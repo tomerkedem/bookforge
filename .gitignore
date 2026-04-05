@@ -1,0 +1,9 @@
+# קבצים אישיים שלא עולים ל-GitHub
+CLAUDE.local.md
+
+# תלויות
+node_modules/
+
+# קבצי סביבה
+.env
+.env.local
