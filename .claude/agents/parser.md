@@ -3,7 +3,8 @@ name: parser
 description: >
   מחלץ פרקים מקובץ Word או PDF תוך שמירה על
   מבנה מלא: כותרות, בולטים, טבלאות, ותמונות.
-  הפעל אותי אחרי Explorer.
+  הפעל אותי אחרי Explorer ולפני Content Architect.
+  אני מחלץ בלבד, אינני מתרגם ואינני משנה תוכן.
 model: sonnet
 tools:
   - read

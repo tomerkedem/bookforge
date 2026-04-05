@@ -1,8 +1,9 @@
 ---
 name: organizer
 description: >
-  מסדר את קבצי ה-MD במבנה הסופי לפי החלטות
-  Content Architect. הפעל אותי אחרי content-architect.
+  מסדר את קבצי ה-MD במבנה הסופי לפי החלטות Content Architect.
+  הפעל אותי אחרי Content Architect ולפני Translator.
+  אני מסדר ומעביר קבצים בלבד, אינני משנה תוכן.
 model: haiku
 tools:
   - read
