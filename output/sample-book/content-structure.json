@@ -1,0 +1,76 @@
+{
+  "book_id": "sample-book",
+  "title": {
+    "he": "ספר לדוגמה",
+    "en": "Sample Book"
+  },
+  "language_source": "he",
+  "language_target": "en",
+  "chapters": [
+    {
+      "id": "chapter-01",
+      "file_he": "chapter-01.he.md",
+      "file_en": "chapter-01.en.md",
+      "title": {
+        "he": "פרק 1: מבוא לנושא",
+        "en": "Chapter 1: Introduction to the Subject"
+      },
+      "type": "intro",
+      "sections": [
+        {
+          "id": "s1",
+          "title": { "he": "מדוע הנושא חשוב" },
+          "type": "content"
+        }
+      ],
+      "order": 1
+    },
+    {
+      "id": "chapter-02",
+      "file_he": "chapter-02.he.md",
+      "file_en": "chapter-02.en.md",
+      "title": {
+        "he": "פרק 2: הרחבה ופיתוח",
+        "en": "Chapter 2: Expansion and Development"
+      },
+      "type": "content",
+      "sections": [
+        {
+          "id": "s1",
+          "title": { "he": "שיטות עבודה" },
+          "type": "content"
+        }
+      ],
+      "order": 2
+    },
+    {
+      "id": "chapter-03",
+      "file_he": "chapter-03.he.md",
+      "file_en": "chapter-03.en.md",
+      "title": {
+        "he": "פרק 3: סיכום ומסקנות",
+        "en": "Chapter 3: Summary and Conclusions"
+      },
+      "type": "summary",
+      "sections": [
+        {
+          "id": "s1",
+          "title": { "he": "מה למדנו" },
+          "type": "content"
+        },
+        {
+          "id": "s2",
+          "title": { "he": "המלצות מעשיות" },
+          "type": "content"
+        }
+      ],
+      "order": 3
+    }
+  ],
+  "total_chapters": 3,
+  "reading_order": ["chapter-01", "chapter-02", "chapter-03"],
+  "navigation": {
+    "has_intro": true,
+    "has_summary": true
+  }
+}
