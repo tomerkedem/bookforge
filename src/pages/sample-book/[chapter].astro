@@ -1,6 +1,7 @@
 ---
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import Layout from '../../layouts/Layout.astro';
 import ReadingProgress from '../../components/sample-book/ReadingProgress.astro';
 import TableOfContents from '../../components/sample-book/TableOfContents.astro';
 import ChapterNav from '../../components/sample-book/ChapterNav.astro';
@@ -30,8 +31,7 @@ const prevChapter = currentIndex > 0 ? CHAPTERS[currentIndex - 1] : undefined;
 const nextChapter = currentIndex < CHAPTERS.length - 1 ? CHAPTERS[currentIndex + 1] : undefined;
 
 const outputDir = join(process.cwd(), 'output', 'sample-book');
-const fileName = `${chapter}.${lang}.md`;
-const filePath = join(outputDir, fileName);
+const filePath = join(outputDir, `${chapter}.${lang}.md`);
 
 let rawContent = '';
 try {
@@ -40,66 +40,47 @@ try {
   rawContent = lang === 'he' ? 'הפרק לא נמצא.' : 'Chapter not found.';
 }
 
-// Simple MD → HTML for headings, paragraphs, lists (no external dep)
 function mdToHtml(md: string): string {
   return md
     .split('\n')
     .map((line) => {
       if (line.startsWith('## ')) return `<h2 class="text-2xl font-semibold mt-8 mb-3">${line.slice(3)}</h2>`;
       if (line.startsWith('# '))  return `<h1 class="text-3xl font-bold mb-6">${line.slice(2)}</h1>`;
-      if (line.startsWith('- '))  return `<li class="mr-5 mb-1">${line.slice(2)}</li>`;
+      if (line.startsWith('- '))  return `<li class="mb-1">${line.slice(2)}</li>`;
       if (line.trim() === '')     return '<br>';
       return `<p class="mb-4 leading-relaxed">${line}</p>`;
     })
     .join('\n')
-    .replace(/(<li[^>]*>.*<\/li>\n)+/g, (m) => `<ul class="list-disc mb-4">${m}</ul>`);
+    .replace(/(<li[^>]*>.*?<\/li>\n)+/gs, (m) => `<ul class="list-disc ps-5 mb-4">${m}</ul>`);
 }
 
 const htmlContent = mdToHtml(rawContent);
-const pageTitle = lang === 'he' ? current?.title.he : current?.title.en;
+const pageTitle = (lang === 'he' ? current?.title.he : current?.title.en) ?? 'BookForge';
+const chaptersForToc = CHAPTERS as unknown as Array<{ id: string; title: { he: string; en: string }; order: number }>;
 ---
 
-<!doctype html>
-<html lang={lang} dir={lang === 'he' ? 'rtl' : 'ltr'}>
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{pageTitle} — ספר לדוגמה</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700&family=Heebo:wght@400;500;600&display=swap"
-      rel="stylesheet"
-    />
-    <style>
-      body { font-family: 'Heebo', system-ui, sans-serif; }
-      h1, h2, h3 { font-family: 'Frank Ruhl Libre', serif; }
-    </style>
-  </head>
-  <body class="bg-white text-gray-900 min-h-screen">
-    <ReadingProgress
-      bookId="sample-book"
-      chapterIndex={currentIndex}
-      totalChapters={CHAPTERS.length}
+<Layout title={`${pageTitle} — ספר לדוגמה`} lang={lang}>
+  <ReadingProgress
+    bookId="sample-book"
+    chapterIndex={currentIndex}
+    totalChapters={CHAPTERS.length}
+  />
+
+  <div class="flex flex-col md:flex-row min-h-screen">
+    <TableOfContents
+      chapters={chaptersForToc}
+      currentChapterId={chapter}
+      lang={lang}
     />
 
-    <div class="flex flex-col md:flex-row min-h-screen">
-      <!-- TOC sidebar — hidden on mobile -->
-      <TableOfContents
-        chapters={CHAPTERS as unknown as Array<{ id: string; title: { he: string; en: string }; order: number }>}
-        currentChapterId={chapter ?? ''}
+    <main class="flex-1 w-full max-w-reading mx-auto px-4 py-10 md:py-16">
+      <article set:html={htmlContent} />
+
+      <ChapterNav
+        prevChapter={prevChapter ? { id: prevChapter.id, title: lang === 'he' ? prevChapter.title.he : prevChapter.title.en } : undefined}
+        nextChapter={nextChapter ? { id: nextChapter.id, title: lang === 'he' ? nextChapter.title.he : nextChapter.title.en } : undefined}
         lang={lang}
       />
-
-      <!-- Main reading area -->
-      <main class="flex-1 max-w-[68ch] mx-auto px-4 py-10 md:py-16 w-full">
-        <article set:html={htmlContent} />
-
-        <ChapterNav
-          prevChapter={prevChapter ? { id: prevChapter.id, title: lang === 'he' ? prevChapter.title.he : prevChapter.title.en } : undefined}
-          nextChapter={nextChapter ? { id: nextChapter.id, title: lang === 'he' ? nextChapter.title.he : nextChapter.title.en } : undefined}
-          lang={lang}
-        />
-      </main>
-    </div>
-  </body>
-</html>
+    </main>
+  </div>
+</Layout>

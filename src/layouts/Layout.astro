@@ -1,0 +1,38 @@
+---
+interface Props {
+  title: string;
+  lang?: 'he' | 'en';
+  description?: string;
+}
+
+const { title, lang = 'he', description = '' } = Astro.props;
+const dir = lang === 'he' ? 'rtl' : 'ltr';
+---
+
+<!doctype html>
+<html lang={lang} dir={dir}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
+    <title>{title}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700&family=Heebo:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body class="bg-white text-gray-900 min-h-screen font-body">
+    <slot />
+  </body>
+</html>
+
+<style is:global>
+  h1, h2, h3, h4 {
+    font-family: 'Frank Ruhl Libre', serif;
+  }
+  body {
+    font-family: 'Heebo', system-ui, sans-serif;
+  }
+</style>

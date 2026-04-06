@@ -12,10 +12,10 @@ const { bookId, chapterIndex, totalChapters } = Astro.props;
   <div id="reading-progress-fill" class="h-full bg-blue-600 transition-all duration-150 ease-out w-0"></div>
 </div>
 
-<script define:vars={{ bookId, chapterIndex, totalChapters }}>
+<script is:inline define:vars={{ bookId, chapterIndex, totalChapters }}>
   const COOKIE_KEY = `yuval-progress-${bookId}`;
 
-  function saveProgress(scrollPosition: number) {
+  function saveProgress(scrollPosition) {
     const data = { chapter: chapterIndex, scrollPosition };
     localStorage.setItem(COOKIE_KEY, JSON.stringify(data));
   }

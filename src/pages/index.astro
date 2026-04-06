@@ -1,0 +1,36 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+const chapters = [
+  { id: 'chapter-01', title: { he: 'פרק 1: מבוא לנושא', en: 'Chapter 1: Introduction' } },
+  { id: 'chapter-02', title: { he: 'פרק 2: עקרונות מתקדמים', en: 'Chapter 2: Advanced Principles' } },
+  { id: 'chapter-03', title: { he: 'פרק 3: סיכום ומסקנות', en: 'Chapter 3: Summary' } },
+];
+---
+
+<Layout title="ספר לדוגמה — BookForge" lang="he">
+  <div dir="rtl" class="max-w-2xl mx-auto px-4 py-16">
+    <h1 class="text-4xl font-bold mb-2 text-gray-900">ספר לדוגמה</h1>
+    <p class="text-gray-500 mb-10 text-lg">3 פרקים · עברית ואנגלית</p>
+
+    <nav aria-label="פרקי הספר">
+      <ol class="space-y-3">
+        {chapters.map((ch, i) => (
+          <li>
+            <a
+              href={`/sample-book/${ch.id}`}
+              class="flex items-center gap-4 p-4 rounded-lg border border-gray-200 hover:border-blue-400 hover:bg-blue-50 transition-colors group"
+            >
+              <span class="text-2xl font-bold text-gray-200 group-hover:text-blue-300 transition-colors w-8 shrink-0">
+                {i + 1}
+              </span>
+              <span class="text-gray-800 font-medium group-hover:text-blue-700 transition-colors">
+                {ch.title.he}
+              </span>
+            </a>
+          </li>
+        ))}
+      </ol>
+    </nav>
+  </div>
+</Layout>
