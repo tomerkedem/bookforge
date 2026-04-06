@@ -45,3 +45,7 @@ tools:
   has_intro: false, אל תמציא פרק
 אם יש פרק אחד בלבד:
   צור content-structure.json עם פרק אחד
+
+דיווח tokens:
+בסיום עבודתך, דווח על מספר ה-tokens שצרכת בפורמט:
+tokens_used: {מספר}  

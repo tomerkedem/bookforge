@@ -116,3 +116,7 @@ Mobile-first breakpoints:
   עדכן בלבד, אל תדרוס
 אם גופן מבוקש אינו זמין ב-Google Fonts:
   השתמש ב-system-ui כברירת מחדל
+
+דיווח tokens:
+בסיום עבודתך, דווח על מספר ה-tokens שצרכת בפורמט:
+tokens_used: {מספר}  

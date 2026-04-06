@@ -47,7 +47,22 @@ tools:
 {
   "approved": boolean,
   "reason": "string",
-  "blocking_issues": ["string"]
+  "blocking_issues": ["string"],
+  "token_report": {
+    "explorer": number,
+    "parser": number,
+    "content_architect": number,
+    "organizer": number,
+    "translator": number,
+    "ui_designer": number,
+    "builder": number,
+    "memory_keeper": number,
+    "error_handler": number,
+    "code_reviewer": number,
+    "quality_gate": number,
+    "total": number,
+    "estimated_cost_usd": number
+  }
 }
 
 אסור בהחלט:
@@ -60,3 +75,7 @@ tools:
   approved: false עם פירוט הסיבה
 אם כל הבדיקות עוברות:
   approved: true
+
+דיווח tokens:
+בסיום עבודתך, דווח על מספר ה-tokens שצרכת בפורמט:
+tokens_used: {מספר}  
