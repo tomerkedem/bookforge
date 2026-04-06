@@ -12,36 +12,94 @@ interface Props {
 }
 
 const { chapters, currentChapterId, lang = 'he' } = Astro.props;
+const dir = lang === 'he' ? 'rtl' : 'ltr';
 ---
 
-<nav
-  dir="rtl"
-  class="hidden md:block w-64 shrink-0 sticky top-8 h-fit px-4 py-6 border-l border-gray-200"
-  aria-label="תוכן עניינים"
->
-  <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-4">
-    {lang === 'he' ? 'תוכן עניינים' : 'Contents'}
-  </p>
-  <ul class="space-y-1">
-    {chapters.map((ch) => {
-      const isActive = ch.id === currentChapterId;
-      const title = lang === 'he' ? ch.title.he : ch.title.en;
-      return (
-        <li>
-          <a
-            href={`/sample-book/${ch.id}`}
-            class:list={[
-              'block py-2 px-3 text-sm rounded-md transition-colors duration-150',
-              isActive
-                ? 'bg-blue-50 text-blue-700 font-medium'
-                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50',
-            ]}
-            aria-current={isActive ? 'page' : undefined}
-          >
-            {title}
-          </a>
-        </li>
-      );
-    })}
-  </ul>
-</nav>
+<!--
+  Per design-system.json:
+  Fixed panel, hidden by default (opacity 0, translateX(100%))
+  Revealed on hover from the inline-end edge
+-->
+<div id="toc-trigger" dir={dir} aria-label={lang === 'he' ? 'תוכן עניינים' : 'Table of contents'}>
+  <!-- Hover zone — thin strip on the inline-end edge -->
+  <div
+    id="toc-trigger-zone"
+    aria-hidden="true"
+    style="position:fixed; top:66px; inset-inline-end:0; width:16px; height:calc(100vh - 66px); z-index:39; cursor:pointer;"
+  ></div>
+
+  <!-- TOC panel -->
+  <nav
+    id="toc-panel"
+    aria-label={lang === 'he' ? 'תוכן עניינים' : 'Table of contents'}
+    style={`
+      position: fixed;
+      top: 66px;
+      inset-inline-end: 0;
+      width: 240px;
+      height: calc(100vh - 66px);
+      background: #ffffff;
+      border-inline-start: 1px solid #f0ede8;
+      padding: 40px 32px;
+      overflow-y: auto;
+      opacity: 0;
+      transform: translateX(${dir === 'rtl' ? '-100%' : '100%'});
+      transition: opacity 0.3s ease, transform 0.3s ease;
+      z-index: 40;
+    `}
+  >
+    <p style="font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:#bbbbbb; margin-bottom:28px;">
+      {lang === 'he' ? 'תוכן עניינים' : 'Contents'}
+    </p>
+
+    <ul style="list-style:none; padding:0; margin:0;">
+      {chapters.map((ch) => {
+        const isActive = ch.id === currentChapterId;
+        const title = lang === 'he' ? ch.title.he : ch.title.en;
+        return (
+          <li style="margin-bottom:4px;">
+            <a
+              href={`/sample-book/${ch.id}`}
+              style={`
+                display: block;
+                padding: 6px 0;
+                font-size: 14px;
+                font-weight: ${isActive ? '500' : '300'};
+                color: ${isActive ? '#1a1a1a' : '#888888'};
+                text-decoration: none;
+                transition: color 0.2s ease;
+              `}
+              aria-current={isActive ? 'page' : undefined}
+            >
+              {title}
+            </a>
+          </li>
+        );
+      })}
+    </ul>
+  </nav>
+</div>
+
+<script is:inline>
+  const panel = document.getElementById('toc-panel');
+  const zone = document.getElementById('toc-trigger-zone');
+  const trigger = document.getElementById('toc-trigger');
+  if (!panel || !zone || !trigger) return;
+
+  const isRtl = document.documentElement.dir === 'rtl';
+  const hiddenTransform = isRtl ? 'translateX(-100%)' : 'translateX(100%)';
+
+  function show() {
+    panel.style.opacity = '1';
+    panel.style.transform = 'translateX(0)';
+  }
+  function hide() {
+    panel.style.opacity = '0';
+    panel.style.transform = hiddenTransform;
+  }
+
+  zone.addEventListener('mouseenter', show);
+  trigger.addEventListener('mouseleave', (e) => {
+    if (!trigger.contains(e.relatedTarget)) hide();
+  });
+</script>

@@ -9,62 +9,55 @@ const dir = lang === 'he' ? 'rtl' : 'ltr';
 ---
 
 <Layout
-  title={lang === 'he' ? 'Yuval — ספריית הקריאה הדיגיטלית' : 'Yuval — Digital Reading Library'}
+  title={lang === 'he' ? 'Yuval — ספריית הקריאה' : 'Yuval — Reading Library'}
   lang={lang}
+  description={lang === 'he' ? 'פלטפורמת קריאה דיגיטלית. ספרים בעברית ואנגלית.' : 'Digital reading platform. Books in Hebrew and English.'}
 >
   <Navigation lang={lang} currentPath="/" />
 
-  <!-- Hero -->
-  <section dir={dir} class="bg-gray-950 text-white">
-    <div class="max-w-6xl mx-auto px-4 py-20 md:py-28 flex flex-col gap-5">
-      <p class="text-blue-400 text-sm font-semibold tracking-widest uppercase">
-        {lang === 'he' ? 'פלטפורמת קריאה דיגיטלית' : 'Digital Reading Platform'}
+  <main dir={dir}>
+    <!-- Page header -->
+    <div
+      class="max-w-6xl mx-auto border-b border-yuval-border"
+      style="padding: 64px 48px 48px;"
+    >
+      <p
+        class="text-yuval-text-muted"
+        style="font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 24px;"
+      >
+        {lang === 'he' ? 'ספרייה' : 'Library'}
       </p>
-      <h1 class="text-4xl md:text-6xl font-bold leading-tight max-w-2xl">
-        {lang === 'he' ? 'ספרים שבאמת\nכדאי לקרוא.' : 'Books worth\nactually reading.'}
+
+      <h1
+        class="font-heading text-yuval-text"
+        style="font-size: clamp(36px, 5vw, 72px); font-weight: 700; line-height: 1.05; letter-spacing: -0.02em; max-width: 10ch;"
+      >
+        {lang === 'he' ? 'הספרים\nשלנו.' : 'Our\nbooks.'}
       </h1>
-      <p class="text-gray-400 text-lg max-w-xl leading-relaxed">
-        {lang === 'he'
-          ? 'Yuval מציגה ספרים בעברית ובאנגלית, עם ממשק קריאה נקי, מעקב התקדמות ושיתוף ציטוטים.'
-          : 'Yuval presents books in Hebrew and English, with a clean reading interface, progress tracking and quote sharing.'}
-      </p>
-      <div class="flex gap-3 flex-wrap mt-2">
-        <a
-          href="#library"
-          class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2.5 rounded-lg transition-colors text-sm"
-        >
-          {lang === 'he' ? 'לספרייה ←' : 'Browse library →'}
-        </a>
+    </div>
+
+    <!-- Book grid — 1px gap on #f0ede8 background -->
+    <div
+      class="max-w-6xl mx-auto"
+      style="padding: 1px 48px 48px; background: #f0ede8;"
+    >
+      <div
+        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+        style="gap: 1px; background: #f0ede8;"
+      >
+        {BOOKS.map((book, i) => (
+          <BookCard book={book} index={i} lang={lang} />
+        ))}
       </div>
-    </div>
-  </section>
-
-  <!-- Stats bar -->
-  <div dir={dir} class="border-b border-gray-100 bg-gray-50">
-    <div class="max-w-6xl mx-auto px-4 py-4 flex gap-8 text-sm text-gray-500 overflow-x-auto">
-      <span><strong class="text-gray-900">{BOOKS.filter(b => b.available).length}</strong> {lang === 'he' ? 'ספרים זמינים' : 'books available'}</span>
-      <span><strong class="text-gray-900">{BOOKS.reduce((s, b) => s + b.totalChapters, 0)}</strong> {lang === 'he' ? 'פרקים' : 'chapters'}</span>
-      <span><strong class="text-gray-900">2</strong> {lang === 'he' ? 'שפות' : 'languages'}</span>
-    </div>
-  </div>
-
-  <!-- Library -->
-  <main id="library" dir={dir} class="max-w-6xl mx-auto px-4 py-14">
-    <h2 class="text-2xl font-bold text-gray-900 mb-8">
-      {lang === 'he' ? 'הספרייה' : 'The Library'}
-    </h2>
-
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-      {BOOKS.map((book) => (
-        <BookCard book={book} lang={lang} />
-      ))}
     </div>
   </main>
 
-  <!-- Footer -->
-  <footer dir={dir} class="border-t border-gray-100 mt-16">
-    <div class="max-w-6xl mx-auto px-4 py-8 text-sm text-gray-400 flex justify-between flex-wrap gap-3">
-      <span>Yuval — {lang === 'he' ? 'נבנה עם BookForge' : 'Built with BookForge'}</span>
+  <footer dir={dir} class="border-t border-yuval-border">
+    <div
+      class="max-w-6xl mx-auto flex justify-between items-center flex-wrap gap-4"
+      style="padding: 32px 48px; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #bbbbbb;"
+    >
+      <span>Yuval</span>
       <span>Astro · Tailwind · RTL</span>
     </div>
   </footer>

@@ -15,62 +15,86 @@ const description = lang === 'he' ? book.description.he : book.description.en;
 <Layout title={`${title} — Yuval`} lang={lang}>
   <Navigation lang={lang} currentPath="/sample-book/" />
 
-  <!-- Hero -->
-  <div dir={dir} class={`bg-gradient-to-br ${book.coverColor} text-white`}>
-    <div class="max-w-4xl mx-auto px-4 py-16 md:py-24 flex flex-col gap-4">
-      <p class="text-white/70 text-sm">
-        <a href="/" class="hover:text-white transition-colors">
-          {lang === 'he' ? 'הספרייה' : 'Library'}
+  <main dir={dir}>
+    <!-- Book hero -->
+    <div
+      class="max-w-reading mx-auto border-b border-yuval-border"
+      style="padding: 64px 48px 56px;"
+    >
+      <!-- Breadcrumb -->
+      <p class="text-yuval-text-muted" style="font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 48px;">
+        <a href="/" class="hover:text-yuval-text transition-colors duration-200">
+          {lang === 'he' ? 'ספרייה' : 'Library'}
         </a>
         {' / '}
-        {title}
+        <span class="text-yuval-text-tertiary">{title}</span>
       </p>
-      <h1 class="text-4xl md:text-5xl font-bold leading-tight">{title}</h1>
-      <p class="text-white/80 text-lg max-w-xl leading-relaxed">{description}</p>
 
-      <div class="flex items-center gap-4 mt-2 text-white/70 text-sm">
-        <span>{book.totalChapters} {lang === 'he' ? 'פרקים' : 'chapters'}</span>
+      <h1
+        class="font-heading text-yuval-text"
+        style="font-size: clamp(36px, 5vw, 72px); font-weight: 700; line-height: 1.05; letter-spacing: -0.02em; margin-bottom: 32px;"
+      >
+        {title}
+      </h1>
+
+      <p class="text-yuval-text-secondary" style="font-size: 17px; font-weight: 300; line-height: 1.85; max-width: 52ch;">
+        {description}
+      </p>
+
+      <div class="flex items-center gap-6 mt-8" style="font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: #bbbbbb;">
+        <span>{chapters.length} {lang === 'he' ? 'פרקים' : 'chapters'}</span>
         <span>·</span>
         <span>{lang === 'he' ? 'עברית + אנגלית' : 'Hebrew + English'}</span>
       </div>
-
-      <a
-        href={`/sample-book/${chapters[0]?.id ?? 'chapter-01'}`}
-        class="mt-4 self-start bg-white text-gray-900 font-semibold px-6 py-2.5 rounded-lg hover:bg-gray-100 transition-colors text-sm"
-      >
-        {lang === 'he' ? 'התחל לקרוא ←' : 'Start reading →'}
-      </a>
     </div>
-  </div>
 
-  <!-- Chapter list -->
-  <main dir={dir} class="max-w-4xl mx-auto px-4 py-12">
-    <h2 class="text-xl font-bold text-gray-900 mb-6">
-      {lang === 'he' ? 'פרקי הספר' : 'Chapters'}
-    </h2>
+    <!-- Chapter list -->
+    <div class="max-w-reading mx-auto" style="padding: 48px 48px 80px;">
+      <p class="text-yuval-text-muted" style="font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 32px;">
+        {lang === 'he' ? 'פרקים' : 'Chapters'}
+      </p>
 
-    <ol class="space-y-3">
-      {chapters.map((ch, i) => {
-        const chTitle = lang === 'he' ? ch.title.he : ch.title.en;
-        return (
-          <li>
-            <a
-              href={`/sample-book/${ch.id}`}
-              class="flex items-center gap-4 p-4 rounded-xl border border-gray-100 hover:border-blue-300 hover:bg-blue-50 transition-all group"
-            >
-              <span class="text-2xl font-bold text-gray-200 group-hover:text-blue-200 transition-colors w-8 shrink-0 text-center">
-                {i + 1}
-              </span>
-              <span class="text-gray-800 font-medium group-hover:text-blue-700 transition-colors">
-                {chTitle}
-              </span>
-              <span class="ms-auto text-gray-300 group-hover:text-blue-400 transition-colors text-lg">
-                {dir === 'rtl' ? '←' : '→'}
-              </span>
-            </a>
-          </li>
-        );
-      })}
-    </ol>
+      <ol class="border-t border-yuval-border">
+        {chapters.map((ch, i) => {
+          const chTitle = lang === 'he' ? ch.title.he : ch.title.en;
+          return (
+            <li class="border-b border-yuval-border group">
+              <a
+                href={`/sample-book/${ch.id}`}
+                class="flex items-center justify-between transition-colors duration-200 hover:bg-yuval-bg-secondary"
+                style="padding: 24px 0;"
+              >
+                <div class="flex items-start gap-6">
+                  <span class="text-yuval-text-muted shrink-0" style="font-size: 11px; letter-spacing: 0.1em; padding-top: 3px;">
+                    {String(i + 1).padStart(2, '0')}
+                  </span>
+                  <span class="font-heading text-yuval-text" style="font-size: 20px; font-weight: 400; line-height: 1.3;">
+                    {chTitle}
+                  </span>
+                </div>
+                <span
+                  class="text-yuval-text opacity-0 group-hover:opacity-100 transition-opacity duration-200 shrink-0"
+                  aria-hidden="true"
+                  style="font-size: 16px; margin-inline-start: 16px;"
+                >
+                  {dir === 'rtl' ? '←' : '→'}
+                </span>
+              </a>
+            </li>
+          );
+        })}
+      </ol>
+
+      <div style="margin-top: 48px;">
+        <a
+          href={`/sample-book/${chapters[0]?.id}`}
+          class="inline-flex items-center gap-3 bg-yuval-text text-white transition-opacity duration-200 hover:opacity-85"
+          style="padding: 14px 28px; font-size: 14px; font-weight: 400; letter-spacing: 0.04em;"
+        >
+          {lang === 'he' ? 'התחל לקרוא' : 'Start reading'}
+          <span aria-hidden="true">{dir === 'rtl' ? '←' : '→'}</span>
+        </a>
+      </div>
+    </div>
   </main>
 </Layout>

@@ -14,42 +14,45 @@ const description = lang === 'he' ? book.description.he : book.description.en;
 <Layout title={`${title} — Yuval`} lang={lang}>
   <Navigation lang={lang} currentPath="/ai-developer-fitness/" />
 
-  <!-- Hero -->
-  <div dir={dir} class={`bg-gradient-to-br ${book.coverColor} text-white`}>
-    <div class="max-w-4xl mx-auto px-4 py-16 md:py-24 flex flex-col gap-4">
-      <p class="text-white/70 text-sm">
-        <a href="/" class="hover:text-white transition-colors">
-          {lang === 'he' ? 'הספרייה' : 'Library'}
+  <main dir={dir}>
+    <div
+      class="max-w-reading mx-auto border-b border-yuval-border"
+      style="padding: 64px 48px 56px;"
+    >
+      <p class="text-yuval-text-muted" style="font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 48px;">
+        <a href="/" class="hover:text-yuval-text transition-colors duration-200">
+          {lang === 'he' ? 'ספרייה' : 'Library'}
         </a>
         {' / '}
+        <span class="text-yuval-text-tertiary">{title}</span>
+      </p>
+
+      <h1
+        class="font-heading text-yuval-text"
+        style="font-size: clamp(36px, 5vw, 72px); font-weight: 700; line-height: 1.05; letter-spacing: -0.02em; margin-bottom: 32px;"
+      >
         {title}
-      </p>
-      <h1 class="text-4xl md:text-5xl font-bold leading-tight">{title}</h1>
-      <p class="text-white/80 text-lg max-w-xl leading-relaxed">{description}</p>
+      </h1>
 
-      <div class="mt-4 inline-flex items-center gap-2 bg-white/20 border border-white/30 text-white/90 text-sm font-medium px-5 py-2.5 rounded-lg self-start">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        {lang === 'he' ? 'הספר בהכנה — בקרוב' : 'Book in preparation — coming soon'}
-      </div>
+      <p class="text-yuval-text-secondary" style="font-size: 17px; font-weight: 300; line-height: 1.85; max-width: 52ch;">
+        {description}
+      </p>
+
+      <p
+        class="text-yuval-text-muted"
+        style="font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; margin-top: 48px;"
+      >
+        {lang === 'he' ? 'בהכנה — יפורסם בקרוב' : 'In preparation — coming soon'}
+      </p>
     </div>
-  </div>
 
-  <!-- Placeholder content -->
-  <main dir={dir} class="max-w-4xl mx-auto px-4 py-16 text-center">
-    <div class="flex flex-col items-center gap-4 text-gray-400">
-      <div class="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center text-2xl">📖</div>
-      <p class="text-lg text-gray-600 font-medium">
-        {lang === 'he' ? 'הפרקים יתווספו בקרוב' : 'Chapters coming soon'}
-      </p>
-      <p class="text-sm max-w-sm">
-        {lang === 'he'
-          ? 'הספר עובר עיבוד על ידי BookForge Pipeline. חזרו מאוחר יותר.'
-          : 'This book is being processed by the BookForge Pipeline. Check back soon.'}
-      </p>
-      <a href="/" class="mt-4 text-sm text-blue-600 hover:underline">
-        {lang === 'he' ? '← חזרה לספרייה' : '→ Back to library'}
+    <div class="max-w-reading mx-auto" style="padding: 48px 48px 80px;">
+      <a
+        href="/"
+        class="text-yuval-text-tertiary transition-colors duration-200 hover:text-yuval-text"
+        style="font-size: 14px; font-weight: 300;"
+      >
+        {dir === 'rtl' ? '→' : '←'} {lang === 'he' ? 'חזרה לספרייה' : 'Back to library'}
       </a>
     </div>
   </main>

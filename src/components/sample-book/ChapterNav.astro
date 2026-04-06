@@ -6,6 +6,7 @@ interface Props {
 }
 
 const { prevChapter, nextChapter, lang = 'he' } = Astro.props;
+const dir = lang === 'he' ? 'rtl' : 'ltr';
 
 const labels = {
   prev: lang === 'he' ? 'הפרק הקודם' : 'Previous chapter',
@@ -14,36 +15,41 @@ const labels = {
 ---
 
 <nav
-  dir="rtl"
-  class="flex justify-between items-center py-6 px-4 border-t border-gray-200 mt-12 gap-4"
+  dir={dir}
+  class="flex justify-between items-start border-t border-yuval-border"
+  style="margin-top: 80px; padding-top: 40px; gap: 24px;"
   aria-label={lang === 'he' ? 'ניווט בין פרקים' : 'Chapter navigation'}
 >
-  <div class="flex-1">
+  <!-- Next (start side in RTL = next) -->
+  <div style="flex: 1;">
     {nextChapter && (
       <a
         href={`/sample-book/${nextChapter.id}`}
-        class="group flex flex-col items-start gap-1 text-sm"
+        class="group flex flex-col gap-1 transition-opacity duration-200 hover:opacity-70"
+        style="text-decoration: none;"
       >
-        <span class="text-xs text-gray-400 group-hover:text-gray-600 transition-colors">
-          ← {labels.next}
+        <span style="font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:#bbbbbb;">
+          {dir === 'rtl' ? '←' : '→'} {labels.next}
         </span>
-        <span class="text-gray-800 font-medium group-hover:text-blue-600 transition-colors line-clamp-1">
+        <span class="font-heading text-yuval-text" style="font-size:18px; font-weight:400;">
           {nextChapter.title}
         </span>
       </a>
     )}
   </div>
 
-  <div class="flex-1 text-end">
+  <!-- Prev (end side in RTL = prev) -->
+  <div style="flex: 1; text-align: end;">
     {prevChapter && (
       <a
         href={`/sample-book/${prevChapter.id}`}
-        class="group flex flex-col items-end gap-1 text-sm"
+        class="group inline-flex flex-col gap-1 transition-opacity duration-200 hover:opacity-70"
+        style="text-decoration: none; align-items: flex-end;"
       >
-        <span class="text-xs text-gray-400 group-hover:text-gray-600 transition-colors">
-          {labels.prev} →
+        <span style="font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:#bbbbbb;">
+          {labels.prev} {dir === 'rtl' ? '→' : '←'}
         </span>
-        <span class="text-gray-800 font-medium group-hover:text-blue-600 transition-colors line-clamp-1">
+        <span class="font-heading text-yuval-text" style="font-size:18px; font-weight:400;">
           {prevChapter.title}
         </span>
       </a>

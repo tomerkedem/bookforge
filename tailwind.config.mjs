@@ -5,16 +5,30 @@ export default {
   ],
   theme: {
     extend: {
+      colors: {
+        yuval: {
+          bg: '#ffffff',
+          'bg-secondary': '#fafaf8',
+          text: '#1a1a1a',
+          'text-secondary': '#666666',
+          'text-tertiary': '#888888',
+          'text-muted': '#bbbbbb',
+          border: '#f0ede8',
+          'border-secondary': '#e0ddd8',
+        },
+      },
       fontFamily: {
-        heading: ["'Frank Ruhl Libre'", 'serif'],
+        heading: ["'Frank Ruhl Libre'", 'Georgia', 'serif'],
         body: ["'Heebo'", 'system-ui', 'sans-serif'],
       },
       maxWidth: {
-        reading: '68ch',
+        reading: '680px',
+      },
+      letterSpacing: {
+        label: '0.12em',
+        brand: '0.02em',
       },
     },
   },
-  // Tailwind v3 RTL support is built-in via rtl: and ltr: variants
-  // enabled automatically when dir="rtl" is on an ancestor element
   plugins: [],
 };

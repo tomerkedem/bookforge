@@ -8,55 +8,68 @@ interface Props {
 const { bookId, chapterIndex, totalChapters } = Astro.props;
 ---
 
-<div id="reading-progress-bar" class="fixed top-0 right-0 left-0 h-1 bg-gray-100 z-50" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={0}>
-  <div id="reading-progress-fill" class="h-full bg-blue-600 transition-all duration-150 ease-out w-0"></div>
+<!-- 2px progress bar below header, per design-system.json -->
+<div
+  id="reading-progress-bar"
+  role="progressbar"
+  aria-valuemin={0}
+  aria-valuemax={100}
+  aria-valuenow={0}
+  aria-label="Reading progress"
+  style="height: 2px; background: #f0ede8; width: 100%; position: sticky; top: 64px; z-index: 30;"
+>
+  <div
+    id="reading-progress-fill"
+    style="height: 100%; background: #1a1a1a; width: 0%; transition: width 0.15s ease-out;"
+  ></div>
+</div>
+
+<!-- Resume banner (hidden initially) -->
+<div id="resume-banner" role="alert" style="display:none; position:fixed; bottom:24px; inset-inline-end:24px; z-index:50; background:#1a1a1a; color:#fff; font-size:13px; padding:12px 20px; display:none; align-items:center; gap:12px;">
+  <span id="resume-text"></span>
+  <button id="resume-yes" style="text-decoration:underline; font-weight:500; background:none; border:none; color:#fff; cursor:pointer;"></button>
+  <button id="resume-no" style="color:#888; background:none; border:none; cursor:pointer; font-size:16px;">×</button>
 </div>
 
 <script is:inline define:vars={{ bookId, chapterIndex, totalChapters }}>
-  const COOKIE_KEY = `yuval-progress-${bookId}`;
+  const STORE_KEY = 'yuval-progress-' + bookId;
 
-  function saveProgress(scrollPosition) {
-    const data = { chapter: chapterIndex, scrollPosition };
-    localStorage.setItem(COOKIE_KEY, JSON.stringify(data));
+  function save(pos) {
+    try { localStorage.setItem(STORE_KEY, JSON.stringify({ chapter: chapterIndex, pos })); } catch {}
   }
 
   function updateBar() {
     const scrollTop = window.scrollY;
-    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-    const pct = docHeight > 0 ? Math.min(100, (scrollTop / docHeight) * 100) : 0;
-
+    const docH = document.documentElement.scrollHeight - window.innerHeight;
+    const pct = docH > 0 ? Math.min(100, (scrollTop / docH) * 100) : 0;
     const fill = document.getElementById('reading-progress-fill');
     const bar = document.getElementById('reading-progress-bar');
-    if (fill) fill.style.width = `${pct}%`;
+    if (fill) fill.style.width = pct + '%';
     if (bar) bar.setAttribute('aria-valuenow', String(Math.round(pct)));
-
-    saveProgress(scrollTop);
+    save(scrollTop);
   }
 
-  // Offer to restore previous scroll position — ask user first (WCAG 2.3)
-  const saved = localStorage.getItem(COOKIE_KEY);
-  if (saved) {
-    try {
-      const { chapter, scrollPosition } = JSON.parse(saved);
-      if (chapter === chapterIndex && scrollPosition > 100) {
-        const banner = document.createElement('div');
-        banner.id = 'resume-banner';
-        banner.setAttribute('role', 'alert');
-        banner.className = 'fixed bottom-4 right-4 z-50 bg-gray-900 text-white text-sm px-4 py-3 rounded-lg shadow-lg flex items-center gap-3';
-        banner.innerHTML = `
-          <span>המשך מהמקום שעצרת?</span>
-          <button id="resume-yes" class="underline font-medium">המשך</button>
-          <button id="resume-no" class="text-gray-400 hover:text-white">×</button>
-        `;
-        document.body.appendChild(banner);
-        document.getElementById('resume-yes')?.addEventListener('click', () => {
-          window.scrollTo({ top: scrollPosition, behavior: 'smooth' });
-          banner.remove();
+  // Offer to resume — user must consent
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORE_KEY) || 'null');
+    if (saved && saved.chapter === chapterIndex && saved.pos > 120) {
+      const banner = document.getElementById('resume-banner');
+      const text = document.getElementById('resume-text');
+      const yes = document.getElementById('resume-yes');
+      const no = document.getElementById('resume-no');
+      if (banner && text && yes && no) {
+        const isHe = document.documentElement.lang === 'he';
+        text.textContent = isHe ? 'המשך מהמקום שעצרת?' : 'Continue where you left off?';
+        yes.textContent = isHe ? 'המשך' : 'Continue';
+        banner.style.display = 'flex';
+        yes.addEventListener('click', () => {
+          window.scrollTo({ top: saved.pos, behavior: 'smooth' });
+          banner.style.display = 'none';
         });
-        document.getElementById('resume-no')?.addEventListener('click', () => banner.remove());
+        no.addEventListener('click', () => { banner.style.display = 'none'; });
       }
-    } catch {}
-  }
+    }
+  } catch {}
 
   window.addEventListener('scroll', updateBar, { passive: true });
   updateBar();
