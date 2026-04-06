@@ -2,6 +2,7 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import Layout from '../../layouts/Layout.astro';
+import Navigation from '../../components/Navigation.astro';
 import ReadingProgress from '../../components/sample-book/ReadingProgress.astro';
 import TableOfContents from '../../components/sample-book/TableOfContents.astro';
 import ChapterNav from '../../components/sample-book/ChapterNav.astro';
@@ -59,7 +60,8 @@ const pageTitle = (lang === 'he' ? current?.title.he : current?.title.en) ?? 'Bo
 const chaptersForToc = CHAPTERS as unknown as Array<{ id: string; title: { he: string; en: string }; order: number }>;
 ---
 
-<Layout title={`${pageTitle} — ספר לדוגמה`} lang={lang}>
+<Layout title={`${pageTitle} — Yuval`} lang={lang}>
+  <Navigation lang={lang} currentPath={`/sample-book/${chapter}`} />
   <ReadingProgress
     bookId="sample-book"
     chapterIndex={currentIndex}

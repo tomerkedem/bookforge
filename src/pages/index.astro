@@ -1,36 +1,71 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import Navigation from '../components/Navigation.astro';
+import BookCard from '../components/BookCard.astro';
+import { BOOKS } from '../lib/books';
 
-const chapters = [
-  { id: 'chapter-01', title: { he: 'פרק 1: מבוא לנושא', en: 'Chapter 1: Introduction' } },
-  { id: 'chapter-02', title: { he: 'פרק 2: עקרונות מתקדמים', en: 'Chapter 2: Advanced Principles' } },
-  { id: 'chapter-03', title: { he: 'פרק 3: סיכום ומסקנות', en: 'Chapter 3: Summary' } },
-];
+const lang = (Astro.url.searchParams.get('lang') ?? 'he') as 'he' | 'en';
+const dir = lang === 'he' ? 'rtl' : 'ltr';
 ---
 
-<Layout title="ספר לדוגמה — BookForge" lang="he">
-  <div dir="rtl" class="max-w-2xl mx-auto px-4 py-16">
-    <h1 class="text-4xl font-bold mb-2 text-gray-900">ספר לדוגמה</h1>
-    <p class="text-gray-500 mb-10 text-lg">3 פרקים · עברית ואנגלית</p>
+<Layout
+  title={lang === 'he' ? 'Yuval — ספריית הקריאה הדיגיטלית' : 'Yuval — Digital Reading Library'}
+  lang={lang}
+>
+  <Navigation lang={lang} currentPath="/" />
 
-    <nav aria-label="פרקי הספר">
-      <ol class="space-y-3">
-        {chapters.map((ch, i) => (
-          <li>
-            <a
-              href={`/sample-book/${ch.id}`}
-              class="flex items-center gap-4 p-4 rounded-lg border border-gray-200 hover:border-blue-400 hover:bg-blue-50 transition-colors group"
-            >
-              <span class="text-2xl font-bold text-gray-200 group-hover:text-blue-300 transition-colors w-8 shrink-0">
-                {i + 1}
-              </span>
-              <span class="text-gray-800 font-medium group-hover:text-blue-700 transition-colors">
-                {ch.title.he}
-              </span>
-            </a>
-          </li>
-        ))}
-      </ol>
-    </nav>
+  <!-- Hero -->
+  <section dir={dir} class="bg-gray-950 text-white">
+    <div class="max-w-6xl mx-auto px-4 py-20 md:py-28 flex flex-col gap-5">
+      <p class="text-blue-400 text-sm font-semibold tracking-widest uppercase">
+        {lang === 'he' ? 'פלטפורמת קריאה דיגיטלית' : 'Digital Reading Platform'}
+      </p>
+      <h1 class="text-4xl md:text-6xl font-bold leading-tight max-w-2xl">
+        {lang === 'he' ? 'ספרים שבאמת\nכדאי לקרוא.' : 'Books worth\nactually reading.'}
+      </h1>
+      <p class="text-gray-400 text-lg max-w-xl leading-relaxed">
+        {lang === 'he'
+          ? 'Yuval מציגה ספרים בעברית ובאנגלית, עם ממשק קריאה נקי, מעקב התקדמות ושיתוף ציטוטים.'
+          : 'Yuval presents books in Hebrew and English, with a clean reading interface, progress tracking and quote sharing.'}
+      </p>
+      <div class="flex gap-3 flex-wrap mt-2">
+        <a
+          href="#library"
+          class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2.5 rounded-lg transition-colors text-sm"
+        >
+          {lang === 'he' ? 'לספרייה ←' : 'Browse library →'}
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Stats bar -->
+  <div dir={dir} class="border-b border-gray-100 bg-gray-50">
+    <div class="max-w-6xl mx-auto px-4 py-4 flex gap-8 text-sm text-gray-500 overflow-x-auto">
+      <span><strong class="text-gray-900">{BOOKS.filter(b => b.available).length}</strong> {lang === 'he' ? 'ספרים זמינים' : 'books available'}</span>
+      <span><strong class="text-gray-900">{BOOKS.reduce((s, b) => s + b.totalChapters, 0)}</strong> {lang === 'he' ? 'פרקים' : 'chapters'}</span>
+      <span><strong class="text-gray-900">2</strong> {lang === 'he' ? 'שפות' : 'languages'}</span>
+    </div>
   </div>
+
+  <!-- Library -->
+  <main id="library" dir={dir} class="max-w-6xl mx-auto px-4 py-14">
+    <h2 class="text-2xl font-bold text-gray-900 mb-8">
+      {lang === 'he' ? 'הספרייה' : 'The Library'}
+    </h2>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      {BOOKS.map((book) => (
+        <BookCard book={book} lang={lang} />
+      ))}
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer dir={dir} class="border-t border-gray-100 mt-16">
+    <div class="max-w-6xl mx-auto px-4 py-8 text-sm text-gray-400 flex justify-between flex-wrap gap-3">
+      <span>Yuval — {lang === 'he' ? 'נבנה עם BookForge' : 'Built with BookForge'}</span>
+      <span>Astro · Tailwind · RTL</span>
+    </div>
+  </footer>
 </Layout>
