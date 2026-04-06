@@ -1,0 +1,13 @@
+{
+  "title": "ספר לדוגמה",
+  "language": "he",
+  "chapters": [
+    {"number": 1, "title": "פרק 1: יסודות הנושא", "heading_level": 1, "has_images": false, "has_tables": false},
+    {"number": 2, "title": "פרק 2: הרחבה ופיתוח", "heading_level": 1, "has_images": false, "has_tables": false},
+    {"number": 3, "title": "פרק 3: סיכום ומסקנות", "heading_level": 1, "has_images": false, "has_tables": false}
+  ],
+  "total_chapters": 3,
+  "has_images": false,
+  "has_tables": false,
+  "source_file": "sample-book.docx"
+}
