@@ -8,3 +8,9 @@
 מעבר שפה עברית/אנגלית לא עבד בריצה הראשונה.
 הסיבה: Builder לא יישם את מנגנון ה-cookie ואת ה-?lang= ב-URL.
 הפתרון: לאחר שBuilder מסיים, בדוק ידנית שמעבר השפה עובד לפני שממשיכים.
+
+### 2026-04-07
+Astro.url.searchParams לא עובד ב-output: static.
+הסיבה: בבנייה סטטית אין request לכן searchParams תמיד ריק.
+הפתרון: להטמיע את שני הגרסאות (עברית/אנגלית) ב-HTML ולבצע שינוי שפה בצד הלקוח
+דרך [data-he]/[data-en] attributes + script שקורא window.location.search.

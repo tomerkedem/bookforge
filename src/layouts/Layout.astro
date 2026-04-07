@@ -15,9 +15,9 @@ export interface Props {
 
 const { title, lang = 'he' } = Astro.props as Props;
 const dir = lang === 'he' ? 'rtl' : 'ltr';
-const toggleLang = lang === 'he' ? 'en' : 'he';
+// Toggle href uses a relative path — client script handles ?lang= param preservation.
 const toggleLabel = lang === 'he' ? 'English' : 'עברית';
-const toggleHref = `${Astro.url.pathname}?lang=${toggleLang}`;
+const toggleHref = `?lang=${lang === 'he' ? 'en' : 'he'}`;
 ---
 
 <!doctype html>

@@ -1,45 +1,16 @@
 ---
 /**
  * src/pages/sample-book/index.astro
- * Book index page for "AI Developer Fitness — Building with Claude Code".
- * Lang resolved from ?lang=he|en query param (defaults to he).
+ * Static-mode bilingual book index for "AI Developer Fitness".
+ * Language (he/en) is resolved client-side from ?lang= query param.
+ * Default language at build time: Hebrew.
  */
 import Layout from '../../layouts/Layout.astro';
 
-type Lang = 'he' | 'en';
-
-const rawLang = Astro.url.searchParams.get('lang') ?? 'he';
-const lang: Lang = rawLang === 'en' ? 'en' : 'he';
-const isHe = lang === 'he';
-
-interface Chapter {
-  number: number;
-  slug: string;
-  title: string;
-  readMinutes: number;
-}
-
-const chapters: Chapter[] = isHe
-  ? [
-      { number: 0, slug: 'chapter-01', title: 'פרק הכנה: פרויקט ההדגמה והסביבה', readMinutes: 5 },
-      { number: 1, slug: 'chapter-02', title: 'פרק 1: שינוי מודל המנטלי', readMinutes: 7 },
-      { number: 2, slug: 'chapter-03', title: 'פרק 2: CLAUDE.md כארכיטקטורה', readMinutes: 10 },
-      { number: 3, slug: 'chapter-04', title: 'פרק 3: Subagents, חלוקת עבודה נכונה', readMinutes: 15 },
-    ]
-  : [
-      { number: 0, slug: 'chapter-01', title: 'Preparation Chapter: The Demo Project and Environment', readMinutes: 5 },
-      { number: 1, slug: 'chapter-02', title: 'Chapter 1: Shifting the Mental Model', readMinutes: 7 },
-      { number: 2, slug: 'chapter-03', title: 'Chapter 2: CLAUDE.md as Architecture', readMinutes: 10 },
-      { number: 3, slug: 'chapter-04', title: 'Chapter 3: Subagents — Proper Division of Work', readMinutes: 15 },
-    ];
-
-const bookTitle = isHe ? 'AI Developer Fitness' : 'AI Developer Fitness';
-const bookSubtitle = isHe
-  ? 'בניית מערכות סוכנים עם Claude Code'
-  : 'Building Agent Systems with Claude Code';
-const pageTitle = `${bookTitle} — BookForge`;
-const minutesLabel = isHe ? 'דקות קריאה' : 'min read';
-const chapterLabel = isHe ? 'פרק' : 'Chapter';
+// Static build always uses Hebrew as the default lang.
+// The client-side script below handles ?lang=en switching.
+const lang = 'he' as const;
+const pageTitle = 'AI Developer Fitness — BookForge';
 ---
 
 <Layout title={pageTitle} lang={lang}>
@@ -53,51 +24,125 @@ const chapterLabel = isHe ? 'פרק' : 'Chapter';
       id="book-title"
       class="font-['Frank_Ruhl_Libre'] text-4xl font-black leading-tight text-[#1a1a1a] md:text-6xl"
     >
-      {bookTitle}
+      <span data-he>AI Developer Fitness</span>
+      <span data-en class="hidden">AI Developer Fitness</span>
     </h1>
     <p class="mt-4 font-['Heebo'] text-lg font-light leading-relaxed text-[#888888]">
-      {bookSubtitle}
+      <span data-he>בניית מערכות סוכנים עם Claude Code</span>
+      <span data-en class="hidden">Building Agent Systems with Claude Code</span>
     </p>
     <div class="mt-8 h-px w-12 bg-[#e0ddd8]" aria-hidden="true"></div>
   </section>
 
   <!-- Chapter list -->
-  <section aria-label={isHe ? 'תוכן עניינים' : 'Table of Contents'}>
+  <section>
+    <h2 class="sr-only">
+      <span data-he>תוכן עניינים</span>
+      <span data-en class="hidden">Table of Contents</span>
+    </h2>
     <ol class="space-y-px bg-[#e0ddd8]" role="list">
-      {chapters.map((ch) => (
-        <li class="bg-[#fafaf8]">
-          <a
-            href={`/sample-book/${ch.slug}?lang=${lang}`}
-            class="group flex items-center gap-5 p-6 transition-colors hover:bg-[#f5f3ef] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1a1a1a] md:p-8"
-            aria-label={`${chapterLabel} ${ch.number}: ${ch.title}`}
-          >
-            <!-- Chapter number -->
-            <span
-              class="w-8 shrink-0 font-['Heebo'] text-xs font-medium tracking-[0.12em] text-[#cccccc] md:w-10"
-              aria-hidden="true"
-            >
-              {String(ch.number).padStart(2, '0')}
-            </span>
 
-            <!-- Title -->
-            <span class="flex-1 font-['Frank_Ruhl_Libre'] text-lg font-bold text-[#1a1a1a] group-hover:text-[#1a1a1a] md:text-xl">
-              {ch.title}
-            </span>
+      <!-- Chapter 1 -->
+      <li class="bg-[#fafaf8]">
+        <a
+          href="/sample-book/chapter-01"
+          data-slug="chapter-01"
+          class="group flex items-center gap-5 p-6 transition-colors hover:bg-[#f5f3ef] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1a1a1a] md:p-8"
+        >
+          <span class="w-10 shrink-0 font-['Heebo'] text-xs font-medium tracking-[0.12em] text-[#cccccc]" aria-hidden="true">01</span>
+          <span class="flex-1 font-['Frank_Ruhl_Libre'] text-lg font-bold text-[#1a1a1a] md:text-xl">
+            <span data-he>פרק הכנה: פרויקט ההדגמה והסביבה</span>
+            <span data-en class="hidden">Preparation Chapter: The Demo Project and Environment</span>
+          </span>
+          <span class="shrink-0 font-['Heebo'] text-xs text-[#bbbbbb] opacity-0 transition-opacity group-hover:opacity-100" aria-hidden="true">
+            <span data-he>← 5 דקות</span>
+            <span data-en class="hidden">5 min →</span>
+          </span>
+        </a>
+      </li>
 
-            <!-- Read time + arrow -->
-            <span class="flex shrink-0 items-center gap-3 font-['Heebo'] text-xs text-[#bbbbbb]">
-              <span>{ch.readMinutes} {minutesLabel}</span>
-              <span
-                class="translate-x-0 opacity-0 transition-all duration-200 group-hover:translate-x-1 group-hover:opacity-100"
-                aria-hidden="true"
-              >
-                {isHe ? '←' : '→'}
-              </span>
-            </span>
-          </a>
-        </li>
-      ))}
+      <!-- Chapter 2 -->
+      <li class="bg-[#fafaf8]">
+        <a
+          href="/sample-book/chapter-02"
+          data-slug="chapter-02"
+          class="group flex items-center gap-5 p-6 transition-colors hover:bg-[#f5f3ef] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1a1a1a] md:p-8"
+        >
+          <span class="w-10 shrink-0 font-['Heebo'] text-xs font-medium tracking-[0.12em] text-[#cccccc]" aria-hidden="true">02</span>
+          <span class="flex-1 font-['Frank_Ruhl_Libre'] text-lg font-bold text-[#1a1a1a] md:text-xl">
+            <span data-he>פרק 1: שינוי מודל המנטלי</span>
+            <span data-en class="hidden">Chapter 1: Shifting the Mental Model</span>
+          </span>
+          <span class="shrink-0 font-['Heebo'] text-xs text-[#bbbbbb] opacity-0 transition-opacity group-hover:opacity-100" aria-hidden="true">
+            <span data-he>← 7 דקות</span>
+            <span data-en class="hidden">7 min →</span>
+          </span>
+        </a>
+      </li>
+
+      <!-- Chapter 3 -->
+      <li class="bg-[#fafaf8]">
+        <a
+          href="/sample-book/chapter-03"
+          data-slug="chapter-03"
+          class="group flex items-center gap-5 p-6 transition-colors hover:bg-[#f5f3ef] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1a1a1a] md:p-8"
+        >
+          <span class="w-10 shrink-0 font-['Heebo'] text-xs font-medium tracking-[0.12em] text-[#cccccc]" aria-hidden="true">03</span>
+          <span class="flex-1 font-['Frank_Ruhl_Libre'] text-lg font-bold text-[#1a1a1a] md:text-xl">
+            <span data-he>פרק 2: CLAUDE.md כארכיטקטורה</span>
+            <span data-en class="hidden">Chapter 2: CLAUDE.md as Architecture</span>
+          </span>
+          <span class="shrink-0 font-['Heebo'] text-xs text-[#bbbbbb] opacity-0 transition-opacity group-hover:opacity-100" aria-hidden="true">
+            <span data-he>← 10 דקות</span>
+            <span data-en class="hidden">10 min →</span>
+          </span>
+        </a>
+      </li>
+
+      <!-- Chapter 4 -->
+      <li class="bg-[#fafaf8]">
+        <a
+          href="/sample-book/chapter-04"
+          data-slug="chapter-04"
+          class="group flex items-center gap-5 p-6 transition-colors hover:bg-[#f5f3ef] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1a1a1a] md:p-8"
+        >
+          <span class="w-10 shrink-0 font-['Heebo'] text-xs font-medium tracking-[0.12em] text-[#cccccc]" aria-hidden="true">04</span>
+          <span class="flex-1 font-['Frank_Ruhl_Libre'] text-lg font-bold text-[#1a1a1a] md:text-xl">
+            <span data-he>פרק 3: Subagents, חלוקת עבודה נכונה</span>
+            <span data-en class="hidden">Chapter 3: Subagents — Proper Division of Work</span>
+          </span>
+          <span class="shrink-0 font-['Heebo'] text-xs text-[#bbbbbb] opacity-0 transition-opacity group-hover:opacity-100" aria-hidden="true">
+            <span data-he>← 15 דקות</span>
+            <span data-en class="hidden">15 min →</span>
+          </span>
+        </a>
+      </li>
+
     </ol>
   </section>
 
 </Layout>
+
+<script>
+  // Client-side language switching for static Astro build.
+  // Reads ?lang=en|he from the URL and shows/hides [data-he] / [data-en] elements.
+  (function () {
+    const params = new URLSearchParams(window.location.search);
+    const lang = params.get('lang') === 'en' ? 'en' : 'he';
+    if (lang === 'he') return; // Hebrew is the default rendered state
+
+    // Switch to English: show [data-en], hide [data-he]
+    document.querySelectorAll('[data-he]').forEach((el) => el.classList.add('hidden'));
+    document.querySelectorAll('[data-en]').forEach((el) => el.classList.remove('hidden'));
+
+    // Update <html> dir and lang for English
+    document.documentElement.setAttribute('lang', 'en');
+    document.documentElement.setAttribute('dir', 'ltr');
+
+    // Update chapter links to preserve ?lang=en
+    document.querySelectorAll<HTMLAnchorElement>('a[data-slug]').forEach((a) => {
+      const slug = a.getAttribute('data-slug');
+      if (slug) a.href = `/sample-book/${slug}?lang=en`;
+    });
+  })();
+</script>
