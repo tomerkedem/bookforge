@@ -80,6 +80,7 @@ image_map = extract_images("path/to/book.docx", "book-name")
 אם כותרת פרק חסרה:
   השתמש בפורמט: chapter-XX ללא כותרת
 
-דיווח tokens:
-בסיום עבודתך, דווח על מספר ה-tokens שצרכת בפורמט:
+דיווח tokens וזמן:
+בסיום עבודתך, דווח בפורמט:
 tokens_used: {מספר}
+time_seconds: {מספר שניות}

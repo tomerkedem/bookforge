@@ -44,6 +44,7 @@ output/{book-name}/assets/chapter-01/image-01.png
 אם שם הספר מכיל תווים מיוחדים:
   המר לאנגלית עם מקפים: my-book-name
 
-דיווח tokens:
-בסיום עבודתך, דווח על מספר ה-tokens שצרכת בפורמט:
+דיווח tokens וזמן:
+בסיום עבודתך, דווח בפורמט:
 tokens_used: {מספר}
+time_seconds: {מספר שניות}

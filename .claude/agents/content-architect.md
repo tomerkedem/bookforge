@@ -46,6 +46,7 @@ tools:
 אם יש פרק אחד בלבד:
   צור content-structure.json עם פרק אחד
 
-דיווח tokens:
-בסיום עבודתך, דווח על מספר ה-tokens שצרכת בפורמט:
-tokens_used: {מספר}  
+דיווח tokens וזמן:
+בסיום עבודתך, דווח בפורמט:
+tokens_used: {מספר}
+time_seconds: {מספר שניות}
