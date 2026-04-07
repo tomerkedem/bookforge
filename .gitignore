@@ -7,3 +7,7 @@ node_modules/
 # קבצי סביבה
 .env
 .env.local
+
+# Python
+__pycache__/
+*.pyc
