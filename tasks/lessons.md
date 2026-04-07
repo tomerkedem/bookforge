@@ -14,3 +14,7 @@ Astro.url.searchParams לא עובד ב-output: static.
 הסיבה: בבנייה סטטית אין request לכן searchParams תמיד ריק.
 הפתרון: להטמיע את שני הגרסאות (עברית/אנגלית) ב-HTML ולבצע שינוי שפה בצד הלקוח
 דרך [data-he]/[data-en] attributes + script שקורא window.location.search.
+
+### 2026-04-07
+Builder לא בנה דף בית ללא הוראה מפורשת.
+כפתור שפה נבנה חד כיווני ללא בדיקה.

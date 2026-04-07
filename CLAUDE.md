@@ -114,6 +114,12 @@ src/pipeline/parse.py     פירוק לפרקים לפי כותרות
 src/pipeline/organize.py  סידור קבצים בתיקיות
 src/pipeline/build.py     יצירת skeleton של Astro
 
+## קריטריונים לאישור
+
+לפני כל דיווח סיום, Quality Gate חייב לבדוק את כל
+הקריטריונים ב-docs/acceptance-criteria.md ידנית.
+אין לאשר בלי שכל קריטריון עבר.
+
 ## גבולות
 
 - אל תגע בoutput/ ללא אישור מפורש
