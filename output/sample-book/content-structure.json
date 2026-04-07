@@ -1,0 +1,71 @@
+{
+  "book": "sample-book",
+  "title": "AI Developer Fitness — Building with Claude Code",
+  "language_source": "he",
+  "language_target": "en",
+  "total_chapters": 4,
+  "chapters": [
+    {
+      "number": 1,
+      "title_he": "פרק הכנה: פרויקט ההדגמה והסביבה",
+      "title_en": "Preparation Chapter: The Demo Project and Environment",
+      "slug": "chapter-01",
+      "type": "intro",
+      "sections": [
+        "מה זה BookForge ו-Yuval ולמה",
+        "מפת הסוכנים של BookForge",
+        "הגדרת סביבה",
+        "README.md"
+      ],
+      "estimated_read_minutes": 5
+    },
+    {
+      "number": 2,
+      "title_he": "פרק 1: שינוי מודל המנטלי",
+      "title_en": "Chapter 1: Shifting the Mental Model",
+      "slug": "chapter-02",
+      "type": "content",
+      "sections": [
+        "מעוזר שמגיב למערכת שמייצרת",
+        "שלושה תרחישים השוואתיים",
+        "תרגיל תכנון ארכיטקטוני"
+      ],
+      "estimated_read_minutes": 7
+    },
+    {
+      "number": 3,
+      "title_he": "פרק 2: CLAUDE.md כארכיטקטורה",
+      "title_en": "Chapter 2: CLAUDE.md as Architecture",
+      "slug": "chapter-03",
+      "type": "content",
+      "sections": [
+        "CLAUDE.md כחוקה",
+        "CLAUDE.local.md להגדרות אישיות",
+        "tasks/todo.md ו-tasks/lessons.md",
+        "Project Index למניעת קריאות כפולות"
+      ],
+      "estimated_read_minutes": 10
+    },
+    {
+      "number": 4,
+      "title_he": "פרק 3: Subagents, חלוקת עבודה נכונה",
+      "title_en": "Chapter 3: Subagents — Proper Division of Work",
+      "slug": "chapter-04",
+      "type": "content",
+      "sections": [
+        "מדוע סוכן אחד לא מספיק",
+        "מה זה Subagent",
+        "אחד עשר הסוכנים של BookForge",
+        "פלט דו לשוני",
+        "Chaining בין סוכנים"
+      ],
+      "estimated_read_minutes": 15
+    }
+  ],
+  "navigation": {
+    "has_toc": true,
+    "has_prev_next": true,
+    "has_intro": true,
+    "has_summary": false
+  }
+}
