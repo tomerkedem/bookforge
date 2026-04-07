@@ -133,6 +133,37 @@ docs/acceptance-criteria.md
 אם כל הבדיקות עוברות:
   approved: true
 
+## דוח tokens סופי חובה
+
+בסיום כל אישור, הצג טבלה מסכמת בפורמט הבא:
+
+┌───────────────────┬──────────┬───────────────┐
+│ סוכן              │  tokens  │ עלות (Sonnet) │
+├───────────────────┼──────────┼───────────────┤
+│ Explorer          │          │               │
+│ Parser            │          │               │
+│ Content Architect │          │               │
+│ Organizer         │          │               │
+│ Translator        │          │               │
+│ UI Designer       │          │               │
+│ Builder           │          │               │
+│ Memory Keeper     │          │               │
+│ Error Handler     │          │               │
+│ Code Reviewer     │          │               │
+│ Quality Gate      │          │               │
+│ Main Agent        │          │               │
+├───────────────────┼──────────┼───────────────┤
+│ סה"כ              │          │               │
+└───────────────────┴──────────┴───────────────┘
+
+תעריפים:
+Haiku: $0.80 למיליון tokens קלט, $4 למיליון tokens פלט
+Sonnet: $3 למיליון tokens קלט, $15 למיליון tokens פלט
+
+אסף את הנתונים מדיווחי tokens_used של כל סוכן.
+אם סוכן לא דיווח, כתוב: לא דווח.
+הצג את הטבלה גם אם approved: false. 
+
 דיווח tokens:
 בסיום עבודתך, דווח על מספר ה-tokens שצרכת בפורמט:
 tokens_used: {מספר}
