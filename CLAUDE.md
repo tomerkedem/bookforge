@@ -104,6 +104,16 @@ Memory Keeper, Error Handler, Code Reviewer.
 - mobile-first בכל קומפוננט, תכנן למסך קטן ואז הרחב
 - שלושת פיצ'רי הגרסה הראשונה: Reading Progress, שיתוף ציטוט, Mobile-first
 
+## שימוש בקוד תשתית
+
+לפני כל הרצת pipeline, הקוד הבא כבר קיים ב-src/pipeline/.
+אל תכתוב קוד חדש לביצוע משימות אלו:
+
+src/pipeline/ingest.py    קריאת קובץ Word או PDF
+src/pipeline/parse.py     פירוק לפרקים לפי כותרות
+src/pipeline/organize.py  סידור קבצים בתיקיות
+src/pipeline/build.py     יצירת skeleton של Astro
+
 ## גבולות
 
 - אל תגע בoutput/ ללא אישור מפורש
