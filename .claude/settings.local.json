@@ -7,7 +7,10 @@
       "Bash(python -c \"import json,sys; v=json.load\\(sys.stdin\\); print\\('\\\\n'.join\\(v[-10:]\\)\\)\")",
       "Bash(npm install:*)",
       "Bash(npx astro:*)",
-      "Bash(python -c ':*)"
+      "Bash(python -c ':*)",
+      "Bash(python3)",
+      "Bash(file:*)",
+      "Bash(find . -type f -exec wc -l {} +)"
     ]
   }
 }

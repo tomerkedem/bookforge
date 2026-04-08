@@ -1,0 +1,79 @@
+{
+  "book": {
+    "title_he": "BookForge: בניית מערכות סוכנים עם Claude Code",
+    "title_en": "BookForge: Building Agent Systems with Claude Code",
+    "chapters": [
+      {
+        "id": 0,
+        "title_he": "פרק הכנה: פרויקט ההדגמה והסביבה",
+        "title_en": "Prep Chapter: The Demo Project and Environment",
+        "sections": 6,
+        "has_images": true,
+        "word_count": 1100,
+        "topics": [
+          "BookForge Overview",
+          "Yuval Platform",
+          "Agent System Architecture",
+          "Environment Setup",
+          "Project Structure",
+          "README Documentation"
+        ]
+      },
+      {
+        "id": 1,
+        "title_he": "פרק 1: שינוי מודל המנטלי",
+        "title_en": "Chapter 1: Changing the Mental Model",
+        "sections": 4,
+        "has_images": false,
+        "word_count": 1050,
+        "topics": [
+          "Helper vs Agent System",
+          "Comparative Scenarios",
+          "Architectural Planning",
+          "Decision Making Responsibilities"
+        ]
+      },
+      {
+        "id": 2,
+        "title_he": "פרק 2: CLAUDE.md כארכיטקטורה",
+        "title_en": "Chapter 2: CLAUDE.md as Architecture",
+        "sections": 5,
+        "has_images": false,
+        "word_count": 1200,
+        "topics": [
+          "CLAUDE.md as Constitution",
+          "Local Configuration",
+          "Task Management",
+          "Project Index",
+          "Knowledge Base Documentation"
+        ]
+      },
+      {
+        "id": 3,
+        "title_he": "פרק 3: Subagents, חלוקת עבודה נכונה",
+        "title_en": "Chapter 3: Subagents, Proper Work Division",
+        "sections": 6,
+        "has_images": true,
+        "word_count": 3600,
+        "topics": [
+          "Single Agent Limitations",
+          "Subagent Architecture",
+          "Eleven Specialized Agents",
+          "Model and Tool Selection",
+          "Bilingual Output Structure",
+          "Agent Chaining Patterns"
+        ]
+      }
+    ],
+    "total_chapters": 4,
+    "total_sections": 21,
+    "has_images": true,
+    "total_word_count": 6950,
+    "languages": [
+      "Hebrew",
+      "English"
+    ],
+    "book_type": "Technical Educational",
+    "primary_focus": "Multi-Agent Systems with Claude Code"
+  }
+}
