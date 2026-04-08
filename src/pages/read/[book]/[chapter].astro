@@ -1,6 +1,7 @@
 ---
 import ReadingLayout from '../../../layouts/ReadingLayout.astro';
 import ChapterNavigation from '../../../components/ChapterNavigation.astro';
+import ChapterSidebars from '../../../components/ChapterSidebars.astro';
 import type { Language, Chapter } from '../../../types/index';
 import { LANGUAGES } from '../../../utils/language';
 import { readFileSync } from 'fs';
@@ -119,6 +120,13 @@ try {
   title={currentChapter.title_en}
   language={LANGUAGES.EN}
 >
+  <!-- Chapter Sidebars: TOC on right, Outline on left -->
+  <ChapterSidebars
+    chapters={mockChapters}
+    currentChapterId={chapterId}
+    language={LANGUAGES.EN}
+  />
+
   <!-- Bilingual content container with data attributes for client-side switching -->
   <div id="chapter-container" data-chapter-id={chapterId} data-book={book}>
     <!-- Hebrew version -->

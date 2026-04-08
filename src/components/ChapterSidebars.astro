@@ -1,0 +1,366 @@
+---
+import type { Language, Chapter } from '../types/index';
+import { LANGUAGES } from '../utils/language';
+
+interface Props {
+  chapters: Chapter[];
+  currentChapterId: number;
+  language?: Language;
+}
+
+const { chapters, currentChapterId, language = LANGUAGES.EN } = Astro.props;
+const isRtl = language === LANGUAGES.HE;
+---
+
+<div class="sidebars-container">
+  <!-- Right Sidebar: Table of Contents (כל הפרקים) -->
+  <aside
+    class:list={[
+      'toc-sidebar',
+      'toc-sidebar-right',
+      isRtl && 'toc-sidebar-rtl',
+    ]}
+    aria-label={language === LANGUAGES.HE ? 'תוכן עניינים' : 'Table of Contents'}
+  >
+    <h3 class="toc-title" data-he="פרקים" data-en="Chapters">
+      {language === LANGUAGES.HE ? 'פרקים' : 'Chapters'}
+    </h3>
+    <nav class="toc-list">
+      <ul>
+        {chapters.map((chapter) => (
+          <li
+            class:list={[
+              'toc-item',
+              chapter.id === currentChapterId && 'toc-item-active',
+            ]}
+          >
+            <a
+              href={`/read/sample-book/${chapter.id}${language === LANGUAGES.HE ? '?lang=he' : ''}`}
+              class:list={[
+                'toc-link',
+                chapter.id === currentChapterId && 'toc-link-active',
+              ]}
+              aria-current={chapter.id === currentChapterId ? 'page' : undefined}
+            >
+              <span class="toc-number">
+                {String(chapter.id).padStart(2, '0')}
+              </span>
+              <span
+                class="toc-chapter-title"
+                data-he={chapter.title_he}
+                data-en={chapter.title_en}
+              >
+                {language === LANGUAGES.HE
+                  ? chapter.title_he
+                  : chapter.title_en}
+              </span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  </aside>
+
+  <!-- Left Sidebar: Chapter Outline (headings של הפרק) -->
+  <aside
+    class:list={[
+      'outline-sidebar',
+      'outline-sidebar-left',
+      isRtl && 'outline-sidebar-rtl',
+    ]}
+    aria-label={language === LANGUAGES.HE ? 'מתוכן הפרק' : 'Chapter Outline'}
+  >
+    <h3 class="outline-title" data-he="בפרק זה" data-en="In This Chapter">
+      {language === LANGUAGES.HE ? 'בפרק זה' : 'In This Chapter'}
+    </h3>
+    <nav id="chapter-outline" class="outline-list">
+      <ul>
+        {/* Outline will be populated by JavaScript from h2/h3 tags */}
+      </ul>
+    </nav>
+  </aside>
+</div>
+
+<style>
+  .sidebars-container {
+    position: relative;
+    width: 100%;
+  }
+
+  /* Right Sidebar: Table of Contents */
+  .toc-sidebar {
+    position: fixed;
+    top: 68px;
+    right: 0;
+    width: 260px;
+    height: calc(100vh - 68px);
+    background: #ffffff;
+    border-left: 1px solid #f0ede8;
+    padding: 24px 16px;
+    overflow-y: auto;
+    z-index: 30;
+    font-size: 13px;
+    line-height: 1.4;
+  }
+
+  .toc-sidebar-rtl {
+    right: auto;
+    left: 0;
+    border-left: none;
+    border-right: 1px solid #f0ede8;
+  }
+
+  .toc-title {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    color: #bbbbbb;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    padding: 0;
+  }
+
+  .toc-list ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .toc-item {
+    margin-bottom: 0;
+    border-bottom: 1px solid #f5f3ef;
+  }
+
+  .toc-item-active {
+    border-left: 3px solid #1a1a1a;
+    border-bottom: none;
+  }
+
+  .toc-item-active.toc-sidebar-rtl {
+    border-left: none;
+    border-right: 3px solid #1a1a1a;
+  }
+
+  .toc-link {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 0;
+    color: #888888;
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+
+  .toc-link:hover {
+    color: #1a1a1a;
+  }
+
+  .toc-link-active {
+    color: #1a1a1a;
+    font-weight: 500;
+  }
+
+  .toc-number {
+    color: #cccccc;
+    font-size: 11px;
+    font-weight: 500;
+    min-width: 24px;
+  }
+
+  .toc-chapter-title {
+    flex: 1;
+    word-break: break-word;
+  }
+
+  /* Left Sidebar: Chapter Outline */
+  .outline-sidebar {
+    position: fixed;
+    top: 68px;
+    left: 0;
+    width: 260px;
+    height: calc(100vh - 68px);
+    background: #ffffff;
+    border-right: 1px solid #f0ede8;
+    padding: 24px 16px;
+    overflow-y: auto;
+    z-index: 30;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .outline-sidebar-rtl {
+    left: auto;
+    right: 0;
+    border-right: none;
+    border-left: 1px solid #f0ede8;
+  }
+
+  .outline-title {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    color: #bbbbbb;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    padding: 0;
+  }
+
+  .outline-list ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .outline-list li {
+    margin-bottom: 0;
+    border-bottom: 1px solid #f5f3ef;
+  }
+
+  .outline-list a {
+    display: block;
+    padding: 8px 0;
+    color: #888888;
+    text-decoration: none;
+    font-size: 12px;
+    word-break: break-word;
+    transition: color 0.2s;
+  }
+
+  .outline-list a:hover {
+    color: #1a1a1a;
+  }
+
+  /* Indentation for nested headings */
+  .outline-list li[data-level="h3"] a {
+    padding-left: 12px;
+    padding-right: 0;
+  }
+
+  .outline-list li[data-level="h3"].outline-sidebar-rtl a {
+    padding-left: 0;
+    padding-right: 12px;
+  }
+
+  /* Scrollbar styling */
+  .toc-sidebar::-webkit-scrollbar,
+  .outline-sidebar::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .toc-sidebar::-webkit-scrollbar-track,
+  .outline-sidebar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .toc-sidebar::-webkit-scrollbar-thumb,
+  .outline-sidebar::-webkit-scrollbar-thumb {
+    background: #e0ddd8;
+    border-radius: 2px;
+  }
+
+  .toc-sidebar::-webkit-scrollbar-thumb:hover,
+  .outline-sidebar::-webkit-scrollbar-thumb:hover {
+    background: #c8c4bc;
+  }
+
+  /* Mobile: hide sidebars on small screens */
+  @media (max-width: 1024px) {
+    .toc-sidebar,
+    .outline-sidebar {
+      display: none;
+    }
+  }
+
+  /* Adjust main content when sidebars visible */
+  :global(.reading-page-with-sidebars) {
+    margin-left: 260px;
+    margin-right: 260px;
+  }
+
+  :global(.reading-page-with-sidebars[dir='rtl']) {
+    margin-left: 260px;
+    margin-right: 260px;
+  }
+</style>
+
+<script>
+  /**
+   * Build chapter outline from h2/h3 headings
+   * Updates when language changes
+   */
+  function buildChapterOutline() {
+    const outline = document.getElementById('chapter-outline');
+    if (!outline) return;
+
+    // Clear existing outline
+    const existingItems = outline.querySelectorAll('li');
+    existingItems.forEach(item => item.remove());
+
+    // Find all headings in chapter content
+    // Look for h2 and h3 elements in [data-he] and [data-en] divs
+    const heDiv = document.querySelector('[data-he].visible, [data-he]:not(.hidden)');
+    const enDiv = document.querySelector('[data-en].visible, [data-en]:not(.hidden)');
+    const contentDiv = heDiv || enDiv;
+
+    if (!contentDiv) return;
+
+    // Get all h2 and h3 elements
+    const headings = Array.from(contentDiv.querySelectorAll('h2, h3'));
+
+    headings.forEach((heading, index) => {
+      const level = heading.tagName.toLowerCase();
+      const text = heading.textContent?.trim() || `Heading ${index}`;
+      const id = heading.id || `heading-${index}`;
+
+      // Add id to heading if not present
+      if (!heading.id) {
+        heading.id = id;
+      }
+
+      // Create outline item
+      const li = document.createElement('li');
+      li.setAttribute('data-level', level);
+
+      const link = document.createElement('a');
+      link.href = `#${id}`;
+      link.textContent = text;
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const target = document.getElementById(id);
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+
+      li.appendChild(link);
+      outline.appendChild(li);
+    });
+  }
+
+  /**
+   * Initialize outline on page load and when language changes
+   */
+  function initializeOutline() {
+    // Wait a bit for content to render
+    setTimeout(() => {
+      buildChapterOutline();
+    }, 100);
+  }
+
+  // Initial load
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeOutline);
+  } else {
+    initializeOutline();
+  }
+
+  // Rebuild outline when language changes
+  window.addEventListener('language-changed', () => {
+    setTimeout(() => {
+      buildChapterOutline();
+    }, 100);
+  });
+
+  // Also rebuild on Astro navigation
+  document.addEventListener('astro:after-swap', initializeOutline);
+</script>
