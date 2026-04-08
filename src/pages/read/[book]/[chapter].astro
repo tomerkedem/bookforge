@@ -71,31 +71,34 @@ if (!currentChapter) {
   return new Response('Chapter not found', { status: 404 });
 }
 
-// Determine language - use URL param as override, default to English
-const urlLang = Astro.url.searchParams.get('lang');
-const validLang = (urlLang === 'he' ? LANGUAGES.HE : LANGUAGES.EN) as Language;
-
-const chapterTitle = validLang === LANGUAGES.HE
-  ? currentChapter.title_he
-  : currentChapter.title_en;
-
-// Load chapter content at BUILD TIME using readFileSync
-let chapterContent = '';
+// Load BOTH language versions at BUILD TIME for client-side switching
+let chapterContentHe = '';
+let chapterContentEn = '';
 let coverImage = '';
 
 try {
-  const filename = `chapter-${String(chapterId).padStart(2, '0')}.${validLang}.md`;
-  const filepath = resolve('output/sample-book', filename);
+  // Load Hebrew version
+  const filenameHe = `chapter-${String(chapterId).padStart(2, '0')}.he.md`;
+  const filepathHe = resolve('output/sample-book', filenameHe);
 
   try {
-    chapterContent = readFileSync(filepath, 'utf-8');
+    chapterContentHe = readFileSync(filepathHe, 'utf-8');
   } catch (e) {
-    console.warn(`Warning: Chapter file not found: ${filepath}`);
-    chapterContent = `<div class="prose prose-lg">
-      <h2>Chapter ${chapterId}: ${chapterTitle}</h2>
-      <p><em>Content loading message: This chapter content was not found during build time.</em></p>
-      <p>Make sure the file exists at: <code>${filename}</code></p>
-    </div>`;
+    console.warn(`Warning: Hebrew chapter file not found: ${filepathHe}`);
+    chapterContentHe = `<h2>${currentChapter.title_he}</h2>
+      <p><em>קובץ זה לא נמצא בזמן הבנייה</em></p>`;
+  }
+
+  // Load English version
+  const filenameEn = `chapter-${String(chapterId).padStart(2, '0')}.en.md`;
+  const filepathEn = resolve('output/sample-book', filenameEn);
+
+  try {
+    chapterContentEn = readFileSync(filepathEn, 'utf-8');
+  } catch (e) {
+    console.warn(`Warning: English chapter file not found: ${filepathEn}`);
+    chapterContentEn = `<h2>${currentChapter.title_en}</h2>
+      <p><em>This chapter file was not found during build time</em></p>`;
   }
 
   // Load cover image path for book detail pages
@@ -106,13 +109,14 @@ try {
   }
 } catch (error) {
   console.error('Error in frontmatter:', error);
-  chapterContent = '<p>Error loading chapter content</p>';
+  chapterContentHe = '<p>Error loading Hebrew content</p>';
+  chapterContentEn = '<p>Error loading English content</p>';
   coverImage = '/covers/default.jpg';
 }
 ---
 
 <ReadingLayout
-  title={chapterTitle}
+  title={currentChapter.title_en}
   language={LANGUAGES.EN}
 >
   <!-- Bilingual content container with data attributes for client-side switching -->
@@ -124,6 +128,9 @@ try {
         <span class="word-count">{currentChapter.word_count} words</span>
         <span class="reading-time">{Math.ceil(currentChapter.word_count / 200)} min read</span>
       </div>
+      <div class="chapter-content prose prose-lg">
+        {chapterContentHe && <Fragment set:html={chapterContentHe} />}
+      </div>
     </div>
 
     <!-- English version (default) -->
@@ -133,11 +140,9 @@ try {
         <span class="word-count">{currentChapter.word_count} words</span>
         <span class="reading-time">{Math.ceil(currentChapter.word_count / 200)} min read</span>
       </div>
-    </div>
-
-    <!-- Common content area -->
-    <div class="chapter-content">
-      {chapterContent && <Fragment set:html={chapterContent} />}
+      <div class="chapter-content prose prose-lg">
+        {chapterContentEn && <Fragment set:html={chapterContentEn} />}
+      </div>
     </div>
 
     <!-- Chapter navigation -->
@@ -218,10 +223,15 @@ try {
 
   /**
    * Switch content between Hebrew and English using data attributes
+   * Searches specifically in chapter-container to avoid other data-he/data-en elements
    */
   function switchLanguage(lang: string) {
-    const heContent = document.querySelector('[data-he]');
-    const enContent = document.querySelector('[data-en]');
+    const container = document.getElementById('chapter-container');
+    if (!container) return;
+
+    // Find chapter content divs (direct children with data-he/data-en)
+    const heContent = container.querySelector(':scope > [data-he]');
+    const enContent = container.querySelector(':scope > [data-en]');
 
     if (heContent && enContent) {
       if (lang === 'he') {
