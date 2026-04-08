@@ -92,15 +92,15 @@ const isRtl = language === LANGUAGES.HE;
       }
 
       :global(article code) {
-        @apply font-mono text-sm bg-yuval-bg-secondary px-2 py-1 rounded text-yuval-text;
+        @apply font-mono text-sm bg-gray-200 px-2 py-1 rounded text-gray-900;
       }
 
       :global(article pre) {
-        @apply bg-yuval-bg-secondary p-4 rounded-lg overflow-x-auto my-6;
+        @apply bg-gray-900 border-2 border-gray-700 p-4 rounded-lg overflow-x-auto my-6 shadow-lg;
       }
 
       :global(article pre code) {
-        @apply bg-transparent px-0 py-0;
+        @apply bg-transparent px-0 py-0 text-gray-100 text-sm;
       }
 
       :global(article a) {

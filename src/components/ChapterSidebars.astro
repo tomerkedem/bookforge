@@ -337,10 +337,16 @@ const isRtl = language === LANGUAGES.HE;
     const container = document.getElementById('chapter-container');
     if (!container) return;
 
-    // Find visible content div (either data-he or data-en)
-    const heDiv = container.querySelector('[data-he]:not(.hidden)');
-    const enDiv = container.querySelector('[data-en]:not(.hidden)');
-    const contentDiv = heDiv || enDiv;
+    // Find visible content div - check computed display style
+    const heDiv = container.querySelector('[data-he]');
+    const enDiv = container.querySelector('[data-en]');
+
+    let contentDiv = null;
+    if (heDiv && window.getComputedStyle(heDiv).display !== 'none') {
+      contentDiv = heDiv;
+    } else if (enDiv && window.getComputedStyle(enDiv).display !== 'none') {
+      contentDiv = enDiv;
+    }
 
     if (!contentDiv) return;
 
