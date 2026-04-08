@@ -12,171 +12,93 @@ Yuval
 עברית
 </button> <button type="button" class="px-3 py-1.5 rounded-full transition-all duration-200 font-body text-sm font-medium bg-yuval-text text-yuval-bg" data-language="en" aria-pressed="true" aria-label="Switch to English" data-he="אנגלית" data-en="English">
 English
-</button> </div> <script type="module" src="/_astro/LanguageToggle.astro_astro_type_script_index_0_lang.ChUskGOR.js"></script> </div> </header> <main class="w-full">  <article class="mx-auto max-w-reading px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16" style="margin-left: 260px; margin-right: 260px;" data-astro-cid-fe7wjrka> <!-- Chapter content --> <div class="prose prose-invert max-w-none space-y-6" data-language="en" data-astro-cid-fe7wjrka>   <div class="sidebars-container" data-astro-cid-x5m5n3h5> <!-- Right Sidebar: Table of Contents (כל הפרקים) --> <aside class="toc-sidebar toc-sidebar-right" aria-label="Table of Contents" data-astro-cid-x5m5n3h5> <h3 class="toc-title" data-he="פרקים" data-en="Chapters" data-astro-cid-x5m5n3h5> Chapters </h3> <nav class="toc-list" data-astro-cid-x5m5n3h5> <ul data-astro-cid-x5m5n3h5> <li class="toc-item toc-item-active" data-astro-cid-x5m5n3h5> <a href="/read/sample-book/1" class="toc-link toc-link-active" aria-current="page" data-astro-cid-x5m5n3h5> <span class="toc-number" data-astro-cid-x5m5n3h5> 01 </span> <span class="toc-chapter-title" data-he="פרק הכנה: פרויקט ההדגמה והסביבה" data-en="Setup Chapter: The Demo Project and Environment" data-astro-cid-x5m5n3h5> Setup Chapter: The Demo Project and Environment </span> </a> </li><li class="toc-item" data-astro-cid-x5m5n3h5> <a href="/read/sample-book/2" class="toc-link" data-astro-cid-x5m5n3h5> <span class="toc-number" data-astro-cid-x5m5n3h5> 02 </span> <span class="toc-chapter-title" data-he="פרק 1: שינוי מודל המנטלי" data-en="Chapter 1: Changing Your Mental Model" data-astro-cid-x5m5n3h5> Chapter 1: Changing Your Mental Model </span> </a> </li><li class="toc-item" data-astro-cid-x5m5n3h5> <a href="/read/sample-book/3" class="toc-link" data-astro-cid-x5m5n3h5> <span class="toc-number" data-astro-cid-x5m5n3h5> 03 </span> <span class="toc-chapter-title" data-he="פרק 2: CLAUDE.md כארכיטקטורה" data-en="Chapter 2: CLAUDE.md as Architecture" data-astro-cid-x5m5n3h5> Chapter 2: CLAUDE.md as Architecture </span> </a> </li><li class="toc-item" data-astro-cid-x5m5n3h5> <a href="/read/sample-book/4" class="toc-link" data-astro-cid-x5m5n3h5> <span class="toc-number" data-astro-cid-x5m5n3h5> 04 </span> <span class="toc-chapter-title" data-he="פרק 3: Subagents, חלוקת עבודה נכונה" data-en="Chapter 3: Subagents, Proper Division of Labor" data-astro-cid-x5m5n3h5> Chapter 3: Subagents, Proper Division of Labor </span> </a> </li> </ul> </nav> </aside> <!-- Left Sidebar: Chapter Outline (headings של הפרק) --> <aside class="outline-sidebar outline-sidebar-left" aria-label="Chapter Outline" data-astro-cid-x5m5n3h5> <h3 class="outline-title" data-he="בפרק זה" data-en="In This Chapter" data-astro-cid-x5m5n3h5> In This Chapter </h3> <nav id="chapter-outline" class="outline-list" data-astro-cid-x5m5n3h5> <ul data-astro-cid-x5m5n3h5>  </ul> </nav> </aside> </div>  <script type="module">function r(){const n=document.getElementById("chapter-outline");if(!n)return;n.querySelectorAll("li").forEach(e=>e.remove());const s=document.querySelector("[data-he].visible, [data-he]:not(.hidden)"),u=document.querySelector("[data-en].visible, [data-en]:not(.hidden)"),d=s||u;if(!d)return;Array.from(d.querySelectorAll("h2, h3")).forEach((e,c)=>{const m=e.tagName.toLowerCase(),h=e.textContent?.trim()||`Heading ${c}`,o=e.id||`heading-${c}`;e.id||(e.id=o);const i=document.createElement("li");i.setAttribute("data-level",m);const t=document.createElement("a");t.href=`#${o}`,t.textContent=h,t.addEventListener("click",v=>{v.preventDefault();const l=document.getElementById(o);l&&l.scrollIntoView({behavior:"smooth",block:"start"})}),i.appendChild(t),n.appendChild(i)})}function a(){setTimeout(()=>{r()},100)}document.readyState==="loading"?document.addEventListener("DOMContentLoaded",a):a();window.addEventListener("language-changed",()=>{setTimeout(()=>{r()},100)});document.addEventListener("astro:after-swap",a);</script>  <div id="chapter-container" data-chapter-id="1" data-book="sample-book" data-astro-cid-hov2pql7> <!-- Hebrew version --> <div data-he class="hidden" dir="rtl" style="text-align: right" data-astro-cid-hov2pql7> <h1 data-astro-cid-hov2pql7>פרק הכנה: פרויקט ההדגמה והסביבה</h1> <div class="chapter-metadata" data-astro-cid-hov2pql7> <span class="word-count" data-astro-cid-hov2pql7>1100 words</span> <span class="reading-time" data-astro-cid-hov2pql7>6 min read</span> </div> <div class="chapter-content prose prose-lg" data-astro-cid-hov2pql7> # פרק הכנה: פרויקט ההדגמה והסביבה
-
-## מה זה BookForge ו-Yuval ולמה
-
-הספר עוסק בבניית מערכות סוכנים. אבל בניגוד לרוב הספרים שעוסקים בנושא, לא נדון בתיאוריה. נבנה מוצר אמיתי.
-
-הפרויקט נקרא BookForge, וכל מה שיילמד בספר ייושם דרכו. BookForge הוא פרויקט פיתוח תוכנה שמדגים כיצד להשתמש ביכולות המתקדמות של Claude Code, ריבוי סוכנים, צוותי סוכנים, וביקורת עצמית, לבניית מוצר אמיתי. הוא מקבל ספר בעברית בפורמט Word או PDF, מפרק אותו לפרקים, מייצר לכל פרק קובץ MD נפרד, ומתרגם כל פרק לאנגלית אוטומטית. הפלט הסופי הוא שתי גרסאות מלאות של הספר, עברית ואנגלית, שמהן נבנית Yuval.
-
-Yuval היא פלטפורמת קריאה דיגיטלית. לא עוד אתר ספרים שנראה כמו כולם. פלטפורמה עם עיצוב שלא קיים כיום בשום מקום, שתומכת בעברית ובאנגלית מהיום הראשון, ומאפשרת לקרוא ספרים בכל מכשיר בצורה נוחה וחכמה.
-
-הטכנולוגיה: Astro כ-framework, Tailwind CSS לעיצוב רספונסיבי מלא, TypeScript לאורך כל הפרויקט.
-
-עיצוב: Mobile-first. הממשק מתוכנן קודם למסך קטן ואז מורחב למסך גדול. בטלפון, טקסט נקי שתופס את כל המסך. במחשב, עיצוב יוקרתי עם תפריטים צידיים.
-
-שלושת פיצ'רי הגרסה הראשונה: Reading Progress, הקורא ממשיך לקרוא בדיוק מאותו מקום בכל מכשיר. שיתוף ציטוט, סימון טקסט מייצר תמונה יפה לשיתוף. Mobile-first design, חווית קריאה מושלמת בכל מסך.
-
-הספר הראשון שיעלה ל-Yuval הוא AI Developer Fitness, שנכתב על ידי אותו מפתח שבנה את הפלטפורמה.
-
-שני הפרויקטים קשורים: BookForge הוא המנוע, Yuval הוא המוצר. ויחד הם מוכיחים את הנקודה המרכזית של הספר: עם תכנון נכון של מערכת סוכנים, מפתח אחד יכול לבנות מה שצוות שלם לא הצליח.
-
-## מפת הסוכנים של BookForge
-
-הסבר:
-
-הדיאגרמה מציגה את מערכת הסוכנים המלאה שנבנה לאורך הספר. כל סוכן אחראי על תפקיד אחד בלבד. הסוכנים הירוקים מבצעים, הסוכנים הכתומים בודקים, ושער האיכות האדום הוא נקודת הכניסה האחרונה לפני שהפלט יוצא. הלולאה המקווקוות בתחתית מייצגת את הביקורת העצמית שרצה לאורך כל התהליך.
-
-## הגדרת סביבה
-
-לפני שממשיכים, ודא שהדברים הבאים מותקנים:
-
-bash
-
-node --version      # 18  ומעלה
-
-git --version
-
-claude --version    # Claude Code v2.1.32 ומעלה
-
-python --version    # 3.8 ומעלה
-
-pip install python-docx
-
-התקנת Claude Code:
-
-bash
-
-npm install -g @anthropic-ai/claude-code
-
-claude login
-
-לאחר ההתקנה תראה את מסך הפתיחה של Claude Code עם פרטי החשבון שלך, הגרסה הנוכחית, והתיקייה שבה אתה עובד. זה אומר שהכל מוכן.
-
-הורדת הפרויקט
-
-כל הקוד של הספר זמין ב:  https://github.com/tomkedem/bookforge
-
-כדי להוריד אותו למחשב שלך:
-
-bash
-
-git clone https://github.com/tomkedem/bookforge.git
-
-cd bookforge
-
-מכאן אפשר לעקוב אחרי כל פרק, לראות את הקוד בפעולה, ולשאול שאלות ב-Issues.
-
-## README.md
-
-ב-repository תמצא את הקובץ הבא:
-
-markdown
-
-# BookForge
-
-פרויקט פיתוח תוכנה שמדגים שימוש ביכולות המתקדמות
-
-של Claude Code לבניית מוצר אמיתי.
-
-מקבל ספר בפורמט Word או PDF ובונה ממנו את Yuval,
-
-פלטפורמת קריאה דיגיטלית ברמה עולמית.
-
-## הסוכנים במערכת
-
-## דרישות
-
-Node.js 18 ומעלה
-
-Claude Code v2.1.32 ומעלה
-
-Git
-
-## מבנה הפרויקט
-
-יתעדכן פרק אחר פרק לאורך הספר.
-
-זה כל מה שיש עכשיו. פרויקט ריק עם כיוון ברור. הסוכנים עוד לא נולדו.
- </div> </div> <!-- English version (default) --> <div data-en class="visible" dir="ltr" style="text-align: left" data-astro-cid-hov2pql7> <h1 data-astro-cid-hov2pql7>Setup Chapter: The Demo Project and Environment</h1> <div class="chapter-metadata" data-astro-cid-hov2pql7> <span class="word-count" data-astro-cid-hov2pql7>1100 words</span> <span class="reading-time" data-astro-cid-hov2pql7>6 min read</span> </div> <div class="chapter-content prose prose-lg" data-astro-cid-hov2pql7> # Setup Chapter: The Demo Project and Environment
-
-## What is BookForge and Yuval and Why
-
-This book deals with building agent systems. But unlike most books on the subject, we won't discuss theory. We'll build a real product.
-
-The project is called BookForge, and everything learned in the book will be implemented through it. BookForge is a software development project that demonstrates how to use Claude Code's advanced capabilities, multiple agents, agent teams, and self-review to build a real product. It takes a book in Hebrew in Word or PDF format, breaks it down into chapters, generates a separate MD file for each chapter, and automatically translates each chapter to English. The final output is two complete versions of the book, Hebrew and English, from which Yuval is built.
-
-Yuval is a digital reading platform. No more website that looks like every other books site. A platform with a design that doesn't exist anywhere today, that supports Hebrew and English from day one, and allows reading books on any device in a comfortable and smart way.
-
-The technology: Astro as the framework, Tailwind CSS for fully responsive design, TypeScript throughout the project.
-
-Design: Mobile-first. The interface is designed first for a small screen then expanded for a large screen. On a phone, clean text that fills the entire screen. On a computer, a luxurious design with side menus.
-
-Three features of the first version: Reading Progress, the reader continues reading from exactly the same place on every device. Share a quote, highlighting text generates a beautiful image to share. Mobile-first design, perfect reading experience on any screen.
-
-The first book to go live on Yuval is AI Developer Fitness, written by the same developer who built the platform.
-
-The two projects are related: BookForge is the engine, Yuval is the product. And together they prove the central point of the book: with proper planning of an agent system, one developer can build what an entire team failed to accomplish.
-
-## Map of BookForge's Agents
-
-Explanation:
-
-The diagram shows the complete agent system built throughout the book. Each agent is responsible for one task only. The green agents execute, the orange agents verify, and the red quality gate is the final entry point before output goes out. The dotted loop at the bottom represents the self-review that runs throughout the entire process.
-
-## Environment Setup
-
-Before continuing, make sure the following are installed:
-
-```bash
-node --version      # 18 and above
+</button> </div> <script type="module" src="/_astro/LanguageToggle.astro_astro_type_script_index_0_lang.ChUskGOR.js"></script> </div> </header> <main class="w-full">  <article class="mx-auto max-w-reading px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16" style="margin-left: 260px; margin-right: 260px;" data-astro-cid-fe7wjrka> <!-- Chapter content --> <div class="prose prose-invert max-w-none space-y-6" data-language="en" data-astro-cid-fe7wjrka>   <div class="sidebars-container" data-astro-cid-x5m5n3h5> <!-- Right Sidebar: Table of Contents (כל הפרקים) --> <aside class="toc-sidebar toc-sidebar-right" id="toc-sidebar" data-rtl="false" aria-label="Table of Contents" data-astro-cid-x5m5n3h5> <h3 class="toc-title" data-astro-cid-x5m5n3h5> <span data-he="פרקים" data-en="Chapters" data-astro-cid-x5m5n3h5> Chapters </span> </h3> <nav class="toc-list" data-astro-cid-x5m5n3h5> <ul data-astro-cid-x5m5n3h5> <li class="toc-item toc-item-active" data-chapter-id="1" data-astro-cid-x5m5n3h5> <a href="/read/sample-book/1" class="toc-link toc-link-active" aria-current="page" data-astro-cid-x5m5n3h5> <span class="toc-number" data-astro-cid-x5m5n3h5> 01 </span> <span class="toc-chapter-title" data-astro-cid-x5m5n3h5> <span data-he="פרק הכנה: פרויקט ההדגמה והסביבה" data-en="Setup Chapter: The Demo Project and Environment" data-astro-cid-x5m5n3h5> Setup Chapter: The Demo Project and Environment </span> </span> </a> </li><li class="toc-item" data-chapter-id="2" data-astro-cid-x5m5n3h5> <a href="/read/sample-book/2" class="toc-link" data-astro-cid-x5m5n3h5> <span class="toc-number" data-astro-cid-x5m5n3h5> 02 </span> <span class="toc-chapter-title" data-astro-cid-x5m5n3h5> <span data-he="פרק 1: שינוי מודל המנטלי" data-en="Chapter 1: Changing Your Mental Model" data-astro-cid-x5m5n3h5> Chapter 1: Changing Your Mental Model </span> </span> </a> </li><li class="toc-item" data-chapter-id="3" data-astro-cid-x5m5n3h5> <a href="/read/sample-book/3" class="toc-link" data-astro-cid-x5m5n3h5> <span class="toc-number" data-astro-cid-x5m5n3h5> 03 </span> <span class="toc-chapter-title" data-astro-cid-x5m5n3h5> <span data-he="פרק 2: CLAUDE.md כארכיטקטורה" data-en="Chapter 2: CLAUDE.md as Architecture" data-astro-cid-x5m5n3h5> Chapter 2: CLAUDE.md as Architecture </span> </span> </a> </li><li class="toc-item" data-chapter-id="4" data-astro-cid-x5m5n3h5> <a href="/read/sample-book/4" class="toc-link" data-astro-cid-x5m5n3h5> <span class="toc-number" data-astro-cid-x5m5n3h5> 04 </span> <span class="toc-chapter-title" data-astro-cid-x5m5n3h5> <span data-he="פרק 3: Subagents, חלוקת עבודה נכונה" data-en="Chapter 3: Subagents, Proper Division of Labor" data-astro-cid-x5m5n3h5> Chapter 3: Subagents, Proper Division of Labor </span> </span> </a> </li> </ul> </nav> </aside> <!-- Left Sidebar: Chapter Outline (headings של הפרק) --> <aside class="outline-sidebar outline-sidebar-left" id="outline-sidebar" data-rtl="false" aria-label="Chapter Outline" data-astro-cid-x5m5n3h5> <h3 class="outline-title" data-astro-cid-x5m5n3h5> <span data-he="בפרק זה" data-en="In This Chapter" data-astro-cid-x5m5n3h5> In This Chapter </span> </h3> <nav id="chapter-outline" class="outline-list" data-astro-cid-x5m5n3h5> <ul data-astro-cid-x5m5n3h5>  </ul> </nav> </aside> </div>  <script type="module">function f(e){const t=document.querySelector(".toc-title span");if(t){const n=t.getAttribute("data-he"),i=t.getAttribute("data-en");t.textContent=e==="he"?n:i}const o=document.querySelector(".outline-title span");if(o){const n=o.getAttribute("data-he"),i=o.getAttribute("data-en");o.textContent=e==="he"?n:i}document.querySelectorAll(".toc-chapter-title span").forEach(n=>{const i=n.getAttribute("data-he"),r=n.getAttribute("data-en");n.textContent=e==="he"?i:r})}function g(){const e=document.getElementById("chapter-outline");if(!e)return;const t=e.querySelector("ul");t&&(t.innerHTML="");const o=document.getElementById("chapter-container");if(!o)return;const n=o.querySelector("[data-he]:not(.hidden)"),i=o.querySelector("[data-en]:not(.hidden)"),r=n||i;if(!r)return;const s=Array.from(r.querySelectorAll("h2, h3"));if(s.length===0){const c=document.createElement("li");c.style.color="#cccccc",c.style.fontSize="12px",c.textContent="No sections found",t&&t.appendChild(c);return}s.forEach((c,h)=>{const p=c.tagName.toLowerCase(),x=c.textContent?.trim()||`Section ${h+1}`,l=`section-${h}`;c.id=l;const d=document.createElement("li");d.setAttribute("data-level",p);const a=document.createElement("a");a.href=`#${l}`,a.textContent=x,a.addEventListener("click",y=>{y.preventDefault();const m=document.getElementById(l);m&&m.scrollIntoView({behavior:"smooth",block:"start"})}),d.appendChild(a),t&&t.appendChild(d)})}function u(e="en"){f(e),setTimeout(()=>{g()},150)}document.readyState==="loading"?document.addEventListener("DOMContentLoaded",()=>{u("en")}):u("en");window.addEventListener("language-changed",e=>{const t=e.detail?.language||"en";f(t),setTimeout(()=>{g()},150)});document.addEventListener("astro:after-swap",()=>{u("en")});</script>  <div id="chapter-container" data-chapter-id="1" data-book="sample-book" data-astro-cid-hov2pql7> <!-- Hebrew version --> <div data-he class="hidden" dir="rtl" style="text-align: right" data-astro-cid-hov2pql7> <h1 data-astro-cid-hov2pql7>פרק הכנה: פרויקט ההדגמה והסביבה</h1> <div class="chapter-metadata" data-astro-cid-hov2pql7> <span class="word-count" data-astro-cid-hov2pql7>1100 words</span> <span class="reading-time" data-astro-cid-hov2pql7>6 min read</span> </div> <div class="chapter-content prose prose-lg" data-astro-cid-hov2pql7> <h1>פרק הכנה: פרויקט ההדגמה והסביבה</h1>
+<h2>מה זה BookForge ו-Yuval ולמה</h2>
+<p>הספר עוסק בבניית מערכות סוכנים. אבל בניגוד לרוב הספרים שעוסקים בנושא, לא נדון בתיאוריה. נבנה מוצר אמיתי.</p>
+<p>הפרויקט נקרא BookForge, וכל מה שיילמד בספר ייושם דרכו. BookForge הוא פרויקט פיתוח תוכנה שמדגים כיצד להשתמש ביכולות המתקדמות של Claude Code, ריבוי סוכנים, צוותי סוכנים, וביקורת עצמית, לבניית מוצר אמיתי. הוא מקבל ספר בעברית בפורמט Word או PDF, מפרק אותו לפרקים, מייצר לכל פרק קובץ MD נפרד, ומתרגם כל פרק לאנגלית אוטומטית. הפלט הסופי הוא שתי גרסאות מלאות של הספר, עברית ואנגלית, שמהן נבנית Yuval.</p>
+<p>Yuval היא פלטפורמת קריאה דיגיטלית. לא עוד אתר ספרים שנראה כמו כולם. פלטפורמה עם עיצוב שלא קיים כיום בשום מקום, שתומכת בעברית ובאנגלית מהיום הראשון, ומאפשרת לקרוא ספרים בכל מכשיר בצורה נוחה וחכמה.</p>
+<p>הטכנולוגיה: Astro כ-framework, Tailwind CSS לעיצוב רספונסיבי מלא, TypeScript לאורך כל הפרויקט.</p>
+<p>עיצוב: Mobile-first. הממשק מתוכנן קודם למסך קטן ואז מורחב למסך גדול. בטלפון, טקסט נקי שתופס את כל המסך. במחשב, עיצוב יוקרתי עם תפריטים צידיים.</p>
+<p>שלושת פיצ&#39;רי הגרסה הראשונה: Reading Progress, הקורא ממשיך לקרוא בדיוק מאותו מקום בכל מכשיר. שיתוף ציטוט, סימון טקסט מייצר תמונה יפה לשיתוף. Mobile-first design, חווית קריאה מושלמת בכל מסך.</p>
+<p>הספר הראשון שיעלה ל-Yuval הוא AI Developer Fitness, שנכתב על ידי אותו מפתח שבנה את הפלטפורמה.</p>
+<p>שני הפרויקטים קשורים: BookForge הוא המנוע, Yuval הוא המוצר. ויחד הם מוכיחים את הנקודה המרכזית של הספר: עם תכנון נכון של מערכת סוכנים, מפתח אחד יכול לבנות מה שצוות שלם לא הצליח.</p>
+<h2>מפת הסוכנים של BookForge</h2>
+<p>הסבר:</p>
+<p>הדיאגרמה מציגה את מערכת הסוכנים המלאה שנבנה לאורך הספר. כל סוכן אחראי על תפקיד אחד בלבד. הסוכנים הירוקים מבצעים, הסוכנים הכתומים בודקים, ושער האיכות האדום הוא נקודת הכניסה האחרונה לפני שהפלט יוצא. הלולאה המקווקוות בתחתית מייצגת את הביקורת העצמית שרצה לאורך כל התהליך.</p>
+<h2>הגדרת סביבה</h2>
+<p>לפני שממשיכים, ודא שהדברים הבאים מותקנים:</p>
+<p>bash</p>
+<p>node --version      # 18  ומעלה</p>
+<p>git --version</p>
+<p>claude --version    # Claude Code v2.1.32 ומעלה</p>
+<p>python --version    # 3.8 ומעלה</p>
+<p>pip install python-docx</p>
+<p>התקנת Claude Code:</p>
+<p>bash</p>
+<p>npm install -g @anthropic-ai/claude-code</p>
+<p>claude login</p>
+<p>לאחר ההתקנה תראה את מסך הפתיחה של Claude Code עם פרטי החשבון שלך, הגרסה הנוכחית, והתיקייה שבה אתה עובד. זה אומר שהכל מוכן.</p>
+<p>הורדת הפרויקט</p>
+<p>כל הקוד של הספר זמין ב:  <a href="https://github.com/tomkedem/bookforge">https://github.com/tomkedem/bookforge</a></p>
+<p>כדי להוריד אותו למחשב שלך:</p>
+<p>bash</p>
+<p>git clone <a href="https://github.com/tomkedem/bookforge.git">https://github.com/tomkedem/bookforge.git</a></p>
+<p>cd bookforge</p>
+<p>מכאן אפשר לעקוב אחרי כל פרק, לראות את הקוד בפעולה, ולשאול שאלות ב-Issues.</p>
+<h2>README.md</h2>
+<p>ב-repository תמצא את הקובץ הבא:</p>
+<p>markdown</p>
+<h1>BookForge</h1>
+<p>פרויקט פיתוח תוכנה שמדגים שימוש ביכולות המתקדמות</p>
+<p>של Claude Code לבניית מוצר אמיתי.</p>
+<p>מקבל ספר בפורמט Word או PDF ובונה ממנו את Yuval,</p>
+<p>פלטפורמת קריאה דיגיטלית ברמה עולמית.</p>
+<h2>הסוכנים במערכת</h2>
+<h2>דרישות</h2>
+<p>Node.js 18 ומעלה</p>
+<p>Claude Code v2.1.32 ומעלה</p>
+<p>Git</p>
+<h2>מבנה הפרויקט</h2>
+<p>יתעדכן פרק אחר פרק לאורך הספר.</p>
+<p>זה כל מה שיש עכשיו. פרויקט ריק עם כיוון ברור. הסוכנים עוד לא נולדו.</p>
+ </div> </div> <!-- English version (default) --> <div data-en class="visible" dir="ltr" style="text-align: left" data-astro-cid-hov2pql7> <h1 data-astro-cid-hov2pql7>Setup Chapter: The Demo Project and Environment</h1> <div class="chapter-metadata" data-astro-cid-hov2pql7> <span class="word-count" data-astro-cid-hov2pql7>1100 words</span> <span class="reading-time" data-astro-cid-hov2pql7>6 min read</span> </div> <div class="chapter-content prose prose-lg" data-astro-cid-hov2pql7> <h1>Setup Chapter: The Demo Project and Environment</h1>
+<h2>What is BookForge and Yuval and Why</h2>
+<p>This book deals with building agent systems. But unlike most books on the subject, we won&#39;t discuss theory. We&#39;ll build a real product.</p>
+<p>The project is called BookForge, and everything learned in the book will be implemented through it. BookForge is a software development project that demonstrates how to use Claude Code&#39;s advanced capabilities, multiple agents, agent teams, and self-review to build a real product. It takes a book in Hebrew in Word or PDF format, breaks it down into chapters, generates a separate MD file for each chapter, and automatically translates each chapter to English. The final output is two complete versions of the book, Hebrew and English, from which Yuval is built.</p>
+<p>Yuval is a digital reading platform. No more website that looks like every other books site. A platform with a design that doesn&#39;t exist anywhere today, that supports Hebrew and English from day one, and allows reading books on any device in a comfortable and smart way.</p>
+<p>The technology: Astro as the framework, Tailwind CSS for fully responsive design, TypeScript throughout the project.</p>
+<p>Design: Mobile-first. The interface is designed first for a small screen then expanded for a large screen. On a phone, clean text that fills the entire screen. On a computer, a luxurious design with side menus.</p>
+<p>Three features of the first version: Reading Progress, the reader continues reading from exactly the same place on every device. Share a quote, highlighting text generates a beautiful image to share. Mobile-first design, perfect reading experience on any screen.</p>
+<p>The first book to go live on Yuval is AI Developer Fitness, written by the same developer who built the platform.</p>
+<p>The two projects are related: BookForge is the engine, Yuval is the product. And together they prove the central point of the book: with proper planning of an agent system, one developer can build what an entire team failed to accomplish.</p>
+<h2>Map of BookForge&#39;s Agents</h2>
+<p>Explanation:</p>
+<p>The diagram shows the complete agent system built throughout the book. Each agent is responsible for one task only. The green agents execute, the orange agents verify, and the red quality gate is the final entry point before output goes out. The dotted loop at the bottom represents the self-review that runs throughout the entire process.</p>
+<h2>Environment Setup</h2>
+<p>Before continuing, make sure the following are installed:</p>
+<pre><code class="language-bash">node --version      # 18 and above
 git --version
 claude --version    # Claude Code v2.1.32 and above
 python --version    # 3.8 and above
 pip install python-docx
-```
-
-Installing Claude Code:
-
-```bash
-npm install -g @anthropic-ai/claude-code
+</code></pre>
+<p>Installing Claude Code:</p>
+<pre><code class="language-bash">npm install -g @anthropic-ai/claude-code
 claude login
-```
-
-After installation you'll see the Claude Code welcome screen with your account details, the current version, and the folder you're working in. That means everything is ready.
-
-## Downloading the Project
-
-All the book's code is available at: https://github.com/tomkedem/bookforge
-
-To download it to your computer:
-
-```bash
-git clone https://github.com/tomkedem/bookforge.git
+</code></pre>
+<p>After installation you&#39;ll see the Claude Code welcome screen with your account details, the current version, and the folder you&#39;re working in. That means everything is ready.</p>
+<h2>Downloading the Project</h2>
+<p>All the book&#39;s code is available at: <a href="https://github.com/tomkedem/bookforge">https://github.com/tomkedem/bookforge</a></p>
+<p>To download it to your computer:</p>
+<pre><code class="language-bash">git clone https://github.com/tomkedem/bookforge.git
 cd bookforge
-```
+</code></pre>
+<p>From here you can follow each chapter, see the code in action, and ask questions in Issues.</p>
+<h2>README.md</h2>
+<p>In the repository you&#39;ll find the following file:</p>
+<pre><code class="language-markdown"># BookForge
 
-From here you can follow each chapter, see the code in action, and ask questions in Issues.
-
-## README.md
-
-In the repository you'll find the following file:
-
-```markdown
-# BookForge
-
-A software development project demonstrating the use of Claude Code's advanced capabilities
+A software development project demonstrating the use of Claude Code&#39;s advanced capabilities
 to build a real product.
 
 Takes a book in Word or PDF format and builds Yuval from it,
@@ -193,8 +115,7 @@ a global-level digital reading platform.
 ## Project Structure
 
 Will be updated chapter by chapter throughout the book.
-```
-
-That's all there is now. An empty project with a clear direction. The agents haven't been born yet.
+</code></pre>
+<p>That&#39;s all there is now. An empty project with a clear direction. The agents haven&#39;t been born yet.</p>
  </div> </div> <!-- Chapter navigation --> <nav class="flex flex-row items-center justify-between gap-4 py-6 border-t border-yuval-border-secondary mt-12" aria-label="Chapter navigation">  <div class="flex flex-col items-center gap-1"> <span class="text-xs font-body text-yuval-text-tertiary uppercase tracking-wide" data-he="פרק 2 מתוך 4" data-en="Chapter 2 of 4">
 Chapter 2 of 4 </span> <h2 class="text-center font-heading font-bold text-lg text-yuval-text" data-he="פרק הכנה: פרויקט ההדגמה והסביבה" data-en="Setup Chapter: The Demo Project and Environment"> Setup Chapter: The Demo Project and Environment </h2> </div> <a href="/read/sample-book/2" class="inline-flex items-center gap-2 px-4 py-2 font-body text-sm font-medium text-yuval-text hover:text-yuval-text-secondary transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yuval-text" data-he="הפרק הבא" data-en="Next Chapter">  <span>Chapter 1: Changing Your Mental Model</span> <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"> <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path> </svg>  </a> </nav> </div>  </div> <!-- Custom prose styles for reading -->  </article>  </main> <script type="module" src="/_astro/BaseLayout.astro_astro_type_script_index_0_lang.Don7ohaG.js"></script> </body> </html>  <script type="module" src="/_astro/_chapter_.astro_astro_type_script_index_0_lang.DHEf8YIE.js"></script>

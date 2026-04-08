@@ -12,824 +12,559 @@ Yuval
 עברית
 </button> <button type="button" class="px-3 py-1.5 rounded-full transition-all duration-200 font-body text-sm font-medium bg-yuval-text text-yuval-bg" data-language="en" aria-pressed="true" aria-label="Switch to English" data-he="אנגלית" data-en="English">
 English
-</button> </div> <script type="module" src="/_astro/LanguageToggle.astro_astro_type_script_index_0_lang.ChUskGOR.js"></script> </div> </header> <main class="w-full">  <article class="mx-auto max-w-reading px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16" style="margin-left: 260px; margin-right: 260px;" data-astro-cid-fe7wjrka> <!-- Chapter content --> <div class="prose prose-invert max-w-none space-y-6" data-language="en" data-astro-cid-fe7wjrka>   <div class="sidebars-container" data-astro-cid-x5m5n3h5> <!-- Right Sidebar: Table of Contents (כל הפרקים) --> <aside class="toc-sidebar toc-sidebar-right" aria-label="Table of Contents" data-astro-cid-x5m5n3h5> <h3 class="toc-title" data-he="פרקים" data-en="Chapters" data-astro-cid-x5m5n3h5> Chapters </h3> <nav class="toc-list" data-astro-cid-x5m5n3h5> <ul data-astro-cid-x5m5n3h5> <li class="toc-item" data-astro-cid-x5m5n3h5> <a href="/read/sample-book/1" class="toc-link" data-astro-cid-x5m5n3h5> <span class="toc-number" data-astro-cid-x5m5n3h5> 01 </span> <span class="toc-chapter-title" data-he="פרק הכנה: פרויקט ההדגמה והסביבה" data-en="Setup Chapter: The Demo Project and Environment" data-astro-cid-x5m5n3h5> Setup Chapter: The Demo Project and Environment </span> </a> </li><li class="toc-item" data-astro-cid-x5m5n3h5> <a href="/read/sample-book/2" class="toc-link" data-astro-cid-x5m5n3h5> <span class="toc-number" data-astro-cid-x5m5n3h5> 02 </span> <span class="toc-chapter-title" data-he="פרק 1: שינוי מודל המנטלי" data-en="Chapter 1: Changing Your Mental Model" data-astro-cid-x5m5n3h5> Chapter 1: Changing Your Mental Model </span> </a> </li><li class="toc-item" data-astro-cid-x5m5n3h5> <a href="/read/sample-book/3" class="toc-link" data-astro-cid-x5m5n3h5> <span class="toc-number" data-astro-cid-x5m5n3h5> 03 </span> <span class="toc-chapter-title" data-he="פרק 2: CLAUDE.md כארכיטקטורה" data-en="Chapter 2: CLAUDE.md as Architecture" data-astro-cid-x5m5n3h5> Chapter 2: CLAUDE.md as Architecture </span> </a> </li><li class="toc-item toc-item-active" data-astro-cid-x5m5n3h5> <a href="/read/sample-book/4" class="toc-link toc-link-active" aria-current="page" data-astro-cid-x5m5n3h5> <span class="toc-number" data-astro-cid-x5m5n3h5> 04 </span> <span class="toc-chapter-title" data-he="פרק 3: Subagents, חלוקת עבודה נכונה" data-en="Chapter 3: Subagents, Proper Division of Labor" data-astro-cid-x5m5n3h5> Chapter 3: Subagents, Proper Division of Labor </span> </a> </li> </ul> </nav> </aside> <!-- Left Sidebar: Chapter Outline (headings של הפרק) --> <aside class="outline-sidebar outline-sidebar-left" aria-label="Chapter Outline" data-astro-cid-x5m5n3h5> <h3 class="outline-title" data-he="בפרק זה" data-en="In This Chapter" data-astro-cid-x5m5n3h5> In This Chapter </h3> <nav id="chapter-outline" class="outline-list" data-astro-cid-x5m5n3h5> <ul data-astro-cid-x5m5n3h5>  </ul> </nav> </aside> </div>  <script type="module">function r(){const n=document.getElementById("chapter-outline");if(!n)return;n.querySelectorAll("li").forEach(e=>e.remove());const s=document.querySelector("[data-he].visible, [data-he]:not(.hidden)"),u=document.querySelector("[data-en].visible, [data-en]:not(.hidden)"),d=s||u;if(!d)return;Array.from(d.querySelectorAll("h2, h3")).forEach((e,c)=>{const m=e.tagName.toLowerCase(),h=e.textContent?.trim()||`Heading ${c}`,o=e.id||`heading-${c}`;e.id||(e.id=o);const i=document.createElement("li");i.setAttribute("data-level",m);const t=document.createElement("a");t.href=`#${o}`,t.textContent=h,t.addEventListener("click",v=>{v.preventDefault();const l=document.getElementById(o);l&&l.scrollIntoView({behavior:"smooth",block:"start"})}),i.appendChild(t),n.appendChild(i)})}function a(){setTimeout(()=>{r()},100)}document.readyState==="loading"?document.addEventListener("DOMContentLoaded",a):a();window.addEventListener("language-changed",()=>{setTimeout(()=>{r()},100)});document.addEventListener("astro:after-swap",a);</script>  <div id="chapter-container" data-chapter-id="4" data-book="bookforge" data-astro-cid-hov2pql7> <!-- Hebrew version --> <div data-he class="hidden" dir="rtl" style="text-align: right" data-astro-cid-hov2pql7> <h1 data-astro-cid-hov2pql7>פרק 3: Subagents, חלוקת עבודה נכונה</h1> <div class="chapter-metadata" data-astro-cid-hov2pql7> <span class="word-count" data-astro-cid-hov2pql7>3600 words</span> <span class="reading-time" data-astro-cid-hov2pql7>18 min read</span> </div> <div class="chapter-content prose prose-lg" data-astro-cid-hov2pql7> # פרק 3: Subagents, חלוקת עבודה נכונה
-
-## מדוע סוכן אחד לא מספיק
-
-נחזור לרגע למשימה שלנו: לקחת ספר בפורמט Word או PDF ולבנות ממנו פלטפורמת קריאה דיגיטלית בשתי שפות.
-
-אם תתן את המשימה הזאת לסוכן אחד, אחד משלושה דברים יקרה.
-
-- הוא ינסה לעשות הכל בבת אחת וייצר קוד שמערבב פירוק תוכן, תרגום, עיצוב, ובנייה בקובץ אחד בלתי ניתן לתחזוקה.
-
-- או שיגמר לו ה-context באמצע והוא יעצור.
-
-- או שהוא יקבל החלטות שגויות בגלל שהוא מנסה לחשוב על יותר מדי דברים בו זמנית.
-
-הפתרון הוא עקרון שכל מהנדס תוכנה מכיר: הפרדת אחריות. כל רכיב אחראי על דבר אחד בלבד.
-
-ב-Claude Code הרכיבים האלה נקראים Subagents.
-
-## מה זה Subagent
-
-Subagent הוא סוכן מתמחה שרץ ב-context window נפרד משלו. הוא מקבל משימה מהסוכן הראשי, מבצע אותה, ומחזיר תוצאה. הסוכן הראשי לא מתמלא בפרטים של כל חקירה, הוא רק מקבל את התוצאה הסופית.
-
-זה אומר שלוש דברים בפועל:
-
-ראשית, כל סוכן יכול להתמחות.
-
-Explorer לא צריך לדעת איך לתרגם.
-
-Translator לא צריך לדעת איך לבנות קומפוננט React.
-
-שנית, context window נשמר נקי. הסוכן הראשי לא מתמלא בקריאות קוד ובתוצאות ביניים.
-
-שלישית, ניתן לנתב משימות לדגמים זולים יותר.
-
-Explorer שרק קורא קבצים יכול לרוץ על Haiku.
-
-Quality Gate שמקבל החלטות מורכבות ירוץ על Sonnet.
-
-## אחד עשר הסוכנים של BookForge
-
-לפני שנבנה כל סוכן, חשוב להבין את התפקיד המדויק של כל אחד ואת הסדר שבו הם פועלים.
-
-מפת הסוכנים המלאה של BookForge נמצאת בפרק ההכנה. הנה הסדר שבו הם פועלים בפועל:
-
-## יצירה, כלים, מודל לכל סוכן
-
-כל subagent ב-Claude Code מוגדר בקובץ Markdown בתיקייה /claude/agents/. הקובץ מכיל שני חלקים: frontmatter עם ההגדרות הטכניות, וגוף הקובץ עם הוראות הסוכן.
-
-## כל אחד עשר הסוכנים של BookForge
-
-להלן הגדרת כל סוכן מוכנה להכנסה לקובץ שלו בתיקייה /claude/agents.
-
-explorer.md
-
-markdown
-
----
-
+</button> </div> <script type="module" src="/_astro/LanguageToggle.astro_astro_type_script_index_0_lang.ChUskGOR.js"></script> </div> </header> <main class="w-full">  <article class="mx-auto max-w-reading px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16" style="margin-left: 260px; margin-right: 260px;" data-astro-cid-fe7wjrka> <!-- Chapter content --> <div class="prose prose-invert max-w-none space-y-6" data-language="en" data-astro-cid-fe7wjrka>   <div class="sidebars-container" data-astro-cid-x5m5n3h5> <!-- Right Sidebar: Table of Contents (כל הפרקים) --> <aside class="toc-sidebar toc-sidebar-right" id="toc-sidebar" data-rtl="false" aria-label="Table of Contents" data-astro-cid-x5m5n3h5> <h3 class="toc-title" data-astro-cid-x5m5n3h5> <span data-he="פרקים" data-en="Chapters" data-astro-cid-x5m5n3h5> Chapters </span> </h3> <nav class="toc-list" data-astro-cid-x5m5n3h5> <ul data-astro-cid-x5m5n3h5> <li class="toc-item" data-chapter-id="1" data-astro-cid-x5m5n3h5> <a href="/read/sample-book/1" class="toc-link" data-astro-cid-x5m5n3h5> <span class="toc-number" data-astro-cid-x5m5n3h5> 01 </span> <span class="toc-chapter-title" data-astro-cid-x5m5n3h5> <span data-he="פרק הכנה: פרויקט ההדגמה והסביבה" data-en="Setup Chapter: The Demo Project and Environment" data-astro-cid-x5m5n3h5> Setup Chapter: The Demo Project and Environment </span> </span> </a> </li><li class="toc-item" data-chapter-id="2" data-astro-cid-x5m5n3h5> <a href="/read/sample-book/2" class="toc-link" data-astro-cid-x5m5n3h5> <span class="toc-number" data-astro-cid-x5m5n3h5> 02 </span> <span class="toc-chapter-title" data-astro-cid-x5m5n3h5> <span data-he="פרק 1: שינוי מודל המנטלי" data-en="Chapter 1: Changing Your Mental Model" data-astro-cid-x5m5n3h5> Chapter 1: Changing Your Mental Model </span> </span> </a> </li><li class="toc-item" data-chapter-id="3" data-astro-cid-x5m5n3h5> <a href="/read/sample-book/3" class="toc-link" data-astro-cid-x5m5n3h5> <span class="toc-number" data-astro-cid-x5m5n3h5> 03 </span> <span class="toc-chapter-title" data-astro-cid-x5m5n3h5> <span data-he="פרק 2: CLAUDE.md כארכיטקטורה" data-en="Chapter 2: CLAUDE.md as Architecture" data-astro-cid-x5m5n3h5> Chapter 2: CLAUDE.md as Architecture </span> </span> </a> </li><li class="toc-item toc-item-active" data-chapter-id="4" data-astro-cid-x5m5n3h5> <a href="/read/sample-book/4" class="toc-link toc-link-active" aria-current="page" data-astro-cid-x5m5n3h5> <span class="toc-number" data-astro-cid-x5m5n3h5> 04 </span> <span class="toc-chapter-title" data-astro-cid-x5m5n3h5> <span data-he="פרק 3: Subagents, חלוקת עבודה נכונה" data-en="Chapter 3: Subagents, Proper Division of Labor" data-astro-cid-x5m5n3h5> Chapter 3: Subagents, Proper Division of Labor </span> </span> </a> </li> </ul> </nav> </aside> <!-- Left Sidebar: Chapter Outline (headings של הפרק) --> <aside class="outline-sidebar outline-sidebar-left" id="outline-sidebar" data-rtl="false" aria-label="Chapter Outline" data-astro-cid-x5m5n3h5> <h3 class="outline-title" data-astro-cid-x5m5n3h5> <span data-he="בפרק זה" data-en="In This Chapter" data-astro-cid-x5m5n3h5> In This Chapter </span> </h3> <nav id="chapter-outline" class="outline-list" data-astro-cid-x5m5n3h5> <ul data-astro-cid-x5m5n3h5>  </ul> </nav> </aside> </div>  <script type="module">function f(e){const t=document.querySelector(".toc-title span");if(t){const n=t.getAttribute("data-he"),i=t.getAttribute("data-en");t.textContent=e==="he"?n:i}const o=document.querySelector(".outline-title span");if(o){const n=o.getAttribute("data-he"),i=o.getAttribute("data-en");o.textContent=e==="he"?n:i}document.querySelectorAll(".toc-chapter-title span").forEach(n=>{const i=n.getAttribute("data-he"),r=n.getAttribute("data-en");n.textContent=e==="he"?i:r})}function g(){const e=document.getElementById("chapter-outline");if(!e)return;const t=e.querySelector("ul");t&&(t.innerHTML="");const o=document.getElementById("chapter-container");if(!o)return;const n=o.querySelector("[data-he]:not(.hidden)"),i=o.querySelector("[data-en]:not(.hidden)"),r=n||i;if(!r)return;const s=Array.from(r.querySelectorAll("h2, h3"));if(s.length===0){const c=document.createElement("li");c.style.color="#cccccc",c.style.fontSize="12px",c.textContent="No sections found",t&&t.appendChild(c);return}s.forEach((c,h)=>{const p=c.tagName.toLowerCase(),x=c.textContent?.trim()||`Section ${h+1}`,l=`section-${h}`;c.id=l;const d=document.createElement("li");d.setAttribute("data-level",p);const a=document.createElement("a");a.href=`#${l}`,a.textContent=x,a.addEventListener("click",y=>{y.preventDefault();const m=document.getElementById(l);m&&m.scrollIntoView({behavior:"smooth",block:"start"})}),d.appendChild(a),t&&t.appendChild(d)})}function u(e="en"){f(e),setTimeout(()=>{g()},150)}document.readyState==="loading"?document.addEventListener("DOMContentLoaded",()=>{u("en")}):u("en");window.addEventListener("language-changed",e=>{const t=e.detail?.language||"en";f(t),setTimeout(()=>{g()},150)});document.addEventListener("astro:after-swap",()=>{u("en")});</script>  <div id="chapter-container" data-chapter-id="4" data-book="bookforge" data-astro-cid-hov2pql7> <!-- Hebrew version --> <div data-he class="hidden" dir="rtl" style="text-align: right" data-astro-cid-hov2pql7> <h1 data-astro-cid-hov2pql7>פרק 3: Subagents, חלוקת עבודה נכונה</h1> <div class="chapter-metadata" data-astro-cid-hov2pql7> <span class="word-count" data-astro-cid-hov2pql7>3600 words</span> <span class="reading-time" data-astro-cid-hov2pql7>18 min read</span> </div> <div class="chapter-content prose prose-lg" data-astro-cid-hov2pql7> <h1>פרק 3: Subagents, חלוקת עבודה נכונה</h1>
+<h2>מדוע סוכן אחד לא מספיק</h2>
+<p>נחזור לרגע למשימה שלנו: לקחת ספר בפורמט Word או PDF ולבנות ממנו פלטפורמת קריאה דיגיטלית בשתי שפות.</p>
+<p>אם תתן את המשימה הזאת לסוכן אחד, אחד משלושה דברים יקרה.</p>
+<ul>
+<li><p>הוא ינסה לעשות הכל בבת אחת וייצר קוד שמערבב פירוק תוכן, תרגום, עיצוב, ובנייה בקובץ אחד בלתי ניתן לתחזוקה.</p>
+</li>
+<li><p>או שיגמר לו ה-context באמצע והוא יעצור.</p>
+</li>
+<li><p>או שהוא יקבל החלטות שגויות בגלל שהוא מנסה לחשוב על יותר מדי דברים בו זמנית.</p>
+</li>
+</ul>
+<p>הפתרון הוא עקרון שכל מהנדס תוכנה מכיר: הפרדת אחריות. כל רכיב אחראי על דבר אחד בלבד.</p>
+<p>ב-Claude Code הרכיבים האלה נקראים Subagents.</p>
+<h2>מה זה Subagent</h2>
+<p>Subagent הוא סוכן מתמחה שרץ ב-context window נפרד משלו. הוא מקבל משימה מהסוכן הראשי, מבצע אותה, ומחזיר תוצאה. הסוכן הראשי לא מתמלא בפרטים של כל חקירה, הוא רק מקבל את התוצאה הסופית.</p>
+<p>זה אומר שלוש דברים בפועל:</p>
+<p>ראשית, כל סוכן יכול להתמחות.</p>
+<p>Explorer לא צריך לדעת איך לתרגם.</p>
+<p>Translator לא צריך לדעת איך לבנות קומפוננט React.</p>
+<p>שנית, context window נשמר נקי. הסוכן הראשי לא מתמלא בקריאות קוד ובתוצאות ביניים.</p>
+<p>שלישית, ניתן לנתב משימות לדגמים זולים יותר.</p>
+<p>Explorer שרק קורא קבצים יכול לרוץ על Haiku.</p>
+<p>Quality Gate שמקבל החלטות מורכבות ירוץ על Sonnet.</p>
+<h2>אחד עשר הסוכנים של BookForge</h2>
+<p>לפני שנבנה כל סוכן, חשוב להבין את התפקיד המדויק של כל אחד ואת הסדר שבו הם פועלים.</p>
+<p>מפת הסוכנים המלאה של BookForge נמצאת בפרק ההכנה. הנה הסדר שבו הם פועלים בפועל:</p>
+<h2>יצירה, כלים, מודל לכל סוכן</h2>
+<p>כל subagent ב-Claude Code מוגדר בקובץ Markdown בתיקייה /claude/agents/. הקובץ מכיל שני חלקים: frontmatter עם ההגדרות הטכניות, וגוף הקובץ עם הוראות הסוכן.</p>
+<h2>כל אחד עשר הסוכנים של BookForge</h2>
+<p>להלן הגדרת כל סוכן מוכנה להכנסה לקובץ שלו בתיקייה /claude/agents.</p>
+<p>explorer.md</p>
+<p>markdown</p>
+<hr>
+<p>name: explorer</p>
+<p>description: &gt;</p>
+<p>סורק קובץ Word או PDF ומדווח על מבנהו.</p>
+<p>הפעל אותי לפני כל פעולה על קובץ חדש.</p>
+<p>model: haiku</p>
+<p>tools:</p>
+<ul>
+<li>read</li>
+</ul>
+<hr>
+<p>אתה Explorer. תפקידך אחד: לקרוא ולדווח.</p>
+<p>אל תשנה שום דבר. אל תפרק. אל תתרגם.</p>
+<p>קרא את הקובץ וחזור עם JSON שמכיל:</p>
+<ul>
+<li><p>מספר פרקים</p>
+</li>
+<li><p>כותרת כל פרק</p>
+</li>
+<li><p>האם יש תמונות</p>
+</li>
+<li><p>שפת המקור</p>
+</li>
+</ul>
+<p>parser.md</p>
+<p>markdown</p>
+<hr>
+<p>name: parser</p>
+<p>description: &gt;</p>
+<p>מחלץ פרקים מקובץ Word או PDF תוך שמירה על</p>
+<p>מבנה מלא: כותרות, בולטים, טבלאות, ותמונות.</p>
+<p>הפעל אותי אחרי Explorer.</p>
+<p>model: sonnet</p>
+<p>tools:</p>
+<ul>
+<li><p>read</p>
+</li>
+<li><p>write</p>
+</li>
+</ul>
+<hr>
+<p>אתה Parser. תפקידך: לחלץ ולשמור.</p>
+<p>לכל פרק צור קובץ MD נפרד בשם chapter-XX.he.md.</p>
+<p>שמור על כל אלה בפורמט Markdown תקני:</p>
+<ul>
+<li><p>כותרות וכותרות משנה</p>
+</li>
+<li><p>טקסט מודגש ונטוי</p>
+</li>
+<li><p>רשימות ממוספרות ונקודות</p>
+</li>
+<li><p>טבלאות</p>
+</li>
+<li><p>ציטוטים</p>
+</li>
+</ul>
+<p>תמונות: חלץ לתיקיית assets/chapter-XX/ והוסף הפניה בקובץ ה-MD.</p>
+<p>אל תתרגם. אל תשנה תוכן. רק חלץ ושמור.</p>
+<p>content-architect.md</p>
+<p>markdown</p>
+<hr>
+<p>name: content-architect</p>
+<p>description: &gt;</p>
+<p>מקבל את הפרקים שחלץ Parser ומחליט על</p>
+<p>מבנה התוכן הסופי לפני הארגון.</p>
+<p>הפעל אותי אחרי Parser.</p>
+<p>model: sonnet</p>
+<p>tools:</p>
+<ul>
+<li><p>read</p>
+</li>
+<li><p>write</p>
+</li>
+</ul>
+<hr>
+<p>אתה Content Architect. תפקידך: להחליט על מבנה.</p>
+<p>קרא את כל קבצי chapter-XX.he.md וצור קובץ</p>
+<p>content-structure.json שמכיל:</p>
+<ul>
+<li><p>סדר הפרקים</p>
+</li>
+<li><p>קשרים בין פרקים</p>
+</li>
+<li><p>פרקי מבוא ופרקי סיכום</p>
+</li>
+<li><p>המלצות לניווט ב-Yuval</p>
+</li>
+</ul>
+<p>אל תשנה תוכן. רק מפה ומחליט על מבנה.</p>
+<p>organizer.md</p>
+<p>markdown</p>
+<hr>
+<p>name: organizer</p>
+<p>description: &gt;</p>
+<p>מסדר את קבצי ה-MD במבנה הסופי לפי החלטות</p>
+<p>Content Architect. הפעל אותי אחרי content-architect.</p>
+<p>model: haiku</p>
+<p>tools:</p>
+<ul>
+<li><p>read</p>
+</li>
+<li><p>write</p>
+</li>
+</ul>
+<hr>
+<p>אתה Organizer. תפקידך: לסדר ולארגן.</p>
+<p>קרא את content-structure.json וסדר את הקבצים:</p>
+<p>output/{book-name}/chapter-01.he.md</p>
+<p>output/{book-name}/chapter-02.he.md</p>
+<p>output/{book-name}/assets/chapter-01/</p>
+<p>אל תשנה תוכן. רק העבר וסדר.</p>
+<p>translator.md</p>
+<p>markdown</p>
+<hr>
+<p>name: translator</p>
+<p>description: &gt;</p>
+<p>מתרגם כל קובץ MD מעברית לאנגלית תוך שמירה</p>
+<p>על מבנה מלא. הפעל אותי אחרי Organizer.</p>
+<p>model: sonnet</p>
+<p>tools:</p>
+<ul>
+<li><p>read</p>
+</li>
+<li><p>write</p>
+</li>
+</ul>
+<hr>
+<p>אתה Translator. תפקידך: לתרגם בלבד.</p>
+<p>לכל קובץ chapter-XX.he.md צור chapter-XX.en.md.</p>
+<p>שמור על כל אלה:</p>
+<ul>
+<li><p>מבנה הכותרות המקורי</p>
+</li>
+<li><p>הדגשות ובולטים</p>
+</li>
+<li><p>טבלאות</p>
+</li>
+<li><p>הפניות לתמונות</p>
+</li>
+</ul>
+<p>תרגם בצורה טבעית, לא מילולית.</p>
+<p>אל תשנה מבנה. אל תוסיף תוכן. רק תרגם.</p>
+<p>ui-designer.md</p>
+<p>markdown</p>
+<hr>
+<p>name: ui-designer</p>
+<p>description: &gt;</p>
+<p>מגדיר את מערכת העיצוב של Yuval לפני שה-Builder</p>
+<p>מתחיל לבנות. הפעל אותי פעם אחת בתחילת הפרויקט.</p>
+<p>model: sonnet</p>
+<p>tools:</p>
+<ul>
+<li><p>read</p>
+</li>
+<li><p>write</p>
+</li>
+</ul>
+<hr>
+<p>אתה UI Designer. תפקידך: להגדיר מערכת עיצוב.</p>
+<p>צור קובץ design-system.json שמכיל:</p>
+<ul>
+<li><p>פלטת צבעים</p>
+</li>
+<li><p>גופנים וגדלים</p>
+</li>
+<li><p>רכיבים בסיסיים: כרטיסיית ספר, דף קריאה, ניווט</p>
+</li>
+<li><p>כללי RTL לעברית</p>
+</li>
+<li><p>כללי LTR לאנגלית</p>
+</li>
+</ul>
+<p>כל קומפוננט שה-Builder יכתוב חייב להתבסס על מסמך זה.</p>
+<p>builder.md</p>
+<p>markdown</p>
+<hr>
+<p>name: builder</p>
+<p>description: &gt;</p>
+<p>בונה קומפוננטים ב- Astro  על בסיס מערכת העיצוב</p>
+<p>ותוכן ה-MD. הפעל אותי אחרי ui-designer.</p>
+<p>model: sonnet</p>
+<p>tools:</p>
+<ul>
+<li><p>read</p>
+</li>
+<li><p>write</p>
+</li>
+<li><p>bash</p>
+</li>
+</ul>
+<hr>
+<p>אתה Builder. תפקידך: לבנות קוד בלבד.</p>
+<p>בנה קומפוננטים ב- Astro לפי design-system.json.</p>
+<p>כל קומפוננט חייב:</p>
+<ul>
+<li><p>לתמוך בעברית ואנגלית</p>
+</li>
+<li><p>להשתמש ברכיבים משותפים קיימים</p>
+</li>
+<li><p>לעמוד בעקרונות SOLID</p>
+</li>
+<li><p>לכלול TypeScript types</p>
+</li>
+</ul>
+<p>אל תחליט על עיצוב. אל תשנה design-system.json.</p>
+<p>memory-keeper.md</p>
+<p>markdown</p>
+<hr>
+<p>name: memory-keeper</p>
+<p>description: &gt;</p>
+<p>שומר על עקביות לאורך כל הפרויקט. הפעל אותי</p>
+<p>לפני כל החלטה ארכיטקטונית חדשה.</p>
+<p>model: sonnet</p>
+<p>memory: user</p>
+<p>tools:</p>
+<ul>
+<li><p>read</p>
+</li>
+<li><p>write</p>
+</li>
+</ul>
+<hr>
+<p>אתה Memory Keeper. תפקידך: לזכור ולוודא עקביות.</p>
+<p>לפני כל החלטה חדשה בדוק שהיא עקבית עם:</p>
+<ul>
+<li><p>design-system.json</p>
+</li>
+<li><p>content-structure.json</p>
+</li>
+<li><p>כל ההחלטות שנרשמו ב-tasks/lessons.md</p>
+</li>
+</ul>
+<p>אם יש סתירה, דווח לסוכן הראשי לפני שממשיכים.</p>
+<p>error-handler.md</p>
+<p>markdown</p>
+<hr>
+<p>name: error-handler</p>
+<p>description: &gt;</p>
+<p>מזהה שגיאות ומתקן אותן. הפעל אותי כשסוכן</p>
+<p>אחר נתקל בשגיאה שאינו יכול לפתור.</p>
+<p>model: sonnet</p>
+<p>tools:</p>
+<ul>
+<li><p>read</p>
+</li>
+<li><p>write</p>
+</li>
+<li><p>bash</p>
+</li>
+</ul>
+<hr>
+<p>אתה Error Handler. תפקידך: לזהות ולתקן שגיאות.</p>
+<p>כשאתה מקבל שגיאה:</p>
+<ol>
+<li><p>זהה את הסיבה השורשית</p>
+</li>
+<li><p>בדוק אם הפתרון קיים ב-tasks/lessons.md</p>
+</li>
+<li><p>תקן את הבעיה</p>
+</li>
+<li><p>תעד את הפתרון ב-tasks/lessons.md</p>
+</li>
+</ol>
+<p>אל תמשיך אם אינך בטוח בפתרון. דווח לסוכן הראשי.</p>
+<p>code-reviewer.md</p>
+<p>markdown</p>
+<hr>
+<p>name: code-reviewer</p>
+<p>description: &gt;</p>
+<p>בודק קוד שכתב Builder לפני שעובר לשלב הבא.</p>
+<p>הפעל אותי אחרי כל קומפוננט חדש שנכתב.</p>
+<p>model: sonnet</p>
+<p>tools:</p>
+<ul>
+<li>read</li>
+</ul>
+<hr>
+<p>אתה Code Reviewer. תפקידך: לבדוק בלבד.</p>
+<p>לכל קומפוננט שאתה מקבל בדוק:</p>
+<ul>
+<li><p>עמידה בעקרונות SOLID</p>
+</li>
+<li><p>שימוש ברכיבים משותפים קיימים</p>
+</li>
+<li><p>תמיכה בעברית ואנגלית</p>
+</li>
+<li><p>TypeScript types תקינים</p>
+</li>
+<li><p>אין קוד כפול</p>
+</li>
+</ul>
+<p>החזר דוח עם ממצאים בלבד. אל תתקן בעצמך.</p>
+<p>quality-gate.md</p>
+<p>markdown</p>
+<hr>
+<p>name: quality-gate</p>
+<p>description: &gt;</p>
+<p>שער האיכות הסופי. הפעל אותי לפני כל commit.</p>
+<p>אם אני לא מאשר, העבודה לא נגמרה.</p>
+<p>model: sonnet</p>
+<p>tools:</p>
+<ul>
+<li><p>read</p>
+</li>
+<li><p>bash</p>
+</li>
+</ul>
+<hr>
+<p>אתה Quality Gate. תפקידך: לאשר או לדחות.</p>
+<p>לפני כל commit שאל שאלה אחת:</p>
+<p>&quot;Would a staff engineer approve this?&quot;</p>
+<p>אם התשובה לא ברורה, החזר את העבודה.</p>
+<p>בדוק:</p>
+<ul>
+<li><p>כל הבדיקות עוברות</p>
+</li>
+<li><p>אין קבצים שנשכחו</p>
+</li>
+<li><p>code-reviewer אישר</p>
+</li>
+<li><p>memory-keeper אישר עקביות</p>
+</li>
+</ul>
+<p>רק אם הכל תקין, אשר להמשיך.</p>
+<p>בחר את דגם Haiku העדכני ביותר הזמין בחשבונך. בדוק את רשימת הדגמים הזמינים בכתובת code.claude.com.</p>
+<p>שים לב לשלושה דברים:</p>
+<p>ראשית, model: claude-haiku-4-5. Explorer רק קורא ומדווח. אין שום סיבה להריץ אותו על Sonnet.</p>
+<p>Haiku זול יותר ומהיר יותר לסריקה.</p>
+<p>שנית, tools: read בלבד.</p>
+<p>Explorer לא יכול לכתוב, לא יכול למחוק, לא יכול להריץ פקודות. הגבלת הכלים היא שכבת בטיחות.</p>
+<p>שלישית, ה-description כתוב בצורה שמסביר לסוכן הראשי מתי לקרוא לו. Claude Code מחליט אוטונומית מתי להעביר משימה לכל סוכן על בסיס ה-description.</p>
+<p>נכון לאפריל 2026. בדוק את התיעוד הרשמי בכתובת code.claude.com לפני יישום.</p>
+<p>מה עושים עכשיו</p>
+<p>צור את כל הקבצים בתיקייה .claude/agents/:</p>
+<p>Windows:</p>
+<p>powershell</p>
+<p>ni .claude\agents\explorer.md</p>
+<p>ni .claude\agents\parser.md</p>
+<p>ni .claude\agents\content-architect.md</p>
+<p>ni .claude\agents\organizer.md</p>
+<p>ni .claude\agents\translator.md</p>
+<p>ni .claude\agents\ui-designer.md</p>
+<p>ni .claude\agents\builder.md</p>
+<p>ni .claude\agents\memory-keeper.md</p>
+<p>ni .claude\agents\error-handler.md</p>
+<p>ni .claude\agents\code-reviewer.md</p>
+<p>ni .claude\agents\quality-gate.md</p>
+<p>Mac / Linux:</p>
+<p>bash</p>
+<p>touch .claude/agents/{explorer,parser,content-architect,organizer,translator,ui-designer,builder,memory-keeper,error-handler,code-reviewer,quality-gate}.md</p>
+<p>העתק את תוכן כל סוכן לקובץ המתאים.</p>
+<p>נכון לאפריל 2026. בדוק את התיעוד הרשמי בכתובת code.claude.com לפני יישום.</p>
+<h2>פלט דו לשוני: chapter-01.he.md ו-chapter-01.en.md</h2>
+<p>אחת ההחלטות הארכיטקטוניות שקיבלנו בפרק 1 היא שכל פרק מיוצר בשתי שפות במקביל. זה לא תרגום אוטומטי פשוט. זו מערכת שמייצרת שני מוצרים מלאים מאותו מקור.</p>
+<p>כך נראה הפלט של BookForge אחרי שהסוכנים מסיימים את עבודתם:</p>
+<p>output/</p>
+<p>└── ai-developer-fitness/</p>
+<p>├── chapter-01.he.md</p>
+<p>├── chapter-01.en.md</p>
+<p>├── chapter-02.he.md</p>
+<p>├── chapter-02.en.md</p>
+<p>└── assets/</p>
+<p>├── chapter-01/</p>
+<p>│   ├── image-01.png</p>
+<p>│   └── image-02.png</p>
+<p>└── chapter-02/</p>
+<p>└── image-01.png</p>
+<p>כל קובץ עברי מכיל את התוכן המקורי עם כל המבנה שמור: כותרות, בולטים, טבלאות, ותמונות. כל קובץ אנגלי הוא תרגום מלא עם אותו מבנה בדיוק.</p>
+<p>Yuval קוראת את שני הקבצים ומגישה את הנכון לפי ההעדפה השמורה של המשתמש.</p>
+<p>מה עושים עכשיו</p>
+<p>צור את תיקיית הפלט:</p>
+<p>Windows:</p>
+<p>powershell</p>
+<p>ni -ItemType Directory output</p>
+<p>ni -ItemType Directory output\ai-developer-fitness</p>
+<p>ni -ItemType Directory output\ai-developer-fitness\assets</p>
+<p>Mac / Linux:</p>
+<p>bash</p>
+<p>mkdir -p output/ai-developer-fitness/assets</p>
+<h2>Chaining בין סוכנים</h2>
+<p>Chaining הוא הדפוס שבו פלט של סוכן אחד הופך לקלט של הסוכן הבא. זה הלב של מערכת BookForge.</p>
+<p>בלי chaining, כל סוכן עובד בבועה. עם chaining, הסוכנים יוצרים pipeline שזורם מקצה לקצה.</p>
+<p>כך נראה chaining בפועל ב-CLAUDE.md:</p>
+<p>markdown</p>
+<h2>סדר הפעלת הסוכנים</h2>
+<p>כשמקבלים קובץ Word או PDF לעיבוד:</p>
+<ol>
+<li>הפעל Explorer על הקובץ</li>
+</ol>
+<p>קלט: נתיב הקובץ</p>
+<p>פלט: JSON עם מבנה הספר</p>
+<ol start="2">
+<li>הפעל Parser</li>
+</ol>
+<p>קלט: נתיב הקובץ + JSON מ-Explorer</p>
+<p>פלט: קבצי chapter-XX.he.md</p>
+<ol start="3">
+<li>הפעל Content Architect</li>
+</ol>
+<p>קלט: כל קבצי chapter-XX.he.md</p>
+<p>פלט: content-structure.json</p>
+<ol start="4">
+<li>הפעל Organizer</li>
+</ol>
+<p>קלט: content-structure.json + קבצי MD</p>
+<p>פלט: מבנה תיקיות מסודר ב-output/</p>
+<ol start="5">
+<li>הפעל Translator</li>
+</ol>
+<p>קלט: כל קבצי chapter-XX.he.md</p>
+<p>פלט: כל קבצי chapter-XX.en.md</p>
+<ol start="6">
+<li>הפעל UI Designer</li>
+</ol>
+<p>קלט: content-structure.json</p>
+<p>פלט: design-system.json</p>
+<ol start="7">
+<li>הפעל Builder</li>
+</ol>
+<p>קלט: כל קבצי MD + design-system.json</p>
+<p>פלט: קומפוננטים ב- Astro</p>
+<ol start="8">
+<li>הפעל במקביל: Memory Keeper, Error Handler, Code Reviewer</li>
+</ol>
+<p>קלט: פלט ה-Builder</p>
+<p>פלט: דוחות ממצאים</p>
+<ol start="9">
+<li>הפעל Quality Gate</li>
+</ol>
+<p>קלט: כל הדוחות</p>
+<p>פלט: אישור או דחייה</p>
+<p>שלושה דברים חשובים בהגדרה זו:</p>
+<p>ראשית, כל שלב מגדיר בדיוק מה הוא מקבל ומה הוא מחזיר. הסוכן הראשי יודע מתי שלב אחד הסתיים ומתי להפעיל את הבא.</p>
+<p>שנית, שלב 8 מריץ שלושה סוכנים במקביל. Memory Keeper, Error Handler, ו-Code Reviewer הם לא תלויים אחד בשני ויכולים לרוץ בו זמנית.</p>
+<p>שלישית, Quality Gate הוא תמיד האחרון. שום דבר לא יוצא מהמערכת בלי אישורו.</p>
+<p>הוסף את הגדרת ה-chaining ל-CLAUDE.md שלך תחת הכותרת &quot;סדר הפעלת הסוכנים&quot;.</p>
+<h2>הקוד בפעולה</h2>
+<p>הקוד המלא של פרק זה זמין ב: <a href="https://github.com/tomkedem/bookforge">https://github.com/tomkedem/bookforge</a></p>
+<p>עיין בשינויים, הרץ, ושאל שאלות ישירות ב-Issues.</p>
+<p>מה יש עכשיו ב-GitHub</p>
+<p>bookforge/</p>
+<p>├── README.md</p>
+<p>├── CLAUDE.md</p>
+<p>├── .gitignore</p>
+<p>├── docs/</p>
+<p>│   └── architecture-thinking.md</p>
+<p>├── tasks/</p>
+<p>│   ├── todo.md</p>
+<p>│   └── lessons.md</p>
+<p>├── output/</p>
+<p>│   └── ai-developer-fitness/</p>
+<p>│       └── assets/</p>
+<p>└── .claude/</p>
+<p>└── agents/</p>
+<p>├── explorer.md</p>
+<p>├── parser.md</p>
+<p>├── content-architect.md</p>
+<p>├── organizer.md</p>
+<p>├── translator.md</p>
+<p>├── ui-designer.md</p>
+<p>├── builder.md</p>
+<p>├── memory-keeper.md</p>
+<p>├── error-handler.md</p>
+<p>├── code-reviewer.md</p>
+<p>└── quality-gate.md</p>
+ </div> </div> <!-- English version (default) --> <div data-en class="visible" dir="ltr" style="text-align: left" data-astro-cid-hov2pql7> <h1 data-astro-cid-hov2pql7>Chapter 3: Subagents, Proper Division of Labor</h1> <div class="chapter-metadata" data-astro-cid-hov2pql7> <span class="word-count" data-astro-cid-hov2pql7>3600 words</span> <span class="reading-time" data-astro-cid-hov2pql7>18 min read</span> </div> <div class="chapter-content prose prose-lg" data-astro-cid-hov2pql7> <h1>Chapter 3: Subagents, Proper Division of Labor</h1>
+<h2>Why One Agent Isn&#39;t Enough</h2>
+<p>Let&#39;s go back for a moment to our task: take a book in Word or PDF format and build a digital reading platform from it in two languages.</p>
+<p>If you give that task to one agent, one of three things will happen.</p>
+<ul>
+<li><p>It will try to do everything at once and generate code that mixes content breakdown, translation, design, and building in one unmaintainable file.</p>
+</li>
+<li><p>Or it will run out of context in the middle and stop.</p>
+</li>
+<li><p>Or it will make wrong decisions because it&#39;s trying to think about too many things at once.</p>
+</li>
+</ul>
+<p>The solution is a principle every software engineer knows: separation of responsibility. Each component is responsible for one thing only.</p>
+<p>In Claude Code these components are called Subagents.</p>
+<h2>What is a Subagent</h2>
+<p>A Subagent is a specialized agent that runs in its own separate context window. It receives a task from the main agent, performs it, and returns a result. The main agent doesn&#39;t get bogged down in the details of each investigation, it just receives the final result.</p>
+<p>This means three things in practice:</p>
+<p><strong>First, each agent can specialize.</strong></p>
+<p>Explorer doesn&#39;t need to know how to translate.</p>
+<p>Translator doesn&#39;t need to know how to build a React component.</p>
+<p><strong>Second, context window stays clean.</strong> The main agent doesn&#39;t get bogged down with code reads and intermediate results.</p>
+<p><strong>Third, you can route tasks to cheaper models.</strong></p>
+<p>Explorer that only reads files can run on Haiku.</p>
+<p>Quality Gate that makes complex decisions will run on Sonnet.</p>
+<h2>The Eleven Agents of BookForge</h2>
+<p>Before building each agent, it&#39;s important to understand the exact role of each one and the order in which they operate.</p>
+<p>The complete map of BookForge&#39;s agents is in the introduction chapter. Here&#39;s the order they actually operate:</p>
+<ol>
+<li><strong>Explorer</strong> - Scans the file structure and reports</li>
+<li><strong>Parser</strong> - Extracts chapters while preserving structure</li>
+<li><strong>Content Architect</strong> - Decides on content organization</li>
+<li><strong>Organizer</strong> - Arranges files in final structure</li>
+<li><strong>Translator</strong> - Translates to English</li>
+<li><strong>UI Designer</strong> - Defines design system</li>
+<li><strong>Builder</strong> - Builds Astro components</li>
+<li><strong>Memory Keeper</strong> - Maintains consistency</li>
+<li><strong>Error Handler</strong> - Identifies and fixes errors</li>
+<li><strong>Code Reviewer</strong> - Reviews code quality</li>
+<li><strong>Quality Gate</strong> - Final approval</li>
+</ol>
+<h2>Creation, Tools, Model for Each Agent</h2>
+<p>Each subagent in Claude Code is defined in a Markdown file in the /claude/agents/ folder. The file contains two parts: frontmatter with technical settings, and the file body with agent instructions.</p>
+<p>The key properties are:</p>
+<ul>
+<li><strong>name</strong>: The agent&#39;s identifier</li>
+<li><strong>description</strong>: When Claude Code should call this agent</li>
+<li><strong>model</strong>: Which Claude model to use (Haiku for simple tasks, Sonnet for complex decisions)</li>
+<li><strong>tools</strong>: What capabilities the agent has (read, write, bash)</li>
+</ul>
+<h2>All Eleven Agents of BookForge</h2>
+<p>Below is the definition of each agent ready to insert into its file in the /claude/agents folder.</p>
+<h3>explorer.md</h3>
+<pre><code class="language-markdown">---
 name: explorer
-
-description: >
-
-סורק קובץ Word או PDF ומדווח על מבנהו.
-
-הפעל אותי לפני כל פעולה על קובץ חדש.
-
-model: haiku
-
-tools:
-
-- read
-
----
-
-אתה Explorer. תפקידך אחד: לקרוא ולדווח.
-
-אל תשנה שום דבר. אל תפרק. אל תתרגם.
-
-קרא את הקובץ וחזור עם JSON שמכיל:
-
-- מספר פרקים
-
-- כותרת כל פרק
-
-- האם יש תמונות
-
-- שפת המקור
-
-parser.md
-
-markdown
-
----
-
-name: parser
-
-description: >
-
-מחלץ פרקים מקובץ Word או PDF תוך שמירה על
-
-מבנה מלא: כותרות, בולטים, טבלאות, ותמונות.
-
-הפעל אותי אחרי Explorer.
-
-model: sonnet
-
-tools:
-
-- read
-
-- write
-
----
-
-אתה Parser. תפקידך: לחלץ ולשמור.
-
-לכל פרק צור קובץ MD נפרד בשם chapter-XX.he.md.
-
-שמור על כל אלה בפורמט Markdown תקני:
-
-- כותרות וכותרות משנה
-
-- טקסט מודגש ונטוי
-
-- רשימות ממוספרות ונקודות
-
-- טבלאות
-
-- ציטוטים
-
-תמונות: חלץ לתיקיית assets/chapter-XX/ והוסף הפניה בקובץ ה-MD.
-
-אל תתרגם. אל תשנה תוכן. רק חלץ ושמור.
-
-content-architect.md
-
-markdown
-
----
-
-name: content-architect
-
-description: >
-
-מקבל את הפרקים שחלץ Parser ומחליט על
-
-מבנה התוכן הסופי לפני הארגון.
-
-הפעל אותי אחרי Parser.
-
-model: sonnet
-
-tools:
-
-- read
-
-- write
-
----
-
-אתה Content Architect. תפקידך: להחליט על מבנה.
-
-קרא את כל קבצי chapter-XX.he.md וצור קובץ
-
-content-structure.json שמכיל:
-
-- סדר הפרקים
-
-- קשרים בין פרקים
-
-- פרקי מבוא ופרקי סיכום
-
-- המלצות לניווט ב-Yuval
-
-אל תשנה תוכן. רק מפה ומחליט על מבנה.
-
-organizer.md
-
-markdown
-
----
-
-name: organizer
-
-description: >
-
-מסדר את קבצי ה-MD במבנה הסופי לפי החלטות
-
-Content Architect. הפעל אותי אחרי content-architect.
-
-model: haiku
-
-tools:
-
-- read
-
-- write
-
----
-
-אתה Organizer. תפקידך: לסדר ולארגן.
-
-קרא את content-structure.json וסדר את הקבצים:
-
-output/{book-name}/chapter-01.he.md
-
-output/{book-name}/chapter-02.he.md
-
-output/{book-name}/assets/chapter-01/
-
-אל תשנה תוכן. רק העבר וסדר.
-
-translator.md
-
-markdown
-
----
-
-name: translator
-
-description: >
-
-מתרגם כל קובץ MD מעברית לאנגלית תוך שמירה
-
-על מבנה מלא. הפעל אותי אחרי Organizer.
-
-model: sonnet
-
-tools:
-
-- read
-
-- write
-
----
-
-אתה Translator. תפקידך: לתרגם בלבד.
-
-לכל קובץ chapter-XX.he.md צור chapter-XX.en.md.
-
-שמור על כל אלה:
-
-- מבנה הכותרות המקורי
-
-- הדגשות ובולטים
-
-- טבלאות
-
-- הפניות לתמונות
-
-תרגם בצורה טבעית, לא מילולית.
-
-אל תשנה מבנה. אל תוסיף תוכן. רק תרגם.
-
-ui-designer.md
-
-markdown
-
----
-
-name: ui-designer
-
-description: >
-
-מגדיר את מערכת העיצוב של Yuval לפני שה-Builder
-
-מתחיל לבנות. הפעל אותי פעם אחת בתחילת הפרויקט.
-
-model: sonnet
-
-tools:
-
-- read
-
-- write
-
----
-
-אתה UI Designer. תפקידך: להגדיר מערכת עיצוב.
-
-צור קובץ design-system.json שמכיל:
-
-- פלטת צבעים
-
-- גופנים וגדלים
-
-- רכיבים בסיסיים: כרטיסיית ספר, דף קריאה, ניווט
-
-- כללי RTL לעברית
-
-- כללי LTR לאנגלית
-
-כל קומפוננט שה-Builder יכתוב חייב להתבסס על מסמך זה.
-
-builder.md
-
-markdown
-
----
-
-name: builder
-
-description: >
-
-בונה קומפוננטים ב- Astro  על בסיס מערכת העיצוב
-
-ותוכן ה-MD. הפעל אותי אחרי ui-designer.
-
-model: sonnet
-
-tools:
-
-- read
-
-- write
-
-- bash
-
----
-
-אתה Builder. תפקידך: לבנות קוד בלבד.
-
-בנה קומפוננטים ב- Astro לפי design-system.json.
-
-כל קומפוננט חייב:
-
-- לתמוך בעברית ואנגלית
-
-- להשתמש ברכיבים משותפים קיימים
-
-- לעמוד בעקרונות SOLID
-
-- לכלול TypeScript types
-
-אל תחליט על עיצוב. אל תשנה design-system.json.
-
-memory-keeper.md
-
-markdown
-
----
-
-name: memory-keeper
-
-description: >
-
-שומר על עקביות לאורך כל הפרויקט. הפעל אותי
-
-לפני כל החלטה ארכיטקטונית חדשה.
-
-model: sonnet
-
-memory: user
-
-tools:
-
-- read
-
-- write
-
----
-
-אתה Memory Keeper. תפקידך: לזכור ולוודא עקביות.
-
-לפני כל החלטה חדשה בדוק שהיא עקבית עם:
-
-- design-system.json
-
-- content-structure.json
-
-- כל ההחלטות שנרשמו ב-tasks/lessons.md
-
-אם יש סתירה, דווח לסוכן הראשי לפני שממשיכים.
-
-error-handler.md
-
-markdown
-
----
-
-name: error-handler
-
-description: >
-
-מזהה שגיאות ומתקן אותן. הפעל אותי כשסוכן
-
-אחר נתקל בשגיאה שאינו יכול לפתור.
-
-model: sonnet
-
-tools:
-
-- read
-
-- write
-
-- bash
-
----
-
-אתה Error Handler. תפקידך: לזהות ולתקן שגיאות.
-
-כשאתה מקבל שגיאה:
-
-1. זהה את הסיבה השורשית
-
-2. בדוק אם הפתרון קיים ב-tasks/lessons.md
-
-3. תקן את הבעיה
-
-4. תעד את הפתרון ב-tasks/lessons.md
-
-אל תמשיך אם אינך בטוח בפתרון. דווח לסוכן הראשי.
-
-code-reviewer.md
-
-markdown
-
----
-
-name: code-reviewer
-
-description: >
-
-בודק קוד שכתב Builder לפני שעובר לשלב הבא.
-
-הפעל אותי אחרי כל קומפוננט חדש שנכתב.
-
-model: sonnet
-
-tools:
-
-- read
-
----
-
-אתה Code Reviewer. תפקידך: לבדוק בלבד.
-
-לכל קומפוננט שאתה מקבל בדוק:
-
-- עמידה בעקרונות SOLID
-
-- שימוש ברכיבים משותפים קיימים
-
-- תמיכה בעברית ואנגלית
-
-- TypeScript types תקינים
-
-- אין קוד כפול
-
-החזר דוח עם ממצאים בלבד. אל תתקן בעצמך.
-
-quality-gate.md
-
-markdown
-
----
-
-name: quality-gate
-
-description: >
-
-שער האיכות הסופי. הפעל אותי לפני כל commit.
-
-אם אני לא מאשר, העבודה לא נגמרה.
-
-model: sonnet
-
-tools:
-
-- read
-
-- bash
-
----
-
-אתה Quality Gate. תפקידך: לאשר או לדחות.
-
-לפני כל commit שאל שאלה אחת:
-
-"Would a staff engineer approve this?"
-
-אם התשובה לא ברורה, החזר את העבודה.
-
-בדוק:
-
-- כל הבדיקות עוברות
-
-- אין קבצים שנשכחו
-
-- code-reviewer אישר
-
-- memory-keeper אישר עקביות
-
-רק אם הכל תקין, אשר להמשיך.
-
-בחר את דגם Haiku העדכני ביותר הזמין בחשבונך. בדוק את רשימת הדגמים הזמינים בכתובת code.claude.com.
-
-שים לב לשלושה דברים:
-
-ראשית, model: claude-haiku-4-5. Explorer רק קורא ומדווח. אין שום סיבה להריץ אותו על Sonnet.
-
-Haiku זול יותר ומהיר יותר לסריקה.
-
-שנית, tools: read בלבד.
-
-Explorer לא יכול לכתוב, לא יכול למחוק, לא יכול להריץ פקודות. הגבלת הכלים היא שכבת בטיחות.
-
-שלישית, ה-description כתוב בצורה שמסביר לסוכן הראשי מתי לקרוא לו. Claude Code מחליט אוטונומית מתי להעביר משימה לכל סוכן על בסיס ה-description.
-
-נכון לאפריל 2026. בדוק את התיעוד הרשמי בכתובת code.claude.com לפני יישום.
-
-מה עושים עכשיו
-
-צור את כל הקבצים בתיקייה .claude/agents/:
-
-Windows:
-
-powershell
-
-ni .claude\agents\explorer.md
-
-ni .claude\agents\parser.md
-
-ni .claude\agents\content-architect.md
-
-ni .claude\agents\organizer.md
-
-ni .claude\agents\translator.md
-
-ni .claude\agents\ui-designer.md
-
-ni .claude\agents\builder.md
-
-ni .claude\agents\memory-keeper.md
-
-ni .claude\agents\error-handler.md
-
-ni .claude\agents\code-reviewer.md
-
-ni .claude\agents\quality-gate.md
-
-Mac / Linux:
-
-bash
-
-touch .claude/agents/{explorer,parser,content-architect,organizer,translator,ui-designer,builder,memory-keeper,error-handler,code-reviewer,quality-gate}.md
-
-העתק את תוכן כל סוכן לקובץ המתאים.
-
-נכון לאפריל 2026. בדוק את התיעוד הרשמי בכתובת code.claude.com לפני יישום.
-
-## פלט דו לשוני: chapter-01.he.md ו-chapter-01.en.md
-
-אחת ההחלטות הארכיטקטוניות שקיבלנו בפרק 1 היא שכל פרק מיוצר בשתי שפות במקביל. זה לא תרגום אוטומטי פשוט. זו מערכת שמייצרת שני מוצרים מלאים מאותו מקור.
-
-כך נראה הפלט של BookForge אחרי שהסוכנים מסיימים את עבודתם:
-
-output/
-
-└── ai-developer-fitness/
-
-├── chapter-01.he.md
-
-├── chapter-01.en.md
-
-├── chapter-02.he.md
-
-├── chapter-02.en.md
-
-└── assets/
-
-├── chapter-01/
-
-│   ├── image-01.png
-
-│   └── image-02.png
-
-└── chapter-02/
-
-└── image-01.png
-
-כל קובץ עברי מכיל את התוכן המקורי עם כל המבנה שמור: כותרות, בולטים, טבלאות, ותמונות. כל קובץ אנגלי הוא תרגום מלא עם אותו מבנה בדיוק.
-
-Yuval קוראת את שני הקבצים ומגישה את הנכון לפי ההעדפה השמורה של המשתמש.
-
-מה עושים עכשיו
-
-צור את תיקיית הפלט:
-
-Windows:
-
-powershell
-
-ni -ItemType Directory output
-
-ni -ItemType Directory output\ai-developer-fitness
-
-ni -ItemType Directory output\ai-developer-fitness\assets
-
-Mac / Linux:
-
-bash
-
-mkdir -p output/ai-developer-fitness/assets
-
-## Chaining בין סוכנים
-
-Chaining הוא הדפוס שבו פלט של סוכן אחד הופך לקלט של הסוכן הבא. זה הלב של מערכת BookForge.
-
-בלי chaining, כל סוכן עובד בבועה. עם chaining, הסוכנים יוצרים pipeline שזורם מקצה לקצה.
-
-כך נראה chaining בפועל ב-CLAUDE.md:
-
-markdown
-
-## סדר הפעלת הסוכנים
-
-כשמקבלים קובץ Word או PDF לעיבוד:
-
-1. הפעל Explorer על הקובץ
-
-קלט: נתיב הקובץ
-
-פלט: JSON עם מבנה הספר
-
-2. הפעל Parser
-
-קלט: נתיב הקובץ + JSON מ-Explorer
-
-פלט: קבצי chapter-XX.he.md
-
-3. הפעל Content Architect
-
-קלט: כל קבצי chapter-XX.he.md
-
-פלט: content-structure.json
-
-4. הפעל Organizer
-
-קלט: content-structure.json + קבצי MD
-
-פלט: מבנה תיקיות מסודר ב-output/
-
-5. הפעל Translator
-
-קלט: כל קבצי chapter-XX.he.md
-
-פלט: כל קבצי chapter-XX.en.md
-
-6. הפעל UI Designer
-
-קלט: content-structure.json
-
-פלט: design-system.json
-
-7. הפעל Builder
-
-קלט: כל קבצי MD + design-system.json
-
-פלט: קומפוננטים ב- Astro
-
-8. הפעל במקביל: Memory Keeper, Error Handler, Code Reviewer
-
-קלט: פלט ה-Builder
-
-פלט: דוחות ממצאים
-
-9. הפעל Quality Gate
-
-קלט: כל הדוחות
-
-פלט: אישור או דחייה
-
-שלושה דברים חשובים בהגדרה זו:
-
-ראשית, כל שלב מגדיר בדיוק מה הוא מקבל ומה הוא מחזיר. הסוכן הראשי יודע מתי שלב אחד הסתיים ומתי להפעיל את הבא.
-
-שנית, שלב 8 מריץ שלושה סוכנים במקביל. Memory Keeper, Error Handler, ו-Code Reviewer הם לא תלויים אחד בשני ויכולים לרוץ בו זמנית.
-
-שלישית, Quality Gate הוא תמיד האחרון. שום דבר לא יוצא מהמערכת בלי אישורו.
-
-הוסף את הגדרת ה-chaining ל-CLAUDE.md שלך תחת הכותרת "סדר הפעלת הסוכנים".
-
-## הקוד בפעולה
-
-הקוד המלא של פרק זה זמין ב: https://github.com/tomkedem/bookforge
-
-עיין בשינויים, הרץ, ושאל שאלות ישירות ב-Issues.
-
-מה יש עכשיו ב-GitHub
-
-bookforge/
-
-├── README.md
-
-├── CLAUDE.md
-
-├── .gitignore
-
-├── docs/
-
-│   └── architecture-thinking.md
-
-├── tasks/
-
-│   ├── todo.md
-
-│   └── lessons.md
-
-├── output/
-
-│   └── ai-developer-fitness/
-
-│       └── assets/
-
-└── .claude/
-
-└── agents/
-
-├── explorer.md
-
-├── parser.md
-
-├── content-architect.md
-
-├── organizer.md
-
-├── translator.md
-
-├── ui-designer.md
-
-├── builder.md
-
-├── memory-keeper.md
-
-├── error-handler.md
-
-├── code-reviewer.md
-
-└── quality-gate.md
- </div> </div> <!-- English version (default) --> <div data-en class="visible" dir="ltr" style="text-align: left" data-astro-cid-hov2pql7> <h1 data-astro-cid-hov2pql7>Chapter 3: Subagents, Proper Division of Labor</h1> <div class="chapter-metadata" data-astro-cid-hov2pql7> <span class="word-count" data-astro-cid-hov2pql7>3600 words</span> <span class="reading-time" data-astro-cid-hov2pql7>18 min read</span> </div> <div class="chapter-content prose prose-lg" data-astro-cid-hov2pql7> # Chapter 3: Subagents, Proper Division of Labor
-
-## Why One Agent Isn't Enough
-
-Let's go back for a moment to our task: take a book in Word or PDF format and build a digital reading platform from it in two languages.
-
-If you give that task to one agent, one of three things will happen.
-
-- It will try to do everything at once and generate code that mixes content breakdown, translation, design, and building in one unmaintainable file.
-
-- Or it will run out of context in the middle and stop.
-
-- Or it will make wrong decisions because it's trying to think about too many things at once.
-
-The solution is a principle every software engineer knows: separation of responsibility. Each component is responsible for one thing only.
-
-In Claude Code these components are called Subagents.
-
-## What is a Subagent
-
-A Subagent is a specialized agent that runs in its own separate context window. It receives a task from the main agent, performs it, and returns a result. The main agent doesn't get bogged down in the details of each investigation, it just receives the final result.
-
-This means three things in practice:
-
-**First, each agent can specialize.**
-
-Explorer doesn't need to know how to translate.
-
-Translator doesn't need to know how to build a React component.
-
-**Second, context window stays clean.** The main agent doesn't get bogged down with code reads and intermediate results.
-
-**Third, you can route tasks to cheaper models.**
-
-Explorer that only reads files can run on Haiku.
-
-Quality Gate that makes complex decisions will run on Sonnet.
-
-## The Eleven Agents of BookForge
-
-Before building each agent, it's important to understand the exact role of each one and the order in which they operate.
-
-The complete map of BookForge's agents is in the introduction chapter. Here's the order they actually operate:
-
-1. **Explorer** - Scans the file structure and reports
-2. **Parser** - Extracts chapters while preserving structure
-3. **Content Architect** - Decides on content organization
-4. **Organizer** - Arranges files in final structure
-5. **Translator** - Translates to English
-6. **UI Designer** - Defines design system
-7. **Builder** - Builds Astro components
-8. **Memory Keeper** - Maintains consistency
-9. **Error Handler** - Identifies and fixes errors
-10. **Code Reviewer** - Reviews code quality
-11. **Quality Gate** - Final approval
-
-## Creation, Tools, Model for Each Agent
-
-Each subagent in Claude Code is defined in a Markdown file in the /claude/agents/ folder. The file contains two parts: frontmatter with technical settings, and the file body with agent instructions.
-
-The key properties are:
-
-- **name**: The agent's identifier
-- **description**: When Claude Code should call this agent
-- **model**: Which Claude model to use (Haiku for simple tasks, Sonnet for complex decisions)
-- **tools**: What capabilities the agent has (read, write, bash)
-
-## All Eleven Agents of BookForge
-
-Below is the definition of each agent ready to insert into its file in the /claude/agents folder.
-
-### explorer.md
-
-```markdown
----
-name: explorer
-description: >
+description: &gt;
   Scans Word or PDF file and reports its structure.
   Run me before any operation on a new file.
 model: haiku
@@ -839,21 +574,18 @@ tools:
 
 You are Explorer. Your job is one: read and report.
 
-Don't change anything. Don't break down. Don't translate.
+Don&#39;t change anything. Don&#39;t break down. Don&#39;t translate.
 
 Read the file and come back with JSON containing:
 - Number of chapters
 - Title of each chapter
 - Whether there are images
 - Source language
-```
-
-### parser.md
-
-```markdown
----
+</code></pre>
+<h3>parser.md</h3>
+<pre><code class="language-markdown">---
 name: parser
-description: >
+description: &gt;
   Extracts chapters from Word or PDF file while preserving
   full structure: headings, bullets, tables, and images.
   Run me after Explorer.
@@ -876,15 +608,12 @@ Preserve all of these in standard Markdown format:
 
 Images: Extract to assets/ folder and add reference in MD file.
 
-Don't translate. Don't change content. Just extract and preserve.
-```
-
-### content-architect.md
-
-```markdown
----
+Don&#39;t translate. Don&#39;t change content. Just extract and preserve.
+</code></pre>
+<h3>content-architect.md</h3>
+<pre><code class="language-markdown">---
 name: content-architect
-description: >
+description: &gt;
   Receives chapters extracted by Parser and decides
   on the final content structure before organization.
   Run me after Parser.
@@ -903,15 +632,12 @@ content-structure.json containing:
 - Introduction and summary chapters
 - Recommendations for navigation in Yuval
 
-Don't change content. Just map and decide on structure.
-```
-
-### organizer.md
-
-```markdown
----
+Don&#39;t change content. Just map and decide on structure.
+</code></pre>
+<h3>organizer.md</h3>
+<pre><code class="language-markdown">---
 name: organizer
-description: >
+description: &gt;
   Arranges MD files in final structure according to decisions
   by Content Architect. Run me after content-architect.
 model: haiku
@@ -927,15 +653,12 @@ output/{book-name}/chapter-01.he.md
 output/{book-name}/chapter-02.he.md
 output/{book-name}/assets/chapter-01/
 
-Don't change content. Just move and arrange.
-```
-
-### translator.md
-
-```markdown
----
+Don&#39;t change content. Just move and arrange.
+</code></pre>
+<h3>translator.md</h3>
+<pre><code class="language-markdown">---
 name: translator
-description: >
+description: &gt;
   Translates each MD file from Hebrew to English while preserving
   full structure. Run me after Organizer.
 model: sonnet
@@ -956,16 +679,13 @@ Preserve all of these:
 
 Translate naturally, not literally.
 
-Don't change structure. Don't add content. Just translate.
-```
-
-### ui-designer.md
-
-```markdown
----
+Don&#39;t change structure. Don&#39;t add content. Just translate.
+</code></pre>
+<h3>ui-designer.md</h3>
+<pre><code class="language-markdown">---
 name: ui-designer
-description: >
-  Defines Yuval's design system before Builder starts building.
+description: &gt;
+  Defines Yuval&#39;s design system before Builder starts building.
   Run me once at the beginning of the project.
 model: sonnet
 tools:
@@ -983,14 +703,11 @@ Create design-system.json file containing:
 - LTR rules for English
 
 Every component Builder writes must be based on this document.
-```
-
-### builder.md
-
-```markdown
----
+</code></pre>
+<h3>builder.md</h3>
+<pre><code class="language-markdown">---
 name: builder
-description: >
+description: &gt;
   Builds components in Astro based on design system
   and MD content. Run me after ui-designer.
 model: sonnet
@@ -1010,15 +727,12 @@ Each component must:
 - Follow SOLID principles
 - Include TypeScript types
 
-Don't decide on design. Don't change design-system.json.
-```
-
-### memory-keeper.md
-
-```markdown
----
+Don&#39;t decide on design. Don&#39;t change design-system.json.
+</code></pre>
+<h3>memory-keeper.md</h3>
+<pre><code class="language-markdown">---
 name: memory-keeper
-description: >
+description: &gt;
   Maintains consistency throughout the project. Run me
   before every new architectural decision.
 model: sonnet
@@ -1030,22 +744,19 @@ tools:
 
 You are Memory Keeper. Your job: remember and ensure consistency.
 
-Before every new decision check that it's consistent with:
+Before every new decision check that it&#39;s consistent with:
 - design-system.json
 - content-structure.json
 - All decisions recorded in tasks/lessons.md
 
-If there's a contradiction, report to the main agent before continuing.
-```
-
-### error-handler.md
-
-```markdown
----
+If there&#39;s a contradiction, report to the main agent before continuing.
+</code></pre>
+<h3>error-handler.md</h3>
+<pre><code class="language-markdown">---
 name: error-handler
-description: >
+description: &gt;
   Identifies and fixes errors. Run me when another agent
-  encounters an error it can't resolve.
+  encounters an error it can&#39;t resolve.
 model: sonnet
 tools:
   - read
@@ -1061,15 +772,12 @@ When you receive an error:
 3. Fix the problem
 4. Document the solution in tasks/lessons.md
 
-Don't continue if you're not sure about the solution. Report to the main agent.
-```
-
-### code-reviewer.md
-
-```markdown
----
+Don&#39;t continue if you&#39;re not sure about the solution. Report to the main agent.
+</code></pre>
+<h3>code-reviewer.md</h3>
+<pre><code class="language-markdown">---
 name: code-reviewer
-description: >
+description: &gt;
   Reviews code written by Builder before moving to the next stage.
   Run me after every new component is written.
 model: sonnet
@@ -1086,17 +794,14 @@ For each component you receive check:
 - Valid TypeScript types
 - No code duplication
 
-Return a report with findings only. Don't fix yourself.
-```
-
-### quality-gate.md
-
-```markdown
----
+Return a report with findings only. Don&#39;t fix yourself.
+</code></pre>
+<h3>quality-gate.md</h3>
+<pre><code class="language-markdown">---
 name: quality-gate
-description: >
+description: &gt;
   Final quality gate. Run me before every commit.
-  If I don't approve, the work isn't done.
+  If I don&#39;t approve, the work isn&#39;t done.
 model: sonnet
 tools:
   - read
@@ -1106,9 +811,9 @@ tools:
 You are Quality Gate. Your job: approve or reject.
 
 Before every commit ask one question:
-"Would a staff engineer approve this?"
+&quot;Would a staff engineer approve this?&quot;
 
-If the answer isn't clear, return the work.
+If the answer isn&#39;t clear, return the work.
 
 Check:
 - All tests pass
@@ -1117,16 +822,11 @@ Check:
 - memory-keeper approved consistency
 
 Only if everything is correct, approve to continue.
-```
-
-## Creating Agent Files
-
-Create all the files in .claude/agents/ folder:
-
-**Windows:**
-
-```powershell
-ni .claude\agents\explorer.md
+</code></pre>
+<h2>Creating Agent Files</h2>
+<p>Create all the files in .claude/agents/ folder:</p>
+<p><strong>Windows:</strong></p>
+<pre><code class="language-powershell">ni .claude\agents\explorer.md
 ni .claude\agents\parser.md
 ni .claude\agents\content-architect.md
 ni .claude\agents\organizer.md
@@ -1137,24 +837,15 @@ ni .claude\agents\memory-keeper.md
 ni .claude\agents\error-handler.md
 ni .claude\agents\code-reviewer.md
 ni .claude\agents\quality-gate.md
-```
-
-**Mac / Linux:**
-
-```bash
-touch .claude/agents/{explorer,parser,content-architect,organizer,translator,ui-designer,builder,memory-keeper,error-handler,code-reviewer,quality-gate}.md
-```
-
-Copy the content of each agent into the appropriate file.
-
-## Bilingual Output: chapter-01.he.md and chapter-01.en.md
-
-One of the architectural decisions we made in Chapter 1 is that each chapter is generated in two languages in parallel. This is not simple automatic translation. This is a system that produces two complete products from the same source.
-
-This is what BookForge's output looks like after the agents finish their work:
-
-```
-output/
+</code></pre>
+<p><strong>Mac / Linux:</strong></p>
+<pre><code class="language-bash">touch .claude/agents/{explorer,parser,content-architect,organizer,translator,ui-designer,builder,memory-keeper,error-handler,code-reviewer,quality-gate}.md
+</code></pre>
+<p>Copy the content of each agent into the appropriate file.</p>
+<h2>Bilingual Output: chapter-01.he.md and chapter-01.en.md</h2>
+<p>One of the architectural decisions we made in Chapter 1 is that each chapter is generated in two languages in parallel. This is not simple automatic translation. This is a system that produces two complete products from the same source.</p>
+<p>This is what BookForge&#39;s output looks like after the agents finish their work:</p>
+<pre><code>output/
 └── ai-developer-fitness/
     ├── chapter-01.he.md
     ├── chapter-01.en.md
@@ -1166,40 +857,24 @@ output/
         │   └── image-02.png
         └── chapter-02/
             └── image-01.png
-```
-
-Each Hebrew file contains the original content with full structure preserved: headings, bullets, tables, and images. Each English file is a complete translation with the exact same structure.
-
-Yuval reads both files and serves the correct one based on the user's saved preference.
-
-## Creating Output Structure
-
-Create the output folder:
-
-**Windows:**
-
-```powershell
-ni -ItemType Directory output
+</code></pre>
+<p>Each Hebrew file contains the original content with full structure preserved: headings, bullets, tables, and images. Each English file is a complete translation with the exact same structure.</p>
+<p>Yuval reads both files and serves the correct one based on the user&#39;s saved preference.</p>
+<h2>Creating Output Structure</h2>
+<p>Create the output folder:</p>
+<p><strong>Windows:</strong></p>
+<pre><code class="language-powershell">ni -ItemType Directory output
 ni -ItemType Directory output\ai-developer-fitness
 ni -ItemType Directory output\ai-developer-fitness\assets
-```
-
-**Mac / Linux:**
-
-```bash
-mkdir -p output/ai-developer-fitness/assets
-```
-
-## Chaining Between Agents
-
-Chaining is the pattern where the output of one agent becomes the input of the next. It's the heart of BookForge's system.
-
-Without chaining, each agent works in a bubble. With chaining, agents create a pipeline that flows from end to end.
-
-This is what chaining looks like in practice in CLAUDE.md:
-
-```markdown
-## Order of Agents Execution
+</code></pre>
+<p><strong>Mac / Linux:</strong></p>
+<pre><code class="language-bash">mkdir -p output/ai-developer-fitness/assets
+</code></pre>
+<h2>Chaining Between Agents</h2>
+<p>Chaining is the pattern where the output of one agent becomes the input of the next. It&#39;s the heart of BookForge&#39;s system.</p>
+<p>Without chaining, each agent works in a bubble. With chaining, agents create a pipeline that flows from end to end.</p>
+<p>This is what chaining looks like in practice in CLAUDE.md:</p>
+<pre><code class="language-markdown">## Order of Agents Execution
 
 When receiving a Word or PDF file to process:
 
@@ -1232,34 +907,23 @@ When receiving a Word or PDF file to process:
    Output: Components in Astro
 
 8. Run in parallel: Memory Keeper, Error Handler, Code Reviewer
-   Input: Builder's output
+   Input: Builder&#39;s output
    Output: Finding reports
 
 9. Run Quality Gate
    Input: All reports
    Output: Approval or rejection
-```
-
-Three things are important in this definition:
-
-**First**, each step defines exactly what it receives and what it returns. The main agent knows when one step is finished and when to run the next.
-
-**Second**, step 8 runs three agents in parallel. Memory Keeper, Error Handler, and Code Reviewer are not dependent on each other and can run simultaneously.
-
-**Third**, Quality Gate is always last. Nothing leaves the system without its approval.
-
-Add the chaining definition to your CLAUDE.md under the heading "Order of Agents Execution".
-
-## The Code in Action
-
-The full code for this chapter is available at: https://github.com/tomkedem/bookforge
-
-Check out the changes, run, and ask questions directly in Issues.
-
-### What's on GitHub Now
-
-```
-bookforge/
+</code></pre>
+<p>Three things are important in this definition:</p>
+<p><strong>First</strong>, each step defines exactly what it receives and what it returns. The main agent knows when one step is finished and when to run the next.</p>
+<p><strong>Second</strong>, step 8 runs three agents in parallel. Memory Keeper, Error Handler, and Code Reviewer are not dependent on each other and can run simultaneously.</p>
+<p><strong>Third</strong>, Quality Gate is always last. Nothing leaves the system without its approval.</p>
+<p>Add the chaining definition to your CLAUDE.md under the heading &quot;Order of Agents Execution&quot;.</p>
+<h2>The Code in Action</h2>
+<p>The full code for this chapter is available at: <a href="https://github.com/tomkedem/bookforge">https://github.com/tomkedem/bookforge</a></p>
+<p>Check out the changes, run, and ask questions directly in Issues.</p>
+<h3>What&#39;s on GitHub Now</h3>
+<pre><code>bookforge/
 ├── README.md
 ├── CLAUDE.md
 ├── .gitignore
@@ -1284,8 +948,7 @@ bookforge/
         ├── error-handler.md
         ├── code-reviewer.md
         └── quality-gate.md
-```
-
-The project's foundation is complete. All 4 chapters have been extracted, translated, and structured. The agent system is ready to build the Yuval platform from this content.
+</code></pre>
+<p>The project&#39;s foundation is complete. All 4 chapters have been extracted, translated, and structured. The agent system is ready to build the Yuval platform from this content.</p>
  </div> </div> <!-- Chapter navigation --> <nav class="flex flex-row items-center justify-between gap-4 py-6 border-t border-yuval-border-secondary mt-12" aria-label="Chapter navigation"> <a href="/read/bookforge/3" class="inline-flex items-center gap-2 px-4 py-2 font-body text-sm font-medium text-yuval-text hover:text-yuval-text-secondary transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yuval-text" data-he="הפרק הקודם" data-en="Previous Chapter">  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"> <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path> </svg> <span>Chapter 2: CLAUDE.md as Architecture</span>  </a> <div class="flex flex-col items-center gap-1"> <span class="text-xs font-body text-yuval-text-tertiary uppercase tracking-wide" data-he="פרק 5 מתוך 4" data-en="Chapter 5 of 4">
 Chapter 5 of 4 </span> <h2 class="text-center font-heading font-bold text-lg text-yuval-text" data-he="פרק 3: Subagents, חלוקת עבודה נכונה" data-en="Chapter 3: Subagents, Proper Division of Labor"> Chapter 3: Subagents, Proper Division of Labor </h2> </div>  </nav> </div>  </div> <!-- Custom prose styles for reading -->  </article>  </main> <script type="module" src="/_astro/BaseLayout.astro_astro_type_script_index_0_lang.Don7ohaG.js"></script> </body> </html>  <script type="module" src="/_astro/_chapter_.astro_astro_type_script_index_0_lang.DHEf8YIE.js"></script>

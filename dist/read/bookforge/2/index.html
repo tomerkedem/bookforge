@@ -12,204 +12,107 @@ Yuval
 עברית
 </button> <button type="button" class="px-3 py-1.5 rounded-full transition-all duration-200 font-body text-sm font-medium bg-yuval-text text-yuval-bg" data-language="en" aria-pressed="true" aria-label="Switch to English" data-he="אנגלית" data-en="English">
 English
-</button> </div> <script type="module" src="/_astro/LanguageToggle.astro_astro_type_script_index_0_lang.ChUskGOR.js"></script> </div> </header> <main class="w-full">  <article class="mx-auto max-w-reading px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16" style="margin-left: 260px; margin-right: 260px;" data-astro-cid-fe7wjrka> <!-- Chapter content --> <div class="prose prose-invert max-w-none space-y-6" data-language="en" data-astro-cid-fe7wjrka>   <div class="sidebars-container" data-astro-cid-x5m5n3h5> <!-- Right Sidebar: Table of Contents (כל הפרקים) --> <aside class="toc-sidebar toc-sidebar-right" aria-label="Table of Contents" data-astro-cid-x5m5n3h5> <h3 class="toc-title" data-he="פרקים" data-en="Chapters" data-astro-cid-x5m5n3h5> Chapters </h3> <nav class="toc-list" data-astro-cid-x5m5n3h5> <ul data-astro-cid-x5m5n3h5> <li class="toc-item" data-astro-cid-x5m5n3h5> <a href="/read/sample-book/1" class="toc-link" data-astro-cid-x5m5n3h5> <span class="toc-number" data-astro-cid-x5m5n3h5> 01 </span> <span class="toc-chapter-title" data-he="פרק הכנה: פרויקט ההדגמה והסביבה" data-en="Setup Chapter: The Demo Project and Environment" data-astro-cid-x5m5n3h5> Setup Chapter: The Demo Project and Environment </span> </a> </li><li class="toc-item toc-item-active" data-astro-cid-x5m5n3h5> <a href="/read/sample-book/2" class="toc-link toc-link-active" aria-current="page" data-astro-cid-x5m5n3h5> <span class="toc-number" data-astro-cid-x5m5n3h5> 02 </span> <span class="toc-chapter-title" data-he="פרק 1: שינוי מודל המנטלי" data-en="Chapter 1: Changing Your Mental Model" data-astro-cid-x5m5n3h5> Chapter 1: Changing Your Mental Model </span> </a> </li><li class="toc-item" data-astro-cid-x5m5n3h5> <a href="/read/sample-book/3" class="toc-link" data-astro-cid-x5m5n3h5> <span class="toc-number" data-astro-cid-x5m5n3h5> 03 </span> <span class="toc-chapter-title" data-he="פרק 2: CLAUDE.md כארכיטקטורה" data-en="Chapter 2: CLAUDE.md as Architecture" data-astro-cid-x5m5n3h5> Chapter 2: CLAUDE.md as Architecture </span> </a> </li><li class="toc-item" data-astro-cid-x5m5n3h5> <a href="/read/sample-book/4" class="toc-link" data-astro-cid-x5m5n3h5> <span class="toc-number" data-astro-cid-x5m5n3h5> 04 </span> <span class="toc-chapter-title" data-he="פרק 3: Subagents, חלוקת עבודה נכונה" data-en="Chapter 3: Subagents, Proper Division of Labor" data-astro-cid-x5m5n3h5> Chapter 3: Subagents, Proper Division of Labor </span> </a> </li> </ul> </nav> </aside> <!-- Left Sidebar: Chapter Outline (headings של הפרק) --> <aside class="outline-sidebar outline-sidebar-left" aria-label="Chapter Outline" data-astro-cid-x5m5n3h5> <h3 class="outline-title" data-he="בפרק זה" data-en="In This Chapter" data-astro-cid-x5m5n3h5> In This Chapter </h3> <nav id="chapter-outline" class="outline-list" data-astro-cid-x5m5n3h5> <ul data-astro-cid-x5m5n3h5>  </ul> </nav> </aside> </div>  <script type="module">function r(){const n=document.getElementById("chapter-outline");if(!n)return;n.querySelectorAll("li").forEach(e=>e.remove());const s=document.querySelector("[data-he].visible, [data-he]:not(.hidden)"),u=document.querySelector("[data-en].visible, [data-en]:not(.hidden)"),d=s||u;if(!d)return;Array.from(d.querySelectorAll("h2, h3")).forEach((e,c)=>{const m=e.tagName.toLowerCase(),h=e.textContent?.trim()||`Heading ${c}`,o=e.id||`heading-${c}`;e.id||(e.id=o);const i=document.createElement("li");i.setAttribute("data-level",m);const t=document.createElement("a");t.href=`#${o}`,t.textContent=h,t.addEventListener("click",v=>{v.preventDefault();const l=document.getElementById(o);l&&l.scrollIntoView({behavior:"smooth",block:"start"})}),i.appendChild(t),n.appendChild(i)})}function a(){setTimeout(()=>{r()},100)}document.readyState==="loading"?document.addEventListener("DOMContentLoaded",a):a();window.addEventListener("language-changed",()=>{setTimeout(()=>{r()},100)});document.addEventListener("astro:after-swap",a);</script>  <div id="chapter-container" data-chapter-id="2" data-book="bookforge" data-astro-cid-hov2pql7> <!-- Hebrew version --> <div data-he class="hidden" dir="rtl" style="text-align: right" data-astro-cid-hov2pql7> <h1 data-astro-cid-hov2pql7>פרק 1: שינוי מודל המנטלי</h1> <div class="chapter-metadata" data-astro-cid-hov2pql7> <span class="word-count" data-astro-cid-hov2pql7>1050 words</span> <span class="reading-time" data-astro-cid-hov2pql7>6 min read</span> </div> <div class="chapter-content prose prose-lg" data-astro-cid-hov2pql7> # פרק 1: שינוי מודל המנטלי
-
-## מעוזר שמגיב למערכת שמייצרת
-
-אתה משתמש ב-Claude Code. אתה נותן לו משימה, הוא מבצע, אתה בודק, נותן משימה נוספת. זה עובד. הקוד יוצא סביר. העבודה מתקדמת.
-
-אבל שים לב למה שקורה בפועל.
-
-אתה זה שמחזיק את כל הפרויקט בראש. אתה זה שיודע מה נעשה, מה נשאר, ומה הצעד הבא. הסוכן מבצע רק מה שאתה מבקש ממנו בכל רגע נתון. ברגע שתפסיק לתת פקודות, הכל עוצר.
-
-זה לא עבודה עם מערכת סוכנים. זה עבודה עם עוזר חכם מאוד שצריך הנחיה מתמדת.
-
-ההבדל בין השניים הוא לא טכני. זה הבדל בגישה. וההבדל הזה הוא מה שקובע אם תבנה תוכנה ברמה גבוהה לבד, או תישאר תלוי בעצמך בכל צעד.
-
-## שלושה תרחישים השוואתיים
-
-כדי להבין את ההבדל בצורה קונקרטית, ניקח משימה אחת ונראה אותה בשלוש גישות שונות.
-
-המשימה: "בנה דף ראשי לפלטפורמת Yuval שמציג רשימת ספרים."
-
-גישה א: ליניארית
-
-אתה:   "כתוב קומפוננט React שמציג רשימת ספרים."
-
-Claude: כותב BookList.tsx
-
-אתה:   "עכשיו הוסף עיצוב."
-
-Claude: מוסיף CSS
-
-אתה:   "עכשיו הוסף pagination."
-
-Claude: מוסיף pagination
-
-אתה:   "עכשיו..."
-
-כל צעד תלוי בך. אתה ה-orchestrator. Claude הוא הידיים. ברגע שאתה עוצר, הכל עוצר.
-
-גישה ב: משימה אחת גדולה
-
-אתה: "בנה דף ראשי מלא לפלטפורמת Yuval עם רשימת ספרים, עיצוב מרשים, pagination, ותמיכה בעברית ואנגלית."
-
-Claude: כותב הכל בבת אחת
-
-נשמע יעיל. אבל מה שיוצא הוא קוד שמנסה לעשות הכל בקובץ אחד, בלי ארכיטקטורה, בלי עקביות עם שאר הפרויקט, ובלי שום ביקורת על מה שנוצר. כשמשהו לא עובד, קשה לדעת איפה הבעיה.
-
-גישה ג: מערכת סוכנים
-
-אתה:  "בנה דף ראשי לפלטפורמת Yuval שמציג רשימת ספרים.
-
-עבוד לפי .CLAUDE.md Explorer יסרוק את הקומפוננטים הקיימים לפני שמתחילים.
-
-UI Designer יגדיר את העיצוב. Builder יממש. Code Reviewer יבדוק. Quality Gate יאשר לפני שמסיימים."
-
-אתה נותן את המשימה פעם אחת. המערכת מחליטה איך לבצע. אתה מקבל תוצאה שעברה ביקורת עצמית לפני שהגיעה אליך.
-
-ההבדל אינו במה שנכתב. ההבדל הוא במי שמחזיק את האחריות לאורך הדרך.
-
-בגישה א ובגישה ב האחריות אצלך. בגישה ג האחריות אצל המערכת.
-
-## תרגיל תכנון ארכיטקטוני
-
-לפני שכותבים שורת קוד אחת ב-BookForge, עצור וענה על שלוש שאלות.
-
-שאלה ראשונה: אילו החלטות אתה רוצה שהמערכת תקבל לבד?
-
-לדוגמה: איך לפרק פרק, איך לארגן קבצי MD, איך לתרגם תוכן, איך לבדוק איכות קוד.
-
-שאלה שנייה: אילו החלטות חייבות להישאר אצלך?
-
-לדוגמה: כיוון עיצובי כללי, אישור merge לפני שקוד עולה, החלטות על ארכיטקטורה שמשפיעה על כל הפרויקט.
-
-שאלה שלישית: איך המערכת תדע שעשתה עבודה טובה?
-
-לדוגמה: הקוד עובר בדיקות, הפלט תקין בעברית ובאנגלית, אין כפילויות בין קומפוננטים.
-
-כתוב את התשובות בקובץ הבא ב-repository:
-
-docs/architecture-thinking.md
-
-זה הקובץ הראשון שתכתוב בפרויקט. לא קוד. לא קומפוננט. החלטות.
-
-כי מערכת סוכנים טובה מתחילה בחשיבה, לא בפקודות.
-
-## הקוד בפעולה
-
-הקוד המלא של פרק זה זמין ב: https://github.com/tomkedem/bookforge
-
-עיין בשינויים, הרץ, ושאל שאלות ישירות ב-Issues.
-
-מה יש עכשיו ב-GitHub
-
-bookforge/
-
-├── README.md
-
-└── docs/
-
-└── architecture-thinking.md
- </div> </div> <!-- English version (default) --> <div data-en class="visible" dir="ltr" style="text-align: left" data-astro-cid-hov2pql7> <h1 data-astro-cid-hov2pql7>Chapter 1: Changing Your Mental Model</h1> <div class="chapter-metadata" data-astro-cid-hov2pql7> <span class="word-count" data-astro-cid-hov2pql7>1050 words</span> <span class="reading-time" data-astro-cid-hov2pql7>6 min read</span> </div> <div class="chapter-content prose prose-lg" data-astro-cid-hov2pql7> # Chapter 1: Changing Your Mental Model
-
-## From an Assistant That Responds to a System That Creates
-
-You use Claude Code. You give it a task, it executes, you check, you give another task. It works. The code comes out reasonable. Work progresses.
-
-But notice what's actually happening.
-
-You're the one holding the entire project in your head. You're the one who knows what was done, what's left, and what's the next step. The agent only does what you ask it to do at each moment. The moment you stop giving commands, everything stops.
-
-This isn't working with an agent system. This is working with a very smart assistant that needs constant guidance.
-
-The difference between the two isn't technical. It's a difference in approach. And this difference is what determines whether you'll build high-level software alone, or remain dependent on yourself at every step.
-
-## Three Comparative Scenarios
-
-To understand the difference concretely, let's take one task and see it in three different approaches.
-
-The task: "Build a home page for the Yuval platform that displays a list of books."
-
-### Approach A: Linear
-
-**You:** "Write a React component that displays a list of books."
-
-**Claude:** Writes BookList.tsx
-
-**You:** "Now add styling."
-
-**Claude:** Adds CSS
-
-**You:** "Now add pagination."
-
-**Claude:** Adds pagination
-
-**You:** "Now..."
-
-Each step depends on you. You're the orchestrator. Claude is the hands. The moment you stop, everything stops.
-
-### Approach B: One Big Task
-
-**You:** "Build a complete home page for the Yuval platform with a book list, impressive design, pagination, and support for Hebrew and English."
-
-**Claude:** Writes everything at once
-
-Sounds efficient. But what comes out is code that tries to do everything in one file, without architecture, without consistency with the rest of the project, and without any review of what was created. When something doesn't work, it's hard to know where the problem is.
-
-### Approach C: Agent System
-
-**You:** "Build a home page for the Yuval platform that displays a list of books.
-
-Follow CLAUDE.md Explorer will scan the existing components before we start.
-
-UI Designer will define the design. Builder will implement. Code Reviewer will check. Quality Gate will approve before we're done."
-
-You give the task once. The system decides how to execute. You get a result that has gone through self-review before it reached you.
-
-The difference is not in what was written. The difference is in who holds the responsibility along the way.
-
-In approach A and approach B the responsibility is with you. In approach C the responsibility is with the system.
-
-## Architectural Planning Exercise
-
-Before you write a single line of code in BookForge, stop and answer three questions.
-
-**First question:** What decisions do you want the system to make on its own?
-
-For example: how to break down a chapter, how to organize MD files, how to translate content, how to check code quality.
-
-**Second question:** What decisions must remain with you?
-
-For example: overall design direction, approval of merge before code goes up, decisions about architecture that affects the entire project.
-
-**Third question:** How will the system know it did good work?
-
-For example: code passes tests, output is correct in Hebrew and English, no duplication between components.
-
-Write your answers in the following file in the repository:
-
-```
-docs/architecture-thinking.md
-```
-
-This is the first file you'll write in the project. Not code. Not a component. Decisions.
-
-Because a good agent system starts with thinking, not commands.
-
-## The Code in Action
-
-The full code for this chapter is available at: https://github.com/tomkedem/bookforge
-
-Check out the changes, run, and ask questions directly in Issues.
-
-### What's on GitHub Now
-
-```
-bookforge/
+</button> </div> <script type="module" src="/_astro/LanguageToggle.astro_astro_type_script_index_0_lang.ChUskGOR.js"></script> </div> </header> <main class="w-full">  <article class="mx-auto max-w-reading px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16" style="margin-left: 260px; margin-right: 260px;" data-astro-cid-fe7wjrka> <!-- Chapter content --> <div class="prose prose-invert max-w-none space-y-6" data-language="en" data-astro-cid-fe7wjrka>   <div class="sidebars-container" data-astro-cid-x5m5n3h5> <!-- Right Sidebar: Table of Contents (כל הפרקים) --> <aside class="toc-sidebar toc-sidebar-right" id="toc-sidebar" data-rtl="false" aria-label="Table of Contents" data-astro-cid-x5m5n3h5> <h3 class="toc-title" data-astro-cid-x5m5n3h5> <span data-he="פרקים" data-en="Chapters" data-astro-cid-x5m5n3h5> Chapters </span> </h3> <nav class="toc-list" data-astro-cid-x5m5n3h5> <ul data-astro-cid-x5m5n3h5> <li class="toc-item" data-chapter-id="1" data-astro-cid-x5m5n3h5> <a href="/read/sample-book/1" class="toc-link" data-astro-cid-x5m5n3h5> <span class="toc-number" data-astro-cid-x5m5n3h5> 01 </span> <span class="toc-chapter-title" data-astro-cid-x5m5n3h5> <span data-he="פרק הכנה: פרויקט ההדגמה והסביבה" data-en="Setup Chapter: The Demo Project and Environment" data-astro-cid-x5m5n3h5> Setup Chapter: The Demo Project and Environment </span> </span> </a> </li><li class="toc-item toc-item-active" data-chapter-id="2" data-astro-cid-x5m5n3h5> <a href="/read/sample-book/2" class="toc-link toc-link-active" aria-current="page" data-astro-cid-x5m5n3h5> <span class="toc-number" data-astro-cid-x5m5n3h5> 02 </span> <span class="toc-chapter-title" data-astro-cid-x5m5n3h5> <span data-he="פרק 1: שינוי מודל המנטלי" data-en="Chapter 1: Changing Your Mental Model" data-astro-cid-x5m5n3h5> Chapter 1: Changing Your Mental Model </span> </span> </a> </li><li class="toc-item" data-chapter-id="3" data-astro-cid-x5m5n3h5> <a href="/read/sample-book/3" class="toc-link" data-astro-cid-x5m5n3h5> <span class="toc-number" data-astro-cid-x5m5n3h5> 03 </span> <span class="toc-chapter-title" data-astro-cid-x5m5n3h5> <span data-he="פרק 2: CLAUDE.md כארכיטקטורה" data-en="Chapter 2: CLAUDE.md as Architecture" data-astro-cid-x5m5n3h5> Chapter 2: CLAUDE.md as Architecture </span> </span> </a> </li><li class="toc-item" data-chapter-id="4" data-astro-cid-x5m5n3h5> <a href="/read/sample-book/4" class="toc-link" data-astro-cid-x5m5n3h5> <span class="toc-number" data-astro-cid-x5m5n3h5> 04 </span> <span class="toc-chapter-title" data-astro-cid-x5m5n3h5> <span data-he="פרק 3: Subagents, חלוקת עבודה נכונה" data-en="Chapter 3: Subagents, Proper Division of Labor" data-astro-cid-x5m5n3h5> Chapter 3: Subagents, Proper Division of Labor </span> </span> </a> </li> </ul> </nav> </aside> <!-- Left Sidebar: Chapter Outline (headings של הפרק) --> <aside class="outline-sidebar outline-sidebar-left" id="outline-sidebar" data-rtl="false" aria-label="Chapter Outline" data-astro-cid-x5m5n3h5> <h3 class="outline-title" data-astro-cid-x5m5n3h5> <span data-he="בפרק זה" data-en="In This Chapter" data-astro-cid-x5m5n3h5> In This Chapter </span> </h3> <nav id="chapter-outline" class="outline-list" data-astro-cid-x5m5n3h5> <ul data-astro-cid-x5m5n3h5>  </ul> </nav> </aside> </div>  <script type="module">function f(e){const t=document.querySelector(".toc-title span");if(t){const n=t.getAttribute("data-he"),i=t.getAttribute("data-en");t.textContent=e==="he"?n:i}const o=document.querySelector(".outline-title span");if(o){const n=o.getAttribute("data-he"),i=o.getAttribute("data-en");o.textContent=e==="he"?n:i}document.querySelectorAll(".toc-chapter-title span").forEach(n=>{const i=n.getAttribute("data-he"),r=n.getAttribute("data-en");n.textContent=e==="he"?i:r})}function g(){const e=document.getElementById("chapter-outline");if(!e)return;const t=e.querySelector("ul");t&&(t.innerHTML="");const o=document.getElementById("chapter-container");if(!o)return;const n=o.querySelector("[data-he]:not(.hidden)"),i=o.querySelector("[data-en]:not(.hidden)"),r=n||i;if(!r)return;const s=Array.from(r.querySelectorAll("h2, h3"));if(s.length===0){const c=document.createElement("li");c.style.color="#cccccc",c.style.fontSize="12px",c.textContent="No sections found",t&&t.appendChild(c);return}s.forEach((c,h)=>{const p=c.tagName.toLowerCase(),x=c.textContent?.trim()||`Section ${h+1}`,l=`section-${h}`;c.id=l;const d=document.createElement("li");d.setAttribute("data-level",p);const a=document.createElement("a");a.href=`#${l}`,a.textContent=x,a.addEventListener("click",y=>{y.preventDefault();const m=document.getElementById(l);m&&m.scrollIntoView({behavior:"smooth",block:"start"})}),d.appendChild(a),t&&t.appendChild(d)})}function u(e="en"){f(e),setTimeout(()=>{g()},150)}document.readyState==="loading"?document.addEventListener("DOMContentLoaded",()=>{u("en")}):u("en");window.addEventListener("language-changed",e=>{const t=e.detail?.language||"en";f(t),setTimeout(()=>{g()},150)});document.addEventListener("astro:after-swap",()=>{u("en")});</script>  <div id="chapter-container" data-chapter-id="2" data-book="bookforge" data-astro-cid-hov2pql7> <!-- Hebrew version --> <div data-he class="hidden" dir="rtl" style="text-align: right" data-astro-cid-hov2pql7> <h1 data-astro-cid-hov2pql7>פרק 1: שינוי מודל המנטלי</h1> <div class="chapter-metadata" data-astro-cid-hov2pql7> <span class="word-count" data-astro-cid-hov2pql7>1050 words</span> <span class="reading-time" data-astro-cid-hov2pql7>6 min read</span> </div> <div class="chapter-content prose prose-lg" data-astro-cid-hov2pql7> <h1>פרק 1: שינוי מודל המנטלי</h1>
+<h2>מעוזר שמגיב למערכת שמייצרת</h2>
+<p>אתה משתמש ב-Claude Code. אתה נותן לו משימה, הוא מבצע, אתה בודק, נותן משימה נוספת. זה עובד. הקוד יוצא סביר. העבודה מתקדמת.</p>
+<p>אבל שים לב למה שקורה בפועל.</p>
+<p>אתה זה שמחזיק את כל הפרויקט בראש. אתה זה שיודע מה נעשה, מה נשאר, ומה הצעד הבא. הסוכן מבצע רק מה שאתה מבקש ממנו בכל רגע נתון. ברגע שתפסיק לתת פקודות, הכל עוצר.</p>
+<p>זה לא עבודה עם מערכת סוכנים. זה עבודה עם עוזר חכם מאוד שצריך הנחיה מתמדת.</p>
+<p>ההבדל בין השניים הוא לא טכני. זה הבדל בגישה. וההבדל הזה הוא מה שקובע אם תבנה תוכנה ברמה גבוהה לבד, או תישאר תלוי בעצמך בכל צעד.</p>
+<h2>שלושה תרחישים השוואתיים</h2>
+<p>כדי להבין את ההבדל בצורה קונקרטית, ניקח משימה אחת ונראה אותה בשלוש גישות שונות.</p>
+<p>המשימה: &quot;בנה דף ראשי לפלטפורמת Yuval שמציג רשימת ספרים.&quot;</p>
+<p>גישה א: ליניארית</p>
+<p>אתה:   &quot;כתוב קומפוננט React שמציג רשימת ספרים.&quot;</p>
+<p>Claude: כותב BookList.tsx</p>
+<p>אתה:   &quot;עכשיו הוסף עיצוב.&quot;</p>
+<p>Claude: מוסיף CSS</p>
+<p>אתה:   &quot;עכשיו הוסף pagination.&quot;</p>
+<p>Claude: מוסיף pagination</p>
+<p>אתה:   &quot;עכשיו...&quot;</p>
+<p>כל צעד תלוי בך. אתה ה-orchestrator. Claude הוא הידיים. ברגע שאתה עוצר, הכל עוצר.</p>
+<p>גישה ב: משימה אחת גדולה</p>
+<p>אתה: &quot;בנה דף ראשי מלא לפלטפורמת Yuval עם רשימת ספרים, עיצוב מרשים, pagination, ותמיכה בעברית ואנגלית.&quot;</p>
+<p>Claude: כותב הכל בבת אחת</p>
+<p>נשמע יעיל. אבל מה שיוצא הוא קוד שמנסה לעשות הכל בקובץ אחד, בלי ארכיטקטורה, בלי עקביות עם שאר הפרויקט, ובלי שום ביקורת על מה שנוצר. כשמשהו לא עובד, קשה לדעת איפה הבעיה.</p>
+<p>גישה ג: מערכת סוכנים</p>
+<p>אתה:  &quot;בנה דף ראשי לפלטפורמת Yuval שמציג רשימת ספרים.</p>
+<p>עבוד לפי .CLAUDE.md Explorer יסרוק את הקומפוננטים הקיימים לפני שמתחילים.</p>
+<p>UI Designer יגדיר את העיצוב. Builder יממש. Code Reviewer יבדוק. Quality Gate יאשר לפני שמסיימים.&quot;</p>
+<p>אתה נותן את המשימה פעם אחת. המערכת מחליטה איך לבצע. אתה מקבל תוצאה שעברה ביקורת עצמית לפני שהגיעה אליך.</p>
+<p>ההבדל אינו במה שנכתב. ההבדל הוא במי שמחזיק את האחריות לאורך הדרך.</p>
+<p>בגישה א ובגישה ב האחריות אצלך. בגישה ג האחריות אצל המערכת.</p>
+<h2>תרגיל תכנון ארכיטקטוני</h2>
+<p>לפני שכותבים שורת קוד אחת ב-BookForge, עצור וענה על שלוש שאלות.</p>
+<p>שאלה ראשונה: אילו החלטות אתה רוצה שהמערכת תקבל לבד?</p>
+<p>לדוגמה: איך לפרק פרק, איך לארגן קבצי MD, איך לתרגם תוכן, איך לבדוק איכות קוד.</p>
+<p>שאלה שנייה: אילו החלטות חייבות להישאר אצלך?</p>
+<p>לדוגמה: כיוון עיצובי כללי, אישור merge לפני שקוד עולה, החלטות על ארכיטקטורה שמשפיעה על כל הפרויקט.</p>
+<p>שאלה שלישית: איך המערכת תדע שעשתה עבודה טובה?</p>
+<p>לדוגמה: הקוד עובר בדיקות, הפלט תקין בעברית ובאנגלית, אין כפילויות בין קומפוננטים.</p>
+<p>כתוב את התשובות בקובץ הבא ב-repository:</p>
+<p>docs/architecture-thinking.md</p>
+<p>זה הקובץ הראשון שתכתוב בפרויקט. לא קוד. לא קומפוננט. החלטות.</p>
+<p>כי מערכת סוכנים טובה מתחילה בחשיבה, לא בפקודות.</p>
+<h2>הקוד בפעולה</h2>
+<p>הקוד המלא של פרק זה זמין ב: <a href="https://github.com/tomkedem/bookforge">https://github.com/tomkedem/bookforge</a></p>
+<p>עיין בשינויים, הרץ, ושאל שאלות ישירות ב-Issues.</p>
+<p>מה יש עכשיו ב-GitHub</p>
+<p>bookforge/</p>
+<p>├── README.md</p>
+<p>└── docs/</p>
+<p>└── architecture-thinking.md</p>
+ </div> </div> <!-- English version (default) --> <div data-en class="visible" dir="ltr" style="text-align: left" data-astro-cid-hov2pql7> <h1 data-astro-cid-hov2pql7>Chapter 1: Changing Your Mental Model</h1> <div class="chapter-metadata" data-astro-cid-hov2pql7> <span class="word-count" data-astro-cid-hov2pql7>1050 words</span> <span class="reading-time" data-astro-cid-hov2pql7>6 min read</span> </div> <div class="chapter-content prose prose-lg" data-astro-cid-hov2pql7> <h1>Chapter 1: Changing Your Mental Model</h1>
+<h2>From an Assistant That Responds to a System That Creates</h2>
+<p>You use Claude Code. You give it a task, it executes, you check, you give another task. It works. The code comes out reasonable. Work progresses.</p>
+<p>But notice what&#39;s actually happening.</p>
+<p>You&#39;re the one holding the entire project in your head. You&#39;re the one who knows what was done, what&#39;s left, and what&#39;s the next step. The agent only does what you ask it to do at each moment. The moment you stop giving commands, everything stops.</p>
+<p>This isn&#39;t working with an agent system. This is working with a very smart assistant that needs constant guidance.</p>
+<p>The difference between the two isn&#39;t technical. It&#39;s a difference in approach. And this difference is what determines whether you&#39;ll build high-level software alone, or remain dependent on yourself at every step.</p>
+<h2>Three Comparative Scenarios</h2>
+<p>To understand the difference concretely, let&#39;s take one task and see it in three different approaches.</p>
+<p>The task: &quot;Build a home page for the Yuval platform that displays a list of books.&quot;</p>
+<h3>Approach A: Linear</h3>
+<p><strong>You:</strong> &quot;Write a React component that displays a list of books.&quot;</p>
+<p><strong>Claude:</strong> Writes BookList.tsx</p>
+<p><strong>You:</strong> &quot;Now add styling.&quot;</p>
+<p><strong>Claude:</strong> Adds CSS</p>
+<p><strong>You:</strong> &quot;Now add pagination.&quot;</p>
+<p><strong>Claude:</strong> Adds pagination</p>
+<p><strong>You:</strong> &quot;Now...&quot;</p>
+<p>Each step depends on you. You&#39;re the orchestrator. Claude is the hands. The moment you stop, everything stops.</p>
+<h3>Approach B: One Big Task</h3>
+<p><strong>You:</strong> &quot;Build a complete home page for the Yuval platform with a book list, impressive design, pagination, and support for Hebrew and English.&quot;</p>
+<p><strong>Claude:</strong> Writes everything at once</p>
+<p>Sounds efficient. But what comes out is code that tries to do everything in one file, without architecture, without consistency with the rest of the project, and without any review of what was created. When something doesn&#39;t work, it&#39;s hard to know where the problem is.</p>
+<h3>Approach C: Agent System</h3>
+<p><strong>You:</strong> &quot;Build a home page for the Yuval platform that displays a list of books.</p>
+<p>Follow CLAUDE.md Explorer will scan the existing components before we start.</p>
+<p>UI Designer will define the design. Builder will implement. Code Reviewer will check. Quality Gate will approve before we&#39;re done.&quot;</p>
+<p>You give the task once. The system decides how to execute. You get a result that has gone through self-review before it reached you.</p>
+<p>The difference is not in what was written. The difference is in who holds the responsibility along the way.</p>
+<p>In approach A and approach B the responsibility is with you. In approach C the responsibility is with the system.</p>
+<h2>Architectural Planning Exercise</h2>
+<p>Before you write a single line of code in BookForge, stop and answer three questions.</p>
+<p><strong>First question:</strong> What decisions do you want the system to make on its own?</p>
+<p>For example: how to break down a chapter, how to organize MD files, how to translate content, how to check code quality.</p>
+<p><strong>Second question:</strong> What decisions must remain with you?</p>
+<p>For example: overall design direction, approval of merge before code goes up, decisions about architecture that affects the entire project.</p>
+<p><strong>Third question:</strong> How will the system know it did good work?</p>
+<p>For example: code passes tests, output is correct in Hebrew and English, no duplication between components.</p>
+<p>Write your answers in the following file in the repository:</p>
+<pre><code>docs/architecture-thinking.md
+</code></pre>
+<p>This is the first file you&#39;ll write in the project. Not code. Not a component. Decisions.</p>
+<p>Because a good agent system starts with thinking, not commands.</p>
+<h2>The Code in Action</h2>
+<p>The full code for this chapter is available at: <a href="https://github.com/tomkedem/bookforge">https://github.com/tomkedem/bookforge</a></p>
+<p>Check out the changes, run, and ask questions directly in Issues.</p>
+<h3>What&#39;s on GitHub Now</h3>
+<pre><code>bookforge/
 ├── README.md
 └── docs/
     └── architecture-thinking.md
-```
+</code></pre>
  </div> </div> <!-- Chapter navigation --> <nav class="flex flex-row items-center justify-between gap-4 py-6 border-t border-yuval-border-secondary mt-12" aria-label="Chapter navigation"> <a href="/read/bookforge/1" class="inline-flex items-center gap-2 px-4 py-2 font-body text-sm font-medium text-yuval-text hover:text-yuval-text-secondary transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yuval-text" data-he="הפרק הקודם" data-en="Previous Chapter">  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"> <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path> </svg> <span>Setup Chapter: The Demo Project and Environment</span>  </a> <div class="flex flex-col items-center gap-1"> <span class="text-xs font-body text-yuval-text-tertiary uppercase tracking-wide" data-he="פרק 3 מתוך 4" data-en="Chapter 3 of 4">
 Chapter 3 of 4 </span> <h2 class="text-center font-heading font-bold text-lg text-yuval-text" data-he="פרק 1: שינוי מודל המנטלי" data-en="Chapter 1: Changing Your Mental Model"> Chapter 1: Changing Your Mental Model </h2> </div> <a href="/read/bookforge/3" class="inline-flex items-center gap-2 px-4 py-2 font-body text-sm font-medium text-yuval-text hover:text-yuval-text-secondary transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yuval-text" data-he="הפרק הבא" data-en="Next Chapter">  <span>Chapter 2: CLAUDE.md as Architecture</span> <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"> <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path> </svg>  </a> </nav> </div>  </div> <!-- Custom prose styles for reading -->  </article>  </main> <script type="module" src="/_astro/BaseLayout.astro_astro_type_script_index_0_lang.Don7ohaG.js"></script> </body> </html>  <script type="module" src="/_astro/_chapter_.astro_astro_type_script_index_0_lang.DHEf8YIE.js"></script>

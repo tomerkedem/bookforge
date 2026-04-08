@@ -20,10 +20,14 @@ const isRtl = language === LANGUAGES.HE;
       'toc-sidebar-right',
       isRtl && 'toc-sidebar-rtl',
     ]}
+    id="toc-sidebar"
+    data-rtl={isRtl}
     aria-label={language === LANGUAGES.HE ? 'תוכן עניינים' : 'Table of Contents'}
   >
-    <h3 class="toc-title" data-he="פרקים" data-en="Chapters">
-      {language === LANGUAGES.HE ? 'פרקים' : 'Chapters'}
+    <h3 class="toc-title">
+      <span data-he="פרקים" data-en="Chapters">
+        {language === LANGUAGES.HE ? 'פרקים' : 'Chapters'}
+      </span>
     </h3>
     <nav class="toc-list">
       <ul>
@@ -33,6 +37,7 @@ const isRtl = language === LANGUAGES.HE;
               'toc-item',
               chapter.id === currentChapterId && 'toc-item-active',
             ]}
+            data-chapter-id={chapter.id}
           >
             <a
               href={`/read/sample-book/${chapter.id}${language === LANGUAGES.HE ? '?lang=he' : ''}`}
@@ -45,14 +50,12 @@ const isRtl = language === LANGUAGES.HE;
               <span class="toc-number">
                 {String(chapter.id).padStart(2, '0')}
               </span>
-              <span
-                class="toc-chapter-title"
-                data-he={chapter.title_he}
-                data-en={chapter.title_en}
-              >
-                {language === LANGUAGES.HE
-                  ? chapter.title_he
-                  : chapter.title_en}
+              <span class="toc-chapter-title">
+                <span data-he={chapter.title_he} data-en={chapter.title_en}>
+                  {language === LANGUAGES.HE
+                    ? chapter.title_he
+                    : chapter.title_en}
+                </span>
               </span>
             </a>
           </li>
@@ -68,10 +71,14 @@ const isRtl = language === LANGUAGES.HE;
       'outline-sidebar-left',
       isRtl && 'outline-sidebar-rtl',
     ]}
+    id="outline-sidebar"
+    data-rtl={isRtl}
     aria-label={language === LANGUAGES.HE ? 'מתוכן הפרק' : 'Chapter Outline'}
   >
-    <h3 class="outline-title" data-he="בפרק זה" data-en="In This Chapter">
-      {language === LANGUAGES.HE ? 'בפרק זה' : 'In This Chapter'}
+    <h3 class="outline-title">
+      <span data-he="בפרק זה" data-en="In This Chapter">
+        {language === LANGUAGES.HE ? 'בפרק זה' : 'In This Chapter'}
+      </span>
     </h3>
     <nav id="chapter-outline" class="outline-list">
       <ul>
@@ -285,37 +292,78 @@ const isRtl = language === LANGUAGES.HE;
 
 <script>
   /**
+   * Update sidebar text based on current language
+   */
+  function updateSidebarText(lang: string) {
+    // Update TOC title
+    const tocTitle = document.querySelector('.toc-title span');
+    if (tocTitle) {
+      const heText = tocTitle.getAttribute('data-he');
+      const enText = tocTitle.getAttribute('data-en');
+      tocTitle.textContent = lang === 'he' ? heText : enText;
+    }
+
+    // Update outline title
+    const outlineTitle = document.querySelector('.outline-title span');
+    if (outlineTitle) {
+      const heText = outlineTitle.getAttribute('data-he');
+      const enText = outlineTitle.getAttribute('data-en');
+      outlineTitle.textContent = lang === 'he' ? heText : enText;
+    }
+
+    // Update chapter titles in TOC
+    document.querySelectorAll('.toc-chapter-title span').forEach((span) => {
+      const heText = span.getAttribute('data-he');
+      const enText = span.getAttribute('data-en');
+      span.textContent = lang === 'he' ? heText : enText;
+    });
+  }
+
+  /**
    * Build chapter outline from h2/h3 headings
-   * Updates when language changes
+   * Searches for headings in the chapter content divs
    */
   function buildChapterOutline() {
     const outline = document.getElementById('chapter-outline');
     if (!outline) return;
 
     // Clear existing outline
-    const existingItems = outline.querySelectorAll('li');
-    existingItems.forEach(item => item.remove());
+    const ul = outline.querySelector('ul');
+    if (ul) {
+      ul.innerHTML = '';
+    }
 
-    // Find all headings in chapter content
-    // Look for h2 and h3 elements in [data-he] and [data-en] divs
-    const heDiv = document.querySelector('[data-he].visible, [data-he]:not(.hidden)');
-    const enDiv = document.querySelector('[data-en].visible, [data-en]:not(.hidden)');
+    // Find the chapter container
+    const container = document.getElementById('chapter-container');
+    if (!container) return;
+
+    // Find visible content div (either data-he or data-en)
+    const heDiv = container.querySelector('[data-he]:not(.hidden)');
+    const enDiv = container.querySelector('[data-en]:not(.hidden)');
     const contentDiv = heDiv || enDiv;
 
     if (!contentDiv) return;
 
-    // Get all h2 and h3 elements
+    // Get all h2 and h3 elements from the content
     const headings = Array.from(contentDiv.querySelectorAll('h2, h3'));
+
+    if (headings.length === 0) {
+      // If no headings found, show message
+      const li = document.createElement('li');
+      li.style.color = '#cccccc';
+      li.style.fontSize = '12px';
+      li.textContent = 'No sections found';
+      if (ul) ul.appendChild(li);
+      return;
+    }
 
     headings.forEach((heading, index) => {
       const level = heading.tagName.toLowerCase();
-      const text = heading.textContent?.trim() || `Heading ${index}`;
-      const id = heading.id || `heading-${index}`;
+      const text = heading.textContent?.trim() || `Section ${index + 1}`;
+      const id = `section-${index}`;
 
-      // Add id to heading if not present
-      if (!heading.id) {
-        heading.id = id;
-      }
+      // Add id to heading
+      heading.id = id;
 
       // Create outline item
       const li = document.createElement('li');
@@ -333,34 +381,43 @@ const isRtl = language === LANGUAGES.HE;
       });
 
       li.appendChild(link);
-      outline.appendChild(li);
+      if (ul) ul.appendChild(li);
     });
   }
 
   /**
-   * Initialize outline on page load and when language changes
+   * Initialize sidebars on page load and when language changes
    */
-  function initializeOutline() {
-    // Wait a bit for content to render
+  function initializeSidebars(lang = 'en') {
+    // Update text
+    updateSidebarText(lang);
+
+    // Wait for content to render, then build outline
     setTimeout(() => {
       buildChapterOutline();
-    }, 100);
+    }, 150);
   }
 
   // Initial load
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initializeOutline);
+    document.addEventListener('DOMContentLoaded', () => {
+      initializeSidebars('en');
+    });
   } else {
-    initializeOutline();
+    initializeSidebars('en');
   }
 
-  // Rebuild outline when language changes
-  window.addEventListener('language-changed', () => {
+  // Update when language changes
+  window.addEventListener('language-changed', (e: any) => {
+    const lang = e.detail?.language || 'en';
+    updateSidebarText(lang);
     setTimeout(() => {
       buildChapterOutline();
-    }, 100);
+    }, 150);
   });
 
-  // Also rebuild on Astro navigation
-  document.addEventListener('astro:after-swap', initializeOutline);
+  // Also update on Astro navigation
+  document.addEventListener('astro:after-swap', () => {
+    initializeSidebars('en');
+  });
 </script>

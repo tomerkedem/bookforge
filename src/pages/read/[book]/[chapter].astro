@@ -6,6 +6,7 @@ import type { Language, Chapter } from '../../../types/index';
 import { LANGUAGES } from '../../../utils/language';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
+import { marked } from 'marked';
 
 interface Props {
   language?: Language;
@@ -83,7 +84,8 @@ try {
   const filepathHe = resolve('output/sample-book', filenameHe);
 
   try {
-    chapterContentHe = readFileSync(filepathHe, 'utf-8');
+    const mdContentHe = readFileSync(filepathHe, 'utf-8');
+    chapterContentHe = await marked(mdContentHe);
   } catch (e) {
     console.warn(`Warning: Hebrew chapter file not found: ${filepathHe}`);
     chapterContentHe = `<h2>${currentChapter.title_he}</h2>
@@ -95,7 +97,8 @@ try {
   const filepathEn = resolve('output/sample-book', filenameEn);
 
   try {
-    chapterContentEn = readFileSync(filepathEn, 'utf-8');
+    const mdContentEn = readFileSync(filepathEn, 'utf-8');
+    chapterContentEn = await marked(mdContentEn);
   } catch (e) {
     console.warn(`Warning: English chapter file not found: ${filepathEn}`);
     chapterContentEn = `<h2>${currentChapter.title_en}</h2>

@@ -12,321 +12,184 @@ Yuval
 עברית
 </button> <button type="button" class="px-3 py-1.5 rounded-full transition-all duration-200 font-body text-sm font-medium bg-yuval-text text-yuval-bg" data-language="en" aria-pressed="true" aria-label="Switch to English" data-he="אנגלית" data-en="English">
 English
-</button> </div> <script type="module" src="/_astro/LanguageToggle.astro_astro_type_script_index_0_lang.ChUskGOR.js"></script> </div> </header> <main class="w-full">  <article class="mx-auto max-w-reading px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16" style="margin-left: 260px; margin-right: 260px;" data-astro-cid-fe7wjrka> <!-- Chapter content --> <div class="prose prose-invert max-w-none space-y-6" data-language="en" data-astro-cid-fe7wjrka>   <div class="sidebars-container" data-astro-cid-x5m5n3h5> <!-- Right Sidebar: Table of Contents (כל הפרקים) --> <aside class="toc-sidebar toc-sidebar-right" aria-label="Table of Contents" data-astro-cid-x5m5n3h5> <h3 class="toc-title" data-he="פרקים" data-en="Chapters" data-astro-cid-x5m5n3h5> Chapters </h3> <nav class="toc-list" data-astro-cid-x5m5n3h5> <ul data-astro-cid-x5m5n3h5> <li class="toc-item" data-astro-cid-x5m5n3h5> <a href="/read/sample-book/1" class="toc-link" data-astro-cid-x5m5n3h5> <span class="toc-number" data-astro-cid-x5m5n3h5> 01 </span> <span class="toc-chapter-title" data-he="פרק הכנה: פרויקט ההדגמה והסביבה" data-en="Setup Chapter: The Demo Project and Environment" data-astro-cid-x5m5n3h5> Setup Chapter: The Demo Project and Environment </span> </a> </li><li class="toc-item" data-astro-cid-x5m5n3h5> <a href="/read/sample-book/2" class="toc-link" data-astro-cid-x5m5n3h5> <span class="toc-number" data-astro-cid-x5m5n3h5> 02 </span> <span class="toc-chapter-title" data-he="פרק 1: שינוי מודל המנטלי" data-en="Chapter 1: Changing Your Mental Model" data-astro-cid-x5m5n3h5> Chapter 1: Changing Your Mental Model </span> </a> </li><li class="toc-item toc-item-active" data-astro-cid-x5m5n3h5> <a href="/read/sample-book/3" class="toc-link toc-link-active" aria-current="page" data-astro-cid-x5m5n3h5> <span class="toc-number" data-astro-cid-x5m5n3h5> 03 </span> <span class="toc-chapter-title" data-he="פרק 2: CLAUDE.md כארכיטקטורה" data-en="Chapter 2: CLAUDE.md as Architecture" data-astro-cid-x5m5n3h5> Chapter 2: CLAUDE.md as Architecture </span> </a> </li><li class="toc-item" data-astro-cid-x5m5n3h5> <a href="/read/sample-book/4" class="toc-link" data-astro-cid-x5m5n3h5> <span class="toc-number" data-astro-cid-x5m5n3h5> 04 </span> <span class="toc-chapter-title" data-he="פרק 3: Subagents, חלוקת עבודה נכונה" data-en="Chapter 3: Subagents, Proper Division of Labor" data-astro-cid-x5m5n3h5> Chapter 3: Subagents, Proper Division of Labor </span> </a> </li> </ul> </nav> </aside> <!-- Left Sidebar: Chapter Outline (headings של הפרק) --> <aside class="outline-sidebar outline-sidebar-left" aria-label="Chapter Outline" data-astro-cid-x5m5n3h5> <h3 class="outline-title" data-he="בפרק זה" data-en="In This Chapter" data-astro-cid-x5m5n3h5> In This Chapter </h3> <nav id="chapter-outline" class="outline-list" data-astro-cid-x5m5n3h5> <ul data-astro-cid-x5m5n3h5>  </ul> </nav> </aside> </div>  <script type="module">function r(){const n=document.getElementById("chapter-outline");if(!n)return;n.querySelectorAll("li").forEach(e=>e.remove());const s=document.querySelector("[data-he].visible, [data-he]:not(.hidden)"),u=document.querySelector("[data-en].visible, [data-en]:not(.hidden)"),d=s||u;if(!d)return;Array.from(d.querySelectorAll("h2, h3")).forEach((e,c)=>{const m=e.tagName.toLowerCase(),h=e.textContent?.trim()||`Heading ${c}`,o=e.id||`heading-${c}`;e.id||(e.id=o);const i=document.createElement("li");i.setAttribute("data-level",m);const t=document.createElement("a");t.href=`#${o}`,t.textContent=h,t.addEventListener("click",v=>{v.preventDefault();const l=document.getElementById(o);l&&l.scrollIntoView({behavior:"smooth",block:"start"})}),i.appendChild(t),n.appendChild(i)})}function a(){setTimeout(()=>{r()},100)}document.readyState==="loading"?document.addEventListener("DOMContentLoaded",a):a();window.addEventListener("language-changed",()=>{setTimeout(()=>{r()},100)});document.addEventListener("astro:after-swap",a);</script>  <div id="chapter-container" data-chapter-id="3" data-book="sample-book" data-astro-cid-hov2pql7> <!-- Hebrew version --> <div data-he class="hidden" dir="rtl" style="text-align: right" data-astro-cid-hov2pql7> <h1 data-astro-cid-hov2pql7>פרק 2: CLAUDE.md כארכיטקטורה</h1> <div class="chapter-metadata" data-astro-cid-hov2pql7> <span class="word-count" data-astro-cid-hov2pql7>1200 words</span> <span class="reading-time" data-astro-cid-hov2pql7>6 min read</span> </div> <div class="chapter-content prose prose-lg" data-astro-cid-hov2pql7> # פרק 2: CLAUDE.md כארכיטקטורה
-
-## CLAUDE.md כחוקה
-
-רוב המפתחים שמשתמשים ב-Claude Code כותבים CLAUDE.md פעם אחת, שמים בו כמה הוראות כלליות, ושוכחים ממנו. התוצאה היא סוכן שמתנהג אחרת בכל session, מקבל החלטות שגויות, וגורם לך לחזור ולתקן את אותם דברים שוב ושוב.
-
-CLAUDE.md הוא לא README. הוא לא תיעוד. הוא החוקה של הפרויקט.
-
-ההבדל בין מסמך לחוקה הוא פשוט: מסמך מתאר. חוקה מחייבת. כשאתה כותב ב-CLAUDE.md "אל תגע בקבצי output ללא אישור מפורש", זה לא המלצה. זה כלל שהסוכן מכבד בכל session ובכל משימה שהוא מבצע.
-
-הסוכן קורא את CLAUDE.md בתחילת כל session. מה שלא כתבת שם, הוא יחליט לבד. ולא תמיד כמו שתרצה.
-
-לפני שממשיכים, צור את הקבצים הבאים בשורש הפרויקט:
-
-Mac / Linux:
-
-Bash
-
-touch CLAUDE.md
-
-touch CLAUDE.local.md
-
-touch .gitignore
-
-mkdir tasks
-
-touch tasks/todo.md
-
-touch tasks/lessons.md
-
-Windows:
-
-Powershell
-
-ni CLAUDE.md
-
-ni CLAUDE.local.md
-
-ni .gitignore
-
-ni -ItemType Directory tasks
-
-ni tasks\todo.md
-
-ni tasks\lessons.md
-
-.gitignore
-
-הקובץ הראשון שנמלא הוא .gitignore הוא מגדיר אילו קבצים Git לא יעלה לעולם ל-GitHub.
-
-פתח את .gitignore והוסף:
-
-# קבצים אישיים שלא עולים ל-GitHub
-
-CLAUDE.local.md
-
-# תלויות
-
-node_modules/
-
-# קבצי סביבה
-
-.env
-
-.env.local
-
-Mac / Linux:
-
-bash
-
-echo "CLAUDE.local.md" >> .gitignore
-
-Windows:
-
-powershell
-
-Add-Content .gitignore "CLAUDE.local.md"
-
-## CLAUDE.local.md להגדרות אישיות
-
-יש הגדרות ששייכות לפרויקט ויש הגדרות ששייכות למכונה שלך בלבד.
-
-CLAUDE.md עולה ל-GitHub ומשותף עם כל מי שעובד על הפרויקט. לכן הוא מכיל כללים אוניברסליים: ארכיטקטורה, גבולות, תקנים.
-
-CLAUDE.local.md נשאר אצלך בלבד. הוא נמצא ב-.gitignore ולא עולה לשום מקום. שמים שם דברים אישיים:
-
-markdown
-
-# CLAUDE.local.md
-
-## סביבה מקומית
-
-- Python נמצא ב: C:\Python312
-
-- Node נמצא ב: C:\Program Files\nodejs
-
-- קובץ הספר לעיבוד: D:\Books\AI_Developer_Fitness.docx
-
-## העדפות אישיות
-
-- תמיד הצג התקדמות בעברית
-
-- לפני כל פעולה destructive שאל אותי
-
-פתח את CLAUDE.local.md וכתוב בו את הנתיבים של הסביבה שלך. זה הקובץ היחיד בפרויקט שאף אחד מלבדך לא יראה.
-
-## tasks/todo.md ו-tasks/lessons.md
-
-שני הקבצים האלה הם הזיכרון החי של הפרויקט.
-
-tasks/todo.md הוא תוכנית העבודה. לפני כל משימה שהסוכן מבצע, הוא כותב לשם את התוכנית ולא מתחיל לכתוב קוד לפני שאתה מאשר. זה מונע את אחת הבעיות הנפוצות ביותר: סוכן שמתחיל לבצע ורק אחר כך מגלה שהבין את המשימה אחרת.
-
-markdown
-
-# tasks/todo.md
-
-## משימה נוכחית
-
-פירוק AI_Developer_Fitness.docx לפרקים
-
-## תוכנית
-
-- [ ] Explorer סורק את הקובץ ומדווח על מבנה
-
-- [ ] Parser מחלץ כל פרק לקובץ נפרד
-
-- [ ] Translator מתרגם כל פרק לאנגלית
-
-- [ ] Organizer מסדר את הקבצים במבנה הנכון
-
-## סטטוס
-
-בביצוע
-
-tasks/lessons.md הוא הזיכרון המצטבר. בכל פעם שאתה מתקן את הסוכן, הוא כותב לשם את הלקח. בפתיחת session חדש, הסוכן קורא את הקובץ הזה לפני שמתחיל לעבוד.
-
-markdown
-
-# tasks/lessons.md
-
-## לקחים
-
-### 2026-04-05
-
-כשמחלצים תמונות מ-Word, חייב לשמור את שם המשתנה
-
-המקורי ולא לשנות אותו. תמונה ששמה השתנה שוברת
-
-את ההפניה בתוך קובץ ה-MD.
-
-### 2026-04-05
-
-Translator לא מתרגם כותרות עם מספרים. צריך
-
-להוסיף לו הוראה מפורשת לכך.
-
-אחרי שבוע של עבודה, lessons.md הוא המסמך הכי יקר בפרויקט. הוא מכיל את כל מה שלמדת על האופן שבו הסוכנים שלך מתנהגים.
-
-מי כותב ל-lessons.md? שניהם. הסוכן כותב כשהוא מתקן שגיאה בעצמו, Error Handler מוגדר לכתוב אחרי כל תיקון. אתה כותב כשאתה מגלה תובנה ארכיטקטונית שהסוכן לא יכול לדעת לבד.
-
-מי קורא את lessons.md? הסוכן קורא אותו בתחילת כל session לפני שהוא מתחיל לעבוד. זה מה שמאפשר לו לדעת מראש מה לא לעשות, בלי לשאול אותך ובלי לחזור שוב על טעויות ישנות.
-
-Claude Code לא זוכר בין sessions. כל session מתחיל מאפס. lessons.md הוא מה שמחבר בין sessions ומונע מהמערכת לחזור על אותן טעויות שוב ושוב. זהו הזיכרון של המערכת.
-
-פתח את שני הקבצים והוסף כותרת ראשונית:
-
-tasks/todo.md:
-
-markdown
-
-# tasks/todo.md
-
-## משימה נוכחית
-
-_תתעדכן לפני כל משימה_
-
-tasks/lessons.md:
-
-markdown
-
-# tasks/lessons.md
-
-## לקחים
-
-_יתעדכן לאחר כל תיקון_
-
-הקוד בפעולה
-
-הקוד המלא של פרק זה זמין ב:  https://github.com/tomkedem/bookforge
-
-עיין בשינויים, הרץ, ושאל שאלות ישירות ב-Issues.
-
-## Project Index למניעת קריאות כפולות
-
-אחת הבעיות הנפוצות ביותר במערכות סוכנים היא קריאות כפולות. הסוכן פותח את אותו קובץ שוב ושוב, שורף tokens מיותרים, ומאט את כל הפרויקט. מחקר שנעשה על 132 sessions הראה ש-71% מכלל קריאות הקבצים היו קבצים שהסוכן כבר פתח באותו session.
-
-הפתרון הוא Project Index, מפה של הפרויקט שהסוכן קורא פעם אחת בתחילת כל session ומשתמש בה כדי לדעת מה יש בכל קובץ לפני שהוא פותח אותו.
-
-Project Index נכתב ישירות בתוך CLAUDE.md:
-
-markdown
-
-## Project Index
-
-### קבצי מקור
-
-src/pipeline/ingest.py       קריאת קובץ Word או PDF וחילוץ טקסט גולמי
-
-src/pipeline/parse.py        פירוק לפרקים לפי כותרות
-
-src/pipeline/organize.py     בניית מבנה קבצי MD לפי שפה
-
-src/pipeline/build.py        יצירת skeleton של אפליקציית Astro
-
-### סוכנים
-
-.claude/agents/explorer.md      סורק מבנה קבצים
-
-.claude/agents/parser.md        מחלץ פרקים ותמונות
-
-.claude/agents/translator.md    מתרגם מעברית לאנגלית
-
-.claude/agents/organizer.md     מסדר קבצי MD
-
-.claude/agents/ui-designer.md   מעצב קומפוננטים
-
-.claude/agents/builder.md       בונה קוד Astro
-
-### פלט
-
-output/{book-name}/chapter-01.he.md    פרק בעברית
-
-output/{book-name}/chapter-01.en.md    פרק באנגלית
-
-output/{book-name}/assets/             תמונות
-
-כל פעם שמוסיפים קובץ חדש לפרויקט, מעדכנים את ה-Index. הסוכן לא צריך לסרוק את הפרויקט מאפס בכל session, הוא כבר יודע מה יש ואיפה.
-
-פתח את CLAUDE.md והוסף את ה-Project Index שלך. עדכן אותו לפי מבנה הפרויקט הספציפי שלך.
-
-## הקוד בפעולה
-
-הקוד המלא של פרק זה זמין ב:  https://github.com/tomkedem/bookforge
-
-עיין בשינויים, הרץ, ושאל שאלות ישירות ב-Issues.
-
-מה יש עכשיו ב-GitHub
-
-bookforge/
-
-├── README.md
-
-├── CLAUDE.md
-
-├── .gitignore
-
-├── docs/
-
-│   └── architecture-thinking.md
-
-└── tasks/
-
-├── todo.md
-
-└── lessons.md
-
-לפרק הכנה הבאנו README.md. פרק 1 הביא את architecture-thinking.md. פרק 2 הביא את CLAUDE.md, .gitignore, ואת תיקיית tasks.
-
-הפרויקט מתחיל לקבל צורה. עדיין אין קוד. עדיין אין סוכנים. אבל יש ארכיטקטורה, חוקה, וזיכרון.
- </div> </div> <!-- English version (default) --> <div data-en class="visible" dir="ltr" style="text-align: left" data-astro-cid-hov2pql7> <h1 data-astro-cid-hov2pql7>Chapter 2: CLAUDE.md as Architecture</h1> <div class="chapter-metadata" data-astro-cid-hov2pql7> <span class="word-count" data-astro-cid-hov2pql7>1200 words</span> <span class="reading-time" data-astro-cid-hov2pql7>6 min read</span> </div> <div class="chapter-content prose prose-lg" data-astro-cid-hov2pql7> # Chapter 2: CLAUDE.md as Architecture
-
-## CLAUDE.md as Constitution
-
-Most developers using Claude Code write CLAUDE.md once, put a few general instructions in it, and forget about it. The result is an agent that behaves differently in each session, makes wrong decisions, and causes you to go back and fix the same things over and over again.
-
-CLAUDE.md is not a README. It's not documentation. It's the constitution of the project.
-
-The difference between a document and a constitution is simple: a document describes. A constitution mandates. When you write in CLAUDE.md "don't touch output files without explicit approval," that's not a recommendation. It's a rule that the agent respects in every session and every task it performs.
-
-The agent reads CLAUDE.md at the beginning of each session. What you didn't write there, it will decide on its own. And not always the way you want.
-
-## Setting Up Project Files
-
-Before continuing, create the following files in the project root:
-
-**Mac / Linux:**
-
-```bash
-touch CLAUDE.md
+</button> </div> <script type="module" src="/_astro/LanguageToggle.astro_astro_type_script_index_0_lang.ChUskGOR.js"></script> </div> </header> <main class="w-full">  <article class="mx-auto max-w-reading px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16" style="margin-left: 260px; margin-right: 260px;" data-astro-cid-fe7wjrka> <!-- Chapter content --> <div class="prose prose-invert max-w-none space-y-6" data-language="en" data-astro-cid-fe7wjrka>   <div class="sidebars-container" data-astro-cid-x5m5n3h5> <!-- Right Sidebar: Table of Contents (כל הפרקים) --> <aside class="toc-sidebar toc-sidebar-right" id="toc-sidebar" data-rtl="false" aria-label="Table of Contents" data-astro-cid-x5m5n3h5> <h3 class="toc-title" data-astro-cid-x5m5n3h5> <span data-he="פרקים" data-en="Chapters" data-astro-cid-x5m5n3h5> Chapters </span> </h3> <nav class="toc-list" data-astro-cid-x5m5n3h5> <ul data-astro-cid-x5m5n3h5> <li class="toc-item" data-chapter-id="1" data-astro-cid-x5m5n3h5> <a href="/read/sample-book/1" class="toc-link" data-astro-cid-x5m5n3h5> <span class="toc-number" data-astro-cid-x5m5n3h5> 01 </span> <span class="toc-chapter-title" data-astro-cid-x5m5n3h5> <span data-he="פרק הכנה: פרויקט ההדגמה והסביבה" data-en="Setup Chapter: The Demo Project and Environment" data-astro-cid-x5m5n3h5> Setup Chapter: The Demo Project and Environment </span> </span> </a> </li><li class="toc-item" data-chapter-id="2" data-astro-cid-x5m5n3h5> <a href="/read/sample-book/2" class="toc-link" data-astro-cid-x5m5n3h5> <span class="toc-number" data-astro-cid-x5m5n3h5> 02 </span> <span class="toc-chapter-title" data-astro-cid-x5m5n3h5> <span data-he="פרק 1: שינוי מודל המנטלי" data-en="Chapter 1: Changing Your Mental Model" data-astro-cid-x5m5n3h5> Chapter 1: Changing Your Mental Model </span> </span> </a> </li><li class="toc-item toc-item-active" data-chapter-id="3" data-astro-cid-x5m5n3h5> <a href="/read/sample-book/3" class="toc-link toc-link-active" aria-current="page" data-astro-cid-x5m5n3h5> <span class="toc-number" data-astro-cid-x5m5n3h5> 03 </span> <span class="toc-chapter-title" data-astro-cid-x5m5n3h5> <span data-he="פרק 2: CLAUDE.md כארכיטקטורה" data-en="Chapter 2: CLAUDE.md as Architecture" data-astro-cid-x5m5n3h5> Chapter 2: CLAUDE.md as Architecture </span> </span> </a> </li><li class="toc-item" data-chapter-id="4" data-astro-cid-x5m5n3h5> <a href="/read/sample-book/4" class="toc-link" data-astro-cid-x5m5n3h5> <span class="toc-number" data-astro-cid-x5m5n3h5> 04 </span> <span class="toc-chapter-title" data-astro-cid-x5m5n3h5> <span data-he="פרק 3: Subagents, חלוקת עבודה נכונה" data-en="Chapter 3: Subagents, Proper Division of Labor" data-astro-cid-x5m5n3h5> Chapter 3: Subagents, Proper Division of Labor </span> </span> </a> </li> </ul> </nav> </aside> <!-- Left Sidebar: Chapter Outline (headings של הפרק) --> <aside class="outline-sidebar outline-sidebar-left" id="outline-sidebar" data-rtl="false" aria-label="Chapter Outline" data-astro-cid-x5m5n3h5> <h3 class="outline-title" data-astro-cid-x5m5n3h5> <span data-he="בפרק זה" data-en="In This Chapter" data-astro-cid-x5m5n3h5> In This Chapter </span> </h3> <nav id="chapter-outline" class="outline-list" data-astro-cid-x5m5n3h5> <ul data-astro-cid-x5m5n3h5>  </ul> </nav> </aside> </div>  <script type="module">function f(e){const t=document.querySelector(".toc-title span");if(t){const n=t.getAttribute("data-he"),i=t.getAttribute("data-en");t.textContent=e==="he"?n:i}const o=document.querySelector(".outline-title span");if(o){const n=o.getAttribute("data-he"),i=o.getAttribute("data-en");o.textContent=e==="he"?n:i}document.querySelectorAll(".toc-chapter-title span").forEach(n=>{const i=n.getAttribute("data-he"),r=n.getAttribute("data-en");n.textContent=e==="he"?i:r})}function g(){const e=document.getElementById("chapter-outline");if(!e)return;const t=e.querySelector("ul");t&&(t.innerHTML="");const o=document.getElementById("chapter-container");if(!o)return;const n=o.querySelector("[data-he]:not(.hidden)"),i=o.querySelector("[data-en]:not(.hidden)"),r=n||i;if(!r)return;const s=Array.from(r.querySelectorAll("h2, h3"));if(s.length===0){const c=document.createElement("li");c.style.color="#cccccc",c.style.fontSize="12px",c.textContent="No sections found",t&&t.appendChild(c);return}s.forEach((c,h)=>{const p=c.tagName.toLowerCase(),x=c.textContent?.trim()||`Section ${h+1}`,l=`section-${h}`;c.id=l;const d=document.createElement("li");d.setAttribute("data-level",p);const a=document.createElement("a");a.href=`#${l}`,a.textContent=x,a.addEventListener("click",y=>{y.preventDefault();const m=document.getElementById(l);m&&m.scrollIntoView({behavior:"smooth",block:"start"})}),d.appendChild(a),t&&t.appendChild(d)})}function u(e="en"){f(e),setTimeout(()=>{g()},150)}document.readyState==="loading"?document.addEventListener("DOMContentLoaded",()=>{u("en")}):u("en");window.addEventListener("language-changed",e=>{const t=e.detail?.language||"en";f(t),setTimeout(()=>{g()},150)});document.addEventListener("astro:after-swap",()=>{u("en")});</script>  <div id="chapter-container" data-chapter-id="3" data-book="sample-book" data-astro-cid-hov2pql7> <!-- Hebrew version --> <div data-he class="hidden" dir="rtl" style="text-align: right" data-astro-cid-hov2pql7> <h1 data-astro-cid-hov2pql7>פרק 2: CLAUDE.md כארכיטקטורה</h1> <div class="chapter-metadata" data-astro-cid-hov2pql7> <span class="word-count" data-astro-cid-hov2pql7>1200 words</span> <span class="reading-time" data-astro-cid-hov2pql7>6 min read</span> </div> <div class="chapter-content prose prose-lg" data-astro-cid-hov2pql7> <h1>פרק 2: CLAUDE.md כארכיטקטורה</h1>
+<h2>CLAUDE.md כחוקה</h2>
+<p>רוב המפתחים שמשתמשים ב-Claude Code כותבים CLAUDE.md פעם אחת, שמים בו כמה הוראות כלליות, ושוכחים ממנו. התוצאה היא סוכן שמתנהג אחרת בכל session, מקבל החלטות שגויות, וגורם לך לחזור ולתקן את אותם דברים שוב ושוב.</p>
+<p>CLAUDE.md הוא לא README. הוא לא תיעוד. הוא החוקה של הפרויקט.</p>
+<p>ההבדל בין מסמך לחוקה הוא פשוט: מסמך מתאר. חוקה מחייבת. כשאתה כותב ב-CLAUDE.md &quot;אל תגע בקבצי output ללא אישור מפורש&quot;, זה לא המלצה. זה כלל שהסוכן מכבד בכל session ובכל משימה שהוא מבצע.</p>
+<p>הסוכן קורא את CLAUDE.md בתחילת כל session. מה שלא כתבת שם, הוא יחליט לבד. ולא תמיד כמו שתרצה.</p>
+<p>לפני שממשיכים, צור את הקבצים הבאים בשורש הפרויקט:</p>
+<p>Mac / Linux:</p>
+<p>Bash</p>
+<p>touch CLAUDE.md</p>
+<p>touch CLAUDE.local.md</p>
+<p>touch .gitignore</p>
+<p>mkdir tasks</p>
+<p>touch tasks/todo.md</p>
+<p>touch tasks/lessons.md</p>
+<p>Windows:</p>
+<p>Powershell</p>
+<p>ni CLAUDE.md</p>
+<p>ni CLAUDE.local.md</p>
+<p>ni .gitignore</p>
+<p>ni -ItemType Directory tasks</p>
+<p>ni tasks\todo.md</p>
+<p>ni tasks\lessons.md</p>
+<p>.gitignore</p>
+<p>הקובץ הראשון שנמלא הוא .gitignore הוא מגדיר אילו קבצים Git לא יעלה לעולם ל-GitHub.</p>
+<p>פתח את .gitignore והוסף:</p>
+<h1>קבצים אישיים שלא עולים ל-GitHub</h1>
+<p>CLAUDE.local.md</p>
+<h1>תלויות</h1>
+<p>node_modules/</p>
+<h1>קבצי סביבה</h1>
+<p>.env</p>
+<p>.env.local</p>
+<p>Mac / Linux:</p>
+<p>bash</p>
+<p>echo &quot;CLAUDE.local.md&quot; &gt;&gt; .gitignore</p>
+<p>Windows:</p>
+<p>powershell</p>
+<p>Add-Content .gitignore &quot;CLAUDE.local.md&quot;</p>
+<h2>CLAUDE.local.md להגדרות אישיות</h2>
+<p>יש הגדרות ששייכות לפרויקט ויש הגדרות ששייכות למכונה שלך בלבד.</p>
+<p>CLAUDE.md עולה ל-GitHub ומשותף עם כל מי שעובד על הפרויקט. לכן הוא מכיל כללים אוניברסליים: ארכיטקטורה, גבולות, תקנים.</p>
+<p>CLAUDE.local.md נשאר אצלך בלבד. הוא נמצא ב-.gitignore ולא עולה לשום מקום. שמים שם דברים אישיים:</p>
+<p>markdown</p>
+<h1>CLAUDE.local.md</h1>
+<h2>סביבה מקומית</h2>
+<ul>
+<li><p>Python נמצא ב: C:\Python312</p>
+</li>
+<li><p>Node נמצא ב: C:\Program Files\nodejs</p>
+</li>
+<li><p>קובץ הספר לעיבוד: D:\Books\AI_Developer_Fitness.docx</p>
+</li>
+</ul>
+<h2>העדפות אישיות</h2>
+<ul>
+<li><p>תמיד הצג התקדמות בעברית</p>
+</li>
+<li><p>לפני כל פעולה destructive שאל אותי</p>
+</li>
+</ul>
+<p>פתח את CLAUDE.local.md וכתוב בו את הנתיבים של הסביבה שלך. זה הקובץ היחיד בפרויקט שאף אחד מלבדך לא יראה.</p>
+<h2>tasks/todo.md ו-tasks/lessons.md</h2>
+<p>שני הקבצים האלה הם הזיכרון החי של הפרויקט.</p>
+<p>tasks/todo.md הוא תוכנית העבודה. לפני כל משימה שהסוכן מבצע, הוא כותב לשם את התוכנית ולא מתחיל לכתוב קוד לפני שאתה מאשר. זה מונע את אחת הבעיות הנפוצות ביותר: סוכן שמתחיל לבצע ורק אחר כך מגלה שהבין את המשימה אחרת.</p>
+<p>markdown</p>
+<h1>tasks/todo.md</h1>
+<h2>משימה נוכחית</h2>
+<p>פירוק AI_Developer_Fitness.docx לפרקים</p>
+<h2>תוכנית</h2>
+<ul>
+<li><p><input disabled="" type="checkbox"> Explorer סורק את הקובץ ומדווח על מבנה</p>
+</li>
+<li><p><input disabled="" type="checkbox"> Parser מחלץ כל פרק לקובץ נפרד</p>
+</li>
+<li><p><input disabled="" type="checkbox"> Translator מתרגם כל פרק לאנגלית</p>
+</li>
+<li><p><input disabled="" type="checkbox"> Organizer מסדר את הקבצים במבנה הנכון</p>
+</li>
+</ul>
+<h2>סטטוס</h2>
+<p>בביצוע</p>
+<p>tasks/lessons.md הוא הזיכרון המצטבר. בכל פעם שאתה מתקן את הסוכן, הוא כותב לשם את הלקח. בפתיחת session חדש, הסוכן קורא את הקובץ הזה לפני שמתחיל לעבוד.</p>
+<p>markdown</p>
+<h1>tasks/lessons.md</h1>
+<h2>לקחים</h2>
+<h3>2026-04-05</h3>
+<p>כשמחלצים תמונות מ-Word, חייב לשמור את שם המשתנה</p>
+<p>המקורי ולא לשנות אותו. תמונה ששמה השתנה שוברת</p>
+<p>את ההפניה בתוך קובץ ה-MD.</p>
+<h3>2026-04-05</h3>
+<p>Translator לא מתרגם כותרות עם מספרים. צריך</p>
+<p>להוסיף לו הוראה מפורשת לכך.</p>
+<p>אחרי שבוע של עבודה, lessons.md הוא המסמך הכי יקר בפרויקט. הוא מכיל את כל מה שלמדת על האופן שבו הסוכנים שלך מתנהגים.</p>
+<p>מי כותב ל-lessons.md? שניהם. הסוכן כותב כשהוא מתקן שגיאה בעצמו, Error Handler מוגדר לכתוב אחרי כל תיקון. אתה כותב כשאתה מגלה תובנה ארכיטקטונית שהסוכן לא יכול לדעת לבד.</p>
+<p>מי קורא את lessons.md? הסוכן קורא אותו בתחילת כל session לפני שהוא מתחיל לעבוד. זה מה שמאפשר לו לדעת מראש מה לא לעשות, בלי לשאול אותך ובלי לחזור שוב על טעויות ישנות.</p>
+<p>Claude Code לא זוכר בין sessions. כל session מתחיל מאפס. lessons.md הוא מה שמחבר בין sessions ומונע מהמערכת לחזור על אותן טעויות שוב ושוב. זהו הזיכרון של המערכת.</p>
+<p>פתח את שני הקבצים והוסף כותרת ראשונית:</p>
+<p>tasks/todo.md:</p>
+<p>markdown</p>
+<h1>tasks/todo.md</h1>
+<h2>משימה נוכחית</h2>
+<p><em>תתעדכן לפני כל משימה</em></p>
+<p>tasks/lessons.md:</p>
+<p>markdown</p>
+<h1>tasks/lessons.md</h1>
+<h2>לקחים</h2>
+<p><em>יתעדכן לאחר כל תיקון</em></p>
+<p>הקוד בפעולה</p>
+<p>הקוד המלא של פרק זה זמין ב:  <a href="https://github.com/tomkedem/bookforge">https://github.com/tomkedem/bookforge</a></p>
+<p>עיין בשינויים, הרץ, ושאל שאלות ישירות ב-Issues.</p>
+<h2>Project Index למניעת קריאות כפולות</h2>
+<p>אחת הבעיות הנפוצות ביותר במערכות סוכנים היא קריאות כפולות. הסוכן פותח את אותו קובץ שוב ושוב, שורף tokens מיותרים, ומאט את כל הפרויקט. מחקר שנעשה על 132 sessions הראה ש-71% מכלל קריאות הקבצים היו קבצים שהסוכן כבר פתח באותו session.</p>
+<p>הפתרון הוא Project Index, מפה של הפרויקט שהסוכן קורא פעם אחת בתחילת כל session ומשתמש בה כדי לדעת מה יש בכל קובץ לפני שהוא פותח אותו.</p>
+<p>Project Index נכתב ישירות בתוך CLAUDE.md:</p>
+<p>markdown</p>
+<h2>Project Index</h2>
+<h3>קבצי מקור</h3>
+<p>src/pipeline/ingest.py       קריאת קובץ Word או PDF וחילוץ טקסט גולמי</p>
+<p>src/pipeline/parse.py        פירוק לפרקים לפי כותרות</p>
+<p>src/pipeline/organize.py     בניית מבנה קבצי MD לפי שפה</p>
+<p>src/pipeline/build.py        יצירת skeleton של אפליקציית Astro</p>
+<h3>סוכנים</h3>
+<p>.claude/agents/explorer.md      סורק מבנה קבצים</p>
+<p>.claude/agents/parser.md        מחלץ פרקים ותמונות</p>
+<p>.claude/agents/translator.md    מתרגם מעברית לאנגלית</p>
+<p>.claude/agents/organizer.md     מסדר קבצי MD</p>
+<p>.claude/agents/ui-designer.md   מעצב קומפוננטים</p>
+<p>.claude/agents/builder.md       בונה קוד Astro</p>
+<h3>פלט</h3>
+<p>output/{book-name}/chapter-01.he.md    פרק בעברית</p>
+<p>output/{book-name}/chapter-01.en.md    פרק באנגלית</p>
+<p>output/{book-name}/assets/             תמונות</p>
+<p>כל פעם שמוסיפים קובץ חדש לפרויקט, מעדכנים את ה-Index. הסוכן לא צריך לסרוק את הפרויקט מאפס בכל session, הוא כבר יודע מה יש ואיפה.</p>
+<p>פתח את CLAUDE.md והוסף את ה-Project Index שלך. עדכן אותו לפי מבנה הפרויקט הספציפי שלך.</p>
+<h2>הקוד בפעולה</h2>
+<p>הקוד המלא של פרק זה זמין ב:  <a href="https://github.com/tomkedem/bookforge">https://github.com/tomkedem/bookforge</a></p>
+<p>עיין בשינויים, הרץ, ושאל שאלות ישירות ב-Issues.</p>
+<p>מה יש עכשיו ב-GitHub</p>
+<p>bookforge/</p>
+<p>├── README.md</p>
+<p>├── CLAUDE.md</p>
+<p>├── .gitignore</p>
+<p>├── docs/</p>
+<p>│   └── architecture-thinking.md</p>
+<p>└── tasks/</p>
+<p>├── todo.md</p>
+<p>└── lessons.md</p>
+<p>לפרק הכנה הבאנו README.md. פרק 1 הביא את architecture-thinking.md. פרק 2 הביא את CLAUDE.md, .gitignore, ואת תיקיית tasks.</p>
+<p>הפרויקט מתחיל לקבל צורה. עדיין אין קוד. עדיין אין סוכנים. אבל יש ארכיטקטורה, חוקה, וזיכרון.</p>
+ </div> </div> <!-- English version (default) --> <div data-en class="visible" dir="ltr" style="text-align: left" data-astro-cid-hov2pql7> <h1 data-astro-cid-hov2pql7>Chapter 2: CLAUDE.md as Architecture</h1> <div class="chapter-metadata" data-astro-cid-hov2pql7> <span class="word-count" data-astro-cid-hov2pql7>1200 words</span> <span class="reading-time" data-astro-cid-hov2pql7>6 min read</span> </div> <div class="chapter-content prose prose-lg" data-astro-cid-hov2pql7> <h1>Chapter 2: CLAUDE.md as Architecture</h1>
+<h2>CLAUDE.md as Constitution</h2>
+<p>Most developers using Claude Code write CLAUDE.md once, put a few general instructions in it, and forget about it. The result is an agent that behaves differently in each session, makes wrong decisions, and causes you to go back and fix the same things over and over again.</p>
+<p>CLAUDE.md is not a README. It&#39;s not documentation. It&#39;s the constitution of the project.</p>
+<p>The difference between a document and a constitution is simple: a document describes. A constitution mandates. When you write in CLAUDE.md &quot;don&#39;t touch output files without explicit approval,&quot; that&#39;s not a recommendation. It&#39;s a rule that the agent respects in every session and every task it performs.</p>
+<p>The agent reads CLAUDE.md at the beginning of each session. What you didn&#39;t write there, it will decide on its own. And not always the way you want.</p>
+<h2>Setting Up Project Files</h2>
+<p>Before continuing, create the following files in the project root:</p>
+<p><strong>Mac / Linux:</strong></p>
+<pre><code class="language-bash">touch CLAUDE.md
 touch CLAUDE.local.md
 touch .gitignore
 mkdir tasks
 touch tasks/todo.md
 touch tasks/lessons.md
-```
-
-**Windows:**
-
-```powershell
-ni CLAUDE.md
+</code></pre>
+<p><strong>Windows:</strong></p>
+<pre><code class="language-powershell">ni CLAUDE.md
 ni CLAUDE.local.md
 ni .gitignore
 ni -ItemType Directory tasks
 ni tasks\todo.md
 ni tasks\lessons.md
-```
-
-## .gitignore
-
-The first file we fill is .gitignore which defines which files Git will never upload to GitHub.
-
-Open .gitignore and add:
-
-```
-# Personal files that don't go to GitHub
+</code></pre>
+<h2>.gitignore</h2>
+<p>The first file we fill is .gitignore which defines which files Git will never upload to GitHub.</p>
+<p>Open .gitignore and add:</p>
+<pre><code># Personal files that don&#39;t go to GitHub
 CLAUDE.local.md
 
 # Dependencies
@@ -335,30 +198,18 @@ node_modules/
 # Environment files
 .env
 .env.local
-```
-
-**Mac / Linux:**
-
-```bash
-echo "CLAUDE.local.md" >> .gitignore
-```
-
-**Windows:**
-
-```powershell
-Add-Content .gitignore "CLAUDE.local.md"
-```
-
-## CLAUDE.local.md for Personal Settings
-
-There are settings that belong to the project and settings that belong to your machine alone.
-
-CLAUDE.md goes to GitHub and is shared with everyone working on the project. So it contains universal rules: architecture, boundaries, standards.
-
-CLAUDE.local.md stays with you alone. It's in .gitignore and doesn't go anywhere. We put personal things there:
-
-```markdown
-# CLAUDE.local.md
+</code></pre>
+<p><strong>Mac / Linux:</strong></p>
+<pre><code class="language-bash">echo &quot;CLAUDE.local.md&quot; &gt;&gt; .gitignore
+</code></pre>
+<p><strong>Windows:</strong></p>
+<pre><code class="language-powershell">Add-Content .gitignore &quot;CLAUDE.local.md&quot;
+</code></pre>
+<h2>CLAUDE.local.md for Personal Settings</h2>
+<p>There are settings that belong to the project and settings that belong to your machine alone.</p>
+<p>CLAUDE.md goes to GitHub and is shared with everyone working on the project. So it contains universal rules: architecture, boundaries, standards.</p>
+<p>CLAUDE.local.md stays with you alone. It&#39;s in .gitignore and doesn&#39;t go anywhere. We put personal things there:</p>
+<pre><code class="language-markdown"># CLAUDE.local.md
 
 ## Local Environment
 
@@ -370,18 +221,12 @@ CLAUDE.local.md stays with you alone. It's in .gitignore and doesn't go anywhere
 
 - Always show progress in Hebrew
 - Before every destructive action ask me
-```
-
-Open CLAUDE.local.md and write the paths of your environment in it. It's the only file in the project that no one but you will see.
-
-## tasks/todo.md and tasks/lessons.md
-
-These two files are the living memory of the project.
-
-**tasks/todo.md** is the work plan. Before each task the agent performs, it writes the plan there and doesn't start writing code before you approve. This prevents one of the most common problems: an agent that starts executing and only later discovers it understood the task differently.
-
-```markdown
-# tasks/todo.md
+</code></pre>
+<p>Open CLAUDE.local.md and write the paths of your environment in it. It&#39;s the only file in the project that no one but you will see.</p>
+<h2>tasks/todo.md and tasks/lessons.md</h2>
+<p>These two files are the living memory of the project.</p>
+<p><strong>tasks/todo.md</strong> is the work plan. Before each task the agent performs, it writes the plan there and doesn&#39;t start writing code before you approve. This prevents one of the most common problems: an agent that starts executing and only later discovers it understood the task differently.</p>
+<pre><code class="language-markdown"># tasks/todo.md
 
 ## Current Task
 
@@ -397,12 +242,9 @@ Breaking down AI_Developer_Fitness.docx into chapters
 ## Status
 
 In progress
-```
-
-**tasks/lessons.md** is the cumulative memory. Every time you fix the agent, it writes the lesson there. When opening a new session, the agent reads this file before starting to work.
-
-```markdown
-# tasks/lessons.md
+</code></pre>
+<p><strong>tasks/lessons.md</strong> is the cumulative memory. Every time you fix the agent, it writes the lesson there. When opening a new session, the agent reads this file before starting to work.</p>
+<pre><code class="language-markdown"># tasks/lessons.md
 
 ## Lessons
 
@@ -414,52 +256,34 @@ the reference inside the MD file.
 
 ### 2026-04-05
 
-Translator doesn't translate titles with numbers. Need to
+Translator doesn&#39;t translate titles with numbers. Need to
 add an explicit instruction to it.
-```
-
-After a week of work, lessons.md is the most valuable document in the project. It contains everything you've learned about how your agents behave.
-
-Who writes to lessons.md? Both. The agent writes when it fixes an error itself, Error Handler is set to write after every fix. You write when you discover an architectural insight the agent can't know on its own.
-
-Who reads lessons.md? The agent reads it at the beginning of every session before it starts working. That's what allows it to know in advance what not to do, without asking you and without repeating old mistakes.
-
-Claude Code doesn't remember between sessions. Every session starts from scratch. lessons.md is what connects between sessions and prevents the system from repeating the same mistakes over and over. It's the system's memory.
-
-## Initial File Setup
-
-Open both files and add an initial heading:
-
-**tasks/todo.md:**
-
-```markdown
-# tasks/todo.md
+</code></pre>
+<p>After a week of work, lessons.md is the most valuable document in the project. It contains everything you&#39;ve learned about how your agents behave.</p>
+<p>Who writes to lessons.md? Both. The agent writes when it fixes an error itself, Error Handler is set to write after every fix. You write when you discover an architectural insight the agent can&#39;t know on its own.</p>
+<p>Who reads lessons.md? The agent reads it at the beginning of every session before it starts working. That&#39;s what allows it to know in advance what not to do, without asking you and without repeating old mistakes.</p>
+<p>Claude Code doesn&#39;t remember between sessions. Every session starts from scratch. lessons.md is what connects between sessions and prevents the system from repeating the same mistakes over and over. It&#39;s the system&#39;s memory.</p>
+<h2>Initial File Setup</h2>
+<p>Open both files and add an initial heading:</p>
+<p><strong>tasks/todo.md:</strong></p>
+<pre><code class="language-markdown"># tasks/todo.md
 
 ## Current Task
 
 _Will be updated before every task_
-```
-
-**tasks/lessons.md:**
-
-```markdown
-# tasks/lessons.md
+</code></pre>
+<p><strong>tasks/lessons.md:</strong></p>
+<pre><code class="language-markdown"># tasks/lessons.md
 
 ## Lessons
 
 _Will be updated after every fix_
-```
-
-## Project Index to Prevent Duplicate Reads
-
-One of the most common problems in agent systems is duplicate reads. The agent opens the same file over and over, burning unnecessary tokens, and slowing down the entire project. Research conducted on 132 sessions showed that 71% of all file reads were files the agent had already opened in the same session.
-
-The solution is Project Index, a map of the project that the agent reads once at the beginning of each session and uses to know what's in each file before opening it.
-
-Project Index is written directly inside CLAUDE.md:
-
-```markdown
-## Project Index
+</code></pre>
+<h2>Project Index to Prevent Duplicate Reads</h2>
+<p>One of the most common problems in agent systems is duplicate reads. The agent opens the same file over and over, burning unnecessary tokens, and slowing down the entire project. Research conducted on 132 sessions showed that 71% of all file reads were files the agent had already opened in the same session.</p>
+<p>The solution is Project Index, a map of the project that the agent reads once at the beginning of each session and uses to know what&#39;s in each file before opening it.</p>
+<p>Project Index is written directly inside CLAUDE.md:</p>
+<pre><code class="language-markdown">## Project Index
 
 ### Source Files
 
@@ -482,22 +306,14 @@ src/pipeline/build.py        Creating skeleton of Astro application
 output/{book-name}/chapter-01.he.md    Chapter in Hebrew
 output/{book-name}/chapter-01.en.md    Chapter in English
 output/{book-name}/assets/             Images
-```
-
-Every time you add a new file to the project, update the Index. The agent doesn't need to scan the project from scratch in every session, it already knows what exists and where.
-
-Open CLAUDE.md and add the Project Index. Update it according to your specific project structure.
-
-## The Code in Action
-
-The full code for this chapter is available at: https://github.com/tomkedem/bookforge
-
-Check out the changes, run, and ask questions directly in Issues.
-
-### What's on GitHub Now
-
-```
-bookforge/
+</code></pre>
+<p>Every time you add a new file to the project, update the Index. The agent doesn&#39;t need to scan the project from scratch in every session, it already knows what exists and where.</p>
+<p>Open CLAUDE.md and add the Project Index. Update it according to your specific project structure.</p>
+<h2>The Code in Action</h2>
+<p>The full code for this chapter is available at: <a href="https://github.com/tomkedem/bookforge">https://github.com/tomkedem/bookforge</a></p>
+<p>Check out the changes, run, and ask questions directly in Issues.</p>
+<h3>What&#39;s on GitHub Now</h3>
+<pre><code>bookforge/
 ├── README.md
 ├── CLAUDE.md
 ├── .gitignore
@@ -506,10 +322,8 @@ bookforge/
 └── tasks/
     ├── todo.md
     └── lessons.md
-```
-
-In the introduction we brought README.md. Chapter 1 brought architecture-thinking.md. Chapter 2 brought CLAUDE.md, .gitignore, and the tasks folder.
-
-The project is starting to take shape. There's still no code. There's still no agents. But there's architecture, constitution, and memory.
+</code></pre>
+<p>In the introduction we brought README.md. Chapter 1 brought architecture-thinking.md. Chapter 2 brought CLAUDE.md, .gitignore, and the tasks folder.</p>
+<p>The project is starting to take shape. There&#39;s still no code. There&#39;s still no agents. But there&#39;s architecture, constitution, and memory.</p>
  </div> </div> <!-- Chapter navigation --> <nav class="flex flex-row items-center justify-between gap-4 py-6 border-t border-yuval-border-secondary mt-12" aria-label="Chapter navigation"> <a href="/read/sample-book/2" class="inline-flex items-center gap-2 px-4 py-2 font-body text-sm font-medium text-yuval-text hover:text-yuval-text-secondary transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yuval-text" data-he="הפרק הקודם" data-en="Previous Chapter">  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"> <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path> </svg> <span>Chapter 1: Changing Your Mental Model</span>  </a> <div class="flex flex-col items-center gap-1"> <span class="text-xs font-body text-yuval-text-tertiary uppercase tracking-wide" data-he="פרק 4 מתוך 4" data-en="Chapter 4 of 4">
 Chapter 4 of 4 </span> <h2 class="text-center font-heading font-bold text-lg text-yuval-text" data-he="פרק 2: CLAUDE.md כארכיטקטורה" data-en="Chapter 2: CLAUDE.md as Architecture"> Chapter 2: CLAUDE.md as Architecture </h2> </div> <a href="/read/sample-book/4" class="inline-flex items-center gap-2 px-4 py-2 font-body text-sm font-medium text-yuval-text hover:text-yuval-text-secondary transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yuval-text" data-he="הפרק הבא" data-en="Next Chapter">  <span>Chapter 3: Subagents, Proper Division of Labor</span> <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"> <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path> </svg>  </a> </nav> </div>  </div> <!-- Custom prose styles for reading -->  </article>  </main> <script type="module" src="/_astro/BaseLayout.astro_astro_type_script_index_0_lang.Don7ohaG.js"></script> </body> </html>  <script type="module" src="/_astro/_chapter_.astro_astro_type_script_index_0_lang.DHEf8YIE.js"></script>
