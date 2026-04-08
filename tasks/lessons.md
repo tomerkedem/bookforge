@@ -46,3 +46,30 @@ Language/RTL logic חוזר בכל קומפוננט (7+ מיקומים).
 ### 2026-04-08
 Builder צריך להוסיף data-he ו-data-en attributes לכל elements שבהם text.
 זה נחוץ לmultilingual content switching בצד הלקוח.
+
+### 2026-04-08
+AbortController חיוני לניקוי event listeners בAstro SPA.
+בכל component שמוסיף event listener, צריך:
+1. `const controller = new AbortController()`
+2. `addEventListener(..., { signal: controller.signal })`
+3. Cleanup on `astro:before-unmount` ו-`window.unload`
+
+### 2026-04-08
+Language switching צריך centralized utilities, לא שכפול בכל component.
+יצרנו language.ts עם:
+- getLanguageFromStorage() - single source of truth
+- setLanguageToStorage() - updates localStorage + cookie + DOM
+- applyLanguageToPage() - toggles data-he/data-en visibility
+- dispatchLanguageChangeEvent() - custom event for components
+זה חסך הרבה קוד כפול וזיהום.
+
+### 2026-04-08
+getStaticPaths() חיוני לכל dynamic routes בAstro static builds.
+צריך להגדיר את כל הפרמטרים האפשריים (books, chapters) לפני הבנייה.
+בלי זה הבנייה נכשלת עם "getStaticPaths required" error.
+
+### 2026-04-08
+markdown content loading עובד דרך fetch() ל-public files.
+בAstro static build, יש טוען לטעון files מתיקיית output/ דרך URL.
+צריך להעביר markdown files ל-public/{book}/{chapter}.{lang}.md 
+או למטמון בבנייה כחלק של content collection.
