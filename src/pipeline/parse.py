@@ -64,11 +64,15 @@ def _classify_chapter(title: str, index: int) -> str:
 def extract_images(docx_path: str, book_name: str, output_dir: str = "output") -> dict:
     """
     Extracts images from a Word document and maps them to paragraph positions.
-    The FIRST image by document position (lowest para_idx) becomes cover.png.
-    Other images are numbered by their appearance order.
+    
+    Cover image detection logic:
+    - If an image exists BEFORE the first Heading 1 → that's the cover
+    - Otherwise, no cover.png is created (all images numbered sequentially)
+    
     Returns a dict with:
       - 'files': mapping rel_id to file path
       - 'positions': list of (paragraph_index, rel_id, filename)
+      - 'has_cover': boolean indicating if cover was found
     """
     try:
         from docx import Document
@@ -80,7 +84,14 @@ def extract_images(docx_path: str, book_name: str, output_dir: str = "output") -
     assets_dir = Path(output_dir) / book_name / "assets"
     assets_dir.mkdir(parents=True, exist_ok=True)
 
-    # Step 1: Build rel_id to image data mapping
+    # Step 1: Find first Heading 1 position
+    first_heading_idx = None
+    for idx, para in enumerate(doc.paragraphs):
+        if para.style and "Heading 1" in para.style.name:
+            first_heading_idx = idx
+            break
+    
+    # Step 2: Build rel_id to image data mapping
     image_data = {}
     for rel_id, rel in doc.part.rels.items():
         if "image" not in rel.reltype:
@@ -95,7 +106,7 @@ def extract_images(docx_path: str, book_name: str, output_dir: str = "output") -
         except Exception:
             continue
 
-    # Step 2: Map images to paragraph positions (find where each image appears)
+    # Step 3: Map images to paragraph positions
     image_positions_temp = []  # (para_idx, rel_id)
     for para_idx, para in enumerate(doc.paragraphs):
         for run in para.runs:
@@ -106,36 +117,54 @@ def extract_images(docx_path: str, book_name: str, output_dir: str = "output") -
                         image_positions_temp.append((para_idx, rel_id))
                         break
 
-    # Step 3: Sort by paragraph position to get document order
+    # Step 4: Sort by paragraph position
     image_positions_temp.sort(key=lambda x: x[0])
 
-    # Step 4: Save images - FIRST by position = cover.png, rest = image-XX
+    # Step 5: Determine if we have a cover image
+    has_cover = False
+    cover_rel_id = None
+    
+    if first_heading_idx is not None and len(image_positions_temp) > 0:
+        # Check if first image appears BEFORE first heading
+        first_img_idx = image_positions_temp[0][0]
+        if first_img_idx < first_heading_idx:
+            has_cover = True
+            cover_rel_id = image_positions_temp[0][1]
+            print(f"✓ Cover image found at paragraph {first_img_idx} (before Heading 1 at {first_heading_idx})")
+        else:
+            print(f"⚠ No cover image: First image at para {first_img_idx}, but Heading 1 at {first_heading_idx}")
+            print(f"  All images will be numbered sequentially (no cover.png)")
+    
+    # Step 6: Save images
     image_files = {}
     image_positions = []
+    image_counter = 1  # Start from 1 for chapter images
     
-    for idx, (para_idx, rel_id) in enumerate(image_positions_temp):
+    for para_idx, rel_id in image_positions_temp:
         img_info = image_data[rel_id]
         
-        if idx == 0:
-            # First image by POSITION (not by rel_id order) = cover
+        if has_cover and rel_id == cover_rel_id:
+            # This is the cover image
             cover_path = assets_dir / "cover.png"
             with open(cover_path, "wb") as f:
                 f.write(img_info["data"])
             image_files[rel_id] = str(cover_path)
             filename = "cover.png"
         else:
-            # Subsequent images numbered by appearance order
-            img_path = assets_dir / f"image-{str(idx).zfill(2)}.{img_info['ext']}"
+            # Regular chapter image
+            img_path = assets_dir / f"image-{str(image_counter).zfill(2)}.{img_info['ext']}"
             with open(img_path, "wb") as f:
                 f.write(img_info["data"])
             image_files[rel_id] = str(img_path)
-            filename = f"image-{str(idx).zfill(2)}.{img_info['ext']}"
+            filename = f"image-{str(image_counter).zfill(2)}.{img_info['ext']}"
+            image_counter += 1
         
         image_positions.append((para_idx, rel_id, filename))
 
     return {
         'files': image_files,
-        'positions': image_positions
+        'positions': image_positions,
+        'has_cover': has_cover
     }
 
 
