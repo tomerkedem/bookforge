@@ -22,7 +22,7 @@ export default {
         body: ["'Heebo'", 'system-ui', 'sans-serif'],
       },
       maxWidth: {
-        reading: '680px',
+        reading: '900px',
       },
       letterSpacing: {
         label: '0.12em',
