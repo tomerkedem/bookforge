@@ -28,6 +28,15 @@ Translator לא צריך לקרוא ל-API ישירות.
 parse.py חילץ תמונה אקראית לפי סדר relations ולא תמונת השער.
 צריך לחלץ לפי מיקום בדף, לא לפי סדר ה-relations.
 
+### 2026-04-09
+**CRITICAL BUG FIXED:** extract_images() שמר תמונה שגויה כ-cover.png.
+הבעיה: הקוד סרק doc.part.rels.items() והתמונה הראשונה ב-dictionary נשמרה כ-cover.
+סדר dictionary iteration אינו מובטח ולא מתאים לסדר המסמך.
+במקרה Machine Learning, rId13 (תמונה מעמוד 4) נשמרה כ-cover במקום rId11 (תמונה מפסקה 8).
+הפתרון: תחילה למפות כל תמונה ל-para_idx, למיין לפי מיקום, ואז התמונה עם para_idx הנמוך ביותר = cover.png.
+שאר התמונות ממוספרות לפי סדר הופעה בפועל במסמך (image-01, image-02...).
+זה מבטיח שתמונת השער תמיד תהיה הראשונה שמופיעה פיזית במסמך.
+
 ### 2026-04-08
 Builder צריך להטמיע טעינת chapter content מ-markdown files בדף קריאה.
 הדף /read/[book]/[chapter] לא צריך להיות stub. צריך עומס בפועלי של chapter-XX.he.md או chapter-XX.en.md

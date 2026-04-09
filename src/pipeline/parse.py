@@ -64,8 +64,8 @@ def _classify_chapter(title: str, index: int) -> str:
 def extract_images(docx_path: str, book_name: str, output_dir: str = "output") -> dict:
     """
     Extracts images from a Word document and maps them to paragraph positions.
-    First image goes to assets/cover.png.
-    Chapter images go to assets/.
+    The FIRST image by document position (lowest para_idx) becomes cover.png.
+    Other images are numbered by their appearance order.
     Returns a dict with:
       - 'files': mapping rel_id to file path
       - 'positions': list of (paragraph_index, rel_id, filename)
@@ -80,50 +80,58 @@ def extract_images(docx_path: str, book_name: str, output_dir: str = "output") -
     assets_dir = Path(output_dir) / book_name / "assets"
     assets_dir.mkdir(parents=True, exist_ok=True)
 
-    image_files = {}
-    image_positions = []
-    image_counter = 0
-
-    # Extract all images and map rel_id to files
+    # Step 1: Build rel_id to image data mapping
+    image_data = {}
     for rel_id, rel in doc.part.rels.items():
         if "image" not in rel.reltype:
             continue
-
         try:
             img_data = rel.target_part.blob
             content_type = rel.target_part.content_type
             ext = content_type.split("/")[-1]
             if ext == "jpeg":
                 ext = "jpg"
-
-            if image_counter == 0:
-                cover_path = assets_dir / "cover.png"
-                with open(cover_path, "wb") as f:
-                    f.write(img_data)
-                image_files[rel_id] = str(cover_path)
-            else:
-                img_path = assets_dir / f"image-{str(image_counter).zfill(2)}.{ext}"
-                with open(img_path, "wb") as f:
-                    f.write(img_data)
-                image_files[rel_id] = str(img_path)
-
-            image_counter += 1
+            image_data[rel_id] = {"data": img_data, "ext": ext}
         except Exception:
             continue
 
-    # Map images to paragraph positions
+    # Step 2: Map images to paragraph positions (find where each image appears)
+    image_positions_temp = []  # (para_idx, rel_id)
     for para_idx, para in enumerate(doc.paragraphs):
-        # Check for inline shapes (drawings/pictures)
         for run in para.runs:
-            # Look for embedded images in run XML
             run_xml = run._element.xml.decode('utf-8') if isinstance(run._element.xml, bytes) else run._element.xml
             if '<w:drawing' in run_xml or '<w:pict' in run_xml:
-                # Extract relationship IDs from the XML
-                for rel_id in image_files.keys():
+                for rel_id in image_data.keys():
                     if rel_id in run_xml:
-                        filename = Path(image_files[rel_id]).name
-                        image_positions.append((para_idx, rel_id, filename))
+                        image_positions_temp.append((para_idx, rel_id))
                         break
+
+    # Step 3: Sort by paragraph position to get document order
+    image_positions_temp.sort(key=lambda x: x[0])
+
+    # Step 4: Save images - FIRST by position = cover.png, rest = image-XX
+    image_files = {}
+    image_positions = []
+    
+    for idx, (para_idx, rel_id) in enumerate(image_positions_temp):
+        img_info = image_data[rel_id]
+        
+        if idx == 0:
+            # First image by POSITION (not by rel_id order) = cover
+            cover_path = assets_dir / "cover.png"
+            with open(cover_path, "wb") as f:
+                f.write(img_info["data"])
+            image_files[rel_id] = str(cover_path)
+            filename = "cover.png"
+        else:
+            # Subsequent images numbered by appearance order
+            img_path = assets_dir / f"image-{str(idx).zfill(2)}.{img_info['ext']}"
+            with open(img_path, "wb") as f:
+                f.write(img_info["data"])
+            image_files[rel_id] = str(img_path)
+            filename = f"image-{str(idx).zfill(2)}.{img_info['ext']}"
+        
+        image_positions.append((para_idx, rel_id, filename))
 
     return {
         'files': image_files,
