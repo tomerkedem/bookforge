@@ -5,10 +5,11 @@ import { LANGUAGES } from '../utils/language';
 interface Props {
   chapters: Chapter[];
   currentChapterId: number;
+  bookSlug: string;
   language?: Language;
 }
 
-const { chapters, currentChapterId, language = LANGUAGES.EN } = Astro.props;
+const { chapters, currentChapterId, bookSlug, language = LANGUAGES.EN } = Astro.props;
 const isRtl = language === LANGUAGES.HE;
 ---
 
@@ -61,7 +62,7 @@ const isRtl = language === LANGUAGES.HE;
               ]}
             >
               <a
-                href={`/read/sample-book/${chapter.id}${language === LANGUAGES.HE ? '?lang=he' : ''}`}
+                href={`/read/${bookSlug}/${chapter.id}${language === LANGUAGES.HE ? '?lang=he' : ''}`}
                 class:list={[
                   'toc-link',
                   'mobile-toc-link',
@@ -111,7 +112,7 @@ const isRtl = language === LANGUAGES.HE;
             data-chapter-id={chapter.id}
           >
             <a
-              href={`/read/sample-book/${chapter.id}${language === LANGUAGES.HE ? '?lang=he' : ''}`}
+              href={`/read/${bookSlug}/${chapter.id}${language === LANGUAGES.HE ? '?lang=he' : ''}`}
               class:list={[
                 'toc-link',
                 chapter.id === currentChapterId && 'toc-link-active',

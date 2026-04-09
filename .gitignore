@@ -7,11 +7,14 @@ node_modules/
 # קבצי סביבה
 .env
 .env.local
-<<<<<<< Updated upstream
 
 # Python
 __pycache__/
 *.pyc
-=======
+
+# Astro
 .astro/
->>>>>>> Stashed changes
+dist/
+
+# Generated assets (copied from output/ by astro integration)
+public/*/assets/

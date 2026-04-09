@@ -1,6 +1,6 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import type { Language } from '../../types/index';
+import type { Language, Chapter } from '../../types/index';
 import { LANGUAGES } from '../../utils/language';
 import { discoverAllBooks } from '../../utils/book-discovery';
 
@@ -100,10 +100,10 @@ const description =
               {book.chapters.length} chapters
             </p>
             <p class="text-sm text-yuval-text-tertiary"
-              data-he={`${book.chapters.reduce((sum, ch) => sum + ch.word_count, 0)} מילים`}
-              data-en={`${book.chapters.reduce((sum, ch) => sum + ch.word_count, 0)} words`}
+              data-he={`${book.chapters.reduce((sum: number, ch: Chapter) => sum + ch.word_count, 0)} מילים`}
+              data-en={`${book.chapters.reduce((sum: number, ch: Chapter) => sum + ch.word_count, 0)} words`}
             >
-              {book.chapters.reduce((sum, ch) => sum + ch.word_count, 0)} words
+              {book.chapters.reduce((sum: number, ch: Chapter) => sum + ch.word_count, 0)} words
             </p>
           </div>
         </div>
@@ -121,7 +121,7 @@ const description =
 
         <div class="space-y-3">
           {
-            book.chapters.map((chapter) => {
+            book.chapters.map((chapter: Chapter) => {
               const chapterTitle =
                 language === LANGUAGES.HE
                   ? chapter.title_he
