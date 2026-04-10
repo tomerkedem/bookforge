@@ -238,6 +238,149 @@ const isRtl = language === LANGUAGES.HE;
         @apply my-12 border-yuval-border;
       }
 
+      /* ── Markdown Preview: tab bar replaces ::before label ── */
+      :global(article pre[data-has-preview]::before) {
+        display: none;
+      }
+
+      :global(article .md-tab-bar) {
+        display: flex;
+        align-items: center;
+        background: #161b22;
+        border-bottom: 1px solid #30363d;
+        padding: 0 8px;
+        gap: 0;
+        flex-shrink: 0;
+      }
+
+      :global(article .md-lang-label) {
+        font-size: 11px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        color: #8b949e;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        padding: 6px 12px 6px 8px;
+        margin-right: 8px;
+        border-right: 1px solid #30363d;
+        flex-shrink: 0;
+      }
+
+      :global(article .md-tab) {
+        padding: 6px 14px;
+        font-size: 12px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        color: #8b949e;
+        background: none;
+        border: none;
+        border-bottom: 2px solid transparent;
+        cursor: pointer;
+        transition: color 0.15s, border-color 0.15s;
+        margin-bottom: -1px;
+      }
+
+      :global(article .md-tab:hover) {
+        color: #c9d1d9;
+      }
+
+      :global(article .md-tab-active) {
+        color: #e6edf3;
+        border-bottom-color: #58a6ff;
+      }
+
+      /* Preview rendered area */
+      :global(article .md-preview) {
+        padding: 20px 24px;
+        color: #c9d1d9;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        font-size: 14px;
+        line-height: 1.7;
+      }
+      :global(article .md-preview[dir="ltr"]) {
+        direction: ltr;
+        text-align: left;
+      }
+      :global(article .md-preview[dir="rtl"]) {
+        direction: rtl;
+        text-align: right;
+        font-family: 'Heebo', 'Frank Ruhl Libre', -apple-system, sans-serif;
+      }
+      :global(article .md-preview[dir="rtl"] ul,
+              article .md-preview[dir="rtl"] ol) {
+        padding-left: 0;
+        padding-right: 1.4em;
+      }
+      :global(article .md-preview[dir="rtl"] blockquote) {
+        border-left: none;
+        border-right: 3px solid #58a6ff;
+        padding: 4px 16px 4px 0;
+      }
+      :global(article .md-preview[dir="rtl"] pre) {
+        direction: ltr;
+        text-align: left;
+      }
+
+      :global(article .md-preview h1) {
+        font-size: 1.4em; font-weight: 700;
+        color: #e6edf3; margin: 0.2em 0 0.6em;
+        border-bottom: 1px solid #30363d; padding-bottom: 0.3em;
+      }
+      :global(article .md-preview h2) {
+        font-size: 1.2em; font-weight: 600;
+        color: #e6edf3; margin: 1em 0 0.4em;
+        border-bottom: 1px solid #21262d; padding-bottom: 0.2em;
+      }
+      :global(article .md-preview h3) {
+        font-size: 1.05em; font-weight: 600;
+        color: #e6edf3; margin: 0.9em 0 0.3em;
+      }
+      :global(article .md-preview p) { margin: 0.5em 0; }
+      :global(article .md-preview ul, article .md-preview ol) {
+        margin: 0.5em 0; padding-left: 1.4em;
+      }
+      :global(article .md-preview li) { margin: 0.2em 0; }
+      :global(article .md-preview code) {
+        background: rgba(110,118,129,0.2);
+        border: 1px solid rgba(110,118,129,0.25);
+        padding: 0.1em 0.4em; border-radius: 4px;
+        font-family: ui-monospace, Menlo, monospace; font-size: 0.88em;
+        color: #e6edf3;
+      }
+      :global(article .md-preview pre) {
+        background: #0d1117; border: 1px solid #30363d;
+        border-radius: 6px; padding: 12px 16px;
+        overflow-x: auto; margin: 0.8em 0;
+      }
+      :global(article .md-preview pre code) {
+        background: none; border: none; padding: 0; font-size: 0.85em;
+      }
+      :global(article .md-preview blockquote) {
+        border-left: 3px solid #58a6ff;
+        margin: 0.8em 0; padding: 4px 0 4px 16px;
+        color: #8b949e;
+      }
+      :global(article .md-preview hr) {
+        border: none; border-top: 1px solid #30363d; margin: 1em 0;
+      }
+      :global(article .md-preview strong) { font-weight: 600; color: #e6edf3; }
+      :global(article .md-preview em) { font-style: italic; color: #c9d1d9; }
+      :global(article .md-preview a) { color: #58a6ff; text-decoration: none; }
+      :global(article .md-preview a:hover) { text-decoration: underline; }
+
+      /* YAML frontmatter block in preview */
+      :global(article .md-preview .md-frontmatter) {
+        background: #0d1117; border: 1px solid #30363d;
+        border-radius: 6px; padding: 12px 16px;
+        margin-bottom: 1em;
+        font-family: ui-monospace, Menlo, monospace;
+        font-size: 12px; color: #8b949e;
+      }
+      :global(article .md-preview .md-frontmatter-key) { color: #79c0ff; }
+      :global(article .md-preview .md-frontmatter-value) { color: #a5d6ff; }
+      :global(article .md-preview .md-frontmatter-title) {
+        font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;
+        color: #484f58; margin-bottom: 8px;
+      }
+
       :global(article table) {
         @apply w-full border-collapse my-6;
       }
@@ -261,7 +404,28 @@ const isRtl = language === LANGUAGES.HE;
         .reading-article {
           margin-left: 320px;
           margin-right: 320px;
+          transition: margin 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+                      max-width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
         }
+
+        /* Immersive: article expands to full width */
+        :global(body.reading-immersive) .reading-article {
+          margin-left: 0;
+          margin-right: 0;
+        }
+      }
+
+      /* Header fades in immersive mode */
+      :global(body.reading-immersive) #site-header {
+        opacity: 0.07;
+        transition: opacity 0.35s ease;
+      }
+      :global(body.reading-immersive) #site-header:hover {
+        opacity: 1;
+        transition: opacity 0.15s ease;
+      }
+      :global(#site-header) {
+        transition: opacity 0.35s ease, background-color 0.3s, border-color 0.3s;
       }
     </style>
   </article>
@@ -313,11 +477,200 @@ const isRtl = language === LANGUAGES.HE;
       });
     }
 
-    addCopyButtons();
-    lazyLoadImages();
-    document.addEventListener('astro:after-swap', () => {
+    // ── Markdown Preview tabs ──────────────────────────────────────
+
+    /** Escape HTML special chars */
+    function esc(s: string): string {
+      return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    /** Inline formatting: bold, italic, code, links */
+    function inline(s: string): string {
+      return s
+        .replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>')
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.+?)\*/g, '<em>$1</em>')
+        .replace(/`([^`]+)`/g, '<code>$1</code>')
+        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
+    }
+
+    /** Render YAML frontmatter as a styled block */
+    function renderFrontmatter(lines: string[]): string {
+      const rows = lines.map(line => {
+        const m = line.match(/^(\s*-?\s*)([^:]+):(.*)/);
+        if (!m) return `<div>${esc(line)}</div>`;
+        const indent = m[1].includes('-') ? 'margin-left:12px;' : '';
+        return `<div style="${indent}"><span class="md-frontmatter-key">${esc(m[2])}</span>:<span class="md-frontmatter-value">${esc(m[3])}</span></div>`;
+      }).join('');
+      return `<div class="md-frontmatter"><div class="md-frontmatter-title">Frontmatter</div>${rows}</div>`;
+    }
+
+    /** Minimal Markdown → HTML renderer */
+    function renderMarkdown(raw: string): string {
+      const lines = raw.split('\n');
+      let html = '';
+      let i = 0;
+
+      // Detect and extract YAML frontmatter
+      if (lines[0]?.trim() === '---') {
+        const endIdx = lines.indexOf('---', 1);
+        if (endIdx > 0) {
+          html += renderFrontmatter(lines.slice(1, endIdx));
+          i = endIdx + 1;
+        }
+      }
+
+      let inUl = false, inOl = false, inPre = false, preLines: string[] = [];
+
+      for (; i < lines.length; i++) {
+        const raw_line = lines[i];
+        const line = raw_line.trim();
+
+        // Fenced code block
+        if (line.startsWith('```')) {
+          if (!inPre) {
+            if (inUl) { html += '</ul>'; inUl = false; }
+            if (inOl) { html += '</ol>'; inOl = false; }
+            inPre = true; preLines = [];
+          } else {
+            html += `<pre><code>${esc(preLines.join('\n'))}</code></pre>`;
+            inPre = false;
+          }
+          continue;
+        }
+        if (inPre) { preLines.push(raw_line); continue; }
+
+        // Headings
+        const hm = line.match(/^(#{1,6})\s+(.*)/);
+        if (hm) {
+          if (inUl) { html += '</ul>'; inUl = false; }
+          if (inOl) { html += '</ol>'; inOl = false; }
+          const lvl = hm[1].length;
+          html += `<h${lvl}>${inline(esc(hm[2]))}</h${lvl}>`;
+          continue;
+        }
+
+        // HR
+        if (/^---+$/.test(line) || /^\*\*\*+$/.test(line)) {
+          if (inUl) { html += '</ul>'; inUl = false; }
+          if (inOl) { html += '</ol>'; inOl = false; }
+          html += '<hr>';
+          continue;
+        }
+
+        // Blockquote
+        if (line.startsWith('> ')) {
+          if (inUl) { html += '</ul>'; inUl = false; }
+          if (inOl) { html += '</ol>'; inOl = false; }
+          html += `<blockquote>${inline(esc(line.slice(2)))}</blockquote>`;
+          continue;
+        }
+
+        // Unordered list
+        const ulm = line.match(/^[-*+]\s+(.*)/);
+        if (ulm) {
+          if (inOl) { html += '</ol>'; inOl = false; }
+          if (!inUl) { html += '<ul>'; inUl = true; }
+          html += `<li>${inline(esc(ulm[1]))}</li>`;
+          continue;
+        }
+
+        // Ordered list
+        const olm = line.match(/^\d+\.\s+(.*)/);
+        if (olm) {
+          if (inUl) { html += '</ul>'; inUl = false; }
+          if (!inOl) { html += '<ol>'; inOl = true; }
+          html += `<li>${inline(esc(olm[1]))}</li>`;
+          continue;
+        }
+
+        // Close open lists on blank line or paragraph
+        if (line === '') {
+          if (inUl) { html += '</ul>'; inUl = false; }
+          if (inOl) { html += '</ol>'; inOl = false; }
+          continue;
+        }
+
+        // Paragraph
+        if (inUl) { html += '</ul>'; inUl = false; }
+        if (inOl) { html += '</ol>'; inOl = false; }
+        html += `<p>${inline(esc(line))}</p>`;
+      }
+
+      if (inUl) html += '</ul>';
+      if (inOl) html += '</ol>';
+      if (inPre) html += `<pre><code>${esc(preLines.join('\n'))}</code></pre>`;
+
+      return html;
+    }
+
+    /** Detect if text is predominantly Hebrew/RTL */
+    function detectDir(text: string): 'rtl' | 'ltr' {
+      const hebrewChars = (text.match(/[\u0590-\u05FF\uFB1D-\uFB4F]/g) || []).length;
+      const latinChars  = (text.match(/[a-zA-Z]/g) || []).length;
+      return hebrewChars > latinChars ? 'rtl' : 'ltr';
+    }
+
+    /** Add Source/Preview tabs to markdown code blocks */
+    function addMarkdownPreview() {
+      document.querySelectorAll<HTMLElement>('article pre[data-lang="markdown"], article pre[data-lang="md"]').forEach(pre => {
+        if (pre.dataset.hasPreview) return;
+        const code = pre.querySelector('code');
+        if (!code) return;
+
+        pre.dataset.hasPreview = 'true';
+
+        // Tab bar: language label + Source tab + Preview tab
+        const tabBar = document.createElement('div');
+        tabBar.className = 'md-tab-bar';
+        tabBar.innerHTML = `
+          <span class="md-lang-label">Markdown</span>
+          <button class="md-tab md-tab-active" data-tab="source" type="button">Source</button>
+          <button class="md-tab" data-tab="preview" type="button">Preview</button>
+        `;
+
+        // Preview container
+        const previewDiv = document.createElement('div');
+        previewDiv.className = 'md-preview';
+        previewDiv.style.display = 'none';
+
+        // Insert tab bar as first child, preview after code
+        pre.insertBefore(tabBar, pre.firstChild);
+        code.after(previewDiv);
+
+        // Tab switching
+        tabBar.addEventListener('click', (e) => {
+          const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('.md-tab');
+          if (!btn) return;
+          const tab = btn.dataset.tab;
+
+          tabBar.querySelectorAll('.md-tab').forEach(b => b.classList.remove('md-tab-active'));
+          btn.classList.add('md-tab-active');
+
+          if (tab === 'preview') {
+            const content = code.textContent || '';
+            previewDiv.setAttribute('dir', detectDir(content));
+            previewDiv.innerHTML = renderMarkdown(content);
+            code.style.display = 'none';
+            previewDiv.style.display = 'block';
+          } else {
+            code.style.display = '';
+            previewDiv.style.display = 'none';
+          }
+        });
+      });
+    }
+
+    function reinitAll() {
       addCopyButtons();
       lazyLoadImages();
-    });
+      addMarkdownPreview();
+    }
+
+    reinitAll();
+    // Astro View Transitions navigation
+    document.addEventListener('astro:after-swap', reinitAll);
+    // Fetch-based chapter navigation (TOC clicks)
+    window.addEventListener('chapter-content-swapped', reinitAll);
   </script>
 </BaseLayout>

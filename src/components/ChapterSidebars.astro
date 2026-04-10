@@ -329,6 +329,59 @@ const isRtl = language === LANGUAGES.HE;
     padding-right: 12px;
   }
 
+  /* ── Smooth transition for immersive mode ── */
+  .toc-sidebar {
+    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 0.35s ease;
+  }
+  .outline-sidebar {
+    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 0.35s ease;
+  }
+
+  /* ── Immersive mode: sidebars slide off screen ── */
+  :global(body.reading-immersive) .toc-sidebar:not(.toc-sidebar-rtl) {
+    transform: translateX(-100%);
+    pointer-events: none;
+  }
+  :global(body.reading-immersive) .toc-sidebar-rtl {
+    transform: translateX(100%);
+    pointer-events: none;
+  }
+  :global(body.reading-immersive) .outline-sidebar:not(.outline-sidebar-rtl) {
+    transform: translateX(100%);
+    pointer-events: none;
+  }
+  :global(body.reading-immersive) .outline-sidebar-rtl {
+    transform: translateX(-100%);
+    pointer-events: none;
+  }
+
+  /* ── Peek on hover at screen edges ── */
+  :global(body.reading-immersive) .toc-sidebar:not(.toc-sidebar-rtl):hover,
+  :global(body.reading-immersive) .toc-sidebar-rtl:hover,
+  :global(body.reading-immersive) .outline-sidebar:not(.outline-sidebar-rtl):hover,
+  :global(body.reading-immersive) .outline-sidebar-rtl:hover {
+    transform: translateX(0);
+    pointer-events: auto;
+    opacity: 1;
+  }
+
+  /* ── Edge peek trigger zones ── */
+  .toc-sidebar::before,
+  .outline-sidebar::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 16px;
+    z-index: 1;
+  }
+  .toc-sidebar:not(.toc-sidebar-rtl)::before { right: -16px; }
+  .toc-sidebar-rtl::before { left: -16px; }
+  .outline-sidebar:not(.outline-sidebar-rtl)::before { left: -16px; }
+  .outline-sidebar-rtl::before { right: -16px; }
+
   /* Scrollbar styling */
   .toc-sidebar::-webkit-scrollbar,
   .outline-sidebar::-webkit-scrollbar {
@@ -639,6 +692,9 @@ const isRtl = language === LANGUAGES.HE;
       history.pushState({}, '', url);
       updateActiveChapter();
       buildChapterOutline();
+
+      // Notify other scripts that new chapter content is in the DOM
+      window.dispatchEvent(new CustomEvent('chapter-content-swapped'));
 
       // Fade content back in
       container.style.opacity = '1';
@@ -1023,4 +1079,49 @@ const isRtl = language === LANGUAGES.HE;
     });
     if (drawer.classList.contains('open')) buildMobileOutline();
   });
+
+  /**
+   * Immersive reading mode — hide chrome when scrolling down, restore on scroll up.
+   * Only active on reading pages (where this component is loaded).
+   */
+  (function initImmersiveMode() {
+    const SCROLL_DOWN_THRESHOLD = 80;  // px scrolled before activating
+    const SCROLL_UP_SNAP = 30;         // px scrolled up before restoring
+    let lastScrollY = 0;
+    let ticking = false;
+    let immersiveActive = false;
+
+    function setImmersive(active: boolean) {
+      if (active === immersiveActive) return;
+      immersiveActive = active;
+      document.body.classList.toggle('reading-immersive', active);
+    }
+
+    function onScroll() {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        const currentY = window.scrollY;
+
+        if (currentY < SCROLL_DOWN_THRESHOLD) {
+          // Near top — always show everything
+          setImmersive(false);
+        } else if (currentY > lastScrollY + 5) {
+          // Scrolling down
+          setImmersive(true);
+        } else if (lastScrollY - currentY > SCROLL_UP_SNAP) {
+          // Scrolled up enough
+          setImmersive(false);
+        }
+
+        lastScrollY = currentY;
+        ticking = false;
+      });
+    }
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+
+    // Reset on chapter navigation
+    window.addEventListener('popstate', () => setImmersive(false));
+  })();
 </script>
