@@ -137,7 +137,7 @@ chapterContentEn = stripFirstH1(chapterContentEn);
   </div>
 
   <!-- Chapter content -->
-  <div id="chapter-container" data-chapter-id={chapterId} data-book={book}>
+  <div id="chapter-container" data-chapter-id={chapterId} data-book={book} transition:animate="none">
     <div data-lang="he" class="hidden" dir="rtl" style="text-align: right">
       <div class="chapter-content prose prose-lg">
         {chapterContentHe && <Fragment set:html={chapterContentHe} />}

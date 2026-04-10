@@ -13,7 +13,7 @@ const { chapters, currentChapterId, bookSlug, language = LANGUAGES.EN } = Astro.
 const isRtl = language === LANGUAGES.HE;
 ---
 
-<div class="sidebars-container">
+<div class="sidebars-container" transition:persist="sidebars">
   <!-- Mobile TOC toggle button -->
   <button
     id="mobile-toc-toggle"
@@ -120,6 +120,7 @@ const isRtl = language === LANGUAGES.HE;
                 chapter.id === currentChapterId && 'toc-link-active',
               ]}
               aria-current={chapter.id === currentChapterId ? 'page' : undefined}
+              data-chapter-id={chapter.id}
             >
               <span class="toc-number">
                 {String(chapter.id).padStart(2, '0')}
@@ -548,25 +549,155 @@ const isRtl = language === LANGUAGES.HE;
   }
 
   /**
-   * TOC navigation — handles language parameter.
-   * Sidebars are now outside <main>, so View Transitions don't affect them.
+   * Get the current chapter ID from the URL
+   */
+  function getCurrentChapterId(): number | null {
+    const match = window.location.pathname.match(/\/read\/[^/]+\/(\d+)/);
+    return match ? parseInt(match[1], 10) : null;
+  }
+
+  /**
+   * Update the active chapter highlighting in TOC based on current URL.
+   * Called after navigation when using transition:persist.
+   */
+  function updateActiveChapter() {
+    const currentId = getCurrentChapterId();
+    if (currentId === null) return;
+
+    // Update desktop TOC
+    document.querySelectorAll('.toc-item').forEach(item => {
+      const chapterId = parseInt((item as HTMLElement).dataset.chapterId || '0', 10);
+      const link = item.querySelector('.toc-link');
+      
+      if (chapterId === currentId) {
+        item.classList.add('toc-item-active');
+        link?.classList.add('toc-link-active');
+        link?.setAttribute('aria-current', 'page');
+      } else {
+        item.classList.remove('toc-item-active');
+        link?.classList.remove('toc-link-active');
+        link?.removeAttribute('aria-current');
+      }
+    });
+
+    // Update mobile TOC
+    document.querySelectorAll('.mobile-toc-link').forEach(link => {
+      const href = link.getAttribute('href') || '';
+      const match = href.match(/\/read\/[^/]+\/(\d+)/);
+      const chapterId = match ? parseInt(match[1], 10) : 0;
+      
+      const item = link.closest('.toc-item');
+      if (chapterId === currentId) {
+        item?.classList.add('toc-item-active');
+        link.classList.add('toc-link-active');
+      } else {
+        item?.classList.remove('toc-item-active');
+        link.classList.remove('toc-link-active');
+      }
+    });
+  }
+
+  /**
+   * Load chapter content via fetch without full page navigation.
+   * This keeps the sidebar in place with no flickering.
+   */
+  async function loadChapterContent(url: string): Promise<void> {
+    try {
+      // Show loading state (optional)
+      const container = document.getElementById('chapter-container');
+      const header = document.getElementById('chapter-header');
+      
+      // Fetch the new page
+      const response = await fetch(url);
+      if (!response.ok) throw new Error('Failed to fetch chapter');
+      
+      const html = await response.text();
+      
+      // Parse the HTML
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, 'text/html');
+      
+      // Extract the new chapter content and header
+      const newContainer = doc.getElementById('chapter-container');
+      const newHeader = doc.getElementById('chapter-header');
+      
+      if (newContainer && container) {
+        container.innerHTML = newContainer.innerHTML;
+        container.dataset.chapterId = newContainer.dataset.chapterId || '';
+        container.dataset.book = newContainer.dataset.book || '';
+      }
+      
+      if (newHeader && header) {
+        header.innerHTML = newHeader.innerHTML;
+      }
+      
+      // Update the URL without full navigation
+      history.pushState({}, '', url);
+      
+      // Update active chapter highlighting
+      updateActiveChapter();
+      
+      // Rebuild the chapter outline
+      buildChapterOutline();
+      
+      // Apply language visibility
+      const lang = getCurrentLang();
+      applyLanguageVisibility(lang);
+      
+      // Scroll to top of content
+      window.scrollTo({ top: 0, behavior: 'instant' });
+      
+    } catch (error) {
+      console.error('Error loading chapter:', error);
+      // Fallback to full navigation
+      window.location.href = url;
+    }
+  }
+
+  /**
+   * Apply language visibility to content divs
+   */
+  function applyLanguageVisibility(lang: string) {
+    document.querySelectorAll('[data-lang]').forEach(el => {
+      const elLang = (el as HTMLElement).dataset.lang;
+      if (elLang === lang) {
+        el.classList.remove('hidden');
+        el.classList.add('visible');
+      } else {
+        el.classList.add('hidden');
+        el.classList.remove('visible');
+      }
+    });
+  }
+
+  /**
+   * TOC navigation — uses fetch to load content without page navigation.
    */
   function initTocNavigation() {
     const tocNav = document.querySelector('.toc-list');
     if (!tocNav || (tocNav as HTMLElement).dataset.navInit === 'true') return;
     (tocNav as HTMLElement).dataset.navInit = 'true';
 
-    // Just update href with correct language - let Astro handle navigation
-    tocNav.addEventListener('click', (e) => {
+    // Handle click with fetch-based loading
+    tocNav.addEventListener('click', async (e) => {
       const target = (e.target as HTMLElement).closest('a.toc-link') as HTMLAnchorElement | null;
       if (!target) return;
       
+      e.preventDefault();
+      
       const base = target.getAttribute('href')?.split('?')[0] || '';
       const lang = getCurrentLang();
-      target.href = lang === 'he' ? `${base}?lang=he` : base;
-      // Let the native click proceed - Astro's ClientRouter handles it
+      const url = lang === 'he' ? `${base}?lang=he` : base;
+      
+      // Load content via fetch - no full page navigation
+      await loadChapterContent(url);
     });
   }
+
+  // Handle browser back/forward buttons
+  window.addEventListener('popstate', async () => {
+    await loadChapterContent(window.location.href);
+  });
 
   /**
    * Update sidebar text based on current language
@@ -719,6 +850,9 @@ const isRtl = language === LANGUAGES.HE;
     // Initialize click navigation
     initTocNavigation();
 
+    // Update active chapter highlighting (for transition:persist)
+    updateActiveChapter();
+
     // Wait for content to render, then build outline
     setTimeout(() => {
       buildChapterOutline();
@@ -859,16 +993,18 @@ const isRtl = language === LANGUAGES.HE;
       });
     });
 
-    // Close on chapter link click
+    // Handle chapter link clicks with fetch-based loading
     drawer.querySelectorAll('a.mobile-toc-link').forEach(link => {
-      link.addEventListener('click', () => closeDrawer());
-    });
-
-    // Update mobile TOC links with language
-    const lang = getCurrentLang();
-    drawer.querySelectorAll<HTMLAnchorElement>('a.mobile-toc-link').forEach(link => {
-      const base = link.getAttribute('href')?.split('?')[0] || '';
-      link.href = lang === 'he' ? `${base}?lang=he` : base;
+      link.addEventListener('click', async (e) => {
+        e.preventDefault();
+        closeDrawer();
+        
+        const base = (link as HTMLAnchorElement).getAttribute('href')?.split('?')[0] || '';
+        const lang = getCurrentLang();
+        const url = lang === 'he' ? `${base}?lang=he` : base;
+        
+        await loadChapterContent(url);
+      });
     });
   }
 

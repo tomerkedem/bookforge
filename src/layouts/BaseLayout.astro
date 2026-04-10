@@ -103,7 +103,7 @@ const isRtl = language === LANGUAGES.HE;
     <!-- Sidebars outside main - not affected by View Transitions -->
     <slot name="sidebars" />
 
-    <main id="main-content" class="w-full">
+    <main id="main-content" class="w-full" transition:animate="none">
       <slot />
     </main>
 
