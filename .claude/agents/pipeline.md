@@ -80,12 +80,48 @@ npm run build
 - דווח התקדמות אחרי כל שלב
 - כל הפלט בעברית
 
+## מעקב tokens ועלות
+
+אחרי כל subagent שמסיים, אסוף ממנו את input_words ו-output_words.
+שמור את הערכים בטבלה מצטברת.
+
+המרת מילים ל-tokens (קירוב):
+- עברית: מילה אחת ≈ 3.5 tokens
+- אנגלית: מילה אחת ≈ 1.3 tokens
+
+תמחור Claude Sonnet (קירוב):
+- input:  $3 למיליון tokens
+- output: $15 למיליון tokens
+
+שער המרה: 1 USD = 3.6 ILS
+
 ## דיווח סופי
 
 בסיום הכל, דווח:
-- chapters: מספר פרקים
-- translated: מספר פרקים שתורגמו
-- images: מספר תמונות
-- build_pages: מספר דפים שנבנו
-- errors: רשימת שגיאות (אם יש)
-- status: success / failed
+
+```
+📊 סיכום Pipeline
+─────────────────────────────────
+chapters:      {מספר פרקים}
+translated:    {מספר פרקים שתורגמו}
+images:        {מספר תמונות}
+build_pages:   {מספר דפים שנבנו}
+errors:        {רשימה, או 0}
+status:        success / failed
+
+💰 עלות משוערת
+─────────────────────────────────
+סוכן            | input words | output words
+pipeline        | {n}         | {n}
+translator      | {n}         | {n}
+code-reviewer   | {n}         | {n}  (אם הופעל)
+error-handler   | {n}         | {n}  (אם הופעל)
+quality-gate    | {n}         | {n}  (אם הופעל)
+─────────────────────────────────
+סה"כ מילים:     {input} in / {output} out
+סה"כ tokens:    {input_tokens} in / {output_tokens} out
+עלות input:     ${n}
+עלות output:    ${n}
+סה"כ USD:       ${total}
+סה"כ ILS:       ₪{total * 3.6}
+```

@@ -60,4 +60,5 @@ tools:
 בסיום כל ה-batch, דווח:
   translated: {מספר קבצים}
   skipped: {מספר קבצים שדולגו}
-  total_words: {מספר מילים שתורגמו}
+  input_words: {מספר מילים בעברית שנקראו}
+  output_words: {מספר מילים באנגלית שנכתבו}
