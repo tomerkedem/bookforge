@@ -1,4 +1,5 @@
 ---
+import '../styles/theme.css';
 import type { Language } from '../types/index';
 import Header from '../components/Header.astro';
 import ReadingProgress from '../components/ReadingProgress.astro';
@@ -60,6 +61,17 @@ const isRtl = language === LANGUAGES.HE;
         "url": "https://yuval.example.com"
       }
     </script>
+
+    <!-- Prevent FOUC: apply dark mode before paint -->
+    <script is:inline>
+      (function() {
+        try {
+          var theme = localStorage.getItem('yuval-theme');
+          if (!theme) theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+          if (theme === 'dark') document.documentElement.classList.add('dark');
+        } catch(e) {}
+      })();
+    </script>
   </head>
 
   <body
@@ -68,6 +80,8 @@ const isRtl = language === LANGUAGES.HE;
       'text-yuval-text',
       'font-body',
       'antialiased',
+      'transition-colors',
+      'duration-300',
       className,
     ]}
   >

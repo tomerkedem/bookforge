@@ -1,0 +1,113 @@
+/* ═══════════════════════════════════════════════════════════
+   YUVAL THEME — Single Source of Truth
+   All light/dark color definitions live here.
+   Components use CSS variables via Tailwind tokens or var().
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── Page backgrounds ── */
+  --yuval-bg: #f5f0e8;
+  --yuval-bg-secondary: #ede8df;
+  --yuval-surface: #ffffff;               /* cards, header, sidebars */
+  --yuval-header-bg: rgba(255, 255, 255, 0.95);
+
+  /* ── Text ── */
+  --yuval-text: #1a1a1a;
+  --yuval-text-secondary: #666666;
+  --yuval-text-tertiary: #888888;
+  --yuval-text-muted: #bbbbbb;
+
+  /* ── Borders ── */
+  --yuval-border: #f0ede8;
+  --yuval-border-secondary: #e0ddd8;
+
+  /* ── Links ── */
+  --yuval-link: #1a1a1a;
+  --yuval-link-hover: #666666;
+
+  /* ── Buttons & bold accents ── */
+  --yuval-accent: #1a1a1a;
+  --yuval-accent-hover: #666666;
+  --yuval-accent-text: #f5f0e8;           /* text on accent bg */
+
+  /* ── Highlight (progress bar, focus ring, borders) ── */
+  --yuval-highlight: #1a1a1a;
+
+  /* ── Toggle switch ── */
+  --yuval-toggle-track: #e0ddd8;
+  --yuval-moon-icon: #bbbbbb;
+
+  /* ── TOC / Sidebar ── */
+  --yuval-toc-item-border: #f5f3ef;
+  --yuval-toc-number: #cccccc;
+  --yuval-toc-active: #1a1a1a;
+
+  /* ── Chapter meta ── */
+  --yuval-meta-text: #9a8c7c;
+  --yuval-meta-bg: rgba(154, 140, 124, 0.06);
+  --yuval-meta-border: rgba(154, 140, 124, 0.12);
+  --yuval-meta-dot: rgba(154, 140, 124, 0.35);
+
+  /* ── Chapter header ── */
+  --yuval-chapter-title: #3d3229;
+  --yuval-progress-badge: #9a8c7c;
+  --yuval-progress-line: rgba(154, 140, 124, 0.12);
+  --yuval-progress-fill: #9a8c7c;
+
+  /* ── Blockquote ── */
+  --yuval-blockquote-border: #888888;
+}
+
+.dark {
+  /* ── Page backgrounds ── */
+  --yuval-bg: #1a1a2e;
+  --yuval-bg-secondary: #16213e;
+  --yuval-surface: #16213e;
+  --yuval-header-bg: rgba(22, 33, 62, 0.95);
+
+  /* ── Text ── */
+  --yuval-text: #e8e8e8;
+  --yuval-text-secondary: #a0a0b0;
+  --yuval-text-tertiary: #7a7a8a;
+  --yuval-text-muted: #555566;
+
+  /* ── Borders ── */
+  --yuval-border: #2a2a3e;
+  --yuval-border-secondary: #3a3a4e;
+
+  /* ── Links ── */
+  --yuval-link: #a78bfa;                  /* purple-400 */
+  --yuval-link-hover: #c084fc;            /* purple-300 */
+
+  /* ── Buttons & bold accents ── */
+  --yuval-accent: #9333ea;                /* purple-600 */
+  --yuval-accent-hover: #7e22ce;          /* purple-700 */
+  --yuval-accent-text: #ffffff;
+
+  /* ── Highlight ── */
+  --yuval-highlight: #a855f7;             /* purple-500 */
+
+  /* ── Toggle switch ── */
+  --yuval-toggle-track: #9333ea;          /* purple-600 */
+  --yuval-moon-icon: #a78bfa;             /* purple-400 */
+
+  /* ── TOC / Sidebar ── */
+  --yuval-toc-item-border: #2a2a3e;
+  --yuval-toc-number: #555566;
+  --yuval-toc-active: #a78bfa;
+
+  /* ── Chapter meta ── */
+  --yuval-meta-text: #7a7a8a;
+  --yuval-meta-bg: rgba(122, 122, 138, 0.1);
+  --yuval-meta-border: rgba(122, 122, 138, 0.2);
+  --yuval-meta-dot: rgba(122, 122, 138, 0.35);
+
+  /* ── Chapter header ── */
+  --yuval-chapter-title: #e8e8e8;
+  --yuval-progress-badge: #7a7a8a;
+  --yuval-progress-line: rgba(42, 42, 62, 0.4);
+  --yuval-progress-fill: #a78bfa;
+
+  /* ── Blockquote ── */
+  --yuval-blockquote-border: #a855f7;     /* purple-500 */
+}

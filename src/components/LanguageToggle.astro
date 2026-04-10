@@ -39,7 +39,7 @@ const oppositeLanguage = getOppositeLanguage(currentLanguage);
       'font-medium',
       currentLanguage === LANGUAGES.HE && 'bg-yuval-text text-yuval-bg',
       currentLanguage !== LANGUAGES.HE &&
-        'text-yuval-text hover:bg-yuval-bg-secondary',
+        'text-yuval-text hover:bg-yuval-border',
     ]}
     data-language="he"
     aria-pressed={currentLanguage === LANGUAGES.HE}
@@ -63,7 +63,7 @@ const oppositeLanguage = getOppositeLanguage(currentLanguage);
       'font-medium',
       currentLanguage === LANGUAGES.EN && 'bg-yuval-text text-yuval-bg',
       currentLanguage !== LANGUAGES.EN &&
-        'text-yuval-text hover:bg-yuval-bg-secondary',
+        'text-yuval-text hover:bg-yuval-border',
     ]}
     data-language="en"
     aria-pressed={currentLanguage === LANGUAGES.EN}

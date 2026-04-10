@@ -163,9 +163,9 @@ chapterContentEn = stripFirstH1(chapterContentEn);
     position: sticky;
     top: 64px;
     z-index: 35;
-    background: #f5f0e8;
+    background: var(--yuval-bg);
     padding: 0.25rem 0 0;
-    transition: padding 0.15s ease;
+    transition: padding 0.15s ease, background 0.3s ease;
   }
 
   .chapter-header.scrolled {
@@ -179,9 +179,9 @@ chapterContentEn = stripFirstH1(chapterContentEn);
     font-weight: 700;
     font-size: clamp(1.5rem, 5vw, 2.5rem);
     line-height: 1.2;
-    color: #3d3229;
+    color: var(--yuval-chapter-title);
     margin: 0 0 0.25rem;
-    transition: font-size 0.2s ease, margin 0.2s ease;
+    transition: font-size 0.2s ease, margin 0.2s ease, color 0.3s ease;
   }
 
   .chapter-header.scrolled .chapter-title {
@@ -212,7 +212,7 @@ chapterContentEn = stripFirstH1(chapterContentEn);
   .progress-badge {
     font-size: 0.875rem;
     font-weight: 700;
-    color: #9a8c7c;
+    color: var(--yuval-progress-badge);
     font-variant-numeric: tabular-nums;
     min-width: 2.75rem;
     text-align: center;
@@ -229,7 +229,7 @@ chapterContentEn = stripFirstH1(chapterContentEn);
 
   .header-progress-line {
     height: 2px;
-    background: rgba(154, 140, 124, 0.12);
+    background: var(--yuval-progress-line);
     margin-top: 0.5rem;
     border-radius: 1px;
     overflow: hidden;
@@ -245,7 +245,7 @@ chapterContentEn = stripFirstH1(chapterContentEn);
   .header-progress-fill {
     height: 100%;
     width: 0%;
-    background: #9a8c7c;
+    background: var(--yuval-progress-fill);
     transition: width 0.1s linear;
     border-radius: 1px;
   }

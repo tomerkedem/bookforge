@@ -54,13 +54,14 @@ const formattedCount = wordCount.toLocaleString(isHe ? 'he-IL' : 'en-US');
     justify-content: center;
     flex-wrap: wrap;
     gap: 0.5rem 0.75rem;
-    color: #9a8c7c;
+    color: var(--yuval-meta-text);
     font-size: 0.8125rem;
     margin-bottom: 2rem;
     padding: 0.625rem 1rem;
-    background: rgba(154, 140, 124, 0.06);
+    background: var(--yuval-meta-bg);
     border-radius: 8px;
-    border: 1px solid rgba(154, 140, 124, 0.12);
+    border: 1px solid var(--yuval-meta-border);
+    transition: color 0.3s, background 0.3s, border-color 0.3s;
   }
 
   .chapter-meta[data-dir="rtl"] {
@@ -84,7 +85,7 @@ const formattedCount = wordCount.toLocaleString(isHe ? 'he-IL' : 'en-US');
   }
 
   .meta-dot {
-    color: rgba(154, 140, 124, 0.35);
+    color: var(--yuval-meta-dot);
     font-size: 1.1rem;
     line-height: 1;
     user-select: none;

@@ -149,7 +149,8 @@ const isRtl = language === LANGUAGES.HE;
       }
 
       :global(article blockquote) {
-        @apply relative pl-4 sm:pl-6 py-3 sm:py-4 my-6 sm:my-8 text-base sm:text-xl leading-relaxed text-yuval-text-secondary border-l-4 border-yuval-text-tertiary bg-yuval-bg-secondary;
+        @apply relative pl-4 sm:pl-6 py-3 sm:py-4 my-6 sm:my-8 text-base sm:text-xl leading-relaxed text-yuval-text-secondary bg-yuval-bg-secondary;
+        border-left: 4px solid var(--yuval-blockquote-border);
       }
 
       :global(article [dir="rtl"] blockquote) {
@@ -179,7 +180,12 @@ const isRtl = language === LANGUAGES.HE;
       }
 
       :global(article a) {
-        @apply text-yuval-text underline hover:text-yuval-text-secondary transition-colors duration-200;
+        @apply underline transition-colors duration-200;
+        color: var(--yuval-link);
+      }
+
+      :global(article a:hover) {
+        color: var(--yuval-link-hover);
       }
 
       :global(article img) {

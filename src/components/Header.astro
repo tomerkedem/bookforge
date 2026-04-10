@@ -1,6 +1,7 @@
 ---
 import type { Language } from '../types/index';
 import LanguageToggle from './LanguageToggle.astro';
+import ThemeToggle from './ThemeToggle.astro';
 
 interface Props {
   language?: Language;
@@ -20,11 +21,12 @@ const { language = 'en', showLanguageToggle = true, class: className } =
     'w-full',
     'border-b',
     'border-yuval-border',
-    'bg-white',
     'backdrop-blur-md',
-    'bg-opacity-95',
+    'transition-colors',
+    'duration-300',
     className,
   ]}
+  style="background-color: var(--yuval-header-bg)"
 >
   <div
     class:list={[
@@ -41,14 +43,17 @@ const { language = 'en', showLanguageToggle = true, class: className } =
     <!-- Logo / Brand -->
     <a
       href="/"
-      class="font-heading font-bold text-xl sm:text-2xl text-yuval-text hover:text-yuval-text-secondary transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yuval-text"
+      class="font-heading font-bold text-xl sm:text-2xl text-yuval-text hover:text-yuval-text-secondary transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yuval-highlight"
       data-he="Yuval"
       data-en="Yuval"
     >
       Yuval
     </a>
 
-    <!-- Language Toggle -->
-    {showLanguageToggle && <LanguageToggle currentLanguage={language} />}
+    <!-- Controls: Theme + Language -->
+    <div class:list={['flex', 'items-center', 'gap-3', language === 'he' && 'flex-row-reverse']}>
+      <ThemeToggle />
+      {showLanguageToggle && <LanguageToggle currentLanguage={language} />}
+    </div>
   </div>
 </header>

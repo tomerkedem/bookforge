@@ -1,0 +1,124 @@
+---
+interface Props {
+  class?: string;
+}
+
+const { class: className } = Astro.props;
+---
+
+<div
+  class:list={[
+    'inline-flex',
+    'items-center',
+    'gap-2',
+    className,
+  ]}
+>
+  <!-- Sun icon -->
+  <svg
+    class="w-4 h-4 text-yuval-text-secondary transition-colors"
+    aria-hidden="true"
+    fill="currentColor"
+    viewBox="0 0 20 20"
+  >
+    <path
+      fill-rule="evenodd"
+      d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"
+      clip-rule="evenodd"
+    ></path>
+  </svg>
+
+  <!-- Toggle switch -->
+  <button
+    id="theme-toggle"
+    type="button"
+    role="switch"
+    aria-checked="false"
+    aria-label="Toggle dark mode"
+    dir="ltr"
+    class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yuval-highlight"
+    style="background-color: var(--yuval-toggle-track)"
+  >
+    <span
+      class="toggle-dot inline-block h-4 w-4 rounded-full bg-white shadow-sm transform transition-transform duration-300 translate-x-1"
+    ></span>
+  </button>
+
+  <!-- Moon icon -->
+  <svg
+    class="w-4 h-4 transition-colors"
+    style="color: var(--yuval-moon-icon)"
+    aria-hidden="true"
+    fill="currentColor"
+    viewBox="0 0 20 20"
+  >
+    <path
+      d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"
+    ></path>
+  </svg>
+</div>
+
+<script>
+  function getStoredTheme(): 'light' | 'dark' | null {
+    try {
+      const stored = localStorage.getItem('yuval-theme');
+      if (stored === 'light' || stored === 'dark') return stored;
+    } catch { /* storage unavailable */ }
+    return null;
+  }
+
+  function getSystemPreference(): 'dark' | 'light' {
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+
+  function getEffectiveTheme(): 'light' | 'dark' {
+    return getStoredTheme() || getSystemPreference();
+  }
+
+  function applyTheme(theme: 'light' | 'dark') {
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+    const toggle = document.getElementById('theme-toggle');
+    if (toggle) {
+      toggle.setAttribute('aria-checked', theme === 'dark' ? 'true' : 'false');
+      // Move the toggle dot
+      const dot = toggle.querySelector('.toggle-dot') as HTMLElement;
+      if (dot) {
+        dot.style.transform = theme === 'dark' ? 'translateX(1.375rem)' : 'translateX(0.25rem)';
+      }
+    }
+  }
+
+  function initThemeToggle() {
+    const toggle = document.getElementById('theme-toggle');
+    if (!toggle) return;
+
+    // Apply current theme
+    const current = getEffectiveTheme();
+    applyTheme(current);
+
+    // Toggle on click
+    toggle.addEventListener('click', () => {
+      const isDark = document.documentElement.classList.contains('dark');
+      const newTheme = isDark ? 'light' : 'dark';
+      try { localStorage.setItem('yuval-theme', newTheme); } catch { /* */ }
+      applyTheme(newTheme);
+    });
+  }
+
+  // Listen for system preference changes
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+    if (!getStoredTheme()) {
+      applyTheme(e.matches ? 'dark' : 'light');
+    }
+  });
+
+  // Initialize
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initThemeToggle);
+  } else {
+    initThemeToggle();
+  }
+
+  // Re-init on Astro navigation
+  document.addEventListener('astro:after-swap', initThemeToggle);
+</script>
