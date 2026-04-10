@@ -20,6 +20,8 @@ def parse(ingested: dict) -> list[dict]:
     for idx, para in enumerate(paragraphs):
         style = para["style"]
         text = para["text"]
+        # Use original document index for image mapping (aligned with extract_images)
+        doc_idx = para.get("doc_para_index", idx)
 
         if "Heading 1" in style:
             if current:
@@ -29,6 +31,7 @@ def parse(ingested: dict) -> list[dict]:
             current = {
                 "number": len(chapters) + 1,
                 "title": text,
+                "heading_doc_index": doc_idx,
                 "content": [],
                 "has_images": False,
                 "type": chapter_type
@@ -37,7 +40,7 @@ def parse(ingested: dict) -> list[dict]:
             current["content"].append({
                 "text": text,
                 "style": style,
-                "para_index": idx  # Track paragraph position for image mapping
+                "para_index": doc_idx  # Original doc index for image alignment
             })
 
     if current:
@@ -71,7 +74,7 @@ def extract_images(docx_path: str, book_name: str, output_dir: str = "output") -
     
     Returns a dict with:
       - 'files': mapping rel_id to file path
-      - 'positions': list of (paragraph_index, rel_id, filename)
+      - 'positions': list of (paragraph_index, rel_id, filename, width_px, height_px)
       - 'has_cover': boolean indicating if cover was found
     """
     try:
@@ -79,6 +82,8 @@ def extract_images(docx_path: str, book_name: str, output_dir: str = "output") -
         from docx.oxml import parse_xml
     except ImportError:
         raise ImportError("pip install python-docx")
+
+    import re
 
     doc = Document(docx_path)
     assets_dir = Path(output_dir) / book_name / "assets"
@@ -115,7 +120,7 @@ def extract_images(docx_path: str, book_name: str, output_dir: str = "output") -
 
     # Step 3: Check for images in SDT elements (before paragraphs - cover page)
     # These appear at position -1 (before first paragraph)
-    image_positions_temp = []  # (para_idx, rel_id)
+    image_positions_temp = []  # (para_idx, rel_id, w_px, h_px)
     
     body = doc.element.body
     for element in body:
@@ -128,18 +133,36 @@ def extract_images(docx_path: str, book_name: str, output_dir: str = "output") -
             for blip in blips:
                 embed_id = blip.get('{http://schemas.openxmlformats.org/officeDocument/2006/relationships}embed')
                 if embed_id and embed_id in image_data:
-                    # Position -1 means before first paragraph
-                    image_positions_temp.append((-1, embed_id))
+                    # Position -1 means before first paragraph (cover)
+                    image_positions_temp.append((-1, embed_id, 0, 0))
     
-    # Step 4: Map images in paragraphs
+    # Step 4: Map images in paragraphs (with dimensions)
     for para_idx, para in enumerate(doc.paragraphs):
         for run in para.runs:
             run_xml = run._element.xml.decode('utf-8') if isinstance(run._element.xml, bytes) else run._element.xml
             if '<w:drawing' in run_xml or '<w:pict' in run_xml:
-                for rel_id in image_data.keys():
-                    if rel_id in run_xml:
-                        image_positions_temp.append((para_idx, rel_id))
+                # Extract exact rel_id via regex (avoid substring false matches)
+                embeds = re.findall(r'r:embed="(rId\d+)"', run_xml)
+                matched_rel_id = None
+                for eid in embeds:
+                    if eid in image_data:
+                        matched_rel_id = eid
                         break
+                if not matched_rel_id:
+                    # Fallback: substring search (legacy)
+                    for rel_id in image_data.keys():
+                        if rel_id in run_xml:
+                            matched_rel_id = rel_id
+                            break
+                if matched_rel_id:
+                    # Extract dimensions from wp:extent (EMU → pixels at 96 DPI)
+                    w_px, h_px = 0, 0
+                    extents = re.findall(r'<wp:extent\s+cx="(\d+)"\s+cy="(\d+)"', run_xml)
+                    if extents:
+                        cx, cy = int(extents[0][0]), int(extents[0][1])
+                        w_px = round(cx / 914400 * 96)
+                        h_px = round(cy / 914400 * 96)
+                    image_positions_temp.append((para_idx, matched_rel_id, w_px, h_px))
 
     # Step 5: Sort by paragraph position
     image_positions_temp.sort(key=lambda x: x[0])
@@ -177,7 +200,7 @@ def extract_images(docx_path: str, book_name: str, output_dir: str = "output") -
     image_positions = []
     image_counter = 1  # Start from 1 for chapter images
     
-    for para_idx, rel_id in image_positions_temp:
+    for para_idx, rel_id, w_px, h_px in image_positions_temp:
         img_info = image_data[rel_id]
         
         if has_cover and rel_id == cover_rel_id:
@@ -196,7 +219,7 @@ def extract_images(docx_path: str, book_name: str, output_dir: str = "output") -
             filename = f"image-{str(image_counter).zfill(2)}.{img_info['ext']}"
             image_counter += 1
         
-        image_positions.append((para_idx, rel_id, filename))
+        image_positions.append((para_idx, rel_id, filename, w_px, h_px))
 
     return {
         'files': image_files,
@@ -205,34 +228,61 @@ def extract_images(docx_path: str, book_name: str, output_dir: str = "output") -
     }
 
 
-def to_markdown(chapter: dict, image_positions: list = None) -> str:
+def to_markdown(chapter: dict, image_positions: list = None, next_heading_idx: int = None) -> str:
     """
     Convert chapter to Markdown with embedded images at correct positions.
     
+    Images are placed using range-based matching: an image belongs to this
+    chapter if its doc_idx is >= this chapter's heading and < the next heading.
+    
     Args:
-        chapter: Chapter dict with title and content blocks
-        image_positions: List of (para_index, rel_id, filename) tuples
+        chapter: Chapter dict with title, heading_doc_index, and content blocks
+        image_positions: List of (para_index, rel_id, filename, w_px, h_px) tuples
+        next_heading_idx: doc_para_index of next chapter's heading (exclusive upper bound)
     """
     lines = [f"# {chapter['title']}", ""]
     
-    # Build a map of para_index to image filenames for quick lookup
-    image_map = {}
-    if image_positions:
-        for para_idx, rel_id, filename in image_positions:
-            if para_idx not in image_map:
-                image_map[para_idx] = []
-            image_map[para_idx].append(filename)
+    content = chapter["content"]
+    if not content:
+        return "\n".join(lines)
 
-    for item in chapter["content"]:
+    # Chapter range: from heading to next heading (or end of doc)
+    ch_start = chapter.get("heading_doc_index", 0)
+    ch_end = next_heading_idx if next_heading_idx is not None else float('inf')
+
+    # Collect images that belong to this chapter's range
+    chapter_images = []
+    if image_positions:
+        for item in image_positions:
+            para_idx = item[0]
+            if para_idx < 0:
+                continue  # Skip cover
+            filename = item[2]
+            w_px = item[3] if len(item) > 3 else 0
+            h_px = item[4] if len(item) > 4 else 0
+            if ch_start <= para_idx < ch_end:
+                chapter_images.append((para_idx, filename, w_px, h_px))
+    
+    # Sort images by position
+    chapter_images.sort(key=lambda x: x[0])
+
+    # Build output: for each content paragraph, insert any images that
+    # appear before it (doc_idx <= this paragraph's doc_idx)
+    img_cursor = 0
+    for item in content:
         style = item["style"]
         text = item["text"]
-        para_idx = item.get("para_index")
+        para_idx = item.get("para_index", -1)
         
-        # Insert images that appear at this paragraph position
-        if para_idx is not None and para_idx in image_map:
-            for img_filename in image_map[para_idx]:
+        # Insert images whose doc_idx <= current paragraph's doc_idx
+        while img_cursor < len(chapter_images) and chapter_images[img_cursor][0] <= para_idx:
+            _, img_filename, w_px, h_px = chapter_images[img_cursor]
+            if w_px > 0 and h_px > 0:
+                lines.append(f'<img src="../assets/{img_filename}" alt="{img_filename}" width="{w_px}" height="{h_px}" />')
+            else:
                 lines.append(f"![{img_filename}](../assets/{img_filename})")
-                lines.append("")
+            lines.append("")
+            img_cursor += 1
 
         if "Heading 2" in style:
             lines.append(f"## {text}")
@@ -244,5 +294,15 @@ def to_markdown(chapter: dict, image_positions: list = None) -> str:
             lines.append(text)
 
         lines.append("")
+
+    # Append any remaining images after the last paragraph
+    while img_cursor < len(chapter_images):
+        _, img_filename, w_px, h_px = chapter_images[img_cursor]
+        if w_px > 0 and h_px > 0:
+            lines.append(f'<img src="../assets/{img_filename}" alt="{img_filename}" width="{w_px}" height="{h_px}" />')
+        else:
+            lines.append(f"![{img_filename}](../assets/{img_filename})")
+        lines.append("")
+        img_cursor += 1
 
     return "\n".join(lines)
