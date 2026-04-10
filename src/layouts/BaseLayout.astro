@@ -1,8 +1,10 @@
 ---
+import { ClientRouter } from 'astro:transitions';
 import '../styles/theme.css';
 import type { Language } from '../types/index';
 import Header from '../components/Header.astro';
 import ReadingProgress from '../components/ReadingProgress.astro';
+import BackToTop from '../components/BackToTop.astro';
 import { LANGUAGES } from '../utils/language';
 
 interface Props {
@@ -29,7 +31,7 @@ const isRtl = language === LANGUAGES.HE;
 ---
 
 <!doctype html>
-<html lang={language} dir={isRtl ? 'rtl' : 'ltr'}>
+<html lang={language} dir={isRtl ? 'rtl' : 'ltr'} class="scroll-smooth">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -47,6 +49,9 @@ const isRtl = language === LANGUAGES.HE;
 
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <!-- View Transitions -->
+    <ClientRouter />
 
     <!-- Open Graph -->
     <meta property="og:title" content={title} />
@@ -99,21 +104,27 @@ const isRtl = language === LANGUAGES.HE;
       <slot />
     </main>
 
+    <BackToTop />
+
     <script>
       // Initialize language preference on page load
       import {
         getLanguageFromStorage,
-        setLanguageToStorage,
         isValidLanguage,
         applyLanguageToPage,
       } from '../utils/language';
 
-      const storedLang = getLanguageFromStorage();
-      if (isValidLanguage(storedLang)) {
-        document.documentElement.lang = storedLang;
-        document.documentElement.dir = storedLang === 'he' ? 'rtl' : 'ltr';
-        applyLanguageToPage(storedLang);
+      function applyStoredLanguage() {
+        const storedLang = getLanguageFromStorage();
+        if (isValidLanguage(storedLang)) {
+          document.documentElement.lang = storedLang;
+          document.documentElement.dir = storedLang === 'he' ? 'rtl' : 'ltr';
+          applyLanguageToPage(storedLang);
+        }
       }
+
+      applyStoredLanguage();
+      document.addEventListener('astro:after-swap', applyStoredLanguage);
 
       // Listen for language changes and update page content
       window.addEventListener(

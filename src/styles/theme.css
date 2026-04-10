@@ -111,3 +111,40 @@
   /* ── Blockquote ── */
   --yuval-blockquote-border: #a855f7;     /* purple-500 */
 }
+
+/* ═══════════════════════════════════════════════════════
+   GLOBAL TRANSITIONS & ANIMATIONS
+   ═══════════════════════════════════════════════════════ */
+
+/* Prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Fade-in for main content on page load */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+#main-content {
+  animation: fade-in-up 0.4s ease-out;
+}
+
+/* Interactive elements transition by default */
+a, button {
+  transition-property: color, background-color, border-color, box-shadow, opacity, transform;
+  transition-duration: 200ms;
+  transition-timing-function: ease;
+}

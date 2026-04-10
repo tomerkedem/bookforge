@@ -3,6 +3,7 @@ import ReadingLayout from '../../../layouts/ReadingLayout.astro';
 import ChapterNavigation from '../../../components/ChapterNavigation.astro';
 import ChapterSidebars from '../../../components/ChapterSidebars.astro';
 import ChapterMeta from '../../../components/ChapterMeta.astro';
+import Breadcrumbs from '../../../components/Breadcrumbs.astro';
 import type { Language, Chapter } from '../../../types/index';
 import { LANGUAGES } from '../../../utils/language';
 import { readFileSync } from 'fs';
@@ -85,6 +86,16 @@ chapterContentEn = stripFirstH1(chapterContentEn);
   title={currentChapter.title_en}
   language={LANGUAGES.EN}
 >
+  <!-- Breadcrumbs -->
+  <Breadcrumbs
+    items={[
+      { label_he: 'ספרים', label_en: 'Books', href: '/' },
+      { label_he: bookData.title_he, label_en: bookData.title_en, href: `/books/${book}` },
+      { label_he: currentChapter.title_he, label_en: currentChapter.title_en },
+    ]}
+    class="mb-4"
+  />
+
   <!-- Chapter Sidebars: TOC on right, Outline on left -->
   <ChapterSidebars
     chapters={allChapters}

@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
 import type { Language, Chapter } from '../../types/index';
 import { LANGUAGES } from '../../utils/language';
 import { discoverAllBooks } from '../../utils/book-discovery';
@@ -55,6 +56,15 @@ const description =
     ]}
   >
     <div class="max-w-4xl mx-auto">
+      <!-- Breadcrumbs -->
+      <Breadcrumbs
+        items={[
+          { label_he: 'ספרים', label_en: 'Books', href: '/' },
+          { label_he: book.title_he, label_en: book.title_en },
+        ]}
+        class="mb-8"
+      />
+
       <!-- Book Header -->
       <div
         class:list={[
@@ -71,6 +81,8 @@ const description =
           <img
             src={book.coverImage}
             alt={title}
+            loading="lazy"
+            decoding="async"
             class="w-full rounded-lg shadow-lg bg-yuval-bg-secondary object-contain"
           />
         </div>

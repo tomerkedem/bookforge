@@ -1,0 +1,53 @@
+---
+interface BreadcrumbItem {
+  label_he: string;
+  label_en: string;
+  href?: string;
+}
+
+interface Props {
+  items: BreadcrumbItem[];
+  class?: string;
+}
+
+const { items, class: className } = Astro.props;
+---
+
+<nav
+  aria-label="Breadcrumb"
+  class:list={['text-sm font-body text-yuval-text-tertiary', className]}
+>
+  <ol class="flex flex-wrap items-center gap-1.5" data-breadcrumbs>
+    {items.map((item, i) => {
+      const isLast = i === items.length - 1;
+      return (
+        <li class="flex items-center gap-1.5">
+          {i > 0 && (
+            <svg class="w-3.5 h-3.5 text-yuval-text-muted rtl:rotate-180 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+          )}
+          {isLast ? (
+            <span
+              class="text-yuval-text font-medium truncate max-w-[200px] sm:max-w-none"
+              aria-current="page"
+              data-he={item.label_he}
+              data-en={item.label_en}
+            >
+              {item.label_en}
+            </span>
+          ) : (
+            <a
+              href={item.href || '/'}
+              class="hover:text-yuval-text transition-colors duration-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-yuval-highlight rounded-sm"
+              data-he={item.label_he}
+              data-en={item.label_en}
+            >
+              {item.label_en}
+            </a>
+          )}
+        </li>
+      );
+    })}
+  </ol>
+</nav>
