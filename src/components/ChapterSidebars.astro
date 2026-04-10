@@ -120,6 +120,7 @@ const isRtl = language === LANGUAGES.HE;
                 chapter.id === currentChapterId && 'toc-link-active',
               ]}
               aria-current={chapter.id === currentChapterId ? 'page' : undefined}
+              data-astro-reload
             >
               <span class="toc-number">
                 {String(chapter.id).padStart(2, '0')}
@@ -548,8 +549,7 @@ const isRtl = language === LANGUAGES.HE;
   }
 
   /**
-   * TOC navigation via event delegation — updates href with correct lang
-   * and lets Astro ClientRouter handle the smooth transition.
+   * TOC navigation — handles language parameter and does full page reload.
    */
   function initTocNavigation() {
     const tocNav = document.querySelector('.toc-list');
@@ -559,12 +559,15 @@ const isRtl = language === LANGUAGES.HE;
     tocNav.addEventListener('click', (e) => {
       const target = (e.target as HTMLElement).closest('a.toc-link') as HTMLAnchorElement | null;
       if (!target) return;
-      // Update href with current lang, then let the default <a> click proceed
-      // so Astro's ClientRouter intercepts it for a smooth transition
+      
+      e.preventDefault();
+      
       const base = target.getAttribute('href')?.split('?')[0] || '';
       const lang = getCurrentLang();
-      target.href = lang === 'he' ? `${base}?lang=he` : base;
-      // Don't call e.preventDefault() — let Astro handle it
+      const url = lang === 'he' ? `${base}?lang=he` : base;
+      
+      // Full page reload — bypasses View Transitions
+      window.location.href = url;
     });
   }
 
@@ -722,23 +725,7 @@ const isRtl = language === LANGUAGES.HE;
     // Wait for content to render, then build outline
     setTimeout(() => {
       buildChapterOutline();
-      scrollTocToActive();
     }, 150);
-  }
-
-  /**
-   * Scroll the TOC sidebar so the active chapter is visible
-   */
-  function scrollTocToActive() {
-    const tocSidebar = document.getElementById('toc-sidebar');
-    if (!tocSidebar) return;
-    const activeItem = tocSidebar.querySelector('.toc-item-active') as HTMLElement | null;
-    if (!activeItem) return;
-    // Scroll only the sidebar container, not the main page
-    const sidebarRect = tocSidebar.getBoundingClientRect();
-    const activeRect = activeItem.getBoundingClientRect();
-    const offset = activeRect.top - sidebarRect.top - sidebarRect.height / 2 + activeRect.height / 2;
-    tocSidebar.scrollTop += offset;
   }
 
   // Initial load
