@@ -5,7 +5,7 @@
     "chapters": [
       {
         "id": 0,
-        "title_he": "מבוא",
+        "title_he": "פתיחה",
         "title_en": "Introduction",
         "sections": 2,
         "has_images": false,
@@ -14,30 +14,42 @@
       },
       {
         "id": 1,
-        "title_he": "Supervised Learning למידה מונחית",
-        "title_en": "Supervised Learning",
+        "title_he": "מה זה Artificial Intelligence (AI)",
+        "title_en": "What is Artificial Intelligence (AI)",
         "sections": 3,
         "has_images": false,
         "word_count": 30,
-        "topics": ["Supervised Learning", "Training Data", "Predictions"]
+        "topics": [
+          "Supervised Learning",
+          "Training Data",
+          "Predictions"
+        ]
       },
       {
         "id": 2,
-        "title_he": "למידה מונחית",
-        "title_en": "Supervised Learning Overview",
+        "title_he": "מה זה Machine Learning",
+        "title_en": "What is Machine Learning",
         "sections": 4,
         "has_images": true,
         "word_count": 92,
-        "topics": ["Supervised Learning", "Labeled Data", "Predictions", "Workflow"]
+        "topics": [
+          "Supervised Learning",
+          "Labeled Data",
+          "Predictions",
+          "Workflow"
+        ]
       },
       {
         "id": 3,
-        "title_he": "סוגי בעיות בלמידה מונחית",
-        "title_en": "Types of Supervised Learning Problems",
+        "title_he": "Why Use ML",
+        "title_en": "Why Use ML",
         "sections": 3,
         "has_images": false,
         "word_count": 51,
-        "topics": ["Regression", "Classification"]
+        "topics": [
+          "Regression",
+          "Classification"
+        ]
       },
       {
         "id": 4,
@@ -46,16 +58,26 @@
         "sections": 5,
         "has_images": false,
         "word_count": 131,
-        "topics": ["Anomaly Detection", "Recommendations", "Risk Assessment", "Predictive Maintenance"]
+        "topics": [
+          "Anomaly Detection",
+          "Recommendations",
+          "Risk Assessment",
+          "Predictive Maintenance"
+        ]
       },
       {
         "id": 5,
-        "title_he": "מודל כללי",
-        "title_en": "General Model",
+        "title_he": "למה/מתי להשתמש ב-Machine Learning",
+        "title_en": "Why/When to Use Machine Learning",
         "sections": 4,
         "has_images": true,
         "word_count": 140,
-        "topics": ["Model", "Training", "Prediction", "Pattern Recognition"]
+        "topics": [
+          "Model",
+          "Training",
+          "Prediction",
+          "Pattern Recognition"
+        ]
       },
       {
         "id": 6,
@@ -64,205 +86,314 @@
         "sections": 6,
         "has_images": true,
         "word_count": 81,
-        "topics": ["ML Process", "Training", "Testing", "Model Iteration"]
+        "topics": [
+          "ML Process",
+          "Training",
+          "Testing",
+          "Model Iteration"
+        ]
       },
       {
         "id": 7,
-        "title_he": "רגרסיה ליניארית Linear Regression",
-        "title_en": "Linear Regression",
+        "title_he": "סוגי מודלים ב-Machine Learning",
+        "title_en": "Types of Machine Learning Models",
         "sections": 7,
         "has_images": true,
         "word_count": 167,
-        "topics": ["Linear Regression", "Squared Error", "Prediction", "Line Fitting"]
+        "topics": [
+          "Linear Regression",
+          "Squared Error",
+          "Prediction",
+          "Line Fitting"
+        ]
       },
       {
         "id": 8,
-        "title_he": "רגרסיה לוגיסטית Logistic Regression",
-        "title_en": "Logistic Regression",
+        "title_he": "למידה מונחית",
+        "title_en": "Supervised Learning",
         "sections": 4,
         "has_images": false,
         "word_count": 77,
-        "topics": ["Logistic Regression", "Classification", "Sigmoid", "Decision Threshold"]
+        "topics": [
+          "Logistic Regression",
+          "Classification",
+          "Sigmoid",
+          "Decision Threshold"
+        ]
       },
       {
         "id": 9,
-        "title_he": "עץ החלטה Decision Tree",
-        "title_en": "Decision Tree",
+        "title_he": "סוגי בעיות בלמידה מונחית",
+        "title_en": "Types of Supervised Learning Problems",
         "sections": 3,
         "has_images": false,
         "word_count": 60,
-        "topics": ["Decision Tree", "Branching", "Classification"]
+        "topics": [
+          "Decision Tree",
+          "Branching",
+          "Classification"
+        ]
       },
       {
         "id": 10,
-        "title_he": "רנדום פורסט Random Forest",
-        "title_en": "Random Forest",
+        "title_he": "רגרסיה ליניארית Linear Regression))",
+        "title_en": "Linear Regression",
         "sections": 5,
         "has_images": false,
         "word_count": 175,
-        "topics": ["Random Forest", "Ensemble", "Voting", "Decision Trees"]
+        "topics": [
+          "Random Forest",
+          "Ensemble",
+          "Voting",
+          "Decision Trees"
+        ]
       },
       {
         "id": 11,
-        "title_he": "Gradient Boosting מתקדם",
-        "title_en": "Advanced Gradient Boosting",
+        "title_he": "רגרסיה לוגיסטית (Logistic Regression)",
+        "title_en": "Logistic Regression",
         "sections": 4,
         "has_images": true,
         "word_count": 125,
-        "topics": ["Gradient Boosting", "Iterative Learning", "Error Correction"]
+        "topics": [
+          "Gradient Boosting",
+          "Iterative Learning",
+          "Error Correction"
+        ]
       },
       {
         "id": 12,
-        "title_he": "K-Nearest Neighbors KNN",
-        "title_en": "K-Nearest Neighbors (KNN)",
+        "title_he": "עץ החלטה (Decision Tree)",
+        "title_en": "Decision Tree",
         "sections": 6,
         "has_images": true,
         "word_count": 219,
-        "topics": ["KNN", "Distance", "Neighbors", "Voting"]
+        "topics": [
+          "KNN",
+          "Distance",
+          "Neighbors",
+          "Voting"
+        ]
       },
       {
         "id": 13,
-        "title_he": "K-Means Clustering",
-        "title_en": "K-Means Clustering",
+        "title_he": "יער אקראי (Random Forest)",
+        "title_en": "Random Forest",
         "sections": 5,
         "has_images": true,
         "word_count": 175,
-        "topics": ["K-Means", "Clustering", "Centroids", "Unsupervised Learning"]
+        "topics": [
+          "K-Means",
+          "Clustering",
+          "Centroids",
+          "Unsupervised Learning"
+        ]
       },
       {
         "id": 14,
-        "title_he": "Principal Component Analysis PCA",
-        "title_en": "Principal Component Analysis (PCA)",
+        "title_he": "חיזוק הדרגתי (XGBoost)",
+        "title_en": "Gradient Boosting (XGBoost)",
         "sections": 4,
         "has_images": false,
         "word_count": 153,
-        "topics": ["PCA", "Dimensionality Reduction", "Feature Transformation"]
+        "topics": [
+          "PCA",
+          "Dimensionality Reduction",
+          "Feature Transformation"
+        ]
       },
       {
         "id": 15,
-        "title_he": "Support Vector Machine SVM",
-        "title_en": "Support Vector Machine (SVM)",
+        "title_he": "למידה לא מונחית (Unsupervised Learning)",
+        "title_en": "Unsupervised Learning",
         "sections": 6,
         "has_images": true,
         "word_count": 233,
-        "topics": ["SVM", "Hyperplane", "Margin", "Support Vectors"]
+        "topics": [
+          "SVM",
+          "Hyperplane",
+          "Margin",
+          "Support Vectors"
+        ]
       },
       {
         "id": 16,
-        "title_he": "רשתות נוירונים Neural Networks",
-        "title_en": "Neural Networks",
+        "title_he": "למידה מונחית מול למידה לא מונחית (Supervised vs Unsupervised Learning)",
+        "title_en": "Supervised vs Unsupervised Learning",
         "sections": 8,
         "has_images": true,
         "word_count": 311,
-        "topics": ["Neural Networks", "Layers", "Backpropagation", "Deep Learning"]
+        "topics": [
+          "Neural Networks",
+          "Layers",
+          "Backpropagation",
+          "Deep Learning"
+        ]
       },
       {
         "id": 17,
-        "title_he": "Convolutional Neural Network CNN",
-        "title_en": "Convolutional Neural Network (CNN)",
+        "title_he": "למידה חצי מונחית (Semi-supervised Learning)",
+        "title_en": "Semi-supervised Learning",
         "sections": 5,
         "has_images": true,
         "word_count": 155,
-        "topics": ["CNN", "Convolution", "Pooling", "Feature Maps", "Image Recognition"]
+        "topics": [
+          "CNN",
+          "Convolution",
+          "Pooling",
+          "Feature Maps",
+          "Image Recognition"
+        ]
       },
       {
         "id": 18,
-        "title_he": "Recurrent Neural Network RNN",
-        "title_en": "Recurrent Neural Network (RNN)",
+        "title_he": "למידת חיזוק (Reinforcement Learning)",
+        "title_en": "Reinforcement Learning",
         "sections": 4,
         "has_images": false,
         "word_count": 148,
-        "topics": ["RNN", "Sequential Data", "Memory", "Time Series"]
+        "topics": [
+          "RNN",
+          "Sequential Data",
+          "Memory",
+          "Time Series"
+        ]
       },
       {
         "id": 19,
-        "title_he": "Long Short-Term Memory LSTM",
-        "title_en": "Long Short-Term Memory (LSTM)",
+        "title_he": "רשתות נוירונים (Neural Networks)",
+        "title_en": "Neural Networks",
         "sections": 4,
         "has_images": false,
         "word_count": 139,
-        "topics": ["LSTM", "Memory Gates", "Long-term Dependencies"]
+        "topics": [
+          "LSTM",
+          "Memory Gates",
+          "Long-term Dependencies"
+        ]
       },
       {
         "id": 20,
-        "title_he": "Transformer ארכיטקטורת",
-        "title_en": "Transformer Architecture",
+        "title_he": "נוירון (Neuron)",
+        "title_en": "Neuron",
         "sections": 3,
         "has_images": false,
         "word_count": 72,
-        "topics": ["Transformer", "Attention Mechanism", "Self-Attention"]
+        "topics": [
+          "Transformer",
+          "Attention Mechanism",
+          "Self-Attention"
+        ]
       },
       {
         "id": 21,
-        "title_he": "Generative Adversarial Network GAN",
-        "title_en": "Generative Adversarial Network (GAN)",
+        "title_he": "פרספטורון (Perceptron)",
+        "title_en": "Perceptron",
         "sections": 5,
         "has_images": false,
         "word_count": 157,
-        "topics": ["GAN", "Generator", "Discriminator", "Adversarial Training"]
+        "topics": [
+          "GAN",
+          "Generator",
+          "Discriminator",
+          "Adversarial Training"
+        ]
       },
       {
         "id": 22,
-        "title_he": "Reinforcement Learning למידת חיזוק",
-        "title_en": "Reinforcement Learning",
+        "title_he": "Forward and Backward Propagation",
+        "title_en": "Forward and Backward Propagation",
         "sections": 5,
         "has_images": false,
         "word_count": 163,
-        "topics": ["Reinforcement Learning", "Agent", "Reward", "Policy"]
+        "topics": [
+          "Reinforcement Learning",
+          "Agent",
+          "Reward",
+          "Policy"
+        ]
       },
       {
         "id": 23,
-        "title_he": "Autoencoder",
-        "title_en": "Autoencoder",
+        "title_he": "Deep Learning",
+        "title_en": "Deep Learning",
         "sections": 5,
         "has_images": false,
         "word_count": 212,
-        "topics": ["Autoencoder", "Encoding", "Decoding", "Dimensionality Reduction"]
+        "topics": [
+          "Autoencoder",
+          "Encoding",
+          "Decoding",
+          "Dimensionality Reduction"
+        ]
       },
       {
         "id": 24,
-        "title_he": "Transfer Learning",
-        "title_en": "Transfer Learning",
+        "title_he": "טבלת בילבול (Confusion Matrix)",
+        "title_en": "Confusion Matrix",
         "sections": 5,
         "has_images": false,
         "word_count": 188,
-        "topics": ["Transfer Learning", "Pre-trained Models", "Fine-tuning"]
+        "topics": [
+          "Transfer Learning",
+          "Pre-trained Models",
+          "Fine-tuning"
+        ]
       },
       {
         "id": 25,
-        "title_he": "Overfitting ו- Underfitting",
-        "title_en": "Overfitting and Underfitting",
+        "title_he": "מעבר ל-Accuracy: דיוק (Precision), רגישות (Recall) ומדד F1",
+        "title_en": "Beyond Accuracy: Precision, Recall, and F1 Score",
         "sections": 4,
         "has_images": false,
         "word_count": 119,
-        "topics": ["Overfitting", "Underfitting", "Model Complexity", "Generalization"]
+        "topics": [
+          "Overfitting",
+          "Underfitting",
+          "Model Complexity",
+          "Generalization"
+        ]
       },
       {
         "id": 26,
-        "title_he": "Cross-Validation",
-        "title_en": "Cross-Validation",
+        "title_he": "מה צריך לדעת כ-AI Engineer",
+        "title_en": "What You Need to Know as an AI Engineer",
         "sections": 3,
         "has_images": false,
         "word_count": 90,
-        "topics": ["Cross-Validation", "K-Fold", "Model Evaluation"]
+        "topics": [
+          "Cross-Validation",
+          "K-Fold",
+          "Model Evaluation"
+        ]
       },
       {
         "id": 27,
-        "title_he": "Hyperparameter Tuning",
-        "title_en": "Hyperparameter Tuning",
+        "title_he": "NumPy: עבודה יעילה עם נתונים מספריים",
+        "title_en": "NumPy: Efficient Work with Numerical Data",
         "sections": 4,
         "has_images": false,
         "word_count": 121,
-        "topics": ["Hyperparameters", "Grid Search", "Random Search", "Optimization"]
+        "topics": [
+          "Hyperparameters",
+          "Grid Search",
+          "Random Search",
+          "Optimization"
+        ]
       },
       {
         "id": 28,
-        "title_he": "Feature Engineering",
-        "title_en": "Feature Engineering",
+        "title_he": "Pandas: השער לעיבוד נתונים ב-Machine Learning",
+        "title_en": "Pandas: The Gateway to Data Processing in Machine Learning",
         "sections": 6,
         "has_images": false,
         "word_count": 197,
-        "topics": ["Feature Engineering", "Feature Selection", "Feature Extraction", "Data Transformation"]
+        "topics": [
+          "Feature Engineering",
+          "Feature Selection",
+          "Feature Extraction",
+          "Data Transformation"
+        ]
       }
     ]
   }
