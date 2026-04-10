@@ -1,13 +1,18 @@
 """
-Full pipeline: Word/PDF → chapters → images → markdown → output.
+Full pipeline: Word/PDF → chapters → images → markdown → translate → output.
 
 Usage:
-    python -m pipeline.build <docx_path> <book_name> [--title-he "..."] [--title-en "..."]
+    python -m pipeline.build <docx_path> <book_name> [--title-he "..."] [--title-en "..."] [--skip-translate]
 
 Example:
     python -m pipeline.build "D:\\Books\\MyBook.docx" my-book --title-he "הספר שלי" --title-en "My Book"
 
 Run from the project root (bookforge/src/).
+
+Translation:
+    Step 5.5 identifies Hebrew chapters needing translation.
+    When run from Copilot, the Translator agent handles translation.
+    Use --skip-translate to skip translation (e.g., for re-parse only).
 """
 
 import argparse
@@ -22,6 +27,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from pipeline.ingest import ingest
 from pipeline.parse import parse, extract_images, to_markdown
 from pipeline.organize import organize
+from pipeline.translate import get_chapters_to_translate, build_translation_prompt
 
 
 def sync_images_to_english(book_dir: Path):
@@ -85,7 +91,7 @@ def copy_assets_to_public(book_slug: str, output_dir: str = "output"):
 
 def run_pipeline(docx_path: str, book_name: str,
                  title_he: str = "", title_en: str = "",
-                 output_dir: str = "output"):
+                 output_dir: str = "output", skip_translate: bool = False):
     """Run the full book processing pipeline."""
 
     print(f"{'=' * 60}")
@@ -93,23 +99,23 @@ def run_pipeline(docx_path: str, book_name: str,
     print(f"{'=' * 60}")
 
     # Step 1: Ingest
-    print("\n[1/6] Ingest...")
+    print("\n[1/7] Ingest...")
     ingested = ingest(docx_path)
     print(f"  Paragraphs: {ingested['total']}")
 
     # Step 2: Parse chapters
-    print("\n[2/6] Parse chapters...")
+    print("\n[2/7] Parse chapters...")
     chapters = parse(ingested)
     print(f"  Chapters: {len(chapters)}")
 
     # Step 3: Extract images
-    print("\n[3/6] Extract images...")
+    print("\n[3/7] Extract images...")
     images = extract_images(docx_path, book_name, output_dir)
     non_cover = [p for p in images["positions"] if p[0] >= 0]
     print(f"  Images: {len(non_cover)} chapter + {'1 cover' if images['has_cover'] else 'no cover'}")
 
     # Step 4: Generate markdown with images
-    print("\n[4/6] Generate markdown...")
+    print("\n[4/7] Generate markdown...")
     chapters_md = []
     total_images = 0
     for i, ch in enumerate(chapters):
@@ -121,19 +127,37 @@ def run_pipeline(docx_path: str, book_name: str,
     print(f"  {total_images} images placed across {len(chapters_md)} chapters")
 
     # Step 5: Organize output (cleans stale files + generates content-structure.json)
-    print("\n[5/6] Organize output...")
+    print("\n[5/7] Organize output...")
     created = organize(book_name, chapters_md, output_dir,
                        book_title_he=title_he, book_title_en=title_en)
     print(f"  Hebrew files: {len(created)}")
 
-    # Step 6: Sync images to English + copy assets to public/
-    print("\n[6/6] Sync & finalize...")
+    # Step 6: Translate (identify chapters needing translation)
     book_dir = Path(output_dir) / book_name
+    pending_translations = []
+    if skip_translate:
+        print("\n[6/7] Translate... SKIPPED (--skip-translate)")
+    else:
+        print("\n[6/7] Translate...")
+        pending_translations = get_chapters_to_translate(str(book_dir))
+        if pending_translations:
+            print(f"  {len(pending_translations)} chapters need translation:")
+            for t in pending_translations:
+                print(f"    chapter-{t['number']}: {t['he_path']} → {t['en_path']}")
+            print("  >> Use Translator agent to translate these chapters.")
+            print("  >> Prompts ready via: build_translation_prompt(he_path, en_path)")
+        else:
+            print("  All chapters already translated (EN files up to date)")
+
+    # Step 7: Sync images to English + copy assets to public/
+    print("\n[7/7] Sync & finalize...")
     sync_images_to_english(book_dir)
     copy_assets_to_public(book_name, output_dir)
 
     print(f"\n{'=' * 60}")
     print(f"Done! {len(chapters)} chapters, {total_images} images")
+    if pending_translations:
+        print(f"ACTION REQUIRED: {len(pending_translations)} chapters need Translator agent")
     print(f"Output: {book_dir}")
     print(f"{'=' * 60}")
 
@@ -142,6 +166,7 @@ def run_pipeline(docx_path: str, book_name: str,
         "images": total_images,
         "has_cover": images["has_cover"],
         "output_dir": str(book_dir),
+        "pending_translations": pending_translations,
     }
 
 
@@ -152,11 +177,13 @@ def main():
     parser.add_argument("--title-he", default="", help="Hebrew title")
     parser.add_argument("--title-en", default="", help="English title")
     parser.add_argument("--output-dir", default="output", help="Output directory")
+    parser.add_argument("--skip-translate", action="store_true",
+                        help="Skip translation step (re-parse only)")
     args = parser.parse_args()
 
     run_pipeline(args.docx_path, args.book_name,
                  title_he=args.title_he, title_en=args.title_en,
-                 output_dir=args.output_dir)
+                 output_dir=args.output_dir, skip_translate=args.skip_translate)
 
 
 if __name__ == "__main__":
