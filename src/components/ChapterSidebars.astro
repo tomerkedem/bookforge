@@ -548,8 +548,8 @@ const isRtl = language === LANGUAGES.HE;
   }
 
   /**
-   * TOC navigation via event delegation — always reads lang at click time.
-   * Uses a flag to ensure the listener is added only once.
+   * TOC navigation via event delegation — updates href with correct lang
+   * and lets Astro ClientRouter handle the smooth transition.
    */
   function initTocNavigation() {
     const tocNav = document.querySelector('.toc-list');
@@ -557,13 +557,14 @@ const isRtl = language === LANGUAGES.HE;
     (tocNav as HTMLElement).dataset.navInit = 'true';
 
     tocNav.addEventListener('click', (e) => {
-      const target = (e.target as HTMLElement).closest('a.toc-link');
+      const target = (e.target as HTMLElement).closest('a.toc-link') as HTMLAnchorElement | null;
       if (!target) return;
-      e.preventDefault();
-      const base = (target as HTMLAnchorElement).getAttribute('href')?.split('?')[0] || '';
+      // Update href with current lang, then let the default <a> click proceed
+      // so Astro's ClientRouter intercepts it for a smooth transition
+      const base = target.getAttribute('href')?.split('?')[0] || '';
       const lang = getCurrentLang();
-      const url = lang === 'he' ? `${base}?lang=he` : base;
-      window.location.href = url;
+      target.href = lang === 'he' ? `${base}?lang=he` : base;
+      // Don't call e.preventDefault() — let Astro handle it
     });
   }
 
@@ -721,7 +722,23 @@ const isRtl = language === LANGUAGES.HE;
     // Wait for content to render, then build outline
     setTimeout(() => {
       buildChapterOutline();
+      scrollTocToActive();
     }, 150);
+  }
+
+  /**
+   * Scroll the TOC sidebar so the active chapter is visible
+   */
+  function scrollTocToActive() {
+    const tocSidebar = document.getElementById('toc-sidebar');
+    if (!tocSidebar) return;
+    const activeItem = tocSidebar.querySelector('.toc-item-active') as HTMLElement | null;
+    if (!activeItem) return;
+    // Scroll only the sidebar container, not the main page
+    const sidebarRect = tocSidebar.getBoundingClientRect();
+    const activeRect = activeItem.getBoundingClientRect();
+    const offset = activeRect.top - sidebarRect.top - sidebarRect.height / 2 + activeRect.height / 2;
+    tocSidebar.scrollTop += offset;
   }
 
   // Initial load
