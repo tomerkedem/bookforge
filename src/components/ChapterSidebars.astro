@@ -21,7 +21,9 @@ const isRtl = language === LANGUAGES.HE;
     aria-label={language === LANGUAGES.HE ? 'פתח ניווט' : 'Open navigation'}
     aria-expanded="false"
   >
-    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <span class="mobile-toc-btn-glow"></span>
+    <span class="mobile-toc-btn-ring"></span>
+    <svg class="mobile-toc-icon w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
     </svg>
   </button>
@@ -416,30 +418,95 @@ const isRtl = language === LANGUAGES.HE;
   .mobile-toc-btn {
     display: none;
     position: fixed;
-    bottom: 20px;
-    right: 20px;
+    bottom: 24px;
+    right: 24px;
     z-index: 50;
-    width: 48px;
-    height: 48px;
+    width: 56px;
+    height: 56px;
     border-radius: 50%;
-    background: var(--yuval-accent);
-    color: var(--yuval-accent-text);
+    background: linear-gradient(135deg, #6366f1, #8b5cf6, #a78bfa);
+    color: #ffffff;
     border: none;
     cursor: pointer;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-    transition: transform 0.2s;
+    box-shadow:
+      0 4px 15px rgba(99, 102, 241, 0.4),
+      0 8px 30px rgba(139, 92, 246, 0.25),
+      inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s;
+    overflow: visible;
+  }
+
+  .mobile-toc-btn:hover {
+    transform: translateY(-2px) scale(1.05);
+    box-shadow:
+      0 8px 25px rgba(99, 102, 241, 0.5),
+      0 12px 40px rgba(139, 92, 246, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.25);
   }
 
   .mobile-toc-btn:active {
     transform: scale(0.92);
+    box-shadow:
+      0 2px 8px rgba(99, 102, 241, 0.4),
+      inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  }
+
+  .mobile-toc-btn-glow {
+    position: absolute;
+    inset: -3px;
+    border-radius: 50%;
+    background: conic-gradient(from 0deg, #6366f1, #a78bfa, #c4b5fd, #6366f1);
+    opacity: 0.5;
+    filter: blur(8px);
+    animation: btnGlowSpin 4s linear infinite;
+    z-index: -1;
+  }
+
+  .mobile-toc-btn-ring {
+    position: absolute;
+    inset: -8px;
+    border-radius: 50%;
+    border: 2px solid rgba(139, 92, 246, 0.3);
+    animation: btnRingPulse 2.5s ease-in-out infinite;
+    pointer-events: none;
+  }
+
+  .mobile-toc-icon {
+    position: relative;
+    z-index: 1;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
+  }
+
+  @keyframes btnGlowSpin {
+    to { transform: rotate(360deg); }
+  }
+
+  @keyframes btnRingPulse {
+    0%, 100% { transform: scale(1); opacity: 0.4; }
+    50% { transform: scale(1.15); opacity: 0; }
   }
 
   @media (max-width: 1023px) {
     .mobile-toc-btn {
       display: flex;
     }
+  }
+
+  :global(.dark) .mobile-toc-btn {
+    background: linear-gradient(135deg, #7c3aed, #6366f1, #818cf8);
+    box-shadow:
+      0 4px 15px rgba(124, 58, 237, 0.45),
+      0 8px 30px rgba(99, 102, 241, 0.25),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  }
+
+  :global(.dark) .mobile-toc-btn:hover {
+    box-shadow:
+      0 8px 25px rgba(124, 58, 237, 0.55),
+      0 12px 40px rgba(99, 102, 241, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.15);
   }
 
   .mobile-overlay {
@@ -680,6 +747,7 @@ const isRtl = language === LANGUAGES.HE;
   // Also update on Astro navigation
   document.addEventListener('astro:after-swap', () => {
     initializeSidebars();
+    drawerInitialized = false;
     initMobileToc();
   });
 
@@ -753,12 +821,13 @@ const isRtl = language === LANGUAGES.HE;
 
   function initMobileToc() {
     if (drawerInitialized) return;
-    drawerInitialized = true;
 
     const btn = document.getElementById('mobile-toc-toggle');
     const overlay = document.getElementById('mobile-sidebar-overlay');
     const drawer = document.getElementById('mobile-drawer');
     if (!btn || !overlay || !drawer) return;
+
+    drawerInitialized = true;
 
     function openDrawer() {
       buildMobileOutline();

@@ -22,8 +22,10 @@ const formattedCount = wordCount.toLocaleString(isHe ? 'he-IL' : 'en-US');
 
 <div class="chapter-meta" data-dir={isHe ? 'rtl' : 'ltr'}>
   <span class="meta-item">
-    <svg class="meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-      <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+    <svg class="meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="9"/>
+      <path d="M12 7v5l3.5 2"/>
+      <circle cx="12" cy="12" r="0.5" fill="currentColor" stroke="none"/>
     </svg>
     {readingTimeMinutes} {labels.readTime}
   </span>
@@ -31,8 +33,9 @@ const formattedCount = wordCount.toLocaleString(isHe ? 'he-IL' : 'en-US');
   <span class="meta-dot" aria-hidden="true">·</span>
 
   <span class="meta-item">
-    <svg class="meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-      <path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+    <svg class="meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19v16H6.5a2.5 2.5 0 0 0 0 5H19"/>
+      <path d="M8 7h6M8 11h4"/>
     </svg>
     {formattedCount} {labels.words}
   </span>
@@ -40,8 +43,9 @@ const formattedCount = wordCount.toLocaleString(isHe ? 'he-IL' : 'en-US');
   <span class="meta-dot" aria-hidden="true">·</span>
 
   <span class="meta-item">
-    <svg class="meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-      <path d="M4 6h16M4 12h16M4 18h7"/>
+    <svg class="meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <rect x="3" y="3" width="18" height="18" rx="3"/>
+      <path d="M3 9h18M9 3v18"/>
     </svg>
     {sections} {labels.sections}
   </span>
@@ -78,10 +82,11 @@ const formattedCount = wordCount.toLocaleString(isHe ? 'he-IL' : 'en-US');
   }
 
   .meta-icon {
-    width: 0.9375rem;
-    height: 0.9375rem;
+    width: 1.125rem;
+    height: 1.125rem;
     flex-shrink: 0;
-    opacity: 0.65;
+    opacity: 1;
+    color: var(--yuval-chapter-title);
   }
 
   .meta-dot {
