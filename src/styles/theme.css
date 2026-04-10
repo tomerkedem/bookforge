@@ -148,3 +148,28 @@ a, button {
   transition-duration: 200ms;
   transition-timing-function: ease;
 }
+
+/* Scrollbar styling (Firefox) */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--yuval-border-secondary) transparent;
+}
+
+/* Scrollbar styling (Webkit) */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--yuval-border-secondary);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--yuval-text-muted);
+}

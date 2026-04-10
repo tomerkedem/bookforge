@@ -2,24 +2,22 @@
 
 ## Overview
 
-This document describes all Astro components and pages for the Yuval digital reading platform. The platform supports Hebrew (RTL) and English (LTR) with mobile-first responsive design.
+This document describes all Astro components and pages for the Yuval digital reading platform. The platform supports Hebrew (RTL) and English (LTR) with mobile-first responsive design, View Transitions for smooth navigation, and full accessibility compliance.
 
 ## Components
 
-### LanguageToggle.astro
+### BackToTop.astro
 
-A bilingual language switch component for Hebrew/English selection with localStorage persistence.
+Floating button that appears after scrolling past a configurable threshold. Smoothly scrolls user back to the top of the page.
 
 Props:
-- currentLanguage?: Language - Current language ('he' or 'en')
-- class?: string - Additional CSS classes
+- threshold?: number - Scroll distance in pixels before button appears (default: 300)
 
 Features:
-- Toggle between Hebrew and English
-- Persists preference to localStorage
-- Dispatches custom event on language change
-- Full keyboard accessibility
-- RTL/LTR aware styling
+- Smooth show/hide animation with opacity and translate
+- requestAnimationFrame-throttled scroll listener
+- Accessible focus-visible ring
+- Passive scroll event for performance
 
 ### BookCard.astro
 
@@ -27,77 +25,189 @@ Displays a book with cover image, title, description, and call-to-action button.
 
 Props:
 - slug: string - Book URL slug
-- title: string - Book title
-- description: string - Short description
+- title_he: string - Hebrew title
+- title_en: string - English title
+- description_he: string - Hebrew description
+- description_en: string - English description
 - coverImage: string - Image URL
 - dominantColor?: string - Overlay color on hover
-- language?: Language - Current language
 - class?: string - Additional CSS classes
 
 Features:
 - Dominant color overlay on hover
+- Card-float effect with layered shadows
 - Responsive image handling
 - Accessible focus states
 - Smooth transitions
 
-### ReadingProgress.astro
+### Breadcrumbs.astro
 
-A sticky progress bar showing reading progress in current chapter.
+Breadcrumb navigation trail with bilingual labels and proper ARIA markup.
 
 Props:
-- scrollPercentage?: number - Progress percentage (0-100)
-- language?: Language - Current language
+- items: BreadcrumbItem[] - Array of { label_he, label_en, href? }
 - class?: string - Additional CSS classes
+
+Features:
+- aria-label="Breadcrumb" and aria-current="page" on last item
+- RTL chevron rotation via Tailwind rtl: modifier
+- Truncation on mobile (max-w-[200px])
+- Focus-visible ring on links
+- data-he / data-en for language switching
+
+### ChapterMeta.astro
+
+Reusable chapter metadata bar displayed below the chapter title. Shows word count, estimated reading time, and number of sections with matching icons.
+
+Props:
+- wordCount: number - Total word count
+- readingTimeMinutes: number - Estimated reading time in minutes
+- sections: number - Number of sections
+- language: Language - Current language ('he' or 'en')
+
+Features:
+- Inline SVG icons for each metric
+- RTL-aware layout (row-reverse for Hebrew)
+- Responsive wrapping on small screens
+- Accessible (aria-hidden on decorative icons)
+
+### ChapterNavigation.astro
+
+Navigation between chapters with previous/next buttons and chapter info.
+
+Props:
+- currentChapterId: number
+- chapters: Chapter[]
+- bookSlug: string
+- language?: Language
+
+Features:
+- Previous/next links with chapter titles
+- Current chapter indicator (center)
+- RTL-aware arrow direction
+- Focus ring for keyboard navigation
+
+### ChapterSidebars.astro
+
+Dual sidebar layout: table of contents on one side, chapter outline on the other. On mobile, collapses into a bottom drawer with tab navigation.
+
+Features:
+- Desktop: fixed sidebars with scroll
+- Mobile: drawer with body scroll lock
+- ARIA tab/tabpanel roles on mobile drawer
+- Language-aware active chapter highlighting
+
+### Header.astro
+
+Sticky header with logo, theme toggle, and language toggle.
+
+Props:
+- language?: Language
+- showLanguageToggle?: boolean
+- class?: string
+
+Features:
+- Skip-to-content link for keyboard users
+- Backdrop blur effect
+- Focus-visible ring on logo
+- RTL flex-row-reverse
+
+### LanguageToggle.astro
+
+Bilingual language switch for Hebrew/English.
+
+Props:
+- currentLanguage?: Language
+
+Features:
+- localStorage persistence
+- Custom event dispatch ('language-changed')
+- Focus-visible ring on buttons
+- Visual active state indicator
+
+### ReadingProgress.astro
+
+Sticky progress bar showing reading progress in current chapter.
+
+Props:
+- scrollPercentage?: number
+- language?: Language
+- class?: string
 
 Features:
 - Automatic scroll tracking
 - Accessible ARIA labels
 - Smooth progress animation
 
-### ChapterNavigation.astro
-
-Navigation between chapters with previous/next buttons and chapter info.
-
-### ChapterMeta.astro
-
-Reusable chapter metadata bar displayed below the chapter title. Shows word count, estimated reading time, and number of sections with matching icons. Fully bilingual — Hebrew labels in Hebrew mode, English labels in English mode.
-
-Props:
-- wordCount: number - Total word count of the chapter
-- readingTimeMinutes: number - Estimated reading time in minutes
-- sections: number - Number of sections in the chapter
-- language: Language - Current language ('he' or 'en')
-
-Features:
-- Inline SVG icons for each metric (book, clock, list)
-- RTL-aware layout (row-reverse for Hebrew)
-- Responsive wrapping on small screens
-- Consistent styling via self-contained scoped CSS
-- Accessible (aria-hidden on decorative icons)
-
-### Header.astro
-
-Sticky header with logo and language toggle.
-
 ## Layouts
 
 ### BaseLayout.astro
 
-Root layout for all pages with header, progress bar, and meta tags.
+Root layout for all pages.
+
+Features:
+- Astro View Transitions (ClientRouter)
+- Dark mode FOUC prevention script
+- Google Fonts with display=swap
+- color-scheme meta for scrollbars
+- Skip-to-content target (#main-content)
+- BackToTop component
+- Smooth scrolling (scroll-smooth on html)
+- Language persistence across navigations
+- Open Graph and Schema.org meta
 
 ### ReadingLayout.astro
 
-Specialized layout for chapter reading with optimized typography.
+Specialized layout for chapter reading.
+
+Features:
+- optimized typography (prose styles)
+- highlight.js syntax highlighting (GitHub Dark)
+- Code copy button on all pre blocks
+- Lazy-loaded content images
+- LTR code blocks in RTL pages
+- Language badge on code blocks
+- Re-initializes on view transitions
 
 ## Pages
 
 ### index.astro (/)
 
-Homepage displaying all available books in a grid layout.
+Homepage displaying all available books in a grid layout. Includes empty state with book icon and guidance text.
 
 ### books/[slug].astro (/books/:slug)
 
-Book detail page showing description, metadata, and chapter list.
+Book detail page with breadcrumbs, cover image (lazy-loaded), metadata, and chapter list.
+
+### read/[book]/[chapter].astro (/read/:book/:chapter)
+
+Chapter reading page with breadcrumbs, sticky chapter header, dual sidebars, code copy buttons, and chapter navigation.
+
+### 404.astro
+
+Custom 404 page with large "404" display, explanation text, and back-to-home button.
+
+## Scripts (src/scripts/)
+
+### reading-page.ts
+Thin init that wires up the three reading modules. Handles AbortController cleanup on page transitions.
+
+### language-switcher.ts
+Language switching via data-lang attributes. Listens to 'language-changed' custom events.
+
+### progress-tracker.ts
+Reading progress with debounced scroll save and back/forward history restore.
+
+### sticky-header.ts
+Sticky header scroll behavior with threshold-based class toggling.
+
+## Theme (src/styles/theme.css)
+
+Single source of truth for all light/dark CSS custom properties. Includes:
+- Color tokens for bg, text, border, accent, highlight
+- Fade-in-up animation for main content
+- prefers-reduced-motion media query
+- Default transitions on interactive elements
 
 ### read/[book]/[chapter].astro (/read/:book/:chapter)
 
