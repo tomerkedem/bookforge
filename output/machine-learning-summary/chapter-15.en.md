@@ -1,5 +1,9 @@
 # Gradient Boosting (XGBoost)
 
+<img src="../assets/image-15.png" alt="image-15.png" width="632" height="322" />
+
+<img src="../assets/image-16.png" alt="image-16.png" width="709" height="333" />
+
 XGBoost is a model based on a combination of trees, but unlike Random Forest, here the trees don't work in parallel but are built one after another.
 
 The central idea is gradient boosting, meaning improving the model by focusing on errors from previous stages.

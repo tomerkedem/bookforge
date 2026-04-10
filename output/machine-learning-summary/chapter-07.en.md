@@ -1,5 +1,7 @@
 # General Machine Learning Process
 
+<img src="../assets/image-07.png" alt="image-07.png" width="704" height="384" />
+
 Machine Learning works as an organized process that repeats itself.
 
 Starting from data
@@ -15,8 +17,6 @@ From this learning, a model is created
 The model is a representation of what was learned from the data
 
 Then the model is used on new data
-
-![image-14.png](../assets/image-14.png)
 
 To perform prediction, classification, or clustering
 

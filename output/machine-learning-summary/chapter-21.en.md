@@ -1,5 +1,7 @@
 # Neuron
 
+<img src="../assets/image-23.png" alt="image-23.png" width="497" height="303" />
+
 A neuron is a unit that receives several signals and makes a decision.
 
 It receives multiple inputs, each of which has different importance, and combines them to arrive at one result.

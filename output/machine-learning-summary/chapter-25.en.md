@@ -1,9 +1,9 @@
 # Confusion Matrix
 
+<img src="../assets/image-27.png" alt="image-27.png" width="625" height="341" />
+
 When a model performs classification, it's not enough to know if it's "accurate" in general.
 You need to understand where it's wrong and what kind of errors it makes.
-
-![image-16.png](../assets/image-16.png)
 
 The Confusion Matrix is a table that breaks down the model's predictions into four clear states, according to a comparison between the prediction and the true value.
 
@@ -26,7 +26,5 @@ But it's important to understand: Accuracy alone is not always enough.
 In cases where there is an imbalance between the groups, a model can achieve high accuracy and still not be useful.
 
 The true power of the Confusion Matrix is that it gives a complete picture:
-
-![image-08.png](../assets/image-08.png)
 
 How well the model identifies correctly, how much it misses, and what kind of errors it makes.

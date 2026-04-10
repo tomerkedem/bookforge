@@ -25,11 +25,12 @@ def _ingest_docx(path: Path) -> dict:
     doc = Document(path)
     paragraphs = []
 
-    for para in doc.paragraphs:
+    for doc_idx, para in enumerate(doc.paragraphs):
         if para.text.strip():
             paragraphs.append({
                 "text": para.text.strip(),
-                "style": para.style.name
+                "style": para.style.name,
+                "doc_para_index": doc_idx
             })
 
     return {

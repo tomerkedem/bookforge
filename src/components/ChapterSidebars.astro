@@ -32,26 +32,26 @@ const isRtl = language === LANGUAGES.HE;
   <!-- Mobile combined drawer (outline + TOC) -->
   <div id="mobile-drawer" class="mobile-drawer">
     <!-- Tab buttons -->
-    <div class="mobile-drawer-tabs">
-      <button class="mobile-tab active" data-tab="outline">
+    <div class="mobile-drawer-tabs" role="tablist">
+      <button class="mobile-tab active" data-tab="outline" role="tab" aria-selected="true" aria-controls="mobile-outline-panel">
         <span data-he="בפרק זה" data-en="In This Chapter">
           {language === LANGUAGES.HE ? 'בפרק זה' : 'In This Chapter'}
         </span>
       </button>
-      <button class="mobile-tab" data-tab="chapters">
+      <button class="mobile-tab" data-tab="chapters" role="tab" aria-selected="false" aria-controls="mobile-chapters-panel">
         <span data-he="פרקים" data-en="Chapters">
           {language === LANGUAGES.HE ? 'פרקים' : 'Chapters'}
         </span>
       </button>
     </div>
     <!-- Outline panel -->
-    <div class="mobile-panel active" id="mobile-outline-panel">
+    <div class="mobile-panel active" id="mobile-outline-panel" role="tabpanel">
       <nav id="mobile-chapter-outline" class="outline-list">
         <ul></ul>
       </nav>
     </div>
     <!-- Chapters panel -->
-    <div class="mobile-panel" id="mobile-chapters-panel">
+    <div class="mobile-panel" id="mobile-chapters-panel" role="tabpanel">
       <nav class="toc-list">
         <ul>
           {chapters.map((chapter) => (
@@ -748,6 +748,7 @@ const isRtl = language === LANGUAGES.HE;
     drawer?.classList.remove('open');
     overlay?.classList.remove('active');
     btn?.setAttribute('aria-expanded', 'false');
+    document.body.style.overflow = '';
   }
 
   function initMobileToc() {
@@ -764,6 +765,7 @@ const isRtl = language === LANGUAGES.HE;
       drawer!.classList.add('open');
       overlay!.classList.add('active');
       btn!.setAttribute('aria-expanded', 'true');
+      document.body.style.overflow = 'hidden';
     }
 
     btn.addEventListener('click', () => {

@@ -1,6 +1,6 @@
 # Semi-supervised Learning
 
-![image-23.png](../assets/image-23.png)
+<img src="../assets/image-20.png" alt="image-20.png" width="447" height="355" />
 
 Semi-supervised learning combines supervised learning with unsupervised learning.
 

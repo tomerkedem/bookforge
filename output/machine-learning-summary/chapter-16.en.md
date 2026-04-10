@@ -1,6 +1,8 @@
 # Unsupervised Learning
 
-![image-07.png](../assets/image-07.png)
+<img src="../assets/image-17.png" alt="image-17.png" width="653" height="241" />
+
+<img src="../assets/image-18.png" alt="image-18.png" width="709" height="332" />
 
 In unsupervised learning, we work with data that has no pre-labeled tags. There is no known correct answer, and no one directing the model what to look for.
 

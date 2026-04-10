@@ -9,10 +9,11 @@
  */
 
 import { readdirSync, readFileSync, existsSync, statSync } from 'fs';
-import { resolve, join } from 'path';
+import { join } from 'path';
 import type { Chapter } from '../types/index';
+import { PATHS } from '../config';
 
-const OUTPUT_DIR = resolve('output');
+const OUTPUT_DIR = PATHS.OUTPUT_DIR;
 
 export interface DiscoveredBook {
   slug: string;
@@ -203,7 +204,7 @@ export function discoverBook(slug: string): DiscoveredBook | null {
     '/covers/cover.jpg',
   ];
 
-  const publicDir = resolve('public');
+  const publicDir = PATHS.PUBLIC_DIR;
   const coverImage = coverCandidates.find(c => existsSync(join(publicDir, c))) || coverCandidates[0];
 
   return {

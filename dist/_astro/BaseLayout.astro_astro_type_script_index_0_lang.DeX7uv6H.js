@@ -1,1 +1,0 @@
-import{a as g,i as o,b as t}from"./language.DlRguERn.js";const e=g();o(e)&&(document.documentElement.lang=e,document.documentElement.dir=e==="he"?"rtl":"ltr",t(e));window.addEventListener("language-changed",a=>{const n=a.detail.language;document.documentElement.lang=n,document.documentElement.dir=n==="he"?"rtl":"ltr",t(n)});

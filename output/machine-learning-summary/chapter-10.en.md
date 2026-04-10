@@ -1,5 +1,7 @@
 # Types of Supervised Learning Problems
 
+<img src="../assets/image-10.png" alt="image-10.png" width="531" height="346" />
+
 In supervised learning, there are two main types of problems:
 
 - Regression

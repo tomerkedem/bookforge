@@ -1,5 +1,7 @@
 # NumPy: Efficient Work with Numerical Data
 
+<img src="../assets/image-30.png" alt="image-30.png" width="444" height="189" />
+
 NumPy is the central library in Python for working with numerical data. It provides a significantly faster and more efficient way to handle information compared to using regular Python lists.
 
 Core Capabilities and Technological Advantages

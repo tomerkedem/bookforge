@@ -6,23 +6,61 @@
 מקבל ספר בפורמט Word או PDF ובונה ממנו את Yuval,
 פלטפורמת קריאה דיגיטלית ברמה עולמית.
 
-## הסוכנים במערכת
+## תכונות עיקריות
 
-Explorer, Parser, Content Architect, Organizer,
-Translator, UI Designer, Builder, Memory Keeper,
-Error Handler, Code Reviewer, Quality Gate
+- **תמיכה דו-לשונית** — עברית (RTL) ואנגלית (LTR) עם החלפה מיידית
+- **View Transitions** — מעברים חלקים בין דפים
+- **Dark Mode** — מצב כהה עם שמירת העדפה
+- **נגישות** — skip-to-content, focus-visible, ARIA, contrast AA
+- **Reading Progress** — מעקב התקדמות קריאה עם שמירה מקומית
+- **Code Copy** — כפתור העתקה על בלוקי קוד
+- **Back to Top** — כפתור חזרה למעלה
+- **Breadcrumbs** — ניווט פירורי לחם
+- **Mobile-first** — עיצוב רספונסיבי מלא
+- **404 מעוצב** — דף שגיאה מותאם
 
 ## דרישות
 
-Node.js 18 ומעלה
-Claude Code v2.1.32 ומעלה
-Git
+- Node.js 18+
+- Python 3.12+ (לפייפליין עיבוד)
+
+## התקנה
+
+```bash
+npm install
+```
+
+## פקודות
+
+```bash
+npm run dev      # שרת פיתוח
+npm run build    # בנייה לפרודקשן
+npm run preview  # תצוגה מקדימה
+npm run test     # הרצת בדיקות
+```
 
 ## מבנה הפרויקט
 
-מתעדכן פרק אחר פרק לאורך הספר.
+```
+src/
+├── components/    # קומפוננטים (BackToTop, Breadcrumbs, BookCard...)
+├── layouts/       # BaseLayout, ReadingLayout
+├── pages/         # index, books/[slug], read/[book]/[chapter], 404
+├── scripts/       # reading-page, language-switcher, progress-tracker, sticky-header
+├── styles/        # theme.css — single source of truth for colors
+├── types/         # TypeScript types
+├── utils/         # book-discovery, language, markdown, reading-progress
+├── pipeline/      # Python pipeline (ingest, parse, organize)
+└── config.ts      # centralized paths and layout constants
+output/            # book source files (MD + assets)
+public/            # static assets served by Astro
+```
+
+## הסוכנים במערכת
+
+Pipeline (מתזמר), Translator (מתרגם), Code Reviewer,
+Error Handler, Quality Gate
 
 ## הקוד בפעולה
 
-עיין בשינויים, הרץ, ושאל שאלות ישירות ב-Issues.
 https://github.com/tomkedem/bookforge

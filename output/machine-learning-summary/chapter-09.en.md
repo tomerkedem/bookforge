@@ -1,5 +1,7 @@
 # Supervised Learning
 
+<img src="../assets/image-09.png" alt="image-09.png" width="455" height="240" />
+
 In supervised learning, the model learns from data that has known answers in advance.
 
 The data comes with labels

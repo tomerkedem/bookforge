@@ -1,13 +1,13 @@
 # Supervised vs Unsupervised Learning
 
+<img src="../assets/image-19.png" alt="image-19.png" width="726" height="314" />
+
 The comparison between supervised and unsupervised learning focuses on three main aspects: uses, complexity, and disadvantages.
 
 In terms of uses,
 
 Supervised learning is suitable for situations where there is labeled data, and therefore can be used for tasks
 such as: spam detection, sentiment analysis, or price prediction.
-
-![image-04.png](../assets/image-04.png)
 
 Unsupervised learning is suitable for situations where there are no labels, and is used for anomaly detection, recommendation systems, customer segmentation, and medical information analysis.
 

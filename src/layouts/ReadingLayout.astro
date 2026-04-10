@@ -192,6 +192,44 @@ const isRtl = language === LANGUAGES.HE;
         @apply max-w-full h-auto rounded-lg my-8;
       }
 
+      /* Code block copy button */
+      :global(article pre) {
+        position: relative;
+      }
+
+      :global(.code-copy-btn) {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        z-index: 10;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border-radius: 6px;
+        border: 1px solid #30363d;
+        background: #21262d;
+        color: #8b949e;
+        cursor: pointer;
+        opacity: 0;
+        transition: opacity 0.2s ease, color 0.15s ease, background 0.15s ease;
+      }
+
+      :global(article pre:hover .code-copy-btn),
+      :global(.code-copy-btn:focus-visible) {
+        opacity: 1;
+      }
+
+      :global(.code-copy-btn:hover) {
+        color: #e6edf3;
+        background: #30363d;
+      }
+
+      :global(.code-copy-btn.copied) {
+        color: #3fb950;
+      }
+
       :global(article hr) {
         @apply my-12 border-yuval-border;
       }
@@ -210,4 +248,56 @@ const isRtl = language === LANGUAGES.HE;
       }
     </style>
   </article>
+
+  <script>
+    // Inject copy buttons into all code blocks
+    function addCopyButtons() {
+      document.querySelectorAll('article pre').forEach((pre) => {
+        if (pre.querySelector('.code-copy-btn')) return;
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'code-copy-btn';
+        btn.setAttribute('aria-label', 'Copy code');
+        btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>';
+        btn.addEventListener('click', async () => {
+          const code = pre.querySelector('code');
+          if (!code) return;
+          try {
+            await navigator.clipboard.writeText(code.textContent || '');
+            btn.classList.add('copied');
+            btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+            setTimeout(() => {
+              btn.classList.remove('copied');
+              btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>';
+            }, 2000);
+          } catch {
+            // Fallback: select text
+            const range = document.createRange();
+            range.selectNodeContents(code);
+            const sel = window.getSelection();
+            sel?.removeAllRanges();
+            sel?.addRange(range);
+          }
+        });
+        pre.appendChild(btn);
+      });
+    }
+
+    // Lazy-load content images
+    function lazyLoadImages() {
+      document.querySelectorAll<HTMLImageElement>('article img').forEach((img) => {
+        if (!img.hasAttribute('loading')) {
+          img.loading = 'lazy';
+          img.decoding = 'async';
+        }
+      });
+    }
+
+    addCopyButtons();
+    lazyLoadImages();
+    document.addEventListener('astro:after-swap', () => {
+      addCopyButtons();
+      lazyLoadImages();
+    });
+  </script>
 </BaseLayout>

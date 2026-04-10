@@ -1,5 +1,7 @@
 # Beyond Accuracy: Precision, Recall, and F1 Score
 
+<img src="../assets/image-28.png" alt="image-28.png" width="710" height="274" />
+
 Overall accuracy tells how many predictions were correct out of all cases
 But it doesn't tell us what errors the model makes
 
@@ -16,7 +18,5 @@ Between precision and recall there is a balance
 You can be very precise but miss cases, and you can find many cases but make more errors
 
 The F1 Score combines both and gives one metric that balances between prediction correctness and case coverage
-
-![image-25.png](../assets/image-25.png)
 
 F1 = 2 · (Precision · Recall) / (Precision + Recall)

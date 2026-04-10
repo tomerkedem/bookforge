@@ -1,10 +1,12 @@
 # Why/When to Use Machine Learning
 
+<img src="../assets/image-05.png" alt="image-05.png" width="710" height="310" />
+
+<img src="../assets/image-06.png" alt="image-06.png" width="709" height="272" />
+
 Machine Learning is not used for every problem, but primarily for situations where there is data and you want to extract insights or predictions from it.
 
 There are two main directions:
-
-![cover.png](../assets/cover.png)
 
 In the classical approach
 
@@ -13,8 +15,6 @@ The goal is to analyze existing data to perform classification, prediction, or g
 In the content generation approach
 
 The goal is to create something new like text, images, or code. This is already a different world, based primarily on unstructured data.
-
-![image-22.png](../assets/image-22.png)
 
 The differences between them are important:
 

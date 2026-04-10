@@ -1,5 +1,7 @@
 # Why Use ML
 
+<img src="../assets/image-03.png" alt="image-03.png" width="709" height="82" />
+
 Why we use Machine Learning:
 
 With ML, computers can learn independently and adapt their operations according to large amounts of data.

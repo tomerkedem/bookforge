@@ -1,5 +1,7 @@
 # שימושים קלאסיים של Machine Learning
 
+<img src="../assets/image-04.png" alt="image-04.png" width="427" height="392" />
+
 Machine Learning נכנס להרבה מאוד מערכות בעולם האמיתי.
 
 יש מערכות שמטרתן לזהות מצבים חריגים

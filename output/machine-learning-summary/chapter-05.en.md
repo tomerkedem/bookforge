@@ -1,5 +1,7 @@
 # Classic Machine Learning Use Cases
 
+<img src="../assets/image-04.png" alt="image-04.png" width="427" height="392" />
+
 Machine Learning is integrated into many real-world systems.
 
 There are systems designed to detect anomalies

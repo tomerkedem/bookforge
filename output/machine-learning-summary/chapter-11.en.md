@@ -1,5 +1,7 @@
 # Linear Regression
 
+<img src="../assets/image-11.png" alt="image-11.png" width="710" height="326" />
+
 Linear Regression is used to learn relationships between variables for the purpose of predicting numerical values.
 
 In the diagram, we see blue points, each point represents actual data.

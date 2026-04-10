@@ -1,5 +1,7 @@
 # Deep Learning
 
+<img src="../assets/image-26.png" alt="image-26.png" width="638" height="278" />
+
 Deep Learning is a natural continuation of neural networks, but with one central difference: depth.
 
 Instead of a network with one or two layers, here we're talking about networks with a large number of computational layers. Each layer learns a different representation of the data, and the deeper you go in the network, the more abstract and complex the representations become.

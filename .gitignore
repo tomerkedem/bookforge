@@ -46,6 +46,8 @@ dist/
 # --- תוצרים גנרטיביים ---
 # (מה שציינת לגבי אינטגרציית Astro)
 public/*/assets/
+src/output/
+src/public/
 
 # --- Logs & Performance ---
 logs

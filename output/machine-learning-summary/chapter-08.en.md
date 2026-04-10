@@ -1,5 +1,7 @@
 # Types of Machine Learning Models
 
+<img src="../assets/image-08.png" alt="image-08.png" width="710" height="266" />
+
 Machine Learning is divided into two main types of learning:
 
 Supervised Learning
@@ -21,8 +23,6 @@ In this situation, there are two main types:
 - Clustering: dividing the data into similar groups
 
 - Associations: identifying relationships between items within the data
-
-![image-06.png](../assets/image-06.png)
 
 Supervised Learning
 
