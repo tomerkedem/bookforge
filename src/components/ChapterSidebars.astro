@@ -602,60 +602,50 @@ const isRtl = language === LANGUAGES.HE;
    * INSTANT swap - no animation, no scroll visible.
    */
   async function loadChapterContent(url: string): Promise<void> {
-    try {
-      const container = document.getElementById('chapter-container');
-      const header = document.getElementById('chapter-header');
-      const article = document.querySelector('.reading-article');
-      
-      if (!container) {
-        window.location.href = url;
-        return;
-      }
+    const container = document.getElementById('chapter-container');
+    const header = document.getElementById('chapter-header');
 
-      // Fetch the new page
+    if (!container) { window.location.href = url; return; }
+
+    // Fade out only the content — sidebars and header stay put
+    container.style.transition = 'opacity 0.1s ease';
+    container.style.opacity = '0';
+
+    try {
       const response = await fetch(url);
       if (!response.ok) throw new Error('Failed to fetch chapter');
-      
+
       const html = await response.text();
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(html, 'text/html');
-      
+      const doc = new DOMParser().parseFromString(html, 'text/html');
+
       const newContainer = doc.getElementById('chapter-container');
       const newHeader = doc.getElementById('chapter-header');
-      
-      // STEP 1: Hide everything instantly
-      if (article) (article as HTMLElement).style.visibility = 'hidden';
-      
-      // STEP 2: Scroll to top INSTANTLY (now invisible)
-      window.scrollTo(0, 0);
-      
-      // STEP 3: Swap content
-      if (newContainer && container) {
+
+      // Scroll to top while content is transparent
+      window.scrollTo({ top: 0, behavior: 'instant' });
+
+      // Swap content
+      if (newContainer) {
         container.innerHTML = newContainer.innerHTML;
         container.dataset.chapterId = newContainer.dataset.chapterId || '';
         container.dataset.book = newContainer.dataset.book || '';
       }
-      
       if (newHeader && header) {
         header.innerHTML = newHeader.innerHTML;
       }
-      
-      // STEP 4: Apply language
-      const lang = getCurrentLang();
-      applyLanguageVisibility(lang);
-      
-      // STEP 5: Update URL and state
+
+      // Apply language, update URL and TOC
+      applyLanguageVisibility(getCurrentLang());
       history.pushState({}, '', url);
       updateActiveChapter();
       buildChapterOutline();
-      
-      // STEP 6: Show everything instantly
-      if (article) (article as HTMLElement).style.visibility = 'visible';
-      
+
+      // Fade content back in
+      container.style.opacity = '1';
+
     } catch (error) {
       console.error('Error loading chapter:', error);
-      const article = document.querySelector('.reading-article');
-      if (article) (article as HTMLElement).style.visibility = 'visible';
+      container.style.opacity = '1';
       window.location.href = url;
     }
   }
@@ -680,22 +670,23 @@ const isRtl = language === LANGUAGES.HE;
    * TOC navigation — uses fetch to load content without page navigation.
    */
   function initTocNavigation() {
-    const tocNav = document.querySelector('.toc-list');
-    if (!tocNav || (tocNav as HTMLElement).dataset.navInit === 'true') return;
-    (tocNav as HTMLElement).dataset.navInit = 'true';
+    // Must target the desktop sidebar specifically — there are multiple .toc-list
+    // elements in the DOM (mobile drawer + desktop sidebar) and querySelector
+    // returns the first one (mobile), leaving desktop links without a handler.
+    const tocSidebar = document.getElementById('toc-sidebar');
+    if (!tocSidebar || tocSidebar.dataset.navInit === 'true') return;
+    tocSidebar.dataset.navInit = 'true';
 
-    // Handle click with fetch-based loading
-    tocNav.addEventListener('click', async (e) => {
+    tocSidebar.addEventListener('click', async (e) => {
       const target = (e.target as HTMLElement).closest('a.toc-link') as HTMLAnchorElement | null;
       if (!target) return;
-      
+
       e.preventDefault();
-      
+
       const base = target.getAttribute('href')?.split('?')[0] || '';
       const lang = getCurrentLang();
       const url = lang === 'he' ? `${base}?lang=he` : base;
-      
-      // Load content via fetch - no full page navigation
+
       await loadChapterContent(url);
     });
   }
