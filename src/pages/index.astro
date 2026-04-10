@@ -88,7 +88,7 @@ const categories = ['All', ...Array.from(new Set(books.map(b => b.category).filt
 
     <!-- Books Grid -->
     <div
-      class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8"
+      class="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-5"
       id="books-grid"
     >
       {
@@ -180,26 +180,3 @@ const categories = ['All', ...Array.from(new Set(books.map(b => b.category).filt
   document.addEventListener('astro:after-swap', initCategoryFilter);
 </script>
 
-<style>
-  :global(.card-float) {
-    /* קרן אור עדינה מלמעלה */
-    border-top: 1px solid rgba(255, 255, 255, 0.9);
-    /* צל מרובד: קרוב+עמוק+פרימה – יוצר אשליית ציפה תמידית */
-    box-shadow:
-      0 1px 2px rgba(0, 0, 0, 0.04),
-      0 4px 8px rgba(0, 0, 0, 0.06),
-      0 12px 24px rgba(0, 0, 0, 0.08),
-      0 24px 40px rgba(0, 0, 0, 0.05);
-    transform: translateY(-2px);
-    transition: box-shadow 0.3s ease, transform 0.3s ease;
-  }
-
-  :global(.card-float:hover) {
-    box-shadow:
-      0 2px 4px rgba(0, 0, 0, 0.05),
-      0 8px 16px rgba(0, 0, 0, 0.09),
-      0 20px 40px rgba(0, 0, 0, 0.12),
-      0 36px 56px rgba(0, 0, 0, 0.07);
-    transform: translateY(-6px);
-  }
-</style>

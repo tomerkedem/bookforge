@@ -60,58 +60,58 @@
 }
 
 .dark {
-  /* ── Page backgrounds ── */
-  --yuval-bg: #1a1a2e;
-  --yuval-bg-secondary: #16213e;
-  --yuval-surface: #16213e;
-  --yuval-header-bg: rgba(22, 33, 62, 0.95);
-  --yuval-reading-bg: #1e1e32;            /* dark paper tone */
+  /* ── Page backgrounds — true neutral dark, no color cast ── */
+  --yuval-bg: #111111;
+  --yuval-bg-secondary: #191919;
+  --yuval-surface: #1e1e1e;
+  --yuval-header-bg: rgba(17, 17, 17, 0.92);
+  --yuval-reading-bg: #161616;
 
   /* ── Text ── */
-  --yuval-text: #e8e8e8;
-  --yuval-text-secondary: #a0a0b0;
-  --yuval-text-tertiary: #7a7a8a;
-  --yuval-text-muted: #555566;
+  --yuval-text: #ededed;
+  --yuval-text-secondary: #999999;
+  --yuval-text-tertiary: #666666;
+  --yuval-text-muted: #444444;
 
   /* ── Borders ── */
-  --yuval-border: #2a2a3e;
-  --yuval-border-secondary: #3a3a4e;
+  --yuval-border: #272727;
+  --yuval-border-secondary: #333333;
 
   /* ── Links ── */
-  --yuval-link: #7c3aed;                  /* purple-600, WCAG AA on dark bg */
-  --yuval-link-hover: #a78bfa;            /* purple-400 */
+  --yuval-link: #ededed;
+  --yuval-link-hover: #aaaaaa;
 
-  /* ── Buttons & bold accents ── */
-  --yuval-accent: #9333ea;                /* purple-600 */
-  --yuval-accent-hover: #7e22ce;          /* purple-700 */
-  --yuval-accent-text: #ffffff;
+  /* ── Buttons & accents — off-white, mirrors light mode logic ── */
+  --yuval-accent: #ededed;
+  --yuval-accent-hover: #cccccc;
+  --yuval-accent-text: #111111;
 
-  /* ── Highlight ── */
-  --yuval-highlight: #a855f7;             /* purple-500 */
+  /* ── Highlight (focus ring, active TOC) ── */
+  --yuval-highlight: #ededed;
 
   /* ── Toggle switch ── */
-  --yuval-toggle-track: #9333ea;          /* purple-600 */
-  --yuval-moon-icon: #a78bfa;             /* purple-400 */
+  --yuval-toggle-track: #333333;
+  --yuval-moon-icon: #888888;
 
   /* ── TOC / Sidebar ── */
-  --yuval-toc-item-border: #2a2a3e;
-  --yuval-toc-number: #555566;
-  --yuval-toc-active: #a78bfa;
+  --yuval-toc-item-border: #222222;
+  --yuval-toc-number: #444444;
+  --yuval-toc-active: #ededed;
 
   /* ── Chapter meta ── */
-  --yuval-meta-text: #7a7a8a;
-  --yuval-meta-bg: rgba(122, 122, 138, 0.1);
-  --yuval-meta-border: rgba(122, 122, 138, 0.2);
-  --yuval-meta-dot: rgba(122, 122, 138, 0.35);
+  --yuval-meta-text: #666666;
+  --yuval-meta-bg: rgba(255, 255, 255, 0.04);
+  --yuval-meta-border: rgba(255, 255, 255, 0.07);
+  --yuval-meta-dot: rgba(255, 255, 255, 0.15);
 
   /* ── Chapter header ── */
-  --yuval-chapter-title: #e8e8e8;
-  --yuval-progress-badge: #7a7a8a;
-  --yuval-progress-line: rgba(42, 42, 62, 0.4);
-  --yuval-progress-fill: #a78bfa;
+  --yuval-chapter-title: #ededed;
+  --yuval-progress-badge: #666666;
+  --yuval-progress-line: rgba(255, 255, 255, 0.06);
+  --yuval-progress-fill: #ededed;
 
   /* ── Blockquote ── */
-  --yuval-blockquote-border: #a855f7;     /* purple-500 */
+  --yuval-blockquote-border: #444444;
 }
 
 /* ═══════════════════════════════════════════════════════

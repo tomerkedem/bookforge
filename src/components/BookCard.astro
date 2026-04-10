@@ -22,7 +22,7 @@ const {
   description_en,
   description_es,
   coverImage,
-  dominantColor = '#1a1a1a',
+  dominantColor = '#888888',
   category = 'General',
   class: className,
 } = Astro.props;
@@ -31,39 +31,40 @@ const bookUrl = `/books/${slug}`;
 ---
 
 <article
-  class:list={[
-    'group',
-    'relative',
-    'overflow-hidden',
-    'rounded-2xl',
-    'bg-yuval-surface',
-    'card-float',
-    className,
-  ]}
+  class:list={['book-card', 'group', 'relative', 'overflow-hidden', 'rounded-2xl', 'bg-yuval-surface', className]}
   data-book-category={category}
+  data-book-slug={slug}
+  style={`--card-glow: ${dominantColor};`}
 >
-  <!-- Thumbnail container with dominant color overlay -->
-  <div
-    class="relative h-48 overflow-hidden bg-contain bg-center bg-no-repeat"
-    style={`background-image: url('${coverImage}'); background-color: var(--yuval-surface);`}
-  >
-    <!-- Dominant color overlay -->
-    <div
-      class="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-20"
-      style={`background-color: ${dominantColor};`}
+  <!-- Cover image — clean, no overlay -->
+  <div class="card-cover relative h-28 overflow-hidden">
+    <img
+      src={coverImage}
+      alt=""
+      class="w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-103"
+      loading="lazy"
+      decoding="async"
+      onerror="this.style.display='none'"
     />
-
-    <!-- Focus overlay for accessibility -->
-    <div
-      class="absolute inset-0 opacity-0 transition-opacity duration-200 group-focus-within:opacity-10"
-      style="background-color: rgba(0, 0, 0, 1);"
-    />
+    <!-- Reading progress bar — shown client-side if book was started -->
+    <div class="absolute bottom-0 left-0 right-0 h-0.5 bg-black/10">
+      <div class="card-progress-fill h-full bg-yuval-accent w-0 transition-all duration-500" data-slug={slug}></div>
+    </div>
   </div>
 
   <!-- Content -->
-  <div class="p-4 sm:p-6 space-y-2 sm:space-y-3">
+  <div class="p-3 sm:p-4 space-y-1.5">
+    <!-- Category + continue reading row -->
+    <div class="flex items-center justify-between gap-2">
+      <span class="card-badge">{category}</span>
+      <span class="card-continue hidden text-xs text-yuval-text-muted" data-slug={slug}>
+        <span data-he="המשך" data-en="Continue" data-es="Continuar">Continue</span>
+        <span class="card-continue-chapter font-medium"></span>
+      </span>
+    </div>
+
     <h3
-      class="font-heading font-bold text-lg sm:text-2xl leading-tight text-yuval-text group-hover:text-yuval-text-secondary transition-colors duration-200"
+      class="font-heading font-semibold text-sm sm:text-base leading-snug text-yuval-text"
       data-he={title_he}
       data-en={title_en}
       data-es={title_es || title_en}
@@ -72,7 +73,7 @@ const bookUrl = `/books/${slug}`;
     </h3>
 
     <p
-      class="text-sm text-yuval-text-secondary leading-relaxed line-clamp-3"
+      class="text-xs text-yuval-text-secondary leading-relaxed line-clamp-2"
       data-he={description_he}
       data-en={description_en}
       data-es={description_es || description_en}
@@ -80,28 +81,117 @@ const bookUrl = `/books/${slug}`;
       {description_en}
     </p>
 
-    <!-- Read button -->
+    <!-- Read link — minimal, text only -->
     <a
       href={bookUrl}
-      class="inline-block mt-4 px-4 py-2 font-body font-medium text-sm rounded-md bg-yuval-accent text-yuval-accent-text hover:bg-yuval-accent-hover transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yuval-highlight book-card-link"
+      class="card-link inline-flex items-center gap-1 pt-1 text-xs font-medium text-yuval-text-secondary hover:text-yuval-text transition-colors duration-150 book-card-link"
       data-base-url={bookUrl}
-      data-he="קרא עכשיו"
-      data-en="Read Now"
-      data-es="Leer ahora"
+      data-he="קרא עכשיו ←"
+      data-en="Read →"
+      data-es="Leer →"
     >
-      Read Now
+      Read →
     </a>
   </div>
 </article>
 
+<style>
+  /* ── Card base ── */
+  .book-card {
+    border: 1px solid var(--yuval-border);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+                box-shadow 0.3s ease,
+                border-color 0.3s ease;
+    will-change: transform;
+  }
+
+  /* ── Ambient glow on hover using dominant color ── */
+  .book-card:hover {
+    transform: translateY(-6px);
+    border-color: transparent;
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--card-glow) 25%, transparent),
+      0 8px 24px -4px color-mix(in srgb, var(--card-glow) 30%, transparent),
+      0 24px 48px -8px color-mix(in srgb, var(--card-glow) 20%, transparent),
+      0 2px 8px rgba(0,0,0,0.12);
+  }
+
+  /* Fallback for browsers without color-mix */
+  @supports not (color: color-mix(in srgb, red 50%, blue)) {
+    .book-card:hover {
+      box-shadow:
+        0 8px 24px -4px rgba(0,0,0,0.18),
+        0 24px 48px -8px rgba(0,0,0,0.12);
+    }
+  }
+
+  /* ── Cover image fallback background ── */
+  .card-cover {
+    background: linear-gradient(135deg, var(--yuval-bg-secondary) 0%, var(--yuval-border) 100%);
+  }
+
+  /* ── Category badge ── */
+  .card-badge {
+    color: var(--yuval-text-muted);
+    font-size: 0.6rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+</style>
+
 <script>
-  function updateBookCardLinks() {
+  function initBookCards() {
     const lang = localStorage.getItem('yuval_language') || 'en';
+
+    // Update links to include language
     document.querySelectorAll<HTMLAnchorElement>('.book-card-link').forEach(link => {
       const base = link.dataset.baseUrl || link.getAttribute('href') || '';
-      link.href = lang === 'he' ? `${base}?lang=he` : base;
+      link.href = lang === 'he' ? `${base}?lang=he` : lang === 'es' ? `${base}?lang=es` : base;
+    });
+
+    // Show reading progress on cards
+    document.querySelectorAll<HTMLElement>('.book-card[data-book-slug]').forEach(card => {
+      const slug = card.dataset.bookSlug;
+      if (!slug) return;
+
+      // Find all reading progress keys for this book
+      const prefix = `yuval_reading_progress_${slug}_ch`;
+      let lastChapter = 0;
+      let hasProgress = false;
+
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.includes(prefix)) {
+          try {
+            const data = JSON.parse(localStorage.getItem(key) || '{}');
+            if (data.scrollPosition > 50) {
+              hasProgress = true;
+              if (data.chapterId > lastChapter) lastChapter = data.chapterId;
+            }
+          } catch { /* skip */ }
+        }
+      }
+
+      if (hasProgress) {
+        // Show "Continue reading" badge
+        const badge = card.querySelector<HTMLElement>('.card-continue[data-slug="' + slug + '"]');
+        const chapterSpan = card.querySelector<HTMLElement>('.card-continue-chapter');
+        if (badge) badge.classList.remove('hidden');
+        if (chapterSpan) chapterSpan.textContent = ` · Ch. ${lastChapter}`;
+
+        // Animate progress bar (chapter number as rough proxy)
+        const fill = card.querySelector<HTMLElement>('.card-progress-fill[data-slug="' + slug + '"]');
+        if (fill) {
+          // Use lastChapter as a fraction of likely total (rough visual only)
+          const pct = Math.min(95, lastChapter * 15);
+          requestAnimationFrame(() => { fill.style.width = `${pct}%`; });
+        }
+      }
     });
   }
-  updateBookCardLinks();
-  window.addEventListener('language-changed', updateBookCardLinks);
+
+  initBookCards();
+  window.addEventListener('language-changed', initBookCards);
+  document.addEventListener('astro:after-swap', initBookCards);
 </script>
