@@ -174,9 +174,29 @@ chapterContentEn = stripFirstH1(chapterContentEn);
     position: sticky;
     top: 64px;
     z-index: 35;
-    background: var(--yuval-bg);
-    padding: 0.25rem 0 0;
+    background: var(--yuval-reading-bg);
+    padding: 0.25rem 1rem 0;
+    margin-left: -1rem;
+    margin-right: -1rem;
     transition: padding 0.15s ease, background 0.3s ease;
+  }
+
+  @media (min-width: 640px) {
+    .chapter-header {
+      padding-left: 1.5rem;
+      padding-right: 1.5rem;
+      margin-left: -1.5rem;
+      margin-right: -1.5rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .chapter-header {
+      padding-left: 2rem;
+      padding-right: 2rem;
+      margin-left: -2rem;
+      margin-right: -2rem;
+    }
   }
 
   .chapter-header.scrolled {
@@ -206,12 +226,45 @@ chapterContentEn = stripFirstH1(chapterContentEn);
   .header-meta-row {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 0;
+    background: rgba(255, 255, 255, 0.45);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-top: 1px solid rgba(255, 255, 255, 0.6);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+    margin-left: -1rem;
+    margin-right: -1rem;
+    padding: 0;
+  }
+
+  :global(.dark) .header-meta-row {
+    background: rgba(255, 255, 255, 0.06);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+  }
+
+  @media (min-width: 640px) {
+    .header-meta-row {
+      margin-left: -1.5rem;
+      margin-right: -1.5rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .header-meta-row {
+      margin-left: -2rem;
+      margin-right: -2rem;
+    }
   }
 
   .header-meta-row :global(.chapter-meta) {
     margin-bottom: 0;
     flex: 1;
+    border: none;
+    border-radius: 0;
+    background: transparent;
   }
 
   .chapter-header.scrolled .header-meta-row :global(.chapter-meta) {
@@ -228,6 +281,8 @@ chapterContentEn = stripFirstH1(chapterContentEn);
     min-width: 2.75rem;
     text-align: center;
     flex-shrink: 0;
+    padding-right: 1rem;
+    padding-left: 1rem;
     opacity: 0;
     transform: scale(0.8);
     transition: opacity 0.2s ease, transform 0.2s ease;

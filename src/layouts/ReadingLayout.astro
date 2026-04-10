@@ -22,8 +22,7 @@ const isRtl = language === LANGUAGES.HE;
 >
   <article
     class:list={[
-      'mx-auto',
-      'max-w-reading',
+      'reading-article',
       'px-4',
       'sm:px-6',
       'lg:px-8',
@@ -33,6 +32,7 @@ const isRtl = language === LANGUAGES.HE;
       isRtl && 'text-right',
       className,
     ]}
+    style="background-color: var(--yuval-reading-bg); padding-bottom: 2rem;"
   >
     <!-- Chapter content -->
     <div
@@ -189,7 +189,7 @@ const isRtl = language === LANGUAGES.HE;
       }
 
       :global(article img) {
-        @apply max-w-full h-auto rounded-lg my-8;
+        @apply max-w-full h-auto rounded-lg my-8 mx-auto block;
       }
 
       /* Code block copy button */
@@ -245,6 +245,19 @@ const isRtl = language === LANGUAGES.HE;
 
       :global(article th) {
         @apply bg-yuval-bg-secondary font-semibold;
+      }
+
+      /* Reading article fills space between sidebars */
+      .reading-article {
+        margin-left: 0;
+        margin-right: 0;
+      }
+
+      @media (min-width: 1024px) {
+        .reading-article {
+          margin-left: 320px;
+          margin-right: 320px;
+        }
       }
     </style>
   </article>

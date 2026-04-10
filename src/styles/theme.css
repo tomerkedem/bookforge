@@ -10,6 +10,7 @@
   --yuval-bg-secondary: #ede8df;
   --yuval-surface: #ffffff;               /* cards, header, sidebars */
   --yuval-header-bg: rgba(255, 255, 255, 0.95);
+  --yuval-reading-bg: #faf7f2;            /* warm paper — easiest on the eyes */
 
   /* ── Text ── */
   --yuval-text: #1a1a1a;
@@ -64,6 +65,7 @@
   --yuval-bg-secondary: #16213e;
   --yuval-surface: #16213e;
   --yuval-header-bg: rgba(22, 33, 62, 0.95);
+  --yuval-reading-bg: #1e1e32;            /* dark paper tone */
 
   /* ── Text ── */
   --yuval-text: #e8e8e8;
