@@ -110,7 +110,9 @@ function discoverChaptersFromFiles(bookDir: string): Chapter[] {
 }
 
 /**
- * Load chapters from content-structure.json if available
+ * Load chapters from content-structure.json if available.
+ * Titles are ALWAYS overridden from actual MD file H1 headings
+ * to prevent stale/mismatched titles in the JSON.
  */
 function loadFromContentStructure(bookDir: string): Chapter[] | null {
   const jsonPath = join(bookDir, 'content-structure.json');
@@ -122,15 +124,26 @@ function loadFromContentStructure(bookDir: string): Chapter[] | null {
 
     if (!data.book?.chapters?.length) return null;
 
-    return data.book.chapters.map((ch, idx) => ({
-      id: ch.id !== undefined ? ch.id + 1 : idx + 1, // content-structure uses 0-based, we use 1-based
-      title_he: ch.title_he,
-      title_en: ch.title_en,
-      sections: ch.sections,
-      has_images: ch.has_images,
-      word_count: ch.word_count,
-      topics: ch.topics || [],
-    }));
+    return data.book.chapters.map((ch, idx) => {
+      const chId = ch.id !== undefined ? ch.id + 1 : idx + 1;
+      const num = String(chId).padStart(2, '0');
+
+      // Always read titles from actual MD files (source of truth)
+      const hePath = join(bookDir, `chapter-${num}.he.md`);
+      const enPath = join(bookDir, `chapter-${num}.en.md`);
+      const heTitle = existsSync(hePath) ? extractFromMd(hePath).title : ch.title_he;
+      const enTitle = existsSync(enPath) ? extractFromMd(enPath).title : ch.title_en;
+
+      return {
+        id: chId,
+        title_he: heTitle,
+        title_en: enTitle,
+        sections: ch.sections,
+        has_images: ch.has_images,
+        word_count: ch.word_count,
+        topics: ch.topics || [],
+      };
+    });
   } catch {
     return null;
   }
