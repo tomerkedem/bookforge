@@ -65,6 +65,9 @@ const categories = ['All', ...Array.from(new Set(books.map(b => b.category).filt
       </p>
     </div>
 
+    <!-- Continue Reading Banner (populated by JS from localStorage) -->
+    <div id="continue-reading-banner" class="max-w-4xl mx-auto mb-10 hidden"></div>
+
     <!-- Category Filter -->
     {categories.length > 1 && (
       <div class="max-w-7xl mx-auto mb-10 flex flex-wrap gap-2 justify-center" id="category-filters">
@@ -178,5 +181,103 @@ const categories = ['All', ...Array.from(new Set(books.map(b => b.category).filt
 
   initCategoryFilter();
   document.addEventListener('astro:after-swap', initCategoryFilter);
+
+  // ── Continue Reading ──────────────────────────────────────────────────────
+  function buildContinueReading() {
+    const banner = document.getElementById('continue-reading-banner');
+    if (!banner) return;
+
+    const lang = localStorage.getItem('yuval_language') || 'en';
+    const isHe = lang === 'he';
+
+    // Find the most recently read chapter across all books
+    let bestKey = '';
+    let bestTime = 0;
+    let bestScroll = 0;
+
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (!key?.startsWith('yuval_reading_progress_')) continue;
+      try {
+        const d = JSON.parse(localStorage.getItem(key) || '{}');
+        const t = d.lastUpdated || d.timestamp || 0;
+        if (t > bestTime && (d.scrollPosition || 0) > 50) {
+          bestTime = t;
+          bestKey = key;
+          bestScroll = d.scrollPosition || 0;
+        }
+      } catch { /* skip */ }
+    }
+
+    if (!bestKey) return;
+
+    // Parse key: yuval_reading_progress_{book}_ch{chapter}
+    const match = bestKey.match(/yuval_reading_progress_(.+?)_ch(\d+)$/);
+    if (!match) return;
+    const bookSlug = match[1];
+    const chapterId = match[2];
+
+    // Find book title from a card on the page
+    const bookCard = document.querySelector<HTMLElement>(`[data-book-slug="${bookSlug}"]`);
+    const titleEl  = bookCard?.querySelector<HTMLElement>('[data-he][data-en]');
+    const bookTitle = titleEl
+      ? (isHe ? titleEl.dataset.he : titleEl.dataset.en) || bookSlug
+      : bookSlug;
+
+    const url = `/read/${bookSlug}/${chapterId}${lang === 'he' ? '?lang=he' : ''}`;
+
+    const estPct = Math.min(95, Math.round((bestScroll / 3000) * 100));
+
+    banner.innerHTML = `
+      <a href="${url}" id="cr-link" style="
+        display:flex; align-items:center; gap:16px;
+        padding:16px 20px;
+        background:var(--yuval-surface,#fff);
+        border:1px solid var(--yuval-border,#e5e7eb);
+        border-radius:16px;
+        text-decoration:none;
+        box-shadow:0 2px 12px rgba(0,0,0,0.06);
+        transition:box-shadow 0.2s, transform 0.2s;
+        direction:${isHe ? 'rtl' : 'ltr'};
+      ">
+        <span style="font-size:28px;flex-shrink:0">📖</span>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;
+            color:var(--yuval-text-muted,#999);margin-bottom:3px">
+            ${isHe ? 'המשך קריאה' : 'Continue Reading'}
+          </div>
+          <div style="font-size:15px;font-weight:700;color:var(--yuval-text,#1a1a1a);
+            white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+            ${bookTitle} · ${isHe ? 'פרק' : 'Chapter'} ${chapterId}
+          </div>
+          <div style="margin-top:6px;height:3px;border-radius:99px;background:var(--yuval-border,#e5e7eb);overflow:hidden">
+            <div style="height:100%;width:${estPct}%;border-radius:99px;
+              background:linear-gradient(90deg,#6366f1,#8b5cf6);
+              transition:width 0.8s ease"></div>
+          </div>
+        </div>
+        <span style="font-size:20px;color:var(--yuval-text-muted,#999);flex-shrink:0">
+          ${isHe ? '←' : '→'}
+        </span>
+      </a>
+    `;
+
+    banner.classList.remove('hidden');
+
+    // Hover effect
+    const link = document.getElementById('cr-link');
+    link?.addEventListener('mouseenter', () => {
+      (link as HTMLElement).style.boxShadow = '0 6px 24px rgba(0,0,0,0.12)';
+      (link as HTMLElement).style.transform = 'translateY(-2px)';
+    });
+    link?.addEventListener('mouseleave', () => {
+      (link as HTMLElement).style.boxShadow = '0 2px 12px rgba(0,0,0,0.06)';
+      (link as HTMLElement).style.transform = '';
+    });
+  }
+
+  buildContinueReading();
+  document.addEventListener('astro:after-swap', buildContinueReading);
+  window.addEventListener('language-changed', buildContinueReading);
 </script>
 

@@ -15,6 +15,8 @@ import { initBookCompletion } from './book-completion';
 import { initFocusParagraph } from './focus-paragraph';
 import { initAmbientColor } from './ambient-color';
 import { initHighlightReplay } from './highlight-replay';
+import { initOnboardingTour } from './onboarding-tour';
+import { initTextToSpeech } from './text-to-speech';
 
 /**
  * Main initialization — wires up all reading-page modules.
@@ -40,6 +42,8 @@ function initializeReadingPage() {
   initFocusParagraph();
   initAmbientColor();
   initHighlightReplay();
+  initTextToSpeech(controller.signal);
+  initOnboardingTour();
 
   const cleanup = () => {
     progressCleanup();
