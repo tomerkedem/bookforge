@@ -27,6 +27,7 @@ const i18n: Record<LangKey, {
   speed: string;
   voice: string;
   notSupported: string;
+  clickToRead: string;
   dir: 'rtl' | 'ltr';
 }> = {
   he: {
@@ -37,6 +38,7 @@ const i18n: Record<LangKey, {
     speed: 'מהירות',
     voice: 'קול',
     notSupported: 'הדפדפן שלך לא תומך בקריאה בקול',
+    clickToRead: 'לחץ לקריאה מכאן',
     dir: 'rtl',
   },
   es: {
@@ -47,6 +49,7 @@ const i18n: Record<LangKey, {
     speed: 'Velocidad',
     voice: 'Voz',
     notSupported: 'Tu navegador no soporta lectura en voz alta',
+    clickToRead: 'Clic para leer desde aquí',
     dir: 'ltr',
   },
   en: {
@@ -57,6 +60,7 @@ const i18n: Record<LangKey, {
     speed: 'Speed',
     voice: 'Voice',
     notSupported: 'Your browser doesn\'t support text-to-speech',
+    clickToRead: 'Click to read from here',
     dir: 'ltr',
   },
 };
@@ -74,6 +78,26 @@ let selectedVoice: SpeechSynthesisVoice | null = null;
 let playbackRate = 1;
 
 const HIGHLIGHT_CLASS = 'tts-reading-highlight';
+const VOICE_STORAGE_KEY = 'yuval_tts_voice';
+const SPEED_STORAGE_KEY = 'yuval_tts_speed';
+
+function getSavedVoiceName(): string | null {
+  const lang = getLang();
+  return localStorage.getItem(`${VOICE_STORAGE_KEY}_${lang}`);
+}
+
+function saveVoiceName(voice: SpeechSynthesisVoice): void {
+  const lang = getLang();
+  localStorage.setItem(`${VOICE_STORAGE_KEY}_${lang}`, voice.name);
+}
+
+function getSavedSpeed(): number {
+  return parseFloat(localStorage.getItem(SPEED_STORAGE_KEY) || '1');
+}
+
+function saveSpeed(rate: number): void {
+  localStorage.setItem(SPEED_STORAGE_KEY, String(rate));
+}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -244,7 +268,7 @@ function updatePlayerState(): void {
   document.querySelectorAll<HTMLElement>('.chapter-content p, .chapter-content h2, .chapter-content h3, .chapter-content li').forEach(el => {
     if (playing || paused) {
       el.style.cursor = 'pointer';
-      el.title = 'Click to read from here';
+      el.title = tr().clickToRead;
     } else {
       el.style.cursor = '';
       el.title = '';
@@ -474,8 +498,13 @@ function buildPlayer(): void {
     sel.innerHTML = voices.map((v, i) =>
       `<option value="${i}">${v.name.replace(/Microsoft |Google /, '').split(' (')[0]}</option>`
     ).join('');
-    // Pre-select the current selectedVoice if any
-    if (selectedVoice) {
+    // Restore saved voice, then fall back to current selectedVoice, then local voice
+    const savedName = getSavedVoiceName();
+    const savedIdx = savedName ? voices.findIndex(v => v.name === savedName) : -1;
+    if (savedIdx >= 0) {
+      sel.selectedIndex = savedIdx;
+      selectedVoice = voices[savedIdx];
+    } else if (selectedVoice) {
       const idx = voices.indexOf(selectedVoice);
       if (idx >= 0) sel.selectedIndex = idx;
     } else {
@@ -485,6 +514,7 @@ function buildPlayer(): void {
     }
     sel.addEventListener('change', () => {
       selectedVoice = voices[parseInt(sel.value, 10)];
+      if (selectedVoice) saveVoiceName(selectedVoice);
       if (playing) {
         window.speechSynthesis.cancel();
         setTimeout(() => speakParagraph(currentParagraphIdx), 50);
@@ -501,10 +531,16 @@ function buildPlayer(): void {
 
   // Speed cycle: 0.75 → 1 → 1.25 → 1.5 → 2 → 0.75
   const speeds = [0.75, 1, 1.25, 1.5, 2];
-  let speedIdx = 1;
+  const savedRate = getSavedSpeed();
+  let speedIdx = speeds.indexOf(savedRate) >= 0 ? speeds.indexOf(savedRate) : 1;
+  playbackRate = speeds[speedIdx];
+  const speedBtn = document.getElementById('tts-speed');
+  if (speedBtn) speedBtn.textContent = `${playbackRate}×`;
+
   document.getElementById('tts-speed')?.addEventListener('click', () => {
     speedIdx = (speedIdx + 1) % speeds.length;
     playbackRate = speeds[speedIdx];
+    saveSpeed(playbackRate);
     const btn = document.getElementById('tts-speed');
     if (btn) btn.textContent = `${playbackRate}×`;
     // Restart current paragraph at new speed

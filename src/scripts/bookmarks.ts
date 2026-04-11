@@ -290,9 +290,12 @@ function renderPanel(): void {
   const body = document.getElementById('bm-panel-body')!;
 
   if (!bookmarks.length) {
+    const lang = getLang();
     const isRtl = labels.dir === 'rtl';
-    const steps = isRtl
+    const steps = lang === 'he'
       ? ['לחץ לחיצה ימנית על פסקה', 'בחר "הוסף סימנייה"', 'לחץ על הסימנייה לקפיצה אליה']
+      : lang === 'es'
+      ? ['Clic derecho en cualquier párrafo', 'Elige "Añadir marcador"', 'Clic en el marcador para saltar']
       : ['Right-click any paragraph', 'Choose "Add bookmark"', 'Click bookmark to jump there'];
     body.innerHTML = `
       <div class="bm-empty">

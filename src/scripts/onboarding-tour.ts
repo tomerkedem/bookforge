@@ -29,8 +29,10 @@ interface Step {
   targetSelector: string;
   title_he: string;
   title_en: string;
+  title_es: string;
   body_he: string;
   body_en: string;
+  body_es: string;
   position: 'top' | 'bottom' | 'left' | 'right';
 }
 
@@ -39,40 +41,50 @@ const STEPS: Step[] = [
     targetSelector: '#chapter-header',
     title_he: 'ברוכים הבאים! 👋',
     title_en: 'Welcome! 👋',
+    title_es: '¡Bienvenido! 👋',
     body_he: 'זוהי פלטפורמת הקריאה של Yuval. נסייר יחד בתכונות העיקריות.',
     body_en: 'This is Yuval\'s reading platform. Let\'s take a quick tour of the key features.',
+    body_es: 'Esta es la plataforma de lectura Yuval. Hagamos un recorrido rápido por las funciones principales.',
     position: 'bottom',
   },
   {
     targetSelector: '#toc-toggle, .toc-sidebar, #chapter-nav',
     title_he: 'תוכן עניינים 📋',
     title_en: 'Table of Contents 📋',
+    title_es: 'Tabla de Contenidos 📋',
     body_he: 'ניווט מהיר בין פרקים. לחץ על כל פרק לניווט מיידי.',
     body_en: 'Navigate between chapters instantly. Click any chapter to jump there.',
+    body_es: 'Navega entre capítulos al instante. Haz clic en cualquier capítulo para ir allí.',
     position: 'right',
   },
   {
     targetSelector: '#fab-toggle',
     title_he: 'בקרי תצוגה ⚙️',
     title_en: 'Display Controls ⚙️',
+    title_es: 'Controles de Pantalla ⚙️',
     body_he: 'שנה גודל טקסט, גופן, רוחב, וערכת צבע. הכל נשמר אוטומטית.',
     body_en: 'Change font size, typeface, width, and color theme. All saved automatically.',
+    body_es: 'Cambia el tamaño de fuente, tipografía, ancho y tema de color. Todo se guarda automáticamente.',
     position: 'left',
   },
   {
     targetSelector: '#reading-fab, .reading-fab',
     title_he: 'סמן טקסט 💡',
     title_en: 'Highlight Text 💡',
+    title_es: 'Resaltar Texto 💡',
     body_he: 'בחר כל טקסט בדף כדי להדגיש אותו. 4 צבעים לארגון: תובנות, שאלות, פעולות, ציטוטים.',
     body_en: 'Select any text on the page to highlight it. 4 colors to organize: insights, questions, actions, quotes.',
+    body_es: 'Selecciona cualquier texto para resaltarlo. 4 colores para organizar: ideas, preguntas, acciones, citas.',
     position: 'left',
   },
   {
     targetSelector: '#goal-indicator',
     title_he: 'יעד קריאה יומי 🎯',
     title_en: 'Daily Reading Goal 🎯',
+    title_es: 'Meta de Lectura Diaria 🎯',
     body_he: 'הגדר יעד יומי ועקב אחרי הרצף שלך. לחץ על הכפתור להגדרה.',
     body_en: 'Set a daily reading goal and track your streak. Click the button to configure.',
+    body_es: 'Establece una meta diaria y sigue tu racha. Haz clic en el botón para configurar.',
     position: 'left',
   },
 ];
@@ -310,8 +322,8 @@ function renderStep(idx: number): void {
       ${dots}
       <span>${idx + 1} ${labels.of} ${STEPS.length}</span>
     </div>
-    <div id="ob-title">${lang === 'he' ? step.title_he : step.title_en}</div>
-    <div id="ob-body">${lang === 'he' ? step.body_he : step.body_en}</div>
+    <div id="ob-title">${lang === 'he' ? step.title_he : lang === 'es' ? step.title_es : step.title_en}</div>
+    <div id="ob-body">${lang === 'he' ? step.body_he : lang === 'es' ? step.body_es : step.body_en}</div>
     <div id="ob-actions">
       <button id="ob-skip">${labels.skip}</button>
       <button id="ob-next">${isLast ? labels.done : labels.next}</button>

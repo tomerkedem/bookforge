@@ -167,6 +167,10 @@
     .reading-fab {
       right: 348px;
     }
+    [dir="rtl"] .reading-fab {
+      right: auto;
+      left: 348px;
+    }
   }
 
   @media (max-width: 639px) {
@@ -174,6 +178,23 @@
       bottom: 24px;
       right: 20px;
     }
+    [dir="rtl"] .reading-fab {
+      right: auto;
+      left: 20px;
+    }
+  }
+
+  [dir="rtl"] .reading-fab {
+    right: auto;
+    left: 28px;
+  }
+
+  [dir="rtl"] .fab-label {
+    transform: translateX(-8px);
+  }
+
+  [dir="rtl"] .fab-item:hover .fab-label {
+    transform: translateX(0);
   }
 
   /* Main FAB button */
@@ -330,6 +351,17 @@
     .typography-panel {
       right: 348px;
     }
+    [dir="rtl"] .typography-panel {
+      right: auto;
+      left: 348px;
+      transform-origin: bottom left;
+    }
+  }
+
+  [dir="rtl"] .typography-panel {
+    right: auto;
+    left: 28px;
+    transform-origin: bottom left;
   }
 
   /* Mobile: bottom sheet */

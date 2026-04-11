@@ -200,15 +200,15 @@ function showHoverPopup(markEl: HTMLElement): void {
   popup.style.left = `${rect.left + window.scrollX + rect.width / 2}px`;
   popup.classList.add('visible');
 
-  popup.querySelector('#hl-remove-btn')!.onclick = () => {
+  (popup.querySelector('#hl-remove-btn') as HTMLElement).onclick = () => {
     popup.classList.remove('visible');
     removeHighlight(markEl.dataset.hlId || '');
   };
-  popup.querySelector('#hl-card-btn')!.onclick = () => {
+  (popup.querySelector('#hl-card-btn') as HTMLElement).onclick = () => {
     popup.classList.remove('visible');
     openQuoteCard(markEl);
   };
-  popup.querySelector('#hl-note-btn')!.onclick = () => {
+  (popup.querySelector('#hl-note-btn') as HTMLElement).onclick = () => {
     popup.classList.remove('visible');
     openInlineNoteEditor(markEl);
   };
