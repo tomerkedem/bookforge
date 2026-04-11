@@ -214,16 +214,21 @@ export function discoverBook(slug: string): DiscoveredBook | null {
 
   if (chapters.length === 0) return null;
 
-  // Check for cover image — find first existing file
+  // Check for cover image — priority order:
+  // 1. Book's own assets folder (from pipeline): /{slug}/assets/cover.png
+  // 2. Dedicated covers folder: /covers/{slug}.png
+  // 3. NO fallback to generic cover.png (prevents showing wrong book's cover)
   const coverCandidates = [
-    `/covers/${slug}.png`,
+    `/${slug}/assets/cover.png`,    // Pipeline-generated cover
+    `/${slug}/assets/cover.jpg`,
+    `/covers/${slug}.png`,          // Manually added cover
     `/covers/${slug}.jpg`,
-    '/covers/cover.png',
-    '/covers/cover.jpg',
   ];
 
   const publicDir = PATHS.PUBLIC_DIR;
-  const coverImage = coverCandidates.find(c => existsSync(join(publicDir, c))) || coverCandidates[0];
+  // Find first existing cover, or use a placeholder (not another book's cover!)
+  const existingCover = coverCandidates.find(c => existsSync(join(publicDir, c.slice(1))));
+  const coverImage = existingCover || `/covers/placeholder.svg`;
 
   return {
     slug,
