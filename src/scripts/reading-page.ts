@@ -4,6 +4,8 @@ import { initStickyHeader } from './sticky-header';
 import { initKeyboardNav } from './keyboard-nav';
 import { initHighlighter } from './highlighter';
 import { initReadingHints } from './reading-hints';
+import { initChapterCompletion } from './chapter-completion';
+import { initSearch } from './search';
 
 /**
  * Main initialization — wires up all reading-page modules.
@@ -18,6 +20,8 @@ function initializeReadingPage() {
   initKeyboardNav(controller.signal);
   initHighlighter(controller.signal);
   initReadingHints();
+  initChapterCompletion();
+  initSearch(controller.signal);
 
   const cleanup = () => {
     progressCleanup();
