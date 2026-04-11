@@ -24,6 +24,7 @@ interface HighlightData {
   text: string;
   color: ColorKey;
   timestamp: number;
+  note?: string;
 }
 
 // ── Storage ──────────────────────────────────────────────────────────────────
@@ -181,8 +182,9 @@ function getHoverPopup(): HTMLElement {
     hoverPopup = document.createElement('div');
     hoverPopup.id = 'hl-hover-popup';
     hoverPopup.innerHTML = `
-      <button type="button" class="hl-popup-btn" id="hl-card-btn">🖼 Card</button>
-      <button type="button" class="hl-popup-btn" id="hl-remove-btn">✕ Remove</button>
+      <button type="button" class="hl-popup-btn" id="hl-note-btn">📝</button>
+      <button type="button" class="hl-popup-btn" id="hl-card-btn">🖼</button>
+      <button type="button" class="hl-popup-btn" id="hl-remove-btn">✕</button>
     `;
     document.body.appendChild(hoverPopup);
   }
@@ -206,6 +208,80 @@ function showHoverPopup(markEl: HTMLElement): void {
     popup.classList.remove('visible');
     openQuoteCard(markEl);
   };
+  popup.querySelector('#hl-note-btn')!.onclick = () => {
+    popup.classList.remove('visible');
+    openInlineNoteEditor(markEl);
+  };
+}
+
+function openInlineNoteEditor(markEl: HTMLElement): void {
+  const ctx = getPageContext();
+  if (!ctx) return;
+
+  const hlId = markEl.dataset.hlId || '';
+  const list = loadHighlights(ctx.book, ctx.chapter, ctx.lang);
+  const hl = list.find(h => h.id === hlId);
+  if (!hl) return;
+
+  // Remove any existing editor
+  document.getElementById('hl-inline-note-editor')?.remove();
+
+  const lang = ctx.lang;
+  const placeholder = lang === 'he'
+    ? 'כתוב הערה...'
+    : lang === 'es' ? 'Escribe una nota...' : 'Write a note...';
+  const hint = lang === 'he' ? 'Ctrl+Enter לשמירה · Esc לביטול' : 'Ctrl+Enter to save · Esc to cancel';
+
+  const editor = document.createElement('div');
+  editor.id = 'hl-inline-note-editor';
+  editor.style.cssText = `
+    position: absolute;
+    z-index: 9999;
+    background: var(--yuval-surface, #fff);
+    border: 1px solid #6366f1;
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+    padding: 10px;
+    width: 260px;
+  `;
+
+  const rect = markEl.getBoundingClientRect();
+  editor.style.top  = `${rect.bottom + window.scrollY + 6}px`;
+  editor.style.left = `${Math.max(8, rect.left + window.scrollX - 10)}px`;
+
+  editor.innerHTML = `
+    <textarea id="hl-inline-ta" rows="3" placeholder="${placeholder}"
+      style="width:100%;font-size:13px;padding:6px 8px;border-radius:6px;
+             border:1px solid var(--yuval-border,#e5e7eb);
+             background:var(--yuval-bg-secondary,#f9f9f9);
+             color:var(--yuval-text,#1a1a1a);
+             font-family:inherit;resize:none;outline:none;box-sizing:border-box;"
+    >${hl.note || ''}</textarea>
+    <span style="font-size:10px;color:var(--yuval-text-muted,#999);display:block;margin-top:4px;">${hint}</span>
+  `;
+
+  document.body.appendChild(editor);
+  const ta = document.getElementById('hl-inline-ta') as HTMLTextAreaElement;
+  ta.focus();
+  ta.selectionStart = ta.selectionEnd = ta.value.length;
+
+  const save = () => {
+    const note = ta.value.trim();
+    const updated = loadHighlights(ctx.book, ctx.chapter, ctx.lang);
+    const idx = updated.findIndex(h => h.id === hlId);
+    if (idx !== -1) {
+      if (note) updated[idx].note = note;
+      else delete updated[idx].note;
+      saveHighlights(ctx.book, ctx.chapter, ctx.lang, updated);
+    }
+    editor.remove();
+  };
+
+  ta.addEventListener('blur', () => setTimeout(() => { if (document.activeElement !== ta) save(); }, 150));
+  ta.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); save(); }
+    if (e.key === 'Escape') { editor.remove(); }
+  });
 }
 
 function scheduleHidePopup(): void {

@@ -21,6 +21,8 @@ const i18n: Record<LangKey, {
   close: string;
   chapterLabel: (n: number) => string;
   colorLabels: Record<string, string>;
+  addNote: string;
+  notePlaceholder: string;
   dir: 'rtl' | 'ltr';
 }> = {
   he: {
@@ -31,6 +33,8 @@ const i18n: Record<LangKey, {
     close: 'סגור',
     chapterLabel: (n) => `פרק ${n}`,
     colorLabels: { yellow: 'תובנה', blue: 'שאלה', green: 'פעולה', pink: 'ציטוט' },
+    addNote: 'הוסף הערה...',
+    notePlaceholder: 'כתוב הערה על ההדגשה הזו...',
     dir: 'rtl',
   },
   es: {
@@ -41,6 +45,8 @@ const i18n: Record<LangKey, {
     close: 'Cerrar',
     chapterLabel: (n) => `Capítulo ${n}`,
     colorLabels: { yellow: 'Insight', blue: 'Pregunta', green: 'Acción', pink: 'Cita' },
+    addNote: 'Añadir nota...',
+    notePlaceholder: 'Escribe una nota sobre este resaltado...',
     dir: 'ltr',
   },
   en: {
@@ -51,6 +57,8 @@ const i18n: Record<LangKey, {
     close: 'Close',
     chapterLabel: (n) => `Chapter ${n}`,
     colorLabels: { yellow: 'Insight', blue: 'Question', green: 'Action', pink: 'Quote' },
+    addNote: 'Add a note...',
+    notePlaceholder: 'Write a note about this highlight...',
     dir: 'ltr',
   },
 };
@@ -64,6 +72,7 @@ interface HighlightData {
   text: string;
   color: string;
   timestamp: number;
+  note?: string;
 }
 
 interface ChapterHighlights {
@@ -118,6 +127,24 @@ function getAllHighlights(): ChapterHighlights[] {
   }
 
   return result.sort((a, b) => a.chapterId - b.chapterId);
+}
+
+function saveNote(chapterId: number, hlId: string, note: string): void {
+  const book = getCurrentBook();
+  const lang = getLang();
+  const key = `yuval_hl_${book}_ch${chapterId}_${lang}`;
+  try {
+    const list: HighlightData[] = JSON.parse(localStorage.getItem(key) || '[]');
+    const idx = list.findIndex(h => h.id === hlId);
+    if (idx !== -1) {
+      if (note.trim()) {
+        list[idx].note = note.trim();
+      } else {
+        delete list[idx].note;
+      }
+      localStorage.setItem(key, JSON.stringify(list));
+    }
+  } catch { /* skip */ }
 }
 
 // ── CSS ───────────────────────────────────────────────────────────────────────
@@ -324,6 +351,73 @@ function injectStyles(): void {
       margin-top: 4px;
       opacity: 0.6;
     }
+
+    /* ── Note area ── */
+    .hl-item-note-area {
+      margin-top: 7px;
+      padding-top: 7px;
+      border-top: 1px dashed rgba(0,0,0,0.12);
+    }
+    :is(.dark) .hl-item-note-area { border-top-color: rgba(255,255,255,0.1); }
+
+    .hl-note-text {
+      display: block;
+      font-size: 12px;
+      line-height: 1.5;
+      color: inherit;
+      opacity: 0.8;
+      cursor: text;
+      padding: 2px 4px;
+      border-radius: 4px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .hl-note-text:hover { background: rgba(0,0,0,0.05); }
+    :is(.dark) .hl-note-text:hover { background: rgba(255,255,255,0.07); }
+
+    .hl-note-empty {
+      display: block;
+      font-size: 11.5px;
+      color: inherit;
+      opacity: 0.38;
+      cursor: text;
+      padding: 2px 4px;
+      border-radius: 4px;
+      font-style: italic;
+    }
+    .hl-note-empty:hover { opacity: 0.55; background: rgba(0,0,0,0.04); }
+    :is(.dark) .hl-note-empty:hover { background: rgba(255,255,255,0.06); }
+
+    .hl-note-textarea {
+      width: 100%;
+      min-height: 56px;
+      font-size: 12px;
+      line-height: 1.5;
+      padding: 5px 6px;
+      border-radius: 6px;
+      border: 1px solid rgba(0,0,0,0.18);
+      background: rgba(255,255,255,0.5);
+      color: inherit;
+      resize: vertical;
+      font-family: inherit;
+      outline: none;
+      box-sizing: border-box;
+    }
+    :is(.dark) .hl-note-textarea {
+      border-color: rgba(255,255,255,0.15);
+      background: rgba(0,0,0,0.25);
+      color: #e0e0e0;
+    }
+    .hl-note-textarea:focus {
+      border-color: #6366f1;
+      box-shadow: 0 0 0 2px rgba(99,102,241,0.18);
+    }
+    .hl-note-hint {
+      font-size: 10px;
+      opacity: 0.45;
+      margin-top: 3px;
+      display: block;
+    }
   `;
   document.head.appendChild(s);
 }
@@ -362,6 +456,67 @@ function buildPanel(): void {
 
 // ── Render content ────────────────────────────────────────────────────────────
 
+function openNoteEditor(
+  noteArea: HTMLElement,
+  chapterId: number,
+  hl: HighlightData,
+  textColor: string,
+): void {
+  if (noteArea.querySelector('.hl-note-textarea')) return; // already open
+
+  const labels = tr();
+  const current = hl.note || '';
+
+  noteArea.innerHTML = `
+    <textarea class="hl-note-textarea" placeholder="${labels.notePlaceholder}"
+      style="color:${textColor}">${current}</textarea>
+    <span class="hl-note-hint" style="color:${textColor}">
+      ${labels.dir === 'rtl' ? 'Ctrl+Enter לשמירה' : 'Ctrl+Enter to save'}
+    </span>
+  `;
+
+  const ta = noteArea.querySelector<HTMLTextAreaElement>('.hl-note-textarea')!;
+  ta.focus();
+  ta.selectionStart = ta.selectionEnd = ta.value.length;
+
+  const commit = () => {
+    const newNote = ta.value;
+    saveNote(chapterId, hl.id, newNote);
+    hl.note = newNote.trim() || undefined;
+
+    const noteHtml = hl.note
+      ? `<span class="hl-note-text">${hl.note.replace(/</g, '&lt;')}</span>`
+      : `<span class="hl-note-empty">${labels.addNote}</span>`;
+    noteArea.innerHTML = noteHtml;
+
+    // Re-attach click handler
+    noteArea.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openNoteEditor(noteArea, chapterId, hl, textColor);
+    }, { once: true });
+  };
+
+  ta.addEventListener('blur', commit);
+  ta.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      ta.removeEventListener('blur', commit);
+      commit();
+    }
+    if (e.key === 'Escape') {
+      ta.removeEventListener('blur', commit);
+      const noteHtml = hl.note
+        ? `<span class="hl-note-text">${hl.note.replace(/</g, '&lt;')}</span>`
+        : `<span class="hl-note-empty">${labels.addNote}</span>`;
+      noteArea.innerHTML = noteHtml;
+      noteArea.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        openNoteEditor(noteArea, chapterId, hl, textColor);
+      }, { once: true });
+    }
+  });
+}
+
 function renderPanel(): void {
   const panel = document.getElementById('hl-panel');
   if (!panel) return;
@@ -370,13 +525,6 @@ function renderPanel(): void {
   const isDark = document.documentElement.classList.contains('dark');
   const allChapters = getAllHighlights();
   const totalCount = allChapters.reduce((s, c) => s + c.highlights.length, 0);
-
-  // Update badge
-  const badge = document.getElementById('hl-fab-badge');
-  if (badge) {
-    badge.textContent = String(totalCount);
-    badge.style.display = totalCount > 0 ? '' : 'none';
-  }
 
   panel.setAttribute('dir', labels.dir);
   panel.innerHTML = `
@@ -424,20 +572,33 @@ function renderPanel(): void {
       const item = document.createElement('div');
       item.className = 'hl-item';
       item.style.background = bg;
-      item.setAttribute('role', 'button');
-      item.setAttribute('tabindex', '0');
-      item.setAttribute('title', colorLabel);
+      item.setAttribute('data-hl-panel-id', hl.id);
+      item.setAttribute('data-hl-chapter', String(chapterId));
+
+      const noteHtml = hl.note
+        ? `<span class="hl-note-text">${hl.note.replace(/</g, '&lt;')}</span>`
+        : `<span class="hl-note-empty">${labels.addNote}</span>`;
+
       item.innerHTML = `
-        <span class="hl-item-emoji">${emoji}</span>
+        <span class="hl-item-emoji" style="cursor:pointer" title="Go to highlight">${emoji}</span>
         <div class="hl-item-body">
-          <div class="hl-item-text" style="color:${text}">${hl.text}</div>
+          <div class="hl-item-text" style="color:${text};cursor:pointer">${hl.text}</div>
           <div class="hl-item-meta" style="color:${text}">${colorLabel}</div>
+          <div class="hl-item-note-area">
+            ${noteHtml}
+          </div>
         </div>
       `;
 
-      item.addEventListener('click', () => jumpToHighlight(chapterId, hl));
-      item.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') jumpToHighlight(chapterId, hl);
+      // Click on text/emoji → jump to highlight
+      item.querySelector('.hl-item-emoji')!.addEventListener('click', () => jumpToHighlight(chapterId, hl));
+      (item.querySelector('.hl-item-text') as HTMLElement).addEventListener('click', () => jumpToHighlight(chapterId, hl));
+
+      // Click on note area → open inline editor
+      const noteArea = item.querySelector('.hl-item-note-area') as HTMLElement;
+      noteArea.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openNoteEditor(noteArea, chapterId, hl, text);
       });
 
       group.appendChild(item);
@@ -513,7 +674,9 @@ function exportMarkdown(): void {
     highlights.forEach(hl => {
       const emoji = COLOR_EMOJI[hl.color];
       const colorLabel = labels.colorLabels[hl.color];
-      md += `${emoji} **${colorLabel}**\n> ${hl.text}\n\n`;
+      md += `${emoji} **${colorLabel}**\n> ${hl.text}\n`;
+      if (hl.note) md += `\n*${hl.note}*\n`;
+      md += '\n';
     });
   });
 
@@ -542,16 +705,21 @@ function closePanel(): void {
 
 // ── Export ────────────────────────────────────────────────────────────────────
 
+function updateBadge(): void {
+  const badge = document.getElementById('hl-fab-badge');
+  if (!badge) return;
+  const total = getAllHighlights().reduce((s, c) => s + c.highlights.length, 0);
+  badge.textContent = String(total);
+  badge.style.display = total > 0 ? '' : 'none';
+}
+
 export function initHighlightsPanel(): void {
   injectStyles();
   buildPanel();
 
-  // Update badge when highlights change
-  window.addEventListener('chapter-content-swapped', () => {
-    const badge = document.getElementById('hl-fab-badge');
-    if (!badge) return;
-    const total = getAllHighlights().reduce((s, c) => s + c.highlights.length, 0);
-    badge.textContent = String(total);
-    badge.style.display = total > 0 ? '' : 'none';
-  });
+  // Update badge immediately on load
+  updateBadge();
+
+  // Re-update after chapter navigation
+  window.addEventListener('chapter-content-swapped', updateBadge);
 }
