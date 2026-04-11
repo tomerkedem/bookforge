@@ -184,71 +184,71 @@ function injectStyles(): void {
     /* ── Keyboard hint bar ── */
     #kbd-hint-bar {
       position: fixed;
-      bottom: 22px;
+      bottom: 28px;
       left: 50%;
       transform: translateX(-50%) translateY(8px);
       z-index: 9989;
       display: flex;
       align-items: center;
-      gap: 14px;
-      padding: 7px 18px;
+      gap: 0;
+      padding: 0;
       width: max-content;
 
-      background: var(--yuval-surface, rgba(255,255,255,0.92));
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border: 1px solid var(--yuval-border, rgba(0,0,0,0.08));
-      border-radius: 100px;
-      box-shadow:
-        0 1px 3px rgba(0,0,0,0.04),
-        0 4px 16px rgba(0,0,0,0.08);
+      background: var(--yuval-surface, #fff);
+      border: 1px solid var(--yuval-border, rgba(0,0,0,0.1));
+      border-radius: 12px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.1);
 
-      font-size: 11.5px;
-      color: var(--yuval-text-muted, #888);
+      font-size: 13px;
+      color: var(--yuval-text-secondary, #555);
       white-space: nowrap;
-      animation: hintSlideUp 0.4s cubic-bezier(0.34,1.56,0.64,1) forwards;
+      overflow: hidden;
+      animation: hintSlideUp 0.35s cubic-bezier(0.34,1.56,0.64,1) forwards;
     }
     #kbd-hint-bar.hiding {
       animation: hintSlideDown 0.3s ease forwards;
     }
 
     :is(.dark) #kbd-hint-bar {
-      background: rgba(30,30,30,0.92);
-      border-color: rgba(255,255,255,0.07);
+      background: #232323;
+      border-color: rgba(255,255,255,0.1);
+      color: #bbb;
     }
 
     .kbd-item {
       display: inline-flex;
       align-items: center;
-      gap: 5px;
+      gap: 7px;
+      padding: 10px 16px;
+      border-right: 1px solid var(--yuval-border, rgba(0,0,0,0.08));
     }
-    .kbd-item + .kbd-item {
-      padding-left: 14px;
-      border-left: 1px solid var(--yuval-border, rgba(0,0,0,0.1));
-    }
-    :is(.dark) .kbd-item + .kbd-item {
-      border-color: rgba(255,255,255,0.08);
+    .kbd-item:last-child { border-right: none; }
+    :is(.dark) .kbd-item { border-color: rgba(255,255,255,0.07); }
+
+    .kbd-item-label {
+      font-size: 13px;
+      font-weight: 400;
     }
 
     kbd {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      padding: 1px 6px;
-      background: var(--yuval-bg-secondary, rgba(0,0,0,0.05));
-      border: 1px solid rgba(0,0,0,0.12);
+      padding: 2px 7px;
+      background: var(--yuval-bg-secondary, #f3f4f6);
+      border: 1px solid rgba(0,0,0,0.15);
       border-bottom-width: 2px;
-      border-radius: 5px;
-      font-size: 10px;
+      border-radius: 6px;
+      font-size: 11px;
       font-family: ui-monospace, monospace;
       font-weight: 700;
-      color: var(--yuval-text-secondary, #555);
+      color: var(--yuval-text, #333);
       line-height: 1.5;
     }
     :is(.dark) kbd {
-      background: rgba(255,255,255,0.07);
-      border-color: rgba(255,255,255,0.1);
-      color: #ccc;
+      background: rgba(255,255,255,0.08);
+      border-color: rgba(255,255,255,0.12);
+      color: #ddd;
     }
   `;
   document.head.appendChild(s);
@@ -309,9 +309,18 @@ function showKbdHint(): void {
   const { kbdChapters, kbdFocus, kbdHighlight, dir } = tr();
   bar.setAttribute('dir', dir);
   bar.innerHTML = `
-    <span class="kbd-item"><kbd>←</kbd><kbd>→</kbd> ${kbdChapters}</span>
-    <span class="kbd-item"><kbd>F</kbd> ${kbdFocus}</span>
-    <span class="kbd-item">✍️ ${kbdHighlight}</span>
+    <span class="kbd-item">
+      <kbd>←</kbd><kbd>→</kbd>
+      <span class="kbd-item-label">${kbdChapters}</span>
+    </span>
+    <span class="kbd-item">
+      <kbd>F</kbd>
+      <span class="kbd-item-label">${kbdFocus}</span>
+    </span>
+    <span class="kbd-item">
+      <span>✍️</span>
+      <span class="kbd-item-label">${kbdHighlight}</span>
+    </span>
   `;
   document.body.appendChild(bar);
 
