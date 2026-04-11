@@ -924,6 +924,61 @@ const isRtl = language === LANGUAGES.HE;
     initializeSidebars();
   }
 
+  // ── TOC progress indicators ────────────────────────────────────────────────
+  function updateTocProgress() {
+    const bookEl = document.getElementById('chapter-container');
+    const book = bookEl?.dataset.book || '';
+    if (!book) return;
+
+    document.querySelectorAll<HTMLElement>('#toc-sidebar li[data-chapter-id]').forEach(li => {
+      const chId = li.dataset.chapterId;
+      if (!chId) return;
+
+      // Find best progress key for this chapter
+      let scrollPos = 0;
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (!k?.includes(`_${book}_ch${chId}`)) continue;
+        try {
+          const d = JSON.parse(localStorage.getItem(k) || '{}');
+          if ((d.scrollPosition || 0) > scrollPos) scrollPos = d.scrollPosition || 0;
+        } catch { /* skip */ }
+      }
+
+      // Remove old indicator
+      li.querySelector('.toc-progress-bar-wrap')?.remove();
+
+      if (scrollPos < 50) return;
+      const pct = Math.min(100, Math.round((scrollPos / 3000) * 100));
+      const done = pct >= 85;
+
+      // Thin progress bar under the chapter title link
+      const bar = document.createElement('div');
+      bar.className = 'toc-progress-bar-wrap';
+      bar.style.cssText = `
+        position:absolute; bottom:0; left:8px; right:8px; height:2px;
+        border-radius:99px;
+        background:var(--yuval-border,#e5e7eb);
+        overflow:hidden;
+      `;
+      const fill = document.createElement('div');
+      fill.style.cssText = `
+        height:100%; width:${pct}%; border-radius:99px;
+        background:${done ? '#22c55e' : '#6366f1'};
+        transition:width 0.6s ease;
+      `;
+      bar.appendChild(fill);
+
+      // li needs relative positioning
+      li.style.position = 'relative';
+      li.appendChild(bar);
+    });
+  }
+
+  // Call on init and after chapter swaps
+  setTimeout(updateTocProgress, 200);
+  window.addEventListener('chapter-content-swapped', () => setTimeout(updateTocProgress, 400));
+
   // Update when language changes
   window.addEventListener('language-changed', (e: any) => {
     const lang = e.detail?.language || 'en';

@@ -75,6 +75,15 @@ export function initStickyHeader(controller: AbortController) {
     if (progressFill) progressFill.style.width = `${pct}%`;
 
     updateReadingTime(pct);
+    updateDocumentTitle(pct);
+  }
+
+  // ── Document title progress ─────────────────────────────────────────────────
+  const originalTitle = document.title;
+  function updateDocumentTitle(pct: number): void {
+    if (pct <= 0) { document.title = originalTitle; return; }
+    // Extract "Chapter Title | Book" from original title
+    document.title = `(${pct}%) ${originalTitle}`;
   }
 
   window.addEventListener('scroll', onScroll, { passive: true, signal: controller.signal });

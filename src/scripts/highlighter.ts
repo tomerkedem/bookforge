@@ -1034,4 +1034,132 @@ export function initHighlighter(signal: AbortSignal): void {
 
   // ── Hide toolbar on scroll ──
   window.addEventListener('scroll', hideToolbar, { signal, passive: true });
+
+  // ── Mobile: long-press on paragraph to highlight it ──────────────────────
+  if ('ontouchstart' in window) {
+    let longPressTimer: ReturnType<typeof setTimeout> | null = null;
+    let longPressEl: HTMLElement | null = null;
+    let touchMoved = false;
+
+    // Show mobile color picker as a bottom sheet
+    function showMobileColorPicker(el: HTMLElement, text: string): void {
+      document.getElementById('hl-mobile-picker')?.remove();
+
+      const ctx = getPageContext();
+      if (!ctx) return;
+
+      const lang = ctx.lang;
+      const labels: Record<string, Record<string, string>> = {
+        he: { yellow: 'תובנה', blue: 'שאלה', green: 'פעולה', pink: 'ציטוט', cancel: 'ביטול', title: 'הדגש פסקה' },
+        en: { yellow: 'Insight', blue: 'Question', green: 'Action', pink: 'Quote', cancel: 'Cancel', title: 'Highlight paragraph' },
+        es: { yellow: 'Insight', blue: 'Pregunta', green: 'Acción', pink: 'Cita', cancel: 'Cancelar', title: 'Resaltar párrafo' },
+      };
+      const l = labels[lang] || labels.en;
+
+      const sheet = document.createElement('div');
+      sheet.id = 'hl-mobile-picker';
+      sheet.style.cssText = `
+        position:fixed; bottom:0; left:0; right:0; z-index:10100;
+        background:var(--yuval-surface,#fff);
+        border-radius:20px 20px 0 0;
+        box-shadow:0 -8px 40px rgba(0,0,0,0.2);
+        padding:20px 20px 32px;
+        animation:hmSlideUp 0.25s cubic-bezier(0.34,1.56,0.64,1);
+      `;
+
+      const style = document.createElement('style');
+      style.textContent = `
+        @keyframes hmSlideUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
+        #hl-mobile-picker { touch-action: none; }
+      `;
+      document.head.appendChild(style);
+
+      const preview = text.length > 80 ? text.slice(0, 80) + '…' : text;
+      sheet.innerHTML = `
+        <div style="width:36px;height:4px;background:var(--yuval-border,#e5e7eb);border-radius:2px;margin:0 auto 16px"></div>
+        <div style="font-size:12px;font-weight:700;color:var(--yuval-text-muted,#999);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:8px">${l.title}</div>
+        <div style="font-size:13px;color:var(--yuval-text-secondary,#555);margin-bottom:20px;line-height:1.5;font-style:italic">"${preview}"</div>
+        <div id="hm-colors" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px"></div>
+        <button id="hm-cancel" style="width:100%;padding:12px;border-radius:12px;border:1px solid var(--yuval-border,#e5e7eb);background:var(--yuval-bg-secondary,#f3f4f6);font-size:14px;font-weight:600;color:var(--yuval-text-secondary,#555);cursor:pointer">${l.cancel}</button>
+      `;
+      document.body.appendChild(sheet);
+
+      const colorsEl = document.getElementById('hm-colors')!;
+      const colorDefs = [
+        { key: 'yellow', bg: '#fef9c3', border: '#fde68a', emoji: '💡' },
+        { key: 'blue',   bg: '#dbeafe', border: '#bfdbfe', emoji: '❓' },
+        { key: 'green',  bg: '#dcfce7', border: '#bbf7d0', emoji: '✅' },
+        { key: 'pink',   bg: '#fce7f3', border: '#fbcfe8', emoji: '💬' },
+      ];
+
+      colorDefs.forEach(({ key, bg, border, emoji }) => {
+        const btn = document.createElement('button');
+        btn.style.cssText = `
+          padding:12px 6px; border-radius:12px; border:2px solid ${border};
+          background:${bg}; cursor:pointer; font-size:20px; display:flex;
+          flex-direction:column; align-items:center; gap:4px;
+        `;
+        const labelSpan = document.createElement('span');
+        labelSpan.style.cssText = 'font-size:10px;font-weight:600;color:#555';
+        labelSpan.textContent = l[key] || key;
+        btn.textContent = emoji;
+        btn.appendChild(labelSpan);
+
+        btn.addEventListener('click', () => {
+          const color = key as ColorKey;
+          const hl: HighlightData = {
+            id: `hl_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+            text,
+            color,
+            timestamp: Date.now(),
+          };
+          const contentEl = getContentEl();
+          if (contentEl) {
+            const applied = applyHighlight(hl, contentEl);
+            if (applied) {
+              const list = loadHighlights(ctx.book, ctx.chapter, ctx.lang);
+              list.push(hl);
+              saveHighlights(ctx.book, ctx.chapter, ctx.lang, list);
+            }
+          }
+          sheet.remove();
+        });
+        colorsEl.appendChild(btn);
+      });
+
+      document.getElementById('hm-cancel')?.addEventListener('click', () => sheet.remove());
+
+      // Backdrop tap closes
+      const backdrop = document.createElement('div');
+      backdrop.style.cssText = 'position:fixed;inset:0;z-index:10099;background:rgba(0,0,0,0.3)';
+      backdrop.addEventListener('click', () => { sheet.remove(); backdrop.remove(); });
+      document.body.insertBefore(backdrop, sheet);
+    }
+
+    const SELECTORS = '.chapter-content p, .chapter-content h2, .chapter-content h3, .chapter-content li, .chapter-content blockquote';
+
+    document.addEventListener('touchstart', (e) => {
+      touchMoved = false;
+      const target = (e.target as HTMLElement).closest<HTMLElement>(SELECTORS);
+      if (!target) return;
+      longPressEl = target;
+      longPressTimer = setTimeout(() => {
+        if (touchMoved) return;
+        const text = target.textContent?.trim() || '';
+        if (text.length < 5) return;
+        // Haptic feedback if available
+        if ('vibrate' in navigator) navigator.vibrate(40);
+        showMobileColorPicker(target, text);
+      }, 600);
+    }, { signal, passive: true });
+
+    document.addEventListener('touchmove', () => {
+      touchMoved = true;
+      if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+    }, { signal, passive: true });
+
+    document.addEventListener('touchend', () => {
+      if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+    }, { signal, passive: true });
+  }
 }

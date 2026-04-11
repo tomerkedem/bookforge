@@ -290,11 +290,23 @@ function renderPanel(): void {
   const body = document.getElementById('bm-panel-body')!;
 
   if (!bookmarks.length) {
+    const isRtl = labels.dir === 'rtl';
+    const steps = isRtl
+      ? ['לחץ לחיצה ימנית על פסקה', 'בחר "הוסף סימנייה"', 'לחץ על הסימנייה לקפיצה אליה']
+      : ['Right-click any paragraph', 'Choose "Add bookmark"', 'Click bookmark to jump there'];
     body.innerHTML = `
       <div class="bm-empty">
         <span class="bm-empty-icon">🔖</span>
         <span class="bm-empty-text">${labels.empty}</span>
         <span class="bm-empty-hint">${labels.emptyHint}</span>
+        <div style="margin-top:16px;width:100%;display:flex;flex-direction:column;gap:8px">
+          ${steps.map((s, i) => `
+            <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--yuval-bg-secondary,#f9f9f9);border-radius:8px;font-size:12px;color:var(--yuval-text-secondary,#555);text-align:${isRtl ? 'right' : 'left'}">
+              <span style="width:20px;height:20px;border-radius:50%;background:#6366f1;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">${i + 1}</span>
+              ${s}
+            </div>
+          `).join('')}
+        </div>
       </div>
     `;
     return;

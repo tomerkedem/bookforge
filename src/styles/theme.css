@@ -225,6 +225,70 @@ body.focus-mode::after {
   font-family: var(--reading-font-family);
 }
 
+/* ═══════════════════════════════════════════════════
+   PRINT STYLESHEET
+   ═══════════════════════════════════════════════════ */
+@media print {
+  /* Hide everything UI */
+  header, nav, aside,
+  #toc-sidebar, #mobile-toc, #reading-fab, #fab-toggle,
+  #chapter-nav, .reading-fab, .BackToTop,
+  #tts-fab, #tts-player,
+  #goal-indicator, #stats-fab-btn, #bookmarks-fab,
+  #highlights-fab, #chapter-completion,
+  .focus-toast, #ob-overlay,
+  [id$="-overlay"], [id$="-modal"],
+  .breadcrumbs, #chapter-header .header-progress-line,
+  #progress-badge-he, #progress-badge-en, #progress-badge-es,
+  .reading-time-value { display: none !important; }
+
+  /* Reset dark/sepia for print */
+  html, body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  /* Chapter content — clean black on white */
+  .chapter-content {
+    max-width: 100% !important;
+    font-size: 11pt !important;
+    line-height: 1.7 !important;
+    color: #000 !important;
+    font-family: Georgia, 'Times New Roman', serif !important;
+  }
+
+  /* Headings */
+  .chapter-content h1, .chapter-content h2,
+  .chapter-content h3, .chapter-content h4 {
+    color: #000 !important;
+    page-break-after: avoid;
+    margin-top: 1.2em;
+  }
+
+  /* No orphan paragraphs */
+  .chapter-content p { orphans: 3; widows: 3; }
+
+  /* Highlights — keep background, add print-friendly label */
+  .yuval-hl[data-color="yellow"] { background: #fef9c3 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .yuval-hl[data-color="blue"]   { background: #dbeafe !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .yuval-hl[data-color="green"]  { background: #dcfce7 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .yuval-hl[data-color="pink"]   { background: #fce7f3 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+  /* Links — show URL */
+  a[href^="http"]::after { content: " (" attr(href) ")"; font-size: 9pt; color: #555; }
+
+  /* Page break before new chapters */
+  #chapter-container { page-break-before: auto; }
+
+  /* Header with book + chapter title */
+  #chapter-header { position: static !important; box-shadow: none !important; border-bottom: 1px solid #ccc; margin-bottom: 24pt; }
+
+  @page {
+    margin: 2cm 2.5cm;
+    @bottom-center { content: counter(page); font-size: 9pt; color: #999; }
+  }
+}
+
 /* ═══════════════════════════════════════════════════════
    CHAPTER TRANSITIONS — Instant swap, no animation
    ═══════════════════════════════════════════════════════ */

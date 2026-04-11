@@ -554,9 +554,19 @@ function renderPanel(): void {
   if (!allChapters.length) {
     body.innerHTML = `
       <div class="hl-panel-empty">
-        <span class="hl-panel-empty-icon">✍️</span>
+        <div style="display:flex;gap:6px;margin-bottom:12px">
+          <span style="width:28px;height:28px;border-radius:50%;background:#fef9c3;border:2px solid #fde68a;display:flex;align-items:center;justify-content:center;font-size:14px">💡</span>
+          <span style="width:28px;height:28px;border-radius:50%;background:#dbeafe;border:2px solid #bfdbfe;display:flex;align-items:center;justify-content:center;font-size:14px">❓</span>
+          <span style="width:28px;height:28px;border-radius:50%;background:#dcfce7;border:2px solid #bbf7d0;display:flex;align-items:center;justify-content:center;font-size:14px">✅</span>
+          <span style="width:28px;height:28px;border-radius:50%;background:#fce7f3;border:2px solid #fbcfe8;display:flex;align-items:center;justify-content:center;font-size:14px">💬</span>
+        </div>
         <span class="hl-panel-empty-text">${labels.empty}</span>
         <span class="hl-panel-empty-hint">${labels.emptyHint}</span>
+        <div style="margin-top:14px;padding:10px 14px;background:var(--yuval-bg-secondary,#f9f9f9);border-radius:10px;border:1px dashed var(--yuval-border,#e5e7eb);font-size:11px;color:var(--yuval-text-muted,#999);line-height:1.6;text-align:${labels.dir === 'rtl' ? 'right' : 'left'}">
+          ${labels.dir === 'rtl'
+            ? '1. בחר טקסט בעכבר או אצבע<br>2. בחר צבע מהסרגל שמופיע<br>3. ההדגשות יישמרו כאן'
+            : '1. Select any text while reading<br>2. Pick a color from the toolbar<br>3. Your highlights appear here'}
+        </div>
       </div>
     `;
     return;
