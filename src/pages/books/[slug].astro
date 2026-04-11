@@ -157,8 +157,18 @@ const description =
                     'focus:ring-2',
                     'focus:ring-offset-2',
                     'focus:ring-yuval-highlight',
+                    'relative',
+                    'overflow-hidden',
                   ]}
+                  data-chapter-id={chapter.id}
+                  data-book-slug={slug}
                 >
+                  {/* Progress bar at bottom of card — filled by JS */}
+                  <div class="chapter-progress-bar absolute bottom-0 left-0 right-0 h-0.5 bg-yuval-border">
+                    <div class="chapter-progress-fill h-full bg-green-500 w-0 transition-all duration-700"
+                      style="border-radius: 0 2px 2px 0"></div>
+                  </div>
+
                   <div
                     class:list={[
                       'flex',
@@ -168,14 +178,17 @@ const description =
                       isRtl && 'flex-row-reverse',
                     ]}
                   >
-                    <div class:list={[isRtl && 'text-right']}>
-                      <h3
-                        class="font-heading font-semibold text-base sm:text-lg text-yuval-text line-clamp-2"
-                        data-he={chapter.title_he}
-                        data-en={chapter.title_en}
-                      >
-                        {chapter.title_en}
-                      </h3>
+                    <div class:list={[isRtl && 'text-right', 'flex-1', 'min-w-0']}>
+                      <div class="flex items-center gap-2">
+                        <span class="chapter-status-icon text-base hidden" aria-hidden="true"></span>
+                        <h3
+                          class="font-heading font-semibold text-base sm:text-lg text-yuval-text line-clamp-2"
+                          data-he={chapter.title_he}
+                          data-en={chapter.title_en}
+                        >
+                          {chapter.title_en}
+                        </h3>
+                      </div>
                       <p class="text-sm text-yuval-text-tertiary mt-1"
                         data-he={`${chapter.sections > 1 ? `${chapter.sections} סעיפים` : 'סעיף אחד'} • ${chapter.word_count} מילים`}
                         data-en={`${chapter.sections > 1 ? `${chapter.sections} sections` : '1 section'} • ${chapter.word_count} words`}
@@ -208,7 +221,6 @@ const description =
 </BaseLayout>
 
 <script>
-  // Update chapter links with current language param
   function updateChapterLinks() {
     const lang = localStorage.getItem('yuval_language') || 'en';
     document.querySelectorAll<HTMLAnchorElement>('.chapter-link').forEach(link => {
@@ -217,6 +229,41 @@ const description =
       link.href = lang === 'he' ? `${base}?lang=he` : base;
     });
   }
+
+  function updateChapterProgress() {
+    document.querySelectorAll<HTMLAnchorElement>('.chapter-link[data-chapter-id][data-book-slug]').forEach(link => {
+      const chapterId = link.dataset.chapterId;
+      const bookSlug  = link.dataset.bookSlug;
+      if (!chapterId || !bookSlug) return;
+
+      const key = `yuval_reading_progress_${bookSlug}_ch${chapterId}`;
+      const altKey = `yuval_reading_progress_${bookSlug}_ch${chapterId}`;
+
+      let scrollY = 0;
+      // Try both key formats
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.includes(`_${bookSlug}_ch${chapterId}`)) {
+          try {
+            const d = JSON.parse(localStorage.getItem(k) || '{}');
+            if (d.scrollPosition > scrollY) scrollY = d.scrollPosition;
+          } catch { /* skip */ }
+        }
+      }
+
+      const fill   = link.querySelector<HTMLElement>('.chapter-progress-fill');
+      const icon   = link.querySelector<HTMLElement>('.chapter-status-icon');
+
+      if (scrollY > 200) {
+        // Estimate percentage: scrollY / (estimated page height ~3000px)
+        const estPct = Math.min(95, Math.round((scrollY / 3000) * 100));
+        if (fill) { fill.style.width = `${estPct}%`; }
+        if (icon) { icon.textContent = estPct >= 85 ? '✅' : '📖'; icon.classList.remove('hidden'); }
+      }
+    });
+  }
+
   updateChapterLinks();
+  updateChapterProgress();
   window.addEventListener('language-changed', updateChapterLinks);
 </script>

@@ -9,6 +9,9 @@ import { initSearch } from './search';
 import { initHighlightsPanel } from './highlights-panel';
 import { initReadingStats } from './reading-stats';
 import { initBookmarks } from './bookmarks';
+import { initSwipeNav } from './swipe-nav';
+import { initReadingGoals } from './reading-goals';
+import { initBookCompletion } from './book-completion';
 
 /**
  * Main initialization — wires up all reading-page modules.
@@ -28,6 +31,9 @@ function initializeReadingPage() {
   initHighlightsPanel();
   initReadingStats();
   initBookmarks(controller.signal);
+  initSwipeNav(controller.signal);
+  initReadingGoals(controller.signal);
+  initBookCompletion();
 
   const cleanup = () => {
     progressCleanup();
