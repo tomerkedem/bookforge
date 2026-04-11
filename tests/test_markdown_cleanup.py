@@ -9,7 +9,7 @@ from pathlib import Path
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from pipeline.ingest import _clean_markdown_asterisks
+from pipeline.ingest import _clean_markdown_asterisks, _to_roman, _to_hebrew_letter
 from pipeline.parse import _clean_markdown_final, _clean_heading
 
 
@@ -123,6 +123,46 @@ class TestCleanHeading:
     def test_cleans_multiple_spaces(self):
         result = _clean_heading("word1  word2   word3")
         assert "  " not in result
+
+
+class TestNumberingHelpers:
+    """Tests for numbering conversion helpers in ingest.py."""
+    
+    def test_roman_numeral_1(self):
+        assert _to_roman(1) == "I"
+    
+    def test_roman_numeral_4(self):
+        assert _to_roman(4) == "IV"
+    
+    def test_roman_numeral_9(self):
+        assert _to_roman(9) == "IX"
+    
+    def test_roman_numeral_10(self):
+        assert _to_roman(10) == "X"
+    
+    def test_roman_numeral_50(self):
+        assert _to_roman(50) == "L"
+    
+    def test_roman_numeral_complex(self):
+        assert _to_roman(1999) == "MCMXCIX"
+    
+    def test_hebrew_letter_1(self):
+        assert _to_hebrew_letter(1) == "א"
+    
+    def test_hebrew_letter_2(self):
+        assert _to_hebrew_letter(2) == "ב"
+    
+    def test_hebrew_letter_10(self):
+        assert _to_hebrew_letter(10) == "י"
+    
+    def test_hebrew_letter_11(self):
+        assert _to_hebrew_letter(11) == "יא"
+    
+    def test_hebrew_letter_20(self):
+        assert _to_hebrew_letter(20) == "כ"
+    
+    def test_hebrew_letter_100(self):
+        assert _to_hebrew_letter(100) == "ק"
 
 
 # Run tests with pytest
