@@ -34,6 +34,24 @@ export function initStickyHeader(controller: AbortController) {
     return pageH > 0 ? Math.min(100, Math.round((window.scrollY / pageH) * 100)) : 0;
   }
 
+  function updateReadingTime(pct: number): void {
+    document.querySelectorAll<HTMLElement>('.reading-time-value').forEach(el => {
+      const total = parseInt(el.dataset.totalMinutes || '0', 10);
+      if (!total) return;
+      const remaining = Math.max(0, Math.round(total * (1 - pct / 100)));
+      const lang = el.closest('[id*="reading-time-meta-"]')?.id.split('-').pop() || 'en';
+      if (remaining <= 0) {
+        el.textContent = lang === 'he' ? '✓ הושלם' : lang === 'es' ? '✓ Completado' : '✓ Done';
+      } else if (pct > 0) {
+        const suffix = lang === 'he' ? 'דקות נותרו' : lang === 'es' ? 'min restantes' : 'min left';
+        el.textContent = `~${remaining} ${suffix}`;
+      } else {
+        const suffix = lang === 'he' ? 'דקות קריאה' : lang === 'es' ? 'min lectura' : 'min read';
+        el.textContent = `${total} ${suffix}`;
+      }
+    });
+  }
+
   function onScroll() {
     if (window.scrollY > SCROLL_THRESHOLD) {
       header!.classList.add('scrolled');
@@ -55,6 +73,8 @@ export function initStickyHeader(controller: AbortController) {
       progressEn.style.transform = pct > 0 ? 'scale(1)' : 'scale(0.8)';
     }
     if (progressFill) progressFill.style.width = `${pct}%`;
+
+    updateReadingTime(pct);
   }
 
   window.addEventListener('scroll', onScroll, { passive: true, signal: controller.signal });

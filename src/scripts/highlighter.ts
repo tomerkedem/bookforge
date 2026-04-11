@@ -615,6 +615,20 @@ function injectStyles(): void {
     }
     #qc-close-btn:hover { background: rgba(0,0,0,0.15); }
 
+    .qc-share-image-btn {
+      display: flex; align-items: center; gap: 6px;
+      padding: 9px 20px;
+      background: #6366f1;
+      color: #fff;
+      border: none; border-radius: 10px;
+      font-size: 13px; font-weight: 650;
+      cursor: pointer;
+      transition: opacity 0.15s;
+      white-space: nowrap;
+    }
+    .qc-share-image-btn:hover { opacity: 0.88; }
+    .qc-share-image-btn:disabled { opacity: 0.5; cursor: wait; }
+
     .qc-share-row {
       display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px;
     }
@@ -731,6 +745,9 @@ function openQuoteCard(markEl: HTMLElement): void {
           `).join('')}
         </div>
         <button id="qc-download-btn" type="button">⬇ Download PNG</button>
+        <button id="qc-share-image-btn" type="button" class="qc-share-image-btn" style="display:none">
+          📤 Share image
+        </button>
         <div class="qc-share-row">
           <button class="qc-share-btn" id="qc-share-whatsapp" type="button" title="Share on WhatsApp">
             <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.09.547 4.048 1.503 5.742L0 24l6.406-1.476A11.94 11.94 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.891 0-3.66-.5-5.19-1.372l-.37-.22-3.803.876.906-3.701-.242-.382A9.947 9.947 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
@@ -773,6 +790,91 @@ function openQuoteCard(markEl: HTMLElement): void {
     card.innerHTML = buildCardHTML(PALETTES[idx]);
   });
 
+  // ── Canvas render helper ──────────────────────────────────────────────────
+  async function renderToCanvas(): Promise<HTMLCanvasElement> {
+    const p = PALETTES[currentPalette];
+    const W = 1080, H = 580;
+    const canvas = document.createElement('canvas');
+    canvas.width = W; canvas.height = H;
+    const ctx = canvas.getContext('2d')!;
+
+    ctx.fillStyle = p.bg;
+    ctx.beginPath();
+    ctx.roundRect(0, 0, W, H, 24);
+    ctx.fill();
+
+    ctx.font = 'bold 110px Georgia, serif';
+    ctx.fillStyle = p.accent;
+    ctx.fillText('"', 52, 110);
+
+    ctx.font = '500 36px -apple-system, BlinkMacSystemFont, sans-serif';
+    ctx.fillStyle = '#ffffff';
+    const maxW = W - 112;
+    const words = text.split(' ');
+    let line = '', lines: string[] = [];
+    for (const word of words) {
+      const test = line ? `${line} ${word}` : word;
+      if (ctx.measureText(test).width > maxW && line) {
+        lines.push(line); line = word;
+      } else { line = test; }
+    }
+    if (line) lines.push(line);
+    const lineH = 52, textStartY = 140;
+    lines.forEach((l, i) => ctx.fillText(l, 56, textStartY + i * lineH));
+
+    const footerY = H - 100;
+    ctx.fillStyle = 'rgba(0,0,0,0.3)';
+    ctx.beginPath();
+    ctx.roundRect(0, footerY, W, 100, [0, 0, 24, 24]);
+    ctx.fill();
+
+    ctx.font = 'bold 22px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    ctx.fillText(title, 56, footerY + 40);
+
+    ctx.font = '500 16px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.fillText('Yuval · yuval.app', 56, footerY + 68);
+
+    try {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      await new Promise<void>((res, rej) => {
+        img.onload = () => res(); img.onerror = () => rej(); img.src = coverUrl;
+      });
+      const cw = 60, ch = 86;
+      const cx = W - cw - 48, cy = footerY + (100 - ch) / 2;
+      ctx.save();
+      ctx.beginPath();
+      ctx.roundRect(cx, cy, cw, ch, 6);
+      ctx.clip();
+      ctx.drawImage(img, cx, cy, cw, ch);
+      ctx.restore();
+    } catch { /* no cover */ }
+
+    return canvas;
+  }
+
+  // Show "Share image" btn only if Web Share API supports files
+  if (navigator.canShare?.({ files: [new File([], 'x.png', { type: 'image/png' })] })) {
+    const shareImgBtn = overlay.querySelector<HTMLButtonElement>('#qc-share-image-btn')!;
+    shareImgBtn.style.display = '';
+    shareImgBtn.addEventListener('click', async () => {
+      shareImgBtn.disabled = true;
+      shareImgBtn.textContent = 'Generating…';
+      try {
+        const canvas = await renderToCanvas();
+        const blob = await new Promise<Blob>(res => canvas.toBlob(b => res(b!), 'image/png'));
+        const file = new File([blob], 'yuval-quote.png', { type: 'image/png' });
+        await navigator.share({ files: [file], title: title, text: `"${text}"` });
+      } catch { /* user cancelled or unsupported */ }
+      finally {
+        shareImgBtn.disabled = false;
+        shareImgBtn.textContent = '📤 Share image';
+      }
+    });
+  }
+
   // Share buttons
   const shareText = `"${text}" — ${title}`;
   overlay.querySelector('#qc-share-whatsapp')!.addEventListener('click', () => {
@@ -795,81 +897,8 @@ function openQuoteCard(markEl: HTMLElement): void {
     const dlBtn = overlay.querySelector<HTMLButtonElement>('#qc-download-btn')!;
     dlBtn.disabled = true;
     dlBtn.textContent = 'Generating…';
-
     try {
-      const p = PALETTES[currentPalette];
-      const W = 1080, H = 580;
-      const canvas = document.createElement('canvas');
-      canvas.width = W; canvas.height = H;
-      const ctx = canvas.getContext('2d')!;
-
-      // Background
-      ctx.fillStyle = p.bg;
-      ctx.beginPath();
-      ctx.roundRect(0, 0, W, H, 24);
-      ctx.fill();
-
-      // Quote mark
-      ctx.font = 'bold 110px Georgia, serif';
-      ctx.fillStyle = p.accent;
-      ctx.fillText('"', 52, 110);
-
-      // Quote text — word-wrap
-      ctx.font = '500 36px -apple-system, BlinkMacSystemFont, sans-serif';
-      ctx.fillStyle = '#ffffff';
-      const maxW = W - 112;
-      const words = text.split(' ');
-      let line = '', lines: string[] = [];
-      for (const word of words) {
-        const test = line ? `${line} ${word}` : word;
-        if (ctx.measureText(test).width > maxW && line) {
-          lines.push(line); line = word;
-        } else { line = test; }
-      }
-      if (line) lines.push(line);
-      const lineH = 52;
-      const totalTextH = lines.length * lineH;
-      const textStartY = 140;
-      lines.forEach((l, i) => ctx.fillText(l, 56, textStartY + i * lineH));
-
-      // Footer bg
-      const footerY = H - 100;
-      ctx.fillStyle = 'rgba(0,0,0,0.3)';
-      ctx.beginPath();
-      ctx.roundRect(0, footerY, W, 100, [0, 0, 24, 24]);
-      ctx.fill();
-
-      // Book title
-      ctx.font = 'bold 22px -apple-system, sans-serif';
-      ctx.fillStyle = 'rgba(255,255,255,0.9)';
-      ctx.fillText(title, 56, footerY + 40);
-
-      // Brand
-      ctx.font = '500 16px -apple-system, sans-serif';
-      ctx.fillStyle = 'rgba(255,255,255,0.4)';
-      ctx.fillText('Yuval · yuval.app', 56, footerY + 68);
-
-      // Cover image (best-effort)
-      try {
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        await new Promise<void>((res, rej) => {
-          img.onload = () => res();
-          img.onerror = () => rej();
-          img.src = coverUrl;
-        });
-        const cw = 60, ch = 86;
-        const cx = W - cw - 48;
-        const cy = footerY + (100 - ch) / 2;
-        ctx.save();
-        ctx.beginPath();
-        ctx.roundRect(cx, cy, cw, ch, 6);
-        ctx.clip();
-        ctx.drawImage(img, cx, cy, cw, ch);
-        ctx.restore();
-      } catch { /* no cover — skip */ }
-
-      // Download
+      const canvas = await renderToCanvas();
       const link = document.createElement('a');
       link.download = `yuval-quote-${Date.now()}.png`;
       link.href = canvas.toDataURL('image/png');

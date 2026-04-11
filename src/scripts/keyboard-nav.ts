@@ -147,8 +147,20 @@ export function initKeyboardNav(signal: AbortSignal) {
         break;
       }
 
+      case 'z':
+      case 'Z': {
+        const isZen = document.body.classList.toggle('reading-zen');
+        // Zen also hides sidebars
+        document.body.classList.toggle('reading-immersive', isZen);
+        showToast(isZen ? '🧘  Zen mode' : '⬜  Normal mode');
+        break;
+      }
+
       case 'Escape':
-        if (document.body.classList.contains('reading-immersive')) {
+        if (document.body.classList.contains('reading-zen')) {
+          document.body.classList.remove('reading-zen', 'reading-immersive');
+          showToast('⬜  Normal mode');
+        } else if (document.body.classList.contains('reading-immersive')) {
           document.body.classList.remove('reading-immersive');
           showToast('⬜  Normal mode');
         }
@@ -157,4 +169,124 @@ export function initKeyboardNav(signal: AbortSignal) {
   };
 
   document.addEventListener('keydown', handler, { signal });
+
+  // ── ? key: show shortcuts panel ──────────────────────────────────────────
+  document.addEventListener('keydown', (e) => {
+    const target = e.target as HTMLElement;
+    if (['INPUT','TEXTAREA','SELECT'].includes(target.tagName) || target.isContentEditable) return;
+    if (e.key === '?') showShortcutsPanel();
+  }, { signal });
+}
+
+// ── Shortcuts panel ───────────────────────────────────────────────────────────
+
+function showShortcutsPanel(): void {
+  if (document.getElementById('kbd-shortcuts-overlay')) return;
+
+  const isRtl = document.documentElement.dir === 'rtl';
+
+  const shortcuts = [
+    { key: '← →',    desc_he: 'פרק קודם / הבא',           desc_en: 'Prev / next chapter' },
+    { key: 'F',       desc_he: 'מצב מיקוד',                desc_en: 'Focus / immersive mode' },
+    { key: 'Z',       desc_he: 'מצב Zen',                  desc_en: 'Zen reading mode' },
+    { key: '/',       desc_he: 'חיפוש',                     desc_en: 'Search' },
+    { key: 'H',       desc_he: 'פאנל הדגשות',              desc_en: 'Highlights panel' },
+    { key: 'B',       desc_he: 'סימניות',                  desc_en: 'Bookmarks' },
+    { key: 'S',       desc_he: 'סטטיסטיקות קריאה',         desc_en: 'Reading stats' },
+    { key: '?',       desc_he: 'קיצורי מקלדת',             desc_en: 'Keyboard shortcuts' },
+    { key: 'Esc',     desc_he: 'סגור / יציאה ממצב',        desc_en: 'Close / exit mode' },
+  ];
+
+  const style = document.createElement('style');
+  style.id = 'kbd-shortcuts-styles';
+  style.textContent = `
+    #kbd-shortcuts-overlay {
+      position: fixed; inset: 0; z-index: 10000;
+      background: rgba(0,0,0,0.5); backdrop-filter: blur(6px);
+      display: flex; align-items: center; justify-content: center;
+      animation: kbdFadeIn 0.2s ease;
+    }
+    @keyframes kbdFadeIn { from { opacity:0 } to { opacity:1 } }
+    #kbd-shortcuts-modal {
+      background: var(--yuval-surface, #fff);
+      border: 1px solid var(--yuval-border, #e5e7eb);
+      border-radius: 18px;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.2);
+      padding: 28px 28px 24px;
+      width: min(420px, 90vw);
+      max-height: 85vh;
+      overflow-y: auto;
+    }
+    :is(.dark) #kbd-shortcuts-modal {
+      background: #1e1e1e;
+      border-color: rgba(255,255,255,0.08);
+    }
+    #kbd-shortcuts-modal h2 {
+      font-size: 16px; font-weight: 800;
+      color: var(--yuval-text, #1a1a1a);
+      margin-bottom: 20px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    #kbd-shortcuts-close {
+      background: none; border: none;
+      color: var(--yuval-text-muted, #999);
+      font-size: 18px; cursor: pointer;
+      width: 28px; height: 28px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 6px;
+    }
+    #kbd-shortcuts-close:hover { background: var(--yuval-bg-secondary, #f3f4f6); }
+    .kbd-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 9px 0;
+      border-bottom: 1px solid var(--yuval-border, #e5e7eb);
+      gap: 12px;
+    }
+    .kbd-row:last-child { border-bottom: none; }
+    .kbd-key {
+      background: var(--yuval-bg-secondary, #f3f4f6);
+      border: 1px solid var(--yuval-border-secondary, #e0e0e0);
+      border-radius: 6px;
+      padding: 3px 10px;
+      font-size: 12px; font-weight: 700;
+      font-family: ui-monospace, monospace;
+      color: var(--yuval-text, #1a1a1a);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    :is(.dark) .kbd-key { background: #2a2a2a; border-color: rgba(255,255,255,0.1); }
+    .kbd-desc {
+      font-size: 13px; color: var(--yuval-text-secondary, #555);
+      text-align: ${isRtl ? 'right' : 'left'};
+    }
+  `;
+  document.head.appendChild(style);
+
+  const overlay = document.createElement('div');
+  overlay.id = 'kbd-shortcuts-overlay';
+  overlay.setAttribute('dir', isRtl ? 'rtl' : 'ltr');
+  overlay.innerHTML = `
+    <div id="kbd-shortcuts-modal">
+      <h2>
+        <span>${isRtl ? '⌨️ קיצורי מקלדת' : '⌨️ Keyboard Shortcuts'}</span>
+        <button id="kbd-shortcuts-close">✕</button>
+      </h2>
+      ${shortcuts.map(s => `
+        <div class="kbd-row">
+          ${isRtl ? `<span class="kbd-desc">${s.desc_he}</span>` : ''}
+          <kbd class="kbd-key">${s.key}</kbd>
+          ${!isRtl ? `<span class="kbd-desc">${s.desc_en}</span>` : ''}
+        </div>
+      `).join('')}
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  const close = () => { overlay.remove(); style.remove(); };
+  document.getElementById('kbd-shortcuts-close')!.addEventListener('click', close);
+  overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' || e.key === '?') close();
+  }, { once: true });
 }

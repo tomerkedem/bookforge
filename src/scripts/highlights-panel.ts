@@ -18,6 +18,7 @@ const i18n: Record<LangKey, {
   empty: string;
   emptyHint: string;
   exportMd: string;
+  exportPdf: string;
   close: string;
   chapterLabel: (n: number) => string;
   colorLabels: Record<string, string>;
@@ -29,7 +30,8 @@ const i18n: Record<LangKey, {
     title: 'ההדגשות שלי',
     empty: 'אין הדגשות עדיין',
     emptyHint: 'סמן טקסט בזמן קריאה כדי לשמור תובנות',
-    exportMd: 'ייצוא Markdown',
+    exportMd: 'Markdown',
+    exportPdf: 'PDF',
     close: 'סגור',
     chapterLabel: (n) => `פרק ${n}`,
     colorLabels: { yellow: 'תובנה', blue: 'שאלה', green: 'פעולה', pink: 'ציטוט' },
@@ -41,7 +43,8 @@ const i18n: Record<LangKey, {
     title: 'Mis resaltados',
     empty: 'Aún no hay resaltados',
     emptyHint: 'Selecciona texto mientras lees para guardar ideas',
-    exportMd: 'Exportar Markdown',
+    exportMd: 'Markdown',
+    exportPdf: 'PDF',
     close: 'Cerrar',
     chapterLabel: (n) => `Capítulo ${n}`,
     colorLabels: { yellow: 'Insight', blue: 'Pregunta', green: 'Acción', pink: 'Cita' },
@@ -53,7 +56,8 @@ const i18n: Record<LangKey, {
     title: 'My Highlights',
     empty: 'No highlights yet',
     emptyHint: 'Select text while reading to save insights',
-    exportMd: 'Export Markdown',
+    exportMd: 'Markdown',
+    exportPdf: 'PDF',
     close: 'Close',
     chapterLabel: (n) => `Chapter ${n}`,
     colorLabels: { yellow: 'Insight', blue: 'Question', green: 'Action', pink: 'Quote' },
@@ -531,7 +535,10 @@ function renderPanel(): void {
     <div id="hl-panel-header">
       <span id="hl-panel-title">${labels.title}</span>
       <div class="hl-panel-header-actions">
-        ${totalCount > 0 ? `<button id="hl-export-btn" type="button">⬇ ${labels.exportMd}</button>` : ''}
+        ${totalCount > 0 ? `
+          <button id="hl-export-btn" type="button">⬇ ${labels.exportMd}</button>
+          <button id="hl-export-pdf-btn" type="button">⬇ ${labels.exportPdf}</button>
+        ` : ''}
         <button id="hl-panel-close" type="button" aria-label="${labels.close}">✕</button>
       </div>
     </div>
@@ -540,6 +547,7 @@ function renderPanel(): void {
 
   document.getElementById('hl-panel-close')?.addEventListener('click', closePanel);
   document.getElementById('hl-export-btn')?.addEventListener('click', exportMarkdown);
+  document.getElementById('hl-export-pdf-btn')?.addEventListener('click', exportPdf);
 
   const body = document.getElementById('hl-panel-body')!;
 
@@ -686,6 +694,85 @@ function exportMarkdown(): void {
   a.download = `highlights-${book}-${Date.now()}.md`;
   a.click();
   URL.revokeObjectURL(a.href);
+}
+
+function exportPdf(): void {
+  const labels = tr();
+  const allChapters = getAllHighlights();
+  const book = getCurrentBook();
+  const isRtl = labels.dir === 'rtl';
+
+  const COLOR_HEX: Record<string, string> = {
+    yellow: '#fef9c3', blue: '#dbeafe', green: '#dcfce7', pink: '#fce7f3',
+  };
+  const COLOR_BORDER: Record<string, string> = {
+    yellow: '#f59e0b', blue: '#3b82f6', green: '#22c55e', pink: '#ec4899',
+  };
+
+  let html = `
+    <!DOCTYPE html><html dir="${labels.dir}"><head>
+    <meta charset="utf-8">
+    <title>${labels.title} — ${book}</title>
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body {
+        font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        color: #1a1a1a; background: #fff;
+        padding: 40px 48px;
+        direction: ${labels.dir};
+      }
+      h1 { font-size: 24px; font-weight: 800; margin-bottom: 4px; }
+      .meta { font-size: 13px; color: #888; margin-bottom: 32px; }
+      h2 { font-size: 14px; font-weight: 700; letter-spacing: 0.06em;
+           text-transform: uppercase; color: #999; margin: 28px 0 12px;
+           padding-bottom: 6px; border-bottom: 1px solid #e5e7eb; }
+      .hl {
+        padding: 12px 16px;
+        border-radius: 8px;
+        margin-bottom: 10px;
+        break-inside: avoid;
+      }
+      .hl-text { font-size: 15px; line-height: 1.6; font-weight: 500; }
+      .hl-meta { font-size: 11px; margin-top: 4px; opacity: 0.6; }
+      .hl-note { font-size: 13px; font-style: italic; margin-top: 8px;
+                 padding-top: 8px; border-top: 1px dashed rgba(0,0,0,0.15); }
+      .footer { margin-top: 40px; padding-top: 16px; border-top: 1px solid #e5e7eb;
+                font-size: 11px; color: #bbb; text-align: center; }
+      @media print {
+        body { padding: 24px 32px; }
+        .no-print { display: none; }
+      }
+    </style>
+    </head><body>
+    <h1>📚 ${labels.title}</h1>
+    <p class="meta">${book} · ${new Date().toLocaleDateString()}</p>
+  `;
+
+  allChapters.forEach(({ chapterId, highlights }) => {
+    html += `<h2>${labels.chapterLabel(chapterId)}</h2>`;
+    highlights.forEach(hl => {
+      const bg = COLOR_HEX[hl.color] || '#f9f9f9';
+      const border = COLOR_BORDER[hl.color] || '#ccc';
+      const emoji = COLOR_EMOJI[hl.color];
+      const colorLabel = labels.colorLabels[hl.color] || '';
+      html += `
+        <div class="hl" style="background:${bg}; border-${isRtl ? 'right' : 'left'}:4px solid ${border}">
+          <div class="hl-text">${hl.text.replace(/</g, '&lt;')}</div>
+          <div class="hl-meta">${emoji} ${colorLabel}</div>
+          ${hl.note ? `<div class="hl-note">${hl.note.replace(/</g, '&lt;')}</div>` : ''}
+        </div>
+      `;
+    });
+  });
+
+  html += `<div class="footer">Yuval Reading Platform</div></body></html>`;
+
+  const win = window.open('', '_blank');
+  if (!win) return;
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+  setTimeout(() => win.print(), 400);
 }
 
 // ── Open / Close ──────────────────────────────────────────────────────────────

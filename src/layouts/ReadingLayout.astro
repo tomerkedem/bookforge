@@ -415,6 +415,18 @@ const isRtl = language === LANGUAGES.HE;
         }
       }
 
+      /* Zen mode: large centered text, no distractions */
+      :global(body.reading-zen) .reading-article {
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+      }
+      :global(body.reading-zen) .chapter-content {
+        font-size: clamp(18px, 2.2vw, 24px) !important;
+        line-height: 1.9 !important;
+        max-width: 640px;
+        margin: 0 auto;
+      }
+
       /* Header fades in immersive mode */
       :global(body.reading-immersive) #site-header {
         opacity: 0.07;
