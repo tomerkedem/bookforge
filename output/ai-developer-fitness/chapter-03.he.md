@@ -172,7 +172,7 @@ const student = await db.students.findById(studentId);
 
 האם זהו פתרון מערכתי או פתרון נקודתי, ומדוע?
 
-**משימ**ה 1: ניתוח רכיב ה-Logger
+**משימה 1: ניתוח רכיב ה-Logger**
 
 פתחו במאגר את הקובץ: lib/logger.ts.
 
