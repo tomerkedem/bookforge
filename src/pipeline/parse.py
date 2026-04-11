@@ -64,9 +64,16 @@ def _classify_chapter(title: str, index: int) -> str:
     return "content"
 
 
-def extract_images(docx_path: str, book_name: str, output_dir: str = "output") -> dict:
+# Default: save images to public/ for web serving (not output/)
+DEFAULT_ASSETS_DIR = "public"
+
+
+def extract_images(docx_path: str, book_name: str, assets_base_dir: str = DEFAULT_ASSETS_DIR) -> dict:
     """
     Extracts images from a Word document and maps them to paragraph positions.
+    
+    Images are saved directly to public/{book_name}/assets/ for web serving.
+    No duplicate copies in output/ folder.
     
     Cover image detection logic:
     - If an image exists BEFORE the first Heading 1 → that's the cover
@@ -76,6 +83,7 @@ def extract_images(docx_path: str, book_name: str, output_dir: str = "output") -
       - 'files': mapping rel_id to file path
       - 'positions': list of (paragraph_index, rel_id, filename, width_px, height_px)
       - 'has_cover': boolean indicating if cover was found
+      - 'book_name': slug for URL paths
     """
     try:
         from docx import Document
@@ -86,7 +94,7 @@ def extract_images(docx_path: str, book_name: str, output_dir: str = "output") -
     import re
 
     doc = Document(docx_path)
-    assets_dir = Path(output_dir) / book_name / "assets"
+    assets_dir = Path(assets_base_dir) / book_name / "assets"
     assets_dir.mkdir(parents=True, exist_ok=True)
 
     # Step 1: Find first TWO Heading 1 positions
@@ -224,21 +232,25 @@ def extract_images(docx_path: str, book_name: str, output_dir: str = "output") -
     return {
         'files': image_files,
         'positions': image_positions,
-        'has_cover': has_cover
+        'has_cover': has_cover,
+        'book_name': book_name  # For absolute URL paths
     }
 
 
-def to_markdown(chapter: dict, image_positions: list = None, next_heading_idx: int = None) -> str:
+def to_markdown(chapter: dict, image_positions: list = None, next_heading_idx: int = None, book_name: str = "") -> str:
     """
     Convert chapter to Markdown with embedded images at correct positions.
     
     Images are placed using range-based matching: an image belongs to this
     chapter if its doc_idx is >= this chapter's heading and < the next heading.
     
+    Image paths are absolute URLs for web serving: /{book_name}/assets/image.png
+    
     Args:
         chapter: Chapter dict with title, heading_doc_index, and content blocks
         image_positions: List of (para_index, rel_id, filename, w_px, h_px) tuples
         next_heading_idx: doc_para_index of next chapter's heading (exclusive upper bound)
+        book_name: Book slug for absolute image paths
     """
     lines = [f"# {chapter['title']}", ""]
     
@@ -275,12 +287,14 @@ def to_markdown(chapter: dict, image_positions: list = None, next_heading_idx: i
         para_idx = item.get("para_index", -1)
         
         # Insert images whose doc_idx <= current paragraph's doc_idx
+        # Use absolute paths for web serving: /{book_name}/assets/
+        assets_path = f"/{book_name}/assets" if book_name else "../assets"
         while img_cursor < len(chapter_images) and chapter_images[img_cursor][0] <= para_idx:
             _, img_filename, w_px, h_px = chapter_images[img_cursor]
             if w_px > 0 and h_px > 0:
-                lines.append(f'<img src="../assets/{img_filename}" alt="{img_filename}" width="{w_px}" height="{h_px}" />')
+                lines.append(f'<img src="{assets_path}/{img_filename}" alt="{img_filename}" width="{w_px}" height="{h_px}" />')
             else:
-                lines.append(f"![{img_filename}](../assets/{img_filename})")
+                lines.append(f"![{img_filename}]({assets_path}/{img_filename})")
             lines.append("")
             img_cursor += 1
 
@@ -296,12 +310,13 @@ def to_markdown(chapter: dict, image_positions: list = None, next_heading_idx: i
         lines.append("")
 
     # Append any remaining images after the last paragraph
+    assets_path = f"/{book_name}/assets" if book_name else "../assets"
     while img_cursor < len(chapter_images):
         _, img_filename, w_px, h_px = chapter_images[img_cursor]
         if w_px > 0 and h_px > 0:
-            lines.append(f'<img src="../assets/{img_filename}" alt="{img_filename}" width="{w_px}" height="{h_px}" />')
+            lines.append(f'<img src="{assets_path}/{img_filename}" alt="{img_filename}" width="{w_px}" height="{h_px}" />')
         else:
-            lines.append(f"![{img_filename}](../assets/{img_filename})")
+            lines.append(f"![{img_filename}]({assets_path}/{img_filename})")
         lines.append("")
         img_cursor += 1
 

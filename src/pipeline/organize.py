@@ -16,8 +16,8 @@ def organize(book_name: str, chapters_md: list[dict], output_dir: str = "output"
     book_dir = Path(output_dir) / slug
     book_dir.mkdir(parents=True, exist_ok=True)
 
-    assets_dir = book_dir / "assets"
-    assets_dir.mkdir(exist_ok=True)
+    # Note: Assets are stored in public/{slug}/assets/, not in output/
+    # See parse.py extract_images() for asset handling
 
     # Clean stale chapter files from previous runs
     _clean_stale_chapters(book_dir, len(chapters_md))

@@ -212,4 +212,4 @@ const student = await db.students.findById(studentId);
 
 אם הצלחתם לזהות לא רק מה הקוד עושה, אלא גם אילו הנחות, אילו פשרות ואילו מחירים הוטמעו בו, סימן שאתם כבר לא קוראים קוד רק כטקסט טכני. אתם מתחילים לקרוא אותו כמבנה של החלטות.
 
-<img src="../assets/image-02.png" alt="image-02.png" width="683" height="402" />
+<img src="/ai-developer-fitness/assets/image-02.png" alt="image-02.png" width="683" height="402" />
