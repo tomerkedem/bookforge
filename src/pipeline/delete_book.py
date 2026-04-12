@@ -34,7 +34,20 @@ def delete_book(slug: str) -> None:
     else:
         missing.append(str(book_dir.relative_to(REPO_ROOT)))
 
-    # 2. public/covers/<slug>.png
+    # 2. public/<slug>/assets/ (images)
+    assets_dir = REPO_ROOT / "public" / slug / "assets"
+    if assets_dir.exists():
+        shutil.rmtree(assets_dir)
+        deleted.append(str(assets_dir.relative_to(REPO_ROOT)))
+        # Remove empty parent dir if exists
+        parent = assets_dir.parent
+        if parent.exists() and not any(parent.iterdir()):
+            parent.rmdir()
+            deleted.append(str(parent.relative_to(REPO_ROOT)))
+    else:
+        missing.append(str(assets_dir.relative_to(REPO_ROOT)))
+
+    # 3. public/covers/<slug>.png (legacy location)
     cover = REPO_ROOT / "public" / "covers" / f"{slug}.png"
     if cover.exists():
         cover.unlink()

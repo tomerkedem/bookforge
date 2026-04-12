@@ -23,10 +23,13 @@ TARGET_LANGUAGES = [
 # ──────────────────────────────────────────────────────────────────────────────
 
 
-def get_chapters_to_translate(book_dir: str, lang_code: str = None) -> list[dict]:
+def get_chapters_to_translate(book_dir: str, target_languages: list[str] = None) -> list[dict]:
     """
-    Find Hebrew chapters that need translation for a given target language.
-    If lang_code is None, returns pending chapters for ALL target languages.
+    Find Hebrew chapters that need translation for target languages.
+    
+    Args:
+        book_dir: Path to book output directory
+        target_languages: List of language codes (e.g. ['en', 'es']) or None for all
     
     Includes intro.he.md and all chapter-XX.he.md files.
 
@@ -35,7 +38,10 @@ def get_chapters_to_translate(book_dir: str, lang_code: str = None) -> list[dict
     book_path = Path(book_dir)
     to_translate = []
 
-    langs = [l for l in TARGET_LANGUAGES if l["code"] == lang_code] if lang_code else TARGET_LANGUAGES
+    if target_languages:
+        langs = [l for l in TARGET_LANGUAGES if l["code"] in target_languages]
+    else:
+        langs = TARGET_LANGUAGES
 
     for lang in langs:
         # Include intro.he.md
