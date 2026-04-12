@@ -144,3 +144,80 @@ def build_batch_prompt(chapters: list[dict], target_languages: list[str] = None)
 - translated: מספר קבצים שתורגמו
 - skipped: מספר קבצים שדולגו (אם יש)
 - total_words: אומדן כולל של מילים שתורגמו"""
+
+
+def partition_chapters(chapters: list[dict], num_groups: int = 3) -> list[list[dict]]:
+    """
+    Partition chapters into groups for parallel translation.
+    
+    Args:
+        chapters: List of chapter dicts from get_chapters_to_translate()
+        num_groups: Number of parallel translators (default: 3)
+    
+    Returns:
+        List of chapter groups, each group for one translator subagent.
+    
+    Example:
+        11 chapters with 3 groups → [[ch1-4], [ch5-8], [ch9-11]]
+    """
+    if not chapters:
+        return []
+    
+    # Don't create more groups than chapters
+    num_groups = min(num_groups, len(chapters))
+    
+    # Distribute evenly
+    groups = [[] for _ in range(num_groups)]
+    for i, chapter in enumerate(chapters):
+        groups[i % num_groups].append(chapter)
+    
+    # Remove empty groups (shouldn't happen, but safety)
+    return [g for g in groups if g]
+
+
+def build_group_prompt(chapters: list[dict], group_id: int, total_groups: int) -> str:
+    """
+    Build a prompt for a single translator handling a subset of chapters.
+    
+    Args:
+        chapters: List of chapters for this translator
+        group_id: Which group this is (1-based, for display)
+        total_groups: Total number of parallel translators
+    
+    Returns:
+        Prompt string for the translator subagent.
+    """
+    if not chapters:
+        return ""
+    
+    file_list = "\n".join(
+        f"  {i+1}. [{ch['lang_name']}] {ch['he_path']} → {ch['target_path']}"
+        for i, ch in enumerate(chapters)
+    )
+    
+    # Get unique languages
+    unique_langs = list(dict.fromkeys(ch['lang_name'] for ch in chapters))
+    lang_str = ", ".join(unique_langs)
+    
+    return f"""אתה Translator {group_id} מתוך {total_groups} (מצב מקבילי).
+
+משימתך: תרגם {len(chapters)} פרקים מעברית ל-{lang_str}.
+
+כללים:
+- שמור על אותו מבנה Markdown בדיוק (כותרות, רשימות, טבלאות)
+- שמור על כל הפניות לתמונות ללא שינוי
+- תרגם בצורה טבעית, לא מילולית
+- מונחים טכניים שאינם ניתנים לתרגום: השאר במקור
+
+רשימת קבצים שלך:
+{file_list}
+
+הוראות:
+1. קרא כל קובץ .he.md
+2. תרגם לשפה המצוינת
+3. כתוב לקובץ היעד
+4. עבור מיד לקובץ הבא — אל תחכה לאישור
+
+בסיום דווח:
+- translated: מספר קבצים
+- total_words: אומדן מילים"""

@@ -35,17 +35,24 @@ python -m pipeline.build "<docx_path>" "<book_name>" --title-he "<title_he>" --t
 
 אם הכל תקין, הפלט כולל רשימת פרקים שצריכים תרגום.
 
-### שלב 2: תרגום (אם יש פרקים ממתינים)
+### שלב 2: תרגום מקבילי (אם יש פרקים ממתינים)
 
 הרץ מתיקיית `src/`:
 ```python
-from pipeline.translate import get_chapters_to_translate, build_batch_prompt
+from pipeline.translate import get_chapters_to_translate, partition_chapters, build_group_prompt
 chapters = get_chapters_to_translate("../output/<book_name>")
-prompt = build_batch_prompt(chapters)
+groups = partition_chapters(chapters, num_groups=3)
+prompts = [build_group_prompt(g, i+1, len(groups)) for i, g in enumerate(groups)]
 ```
 
-הפעל את סוכן **translator** עם ה-prompt שנוצר.
-חכה שיסיים את כל הקבצים.
+**הפעל במקביל** את סוכן **translator** עם כל prompt:
+- Translator 1 עם prompts[0]
+- Translator 2 עם prompts[1]
+- Translator 3 עם prompts[2]
+
+חכה שכל השלושה יסיימו. אסוף דיווחי translated ו-total_words מכולם.
+
+> **הערה**: אם יש פחות מ-6 פרקים, השתמש ב-`num_groups=2` או `num_groups=1`.
 
 ### שלב 3: סנכרון תמונות לאנגלית
 
