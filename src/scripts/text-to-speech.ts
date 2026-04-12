@@ -90,7 +90,7 @@ function clearHighlight(): void {
 function highlightParagraph(el: HTMLElement): void {
   clearHighlight();
   el.classList.add(HIGHLIGHT_CLASS);
-  el.style.background = 'rgba(99,102,241,0.12)';
+  el.style.background = 'rgba(71,85,105,0.12)';
   el.style.borderRadius = '6px';
   el.style.transition = 'background 0.3s ease';
   el.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -269,9 +269,9 @@ function injectStyles(): void {
       border: 1px solid rgba(255,255,255,0.5);
       box-shadow: 
         0 4px 16px rgba(0,0,0,0.1),
-        0 2px 4px rgba(99,102,241,0.08),
+        0 2px 4px rgba(71,85,105,0.08),
         inset 0 1px 0 rgba(255,255,255,0.8);
-      color: #6366f1;
+      color: #475569;
       cursor: pointer;
       display: flex; align-items: center; justify-content: center;
       transition: all 0.25s cubic-bezier(0.34,1.56,0.64,1);
@@ -279,17 +279,17 @@ function injectStyles(): void {
     :is(.dark) #tts-fab {
       background: linear-gradient(135deg, rgba(40,40,40,0.95) 0%, rgba(30,30,30,0.9) 100%);
       border-color: rgba(255,255,255,0.08);
-      color: #a5b4fc;
+      color: #94a3b8;
       box-shadow: 
         0 4px 16px rgba(0,0,0,0.3),
         inset 0 1px 0 rgba(255,255,255,0.05);
     }
-    #tts-fab svg { display: block; filter: drop-shadow(0 1px 2px rgba(99,102,241,0.2)); }
+    #tts-fab svg { display: block; filter: drop-shadow(0 1px 2px rgba(71,85,105,0.2)); }
     #tts-fab:hover {
       transform: scale(1.1);
       box-shadow: 
-        0 6px 24px rgba(99,102,241,0.25),
-        0 2px 8px rgba(99,102,241,0.15),
+        0 6px 24px rgba(71,85,105,0.25),
+        0 2px 8px rgba(71,85,105,0.15),
         inset 0 1px 0 rgba(255,255,255,0.9);
     }
     #tts-fab:hover .tts-bar {
@@ -305,18 +305,18 @@ function injectStyles(): void {
       50% { transform: scaleY(0.5); }
     }
     #tts-fab.tts-playing {
-      background: linear-gradient(135deg, #818cf8 0%, #6366f1 50%, #4f46e5 100%);
+      background: linear-gradient(135deg, #64748b 0%, #475569 50%, #334155 100%);
       color: #fff;
       border-color: transparent;
       box-shadow: 
-        0 4px 20px rgba(99,102,241,0.45),
-        0 2px 8px rgba(99,102,241,0.25),
+        0 4px 20px rgba(71,85,105,0.45),
+        0 2px 8px rgba(71,85,105,0.25),
         inset 0 1px 0 rgba(255,255,255,0.2);
       animation: fabPulse 2s ease-in-out infinite;
     }
     @keyframes fabPulse {
-      0%, 100% { box-shadow: 0 4px 20px rgba(99,102,241,0.45), 0 0 0 0 rgba(99,102,241,0.3); }
-      50% { box-shadow: 0 4px 20px rgba(99,102,241,0.45), 0 0 0 8px rgba(99,102,241,0); }
+      0%, 100% { box-shadow: 0 4px 20px rgba(71,85,105,0.45), 0 0 0 0 rgba(71,85,105,0.3); }
+      50% { box-shadow: 0 4px 20px rgba(71,85,105,0.45), 0 0 0 8px rgba(71,85,105,0); }
     }
     #tts-fab.tts-paused {
       background: linear-gradient(135deg, #fb923c 0%, #f97316 50%, #ea580c 100%);
@@ -334,9 +334,9 @@ function injectStyles(): void {
     body.tts-active .chapter-content h2:hover,
     body.tts-active .chapter-content h3:hover,
     body.tts-active .chapter-content li:hover {
-      background: rgba(99,102,241,0.07);
+      background: rgba(71,85,105,0.07);
       border-radius: 4px;
-      outline: 1px dashed rgba(99,102,241,0.3);
+      outline: 1px dashed rgba(71,85,105,0.3);
     }
 
     /* ── Player bar ── */
@@ -353,7 +353,7 @@ function injectStyles(): void {
       border-radius: 99px;
       box-shadow: 
         0 8px 32px rgba(0,0,0,0.12),
-        0 2px 8px rgba(99,102,241,0.08),
+        0 2px 8px rgba(71,85,105,0.08),
         inset 0 1px 0 rgba(255,255,255,0.8);
       padding: 10px 16px;
       display: flex;
@@ -367,7 +367,7 @@ function injectStyles(): void {
       border-color: rgba(255,255,255,0.08);
       box-shadow: 
         0 8px 32px rgba(0,0,0,0.4),
-        0 2px 8px rgba(99,102,241,0.15),
+        0 2px 8px rgba(71,85,105,0.15),
         inset 0 1px 0 rgba(255,255,255,0.05);
     }
     #tts-player.tts-active {
@@ -392,10 +392,10 @@ function injectStyles(): void {
       box-shadow: 0 2px 4px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
     }
     .tts-btn:hover:not(:disabled) {
-      background: linear-gradient(135deg, #818cf8 0%, #6366f1 100%);
+      background: linear-gradient(135deg, #64748b 0%, #475569 100%);
       color: #fff;
       transform: scale(1.08);
-      box-shadow: 0 4px 12px rgba(99,102,241,0.35);
+      box-shadow: 0 4px 12px rgba(71,85,105,0.35);
     }
     .tts-btn:disabled { opacity: 0.35; cursor: default; }
     .tts-btn svg { display: block; pointer-events: none; }
@@ -403,12 +403,12 @@ function injectStyles(): void {
     /* Main play button - premium style */
     #tts-play {
       width: 48px; height: 48px;
-      background: linear-gradient(135deg, #818cf8 0%, #6366f1 50%, #4f46e5 100%);
+      background: linear-gradient(135deg, #64748b 0%, #475569 50%, #334155 100%);
       color: #fff;
       border: none;
       box-shadow: 
-        0 4px 16px rgba(99,102,241,0.4),
-        0 2px 4px rgba(99,102,241,0.2),
+        0 4px 16px rgba(71,85,105,0.4),
+        0 2px 4px rgba(71,85,105,0.2),
         inset 0 1px 0 rgba(255,255,255,0.2);
       position: relative;
     }
@@ -417,7 +417,7 @@ function injectStyles(): void {
       position: absolute;
       inset: -3px;
       border-radius: 50%;
-      background: conic-gradient(from 0deg, #6366f1, #a5b4fc, #6366f1);
+      background: conic-gradient(from 0deg, #475569, #94a3b8, #475569);
       opacity: 0;
       z-index: -1;
       transition: opacity 0.3s;
@@ -435,8 +435,8 @@ function injectStyles(): void {
     #tts-play:hover { 
       transform: scale(1.1);
       box-shadow: 
-        0 6px 24px rgba(99,102,241,0.5),
-        0 2px 8px rgba(99,102,241,0.3),
+        0 6px 24px rgba(71,85,105,0.5),
+        0 2px 8px rgba(71,85,105,0.3),
         inset 0 1px 0 rgba(255,255,255,0.3);
     }
 
@@ -467,10 +467,10 @@ function injectStyles(): void {
       transition: all 0.2s;
     }
     #tts-speed:hover {
-      background: linear-gradient(135deg, #818cf8 0%, #6366f1 100%);
+      background: linear-gradient(135deg, #64748b 0%, #475569 100%);
       color: #fff;
       border-color: transparent;
-      box-shadow: 0 2px 8px rgba(99,102,241,0.3);
+      box-shadow: 0 2px 8px rgba(71,85,105,0.3);
     }
     :is(.dark) #tts-speed {
       background: linear-gradient(135deg, #374151 0%, #1f2937 100%);
