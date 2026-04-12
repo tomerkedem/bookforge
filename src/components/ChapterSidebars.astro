@@ -1363,6 +1363,45 @@ const isRtl = language === LANGUAGES.HE;
   }
 
   /**
+   * Update outline items styling when theme changes (day/night)
+   */
+  function updateOutlineTheme() {
+    const isDark = document.documentElement.classList.contains('dark');
+    const ul = document.getElementById('chapter-outline');
+    if (!ul) return;
+
+    ul.querySelectorAll<HTMLLIElement>('li[data-level]').forEach(li => {
+      const level = li.getAttribute('data-level') || 'h2';
+      li.style.background = isDark 
+        ? 'linear-gradient(145deg, rgba(70, 70, 75, 0.95), rgba(50, 50, 55, 0.98))' 
+        : 'linear-gradient(145deg, #fefefe, #f3f3f3)';
+      li.style.borderColor = isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.12)';
+      li.style.boxShadow = isDark 
+        ? '0 3px 8px rgba(0, 0, 0, 0.25), 0 1px 3px rgba(0, 0, 0, 0.15)' 
+        : '0 3px 8px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05)';
+
+      const link = li.querySelector('a');
+      if (link) {
+        (link as HTMLElement).style.color = isDark ? 'rgba(255, 255, 255, 0.75)' : 'rgba(0, 0, 0, 0.7)';
+      }
+    });
+  }
+
+  // Listen for theme changes using MutationObserver
+  const themeObserver = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+        updateOutlineTheme();
+      }
+    });
+  });
+
+  themeObserver.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ['class']
+  });
+
+  /**
    * TOC links no longer need ?lang= - language is determined by toggle position
    */
   function updateTocLinks(lang: string) {
