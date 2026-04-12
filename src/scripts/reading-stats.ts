@@ -321,7 +321,22 @@ function injectStyles(): void {
 
     /* ── Streak fire card ── */
     .stat-card.streak .stat-value { color: #f97316; }
-    .stat-card.streak .stat-icon  { filter: drop-shadow(0 0 6px rgba(249,115,22,0.4)); }
+    .stat-card.streak .stat-icon  { filter: drop-shadow(0 0 8px rgba(249,115,22,0.5)); }
+    .stat-card.streak .streak-flame {
+      animation: flicker 1.5s ease-in-out infinite;
+    }
+    @keyframes flicker {
+      0%, 100% { transform: scale(1) rotate(0deg); filter: brightness(1); }
+      25% { transform: scale(1.05) rotate(-2deg); filter: brightness(1.1); }
+      50% { transform: scale(0.98) rotate(1deg); filter: brightness(0.95); }
+      75% { transform: scale(1.03) rotate(-1deg); filter: brightness(1.05); }
+    }
+    
+    /* ── Modern stat icons ── */
+    .stat-icon svg { display: block; }
+    .stat-card:not(.streak) .stat-icon svg {
+      color: var(--yuval-text-secondary, #555);
+    }
   `;
   document.head.appendChild(s);
 }
@@ -379,13 +394,24 @@ function renderStats(): void {
 
   modal.innerHTML = `
     <div id="stats-modal-header">
-      <span id="stats-modal-title">📚 ${labels.title}</span>
+      <span id="stats-modal-title">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18" style="vertical-align:-3px;margin-inline-end:6px;">
+          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+        </svg>
+        ${labels.title}
+      </span>
       <button id="stats-modal-close" aria-label="${labels.close}">✕</button>
     </div>
     <div class="stats-grid">
 
       <div class="stat-card" style="grid-column: span 2">
-        <span class="stat-icon">📖</span>
+        <span class="stat-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="24" height="24">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+            <path d="M8 7h8M8 11h8M8 15h5"/>
+          </svg>
+        </span>
         <span class="stat-value">${stats.chaptersRead}
           <span style="font-size:13px;font-weight:500;color:var(--yuval-text-muted,#999)">
             ${labels.of} ${stats.totalChapters || '?'}
@@ -398,19 +424,41 @@ function renderStats(): void {
       </div>
 
       <div class="stat-card">
-        <span class="stat-icon">📝</span>
+        <span class="stat-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="24" height="24">
+            <path d="M12 20h9"/>
+            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+          </svg>
+        </span>
         <span class="stat-value">${wordsFormatted}</span>
         <span class="stat-label">${labels.wordsRead}</span>
       </div>
 
       <div class="stat-card">
-        <span class="stat-icon">💡</span>
+        <span class="stat-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="24" height="24">
+            <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+        </span>
         <span class="stat-value">${stats.highlights}</span>
         <span class="stat-label">${labels.highlights}</span>
       </div>
 
       <div class="stat-card streak" style="grid-column: span 2">
-        <span class="stat-icon">🔥</span>
+        <span class="stat-icon">
+          <svg viewBox="0 0 24 24" fill="none" width="28" height="28" class="streak-flame">
+            <defs>
+              <linearGradient id="flameGrad" x1="0%" y1="100%" x2="0%" y2="0%">
+                <stop offset="0%" style="stop-color:#f97316"/>
+                <stop offset="50%" style="stop-color:#fb923c"/>
+                <stop offset="100%" style="stop-color:#fbbf24"/>
+              </linearGradient>
+            </defs>
+            <path d="M12 2C8 6 6 10 6 13a6 6 0 0 0 12 0c0-3-2-7-6-11z" fill="url(#flameGrad)" stroke="#ea580c" stroke-width="1"/>
+            <path d="M12 9c-2 2-3 4-3 5.5a3 3 0 0 0 6 0c0-1.5-1-3.5-3-5.5z" fill="#fef3c7" opacity="0.9"/>
+          </svg>
+        </span>
         <span class="stat-value">${labels.streakDays(stats.streak)}</span>
         <span class="stat-label">${labels.streak}</span>
       </div>

@@ -200,7 +200,9 @@ function updatePlayerState(): void {
   if (!bar) return;
 
   if (playBtn) {
-    playBtn.textContent = playing ? '⏸' : '▶';
+    playBtn.innerHTML = playing 
+      ? `<svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>`
+      : `<svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16" class="tts-play-icon"><path d="M8 5.14v14l11-7-11-7z"/></svg>`;
     playBtn.title = playing ? tr('tts.pause') : tr('tts.play');
   }
   if (stopBtn) stopBtn.disabled = !playing && !paused;
@@ -259,21 +261,36 @@ function injectStyles(): void {
       bottom: 370px;
       right: 20px;
       z-index: 9980;
-      width: 44px; height: 44px;
+      width: 48px; height: 48px;
       border-radius: 50%;
-      background: var(--yuval-surface, #fff);
-      border: 1px solid var(--yuval-border, #e5e7eb);
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-      color: var(--yuval-text-secondary, #555);
+      background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(248,250,252,0.9) 100%);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.5);
+      box-shadow: 
+        0 4px 16px rgba(0,0,0,0.1),
+        0 2px 4px rgba(99,102,241,0.08),
+        inset 0 1px 0 rgba(255,255,255,0.8);
+      color: #6366f1;
       cursor: pointer;
       display: flex; align-items: center; justify-content: center;
-      font-size: 18px;
-      transition: transform 0.2s, box-shadow 0.2s, background 0.15s;
+      transition: all 0.25s cubic-bezier(0.34,1.56,0.64,1);
     }
-    #tts-fab svg { display: block; }
+    :is(.dark) #tts-fab {
+      background: linear-gradient(135deg, rgba(40,40,40,0.95) 0%, rgba(30,30,30,0.9) 100%);
+      border-color: rgba(255,255,255,0.08);
+      color: #a5b4fc;
+      box-shadow: 
+        0 4px 16px rgba(0,0,0,0.3),
+        inset 0 1px 0 rgba(255,255,255,0.05);
+    }
+    #tts-fab svg { display: block; filter: drop-shadow(0 1px 2px rgba(99,102,241,0.2)); }
     #tts-fab:hover {
-      transform: scale(1.08);
-      box-shadow: 0 4px 16px rgba(0,0,0,0.14);
+      transform: scale(1.1);
+      box-shadow: 
+        0 6px 24px rgba(99,102,241,0.25),
+        0 2px 8px rgba(99,102,241,0.15),
+        inset 0 1px 0 rgba(255,255,255,0.9);
     }
     #tts-fab:hover .tts-bar {
       animation: ttsWave 0.6s ease-in-out infinite;
@@ -288,17 +305,28 @@ function injectStyles(): void {
       50% { transform: scaleY(0.5); }
     }
     #tts-fab.tts-playing {
-      background: #6366f1;
+      background: linear-gradient(135deg, #818cf8 0%, #6366f1 50%, #4f46e5 100%);
       color: #fff;
-      border-color: #6366f1;
-      animation: ttsPulse 1.5s ease infinite;
+      border-color: transparent;
+      box-shadow: 
+        0 4px 20px rgba(99,102,241,0.45),
+        0 2px 8px rgba(99,102,241,0.25),
+        inset 0 1px 0 rgba(255,255,255,0.2);
+      animation: fabPulse 2s ease-in-out infinite;
+    }
+    @keyframes fabPulse {
+      0%, 100% { box-shadow: 0 4px 20px rgba(99,102,241,0.45), 0 0 0 0 rgba(99,102,241,0.3); }
+      50% { box-shadow: 0 4px 20px rgba(99,102,241,0.45), 0 0 0 8px rgba(99,102,241,0); }
     }
     #tts-fab.tts-paused {
-      background: #f97316;
+      background: linear-gradient(135deg, #fb923c 0%, #f97316 50%, #ea580c 100%);
       color: #fff;
-      border-color: #f97316;
+      border-color: transparent;
+      box-shadow: 
+        0 4px 20px rgba(249,115,22,0.45),
+        0 2px 8px rgba(249,115,22,0.25),
+        inset 0 1px 0 rgba(255,255,255,0.2);
     }
-    :is(.dark) #tts-fab { background: #2a2a2a; border-color: rgba(255,255,255,0.1); }
     [dir="rtl"] #tts-fab { right: auto; left: 20px; }
 
     /* Paragraph hover when TTS active */
@@ -311,11 +339,6 @@ function injectStyles(): void {
       outline: 1px dashed rgba(99,102,241,0.3);
     }
 
-    @keyframes ttsPulse {
-      0%,100% { box-shadow: 0 0 0 0 rgba(99,102,241,0.4); }
-      50%      { box-shadow: 0 0 0 8px rgba(99,102,241,0); }
-    }
-
     /* ── Player bar ── */
     #tts-player {
       position: fixed;
@@ -323,10 +346,15 @@ function injectStyles(): void {
       left: 50%;
       transform: translateX(-50%);
       z-index: 9990;
-      background: var(--yuval-surface, #fff);
-      border: 1px solid var(--yuval-border, #e5e7eb);
+      background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(248,250,252,0.9) 100%);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.5);
       border-radius: 99px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+      box-shadow: 
+        0 8px 32px rgba(0,0,0,0.12),
+        0 2px 8px rgba(99,102,241,0.08),
+        inset 0 1px 0 rgba(255,255,255,0.8);
       padding: 10px 16px;
       display: flex;
       align-items: center;
@@ -335,8 +363,12 @@ function injectStyles(): void {
       min-width: 300px;
     }
     :is(.dark) #tts-player {
-      background: #1e1e1e;
-      border-color: rgba(255,255,255,0.1);
+      background: linear-gradient(135deg, rgba(30,30,30,0.95) 0%, rgba(20,20,20,0.9) 100%);
+      border-color: rgba(255,255,255,0.08);
+      box-shadow: 
+        0 8px 32px rgba(0,0,0,0.4),
+        0 2px 8px rgba(99,102,241,0.15),
+        inset 0 1px 0 rgba(255,255,255,0.05);
     }
     #tts-player.tts-active {
       bottom: 16px;
@@ -345,28 +377,68 @@ function injectStyles(): void {
     .tts-btn {
       width: 36px; height: 36px;
       border-radius: 50%;
-      border: none;
-      background: var(--yuval-bg-secondary, #f3f4f6);
-      color: var(--yuval-text, #1a1a1a);
-      font-size: 16px;
+      border: 1px solid transparent;
+      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+      color: #475569;
       cursor: pointer;
       display: flex; align-items: center; justify-content: center;
-      transition: background 0.15s, transform 0.15s;
+      transition: all 0.2s cubic-bezier(0.34,1.56,0.64,1);
       flex-shrink: 0;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.8);
+    }
+    :is(.dark) .tts-btn {
+      background: linear-gradient(135deg, #374151 0%, #1f2937 100%);
+      color: #cbd5e1;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
     }
     .tts-btn:hover:not(:disabled) {
-      background: #6366f1;
+      background: linear-gradient(135deg, #818cf8 0%, #6366f1 100%);
       color: #fff;
-      transform: scale(1.05);
+      transform: scale(1.08);
+      box-shadow: 0 4px 12px rgba(99,102,241,0.35);
     }
     .tts-btn:disabled { opacity: 0.35; cursor: default; }
+    .tts-btn svg { display: block; pointer-events: none; }
+    
+    /* Main play button - premium style */
     #tts-play {
-      width: 42px; height: 42px;
-      background: #6366f1;
+      width: 48px; height: 48px;
+      background: linear-gradient(135deg, #818cf8 0%, #6366f1 50%, #4f46e5 100%);
       color: #fff;
-      font-size: 18px;
+      border: none;
+      box-shadow: 
+        0 4px 16px rgba(99,102,241,0.4),
+        0 2px 4px rgba(99,102,241,0.2),
+        inset 0 1px 0 rgba(255,255,255,0.2);
+      position: relative;
     }
-    #tts-play:hover { background: #4f46e5; }
+    #tts-play::before {
+      content: '';
+      position: absolute;
+      inset: -3px;
+      border-radius: 50%;
+      background: conic-gradient(from 0deg, #6366f1, #a5b4fc, #6366f1);
+      opacity: 0;
+      z-index: -1;
+      transition: opacity 0.3s;
+      animation: playRing 2s linear infinite;
+    }
+    #tts-play:hover::before,
+    #tts-player.tts-active #tts-play::before {
+      opacity: 0.6;
+    }
+    @keyframes playRing {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    #tts-play svg { width: 20px; height: 20px; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2)); }
+    #tts-play:hover { 
+      transform: scale(1.1);
+      box-shadow: 
+        0 6px 24px rgba(99,102,241,0.5),
+        0 2px 8px rgba(99,102,241,0.3),
+        inset 0 1px 0 rgba(255,255,255,0.3);
+    }
 
     .tts-label {
       font-size: 12px;
@@ -376,25 +448,47 @@ function injectStyles(): void {
       flex: 1;
       text-align: center;
     }
+    :is(.dark) .tts-label { color: #94a3b8; }
 
     /* Speed control */
     #tts-speed {
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 700;
-      color: var(--yuval-text, #1a1a1a);
-      background: var(--yuval-bg-secondary, #f3f4f6);
-      border: 1px solid var(--yuval-border, #e5e7eb);
-      border-radius: 6px;
-      padding: 4px 8px;
+      letter-spacing: 0.02em;
+      color: #475569;
+      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+      border: 1px solid rgba(148,163,184,0.3);
+      border-radius: 8px;
+      padding: 6px 10px;
       cursor: pointer;
       min-width: 44px;
       text-align: center;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.8);
+      transition: all 0.2s;
+    }
+    #tts-speed:hover {
+      background: linear-gradient(135deg, #818cf8 0%, #6366f1 100%);
+      color: #fff;
+      border-color: transparent;
+      box-shadow: 0 2px 8px rgba(99,102,241,0.3);
+    }
+    :is(.dark) #tts-speed {
+      background: linear-gradient(135deg, #374151 0%, #1f2937 100%);
+      color: #cbd5e1;
+      border-color: rgba(255,255,255,0.08);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
     }
 
     /* Close */
     #tts-close {
-      font-size: 14px;
-      color: var(--yuval-text-muted, #999);
+      color: #94a3b8;
+      width: 32px;
+      height: 32px;
+    }
+    #tts-close:hover {
+      background: linear-gradient(135deg, #fecaca 0%, #fca5a5 100%);
+      color: #dc2626;
+      box-shadow: 0 2px 8px rgba(220,38,38,0.25);
     }
   `;
   document.head.appendChild(s);
@@ -423,8 +517,12 @@ function buildPlayer(): void {
   player.id = 'tts-player';
   player.setAttribute('dir', isRtlLang(getLang()) ? 'rtl' : 'ltr');
   player.innerHTML = `
-    <button class="tts-btn" id="tts-stop" title="${tr('tts.stop')}" disabled>⏹</button>
-    <button class="tts-btn" id="tts-play" title="${tr('tts.play')}">▶</button>
+    <button class="tts-btn" id="tts-stop" title="${tr('tts.stop')}" disabled>
+      <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+    </button>
+    <button class="tts-btn" id="tts-play" title="${tr('tts.play')}">
+      <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16" class="tts-play-icon"><path d="M8 5.14v14l11-7-11-7z"/></svg>
+    </button>
     <span class="tts-label">
       <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14" style="vertical-align:-2px;margin-inline-end:4px;">
         <rect x="4" y="10" width="2" height="4" rx="1"/>
@@ -443,7 +541,9 @@ function buildPlayer(): void {
       padding:3px 4px; cursor:pointer;
     "></select>
     <button class="tts-btn" id="tts-speed" title="${tr('tts.speed')}">1×</button>
-    <button class="tts-btn" id="tts-close" title="${tr('tts.stop')}">✕</button>
+    <button class="tts-btn" id="tts-close" title="${tr('tts.close')}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="14" height="14"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    </button>
   `;
   document.body.appendChild(player);
 
