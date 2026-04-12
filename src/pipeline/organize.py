@@ -11,7 +11,7 @@ from pathlib import Path
 
 def organize(book_name: str, chapters_md: list[dict], output_dir: str = "output",
              book_title_he: str = "", book_title_en: str = "",
-             book_title_es: str = "") -> list[str]:
+             book_title_es: str = "", book_subtitle_he: str = "") -> list[str]:
     slug = _slugify(book_name)
     book_dir = Path(output_dir) / slug
     book_dir.mkdir(parents=True, exist_ok=True)
@@ -42,7 +42,7 @@ def organize(book_name: str, chapters_md: list[dict], output_dir: str = "output"
         created.append(str(he_file))
 
     # Generate content-structure.json
-    _generate_content_structure(book_dir, chapters_md, book_title_he, book_title_en, book_title_es)
+    _generate_content_structure(book_dir, chapters_md, book_title_he, book_title_en, book_title_es, book_subtitle_he)
 
     return created
 
@@ -63,7 +63,7 @@ def _clean_stale_chapters(book_dir: Path, chapter_count: int):
 
 def _generate_content_structure(book_dir: Path, chapters_md: list[dict],
                                  book_title_he: str, book_title_en: str,
-                                 book_title_es: str):
+                                 book_title_es: str, book_subtitle_he: str = ""):
     """Generate content-structure.json from chapter markdown content."""
     chapters_json = []
     content_chapter_num = 0  # Counter for regular chapters
@@ -111,6 +111,9 @@ def _generate_content_structure(book_dir: Path, chapters_md: list[dict],
             "title_he": book_title_he or _format_title(book_dir.name),
             "title_en": book_title_en or _format_title(book_dir.name),
             "title_es": book_title_es or book_title_en or _format_title(book_dir.name),
+            "subtitle_he": book_subtitle_he,
+            "subtitle_en": book_subtitle_he,  # Placeholder until translation
+            "subtitle_es": book_subtitle_he,  # Placeholder until translation
             "chapters": chapters_json
         }
     }

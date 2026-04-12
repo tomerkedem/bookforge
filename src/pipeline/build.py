@@ -28,7 +28,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from pipeline.ingest import ingest
-from pipeline.parse import parse, extract_images, to_markdown, DEFAULT_ASSETS_DIR
+from pipeline.parse import parse, extract_images, to_markdown, extract_book_info, DEFAULT_ASSETS_DIR
 from pipeline.organize import organize
 from pipeline.translate import get_chapters_to_translate, build_translation_prompt, build_batch_prompt
 
@@ -127,6 +127,18 @@ def run_pipeline(docx_path: str, book_name: str,
     print("\n[1/7] Ingest...")
     ingested = ingest(docx_path)
     print(f"  Paragraphs: {ingested['total']}")
+    
+    # Extract book info from cover page (title + subtitle)
+    book_info = extract_book_info(ingested)
+    if book_info["title"]:
+        print(f"  כותרת: {book_info['title']}")
+    if book_info["subtitle"]:
+        print(f"  תת-כותרת: {book_info['subtitle']}")
+    
+    # Use extracted title if not provided via CLI
+    if not title_he and book_info["title"]:
+        title_he = book_info["title"]
+    subtitle_he = book_info.get("subtitle", "")
 
     # Step 2: Parse chapters
     print("\n[2/7] Parse chapters...")
@@ -160,7 +172,7 @@ def run_pipeline(docx_path: str, book_name: str,
     print("\n[5/7] Organize output...")
     created = organize(book_name, chapters_md, output_dir,
                        book_title_he=title_he, book_title_en=title_en,
-                       book_title_es=title_es)
+                       book_title_es=title_es, book_subtitle_he=subtitle_he)
     print(f"  Hebrew files: {len(created)}")
 
     # Step 6: Translate (identify chapters needing translation)

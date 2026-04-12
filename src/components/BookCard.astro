@@ -4,6 +4,9 @@ interface Props {
   title_he: string;
   title_en: string;
   title_es?: string;
+  subtitle_he?: string;
+  subtitle_en?: string;
+  subtitle_es?: string;
   description_he: string;
   description_en: string;
   description_es?: string;
@@ -18,6 +21,9 @@ const {
   title_he,
   title_en,
   title_es,
+  subtitle_he = '',
+  subtitle_en = '',
+  subtitle_es = '',
   description_he,
   description_en,
   description_es,
@@ -71,6 +77,17 @@ const bookUrl = `/books/${slug}`;
     >
       {title_en}
     </h3>
+
+    {(subtitle_he || subtitle_en) && (
+      <p
+        class="text-xs text-yuval-text-muted italic leading-tight -mt-0.5"
+        data-he={subtitle_he}
+        data-en={subtitle_en}
+        data-es={subtitle_es || subtitle_en}
+      >
+        {subtitle_en}
+      </p>
+    )}
 
     <p
       class="text-xs text-yuval-text-secondary leading-relaxed line-clamp-2"

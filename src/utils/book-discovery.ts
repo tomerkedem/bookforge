@@ -20,6 +20,9 @@ export interface DiscoveredBook {
   title_he: string;
   title_en: string;
   title_es: string;
+  subtitle_he: string;
+  subtitle_en: string;
+  subtitle_es: string;
   description_he: string;
   description_en: string;
   description_es: string;
@@ -34,6 +37,9 @@ interface ContentStructure {
     title_he: string;
     title_en: string;
     title_es?: string;
+    subtitle_he?: string;
+    subtitle_en?: string;
+    subtitle_es?: string;
     description_he?: string;
     description_en?: string;
     description_es?: string;
@@ -165,6 +171,9 @@ function loadBookMeta(bookDir: string, slug: string): {
   title_he: string;
   title_en: string;
   title_es: string;
+  subtitle_he: string;
+  subtitle_en: string;
+  subtitle_es: string;
   description_he: string;
   description_en: string;
   description_es: string;
@@ -175,10 +184,14 @@ function loadBookMeta(bookDir: string, slug: string): {
     try {
       const data: ContentStructure = JSON.parse(readFileSync(jsonPath, 'utf-8'));
       const title_en = data.book.title_en || slug;
+      const subtitle_en = data.book.subtitle_en || data.book.subtitle_he || '';
       return {
         title_he: data.book.title_he || slug,
         title_en,
         title_es: data.book.title_es || title_en,
+        subtitle_he: data.book.subtitle_he || '',
+        subtitle_en,
+        subtitle_es: data.book.subtitle_es || subtitle_en,
         description_he: data.book.description_he || '',
         description_en: data.book.description_en || '',
         description_es: data.book.description_es || data.book.description_en || '',
@@ -193,6 +206,9 @@ function loadBookMeta(bookDir: string, slug: string): {
     title_he: formatted,
     title_en: formatted,
     title_es: formatted,
+    subtitle_he: '',
+    subtitle_en: '',
+    subtitle_es: '',
     description_he: '',
     description_en: '',
     description_es: '',
@@ -235,6 +251,9 @@ export function discoverBook(slug: string): DiscoveredBook | null {
     title_he: meta.title_he,
     title_en: meta.title_en,
     title_es: meta.title_es,
+    subtitle_he: meta.subtitle_he,
+    subtitle_en: meta.subtitle_en,
+    subtitle_es: meta.subtitle_es,
     description_he: meta.description_he,
     description_en: meta.description_en,
     description_es: meta.description_es,

@@ -13,6 +13,58 @@ INTRO_KEYWORDS = ["מבוא", "פתיחה", "הקדמה", "introduction", "prefa
 COVER_KEYWORDS = ["שער", "cover", "title"]
 
 
+def extract_book_info(ingested: dict) -> dict:
+    """
+    Extract book title and subtitle from the cover page.
+    Looks at paragraphs BEFORE the first Heading 1.
+    
+    In a typical Word document:
+    - First significant paragraph = Book title
+    - Second significant paragraph = Subtitle
+    
+    Returns: {title: str, subtitle: str}
+    """
+    paragraphs = ingested.get("paragraphs", [])
+    title = ""
+    subtitle = ""
+    
+    # Find first Heading 1 position
+    first_heading_idx = None
+    for idx, para in enumerate(paragraphs):
+        style = para.get("style", "")
+        if "Heading 1" in style:
+            first_heading_idx = idx
+            break
+    
+    # Collect significant text paragraphs before Heading 1
+    cover_texts = []
+    limit = first_heading_idx if first_heading_idx is not None else min(20, len(paragraphs))
+    
+    for idx in range(limit):
+        para = paragraphs[idx]
+        text = para.get("text", "").strip()
+        style = para.get("style", "")
+        
+        # Skip empty, spacing, and heading paragraphs
+        if not text or style == "Spacing" or "Heading" in style:
+            continue
+        
+        # Skip if looks like author name or date
+        if len(text) < 100:  # Short enough to be title/subtitle
+            cover_texts.append(text)
+        
+        # Usually only need first 2 significant texts
+        if len(cover_texts) >= 2:
+            break
+    
+    if len(cover_texts) >= 1:
+        title = cover_texts[0]
+    if len(cover_texts) >= 2:
+        subtitle = cover_texts[1]
+    
+    return {"title": title, "subtitle": subtitle}
+
+
 def _clean_heading(text: str) -> str:
     """
     Remove bold/italic markdown from headings - they're already styled by structure.
