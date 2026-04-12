@@ -575,8 +575,35 @@ function injectStyles(): void {
     /* Color picker row */
     #qc-actions {
       padding: 16px 20px 20px;
-      display: flex; align-items: center; gap: 12px;
+      display: flex; flex-wrap: wrap; align-items: center; gap: 12px;
     }
+
+    .qc-share-row {
+      width: 100%;
+      flex-basis: 100%;
+    }
+
+    .qc-note {
+      font-size: 13px;
+      font-style: italic;
+      color: rgba(255,255,255,0.7);
+      margin: 6px 0 0;
+      padding: 8px 12px;
+      border-radius: 6px;
+      background: rgba(255,255,255,0.06);
+      border-left: 3px solid var(--qc-accent, rgba(255,255,255,0.25));
+    }
+
+    /* Light palette overrides */
+    .qc-content.qc-light .qc-text { color: #1a1a1a; }
+    .qc-content.qc-light .qc-note { 
+      color: rgba(0,0,0,0.65); 
+      background: rgba(0,0,0,0.06);
+      border-left-color: rgba(0,0,0,0.2);
+    }
+    .qc-footer.qc-light { background: rgba(0,0,0,0.08); }
+    .qc-footer.qc-light .qc-book-title { color: rgba(0,0,0,0.85); }
+    .qc-footer.qc-light .qc-brand { color: rgba(0,0,0,0.45); }
 
     .qc-palette {
       display: flex; gap: 8px; flex: 1;
@@ -630,7 +657,7 @@ function injectStyles(): void {
     .qc-share-image-btn:disabled { opacity: 0.5; cursor: wait; }
 
     .qc-share-row {
-      display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px;
+      display: flex; gap: 8px; flex-wrap: wrap; margin-top: 0;
     }
     .qc-share-btn {
       display: flex; align-items: center; gap: 6px;
@@ -660,12 +687,14 @@ function injectStyles(): void {
 // ── Quote Card ────────────────────────────────────────────────────────────────
 
 const PALETTES = [
-  { bg: '#0f172a', accent: 'rgba(148,163,184,0.3)', label: 'Night'    },
-  { bg: '#1e1b4b', accent: 'rgba(167,139,250,0.35)', label: 'Purple'  },
-  { bg: '#0c4a6e', accent: 'rgba(125,211,252,0.35)', label: 'Ocean'   },
-  { bg: '#14532d', accent: 'rgba(134,239,172,0.35)', label: 'Forest'  },
-  { bg: '#431407', accent: 'rgba(253,186,116,0.35)', label: 'Ember'   },
-  { bg: '#1c1917', accent: 'rgba(231,229,228,0.25)', label: 'Stone'   },
+  { bg: '#fffbeb', accent: 'rgba(180,140,50,0.4)', label: 'Cream', light: true },
+  { bg: '#fef9c3', accent: 'rgba(161,98,7,0.35)', label: 'Yellow', light: true },
+  { bg: '#ffffff', accent: 'rgba(100,100,100,0.25)', label: 'White', light: true },
+  { bg: '#f0fdf4', accent: 'rgba(22,163,74,0.3)', label: 'Mint', light: true },
+  { bg: '#fdf2f8', accent: 'rgba(219,39,119,0.3)', label: 'Rose', light: true },
+  { bg: '#0f172a', accent: 'rgba(148,163,184,0.3)', label: 'Night', light: false },
+  { bg: '#14532d', accent: 'rgba(134,239,172,0.35)', label: 'Forest', light: false },
+  { bg: '#1e1b4b', accent: 'rgba(167,139,250,0.35)', label: 'Purple', light: false },
 ];
 
 function getBookMeta(): { title: string; coverUrl: string } {
@@ -700,6 +729,18 @@ function openQuoteCard(markEl: HTMLElement): void {
   const text = markEl.textContent || '';
   if (!text.trim()) return;
 
+  // Get note from highlight data
+  const hlId = markEl.dataset.hlId;
+  let note = '';
+  if (hlId) {
+    const ctx = getPageContext();
+    if (ctx) {
+      const highlights = loadHighlights(ctx.book, ctx.chapter, ctx.lang);
+      const hl = highlights.find(h => h.id === hlId);
+      if (hl?.note) note = hl.note;
+    }
+  }
+
   // Remove existing overlay
   document.getElementById('qc-overlay')?.remove();
 
@@ -711,14 +752,19 @@ function openQuoteCard(markEl: HTMLElement): void {
     const coverPart = coverUrl
       ? `<img class="qc-cover" src="${coverUrl}" alt="" onerror="this.style.display='none'">`
       : `<div class="qc-cover-placeholder"></div>`;
+    const notePart = note
+      ? `<p class="qc-note">📝 ${note}</p>`
+      : '';
+    const lightClass = p.light ? ' qc-light' : '';
     return `
       <div class="qc-bg" style="background:${p.bg}"></div>
       <div class="qc-bg-noise"></div>
-      <div class="qc-content">
+      <div class="qc-content${lightClass}">
         <span class="qc-quote-mark" style="color:${p.accent}">"</span>
         <p class="qc-text">${text}</p>
+        ${notePart}
       </div>
-      <div class="qc-footer">
+      <div class="qc-footer${lightClass}">
         <div class="qc-book-info">
           <span class="qc-book-title">${title}</span>
           <span class="qc-brand">Yuval · yuval.app</span>
@@ -740,7 +786,7 @@ function openQuoteCard(markEl: HTMLElement): void {
         <div class="qc-palette">
           ${PALETTES.map((p, i) => `
             <button class="qc-swatch${i === 0 ? ' active' : ''}"
-              style="background:${p.bg}; box-shadow: 0 0 0 1px rgba(255,255,255,0.15) inset"
+              style="background:${p.bg}; box-shadow: 0 0 0 1px ${p.light ? 'rgba(0,0,0,0.15)' : 'rgba(255,255,255,0.15)'} inset"
               data-idx="${i}" title="${p.label}" type="button"></button>
           `).join('')}
         </div>
@@ -793,7 +839,10 @@ function openQuoteCard(markEl: HTMLElement): void {
   // ── Canvas render helper ──────────────────────────────────────────────────
   async function renderToCanvas(): Promise<HTMLCanvasElement> {
     const p = PALETTES[currentPalette];
-    const W = 1080, H = 580;
+    const isLight = p.light;
+    const W = 1080;
+    // Increase height if there's a note
+    const H = note ? 640 : 580;
     const canvas = document.createElement('canvas');
     canvas.width = W; canvas.height = H;
     const ctx = canvas.getContext('2d')!;
@@ -808,7 +857,7 @@ function openQuoteCard(markEl: HTMLElement): void {
     ctx.fillText('"', 52, 110);
 
     ctx.font = '500 36px -apple-system, BlinkMacSystemFont, sans-serif';
-    ctx.fillStyle = '#ffffff';
+    ctx.fillStyle = isLight ? '#1a1a1a' : '#ffffff';
     const maxW = W - 112;
     const words = text.split(' ');
     let line = '', lines: string[] = [];
@@ -822,18 +871,36 @@ function openQuoteCard(markEl: HTMLElement): void {
     const lineH = 52, textStartY = 140;
     lines.forEach((l, i) => ctx.fillText(l, 56, textStartY + i * lineH));
 
+    // Draw note if present
+    if (note) {
+      const noteY = textStartY + lines.length * lineH + 20;
+      ctx.fillStyle = isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.08)';
+      ctx.beginPath();
+      ctx.roundRect(52, noteY, W - 104, 50, 8);
+      ctx.fill();
+      // Left accent border
+      ctx.fillStyle = p.accent;
+      ctx.beginPath();
+      ctx.roundRect(52, noteY, 4, 50, [4, 0, 0, 4]);
+      ctx.fill();
+      // Note text
+      ctx.font = 'italic 500 26px -apple-system, sans-serif';
+      ctx.fillStyle = isLight ? 'rgba(0,0,0,0.65)' : 'rgba(255,255,255,0.7)';
+      ctx.fillText(`📝 ${note}`, 72, noteY + 33);
+    }
+
     const footerY = H - 100;
-    ctx.fillStyle = 'rgba(0,0,0,0.3)';
+    ctx.fillStyle = isLight ? 'rgba(0,0,0,0.08)' : 'rgba(0,0,0,0.3)';
     ctx.beginPath();
     ctx.roundRect(0, footerY, W, 100, [0, 0, 24, 24]);
     ctx.fill();
 
     ctx.font = 'bold 22px -apple-system, sans-serif';
-    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    ctx.fillStyle = isLight ? 'rgba(0,0,0,0.85)' : 'rgba(255,255,255,0.9)';
     ctx.fillText(title, 56, footerY + 40);
 
     ctx.font = '500 16px -apple-system, sans-serif';
-    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.fillStyle = isLight ? 'rgba(0,0,0,0.45)' : 'rgba(255,255,255,0.4)';
     ctx.fillText('Yuval · yuval.app', 56, footerY + 68);
 
     try {

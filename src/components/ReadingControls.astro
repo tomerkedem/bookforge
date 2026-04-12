@@ -161,6 +161,13 @@
     flex-direction: column-reverse;
     align-items: center;
     gap: 10px;
+    opacity: 1;
+    transition: opacity 0.3s ease;
+  }
+
+  .reading-fab.scrolling {
+    opacity: 0.15;
+    pointer-events: none;
   }
 
   @media (min-width: 1024px) {
@@ -803,6 +810,19 @@
       if (e.key.toLowerCase() === 't') { e.preventDefault(); if (!typoPanelOpen) { toggleFab(true); } toggleTypoPanel(); }
       if (e.key === 'Escape') { closeTypoPanel(); toggleFab(false); if (focusActive) toggleFocus(); }
     });
+
+    /* Hide FAB while scrolling */
+    let scrollTimeout: ReturnType<typeof setTimeout>;
+    const fab = $('reading-fab');
+    window.addEventListener('scroll', () => {
+      if (fab && !fabOpen) {
+        fab.classList.add('scrolling');
+        clearTimeout(scrollTimeout);
+        scrollTimeout = setTimeout(() => {
+          fab.classList.remove('scrolling');
+        }, 800);
+      }
+    }, { passive: true });
 
     /* Restore saved theme */
     const saved = localStorage.getItem('yuval-theme');

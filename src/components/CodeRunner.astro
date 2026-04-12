@@ -716,6 +716,8 @@ class OutputCapture:
     def __init__(self):
         self.stdout = StringIO()
         self.stderr = StringIO()
+        sys.stdout = self.stdout
+        sys.stderr = self.stderr
         
     def get_output(self):
         return self.stdout.getvalue(), self.stderr.getvalue()
@@ -723,10 +725,10 @@ class OutputCapture:
     def clear(self):
         self.stdout = StringIO()
         self.stderr = StringIO()
+        sys.stdout = self.stdout
+        sys.stderr = self.stderr
 
 _output_capture = OutputCapture()
-sys.stdout = _output_capture.stdout
-sys.stderr = _output_capture.stderr
       `);
       
       pyodideReady = true;

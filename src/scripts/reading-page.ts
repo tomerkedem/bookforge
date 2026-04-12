@@ -30,7 +30,7 @@ function initializeReadingPage() {
   initStickyHeader(controller);
   initKeyboardNav(controller.signal);
   initHighlighter(controller.signal);
-  initReadingHints();
+  // initReadingHints(); // Disabled - distracting during reading
   initChapterCompletion();
   initSearch(controller.signal);
   initHighlightsPanel();

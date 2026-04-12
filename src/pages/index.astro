@@ -4,6 +4,7 @@ import BookCard from '../components/BookCard.astro';
 import type { Language } from '../types/index';
 import { LANGUAGES } from '../utils/language';
 import { discoverAllBooks } from '../utils/book-discovery';
+import { quotes, getRandomQuote } from '../data/inspirational-quotes';
 
 interface Props {
   language?: Language;
@@ -14,6 +15,9 @@ const isRtl = language === LANGUAGES.HE;
 
 const books = discoverAllBooks();
 const categories = ['All', ...Array.from(new Set(books.map(b => b.category).filter(Boolean))).sort()];
+
+// Get initial quote (will be replaced client-side for true randomness)
+const initialQuote = getRandomQuote();
 ---
 
 <BaseLayout
@@ -25,49 +29,42 @@ const categories = ['All', ...Array.from(new Set(books.map(b => b.category).filt
   }
   language={language}
 >
-  <div
-    class:list={[
-      'min-h-screen',
-      'bg-yuval-bg',
-      'px-4',
-      'sm:px-6',
-      'lg:px-8',
-      'py-12',
-      'sm:py-16',
-      'lg:py-20',
-    ]}
-  >
-    <!-- Hero Section -->
-    <div
-      class:list={[
-        'max-w-4xl',
-        'mx-auto',
-        'mb-16',
-        'text-center',
-        isRtl && 'text-right',
-      ]}
-    >
-      <h1
-        class="font-heading font-bold text-3xl sm:text-4xl lg:text-6xl leading-tight mb-3 sm:mb-4 text-yuval-text"
-        data-i18n="home.title"
-      >
-        Books
-      </h1>
-      <p
-        class="text-lg sm:text-xl text-yuval-text-secondary font-light leading-relaxed"
-        data-i18n="home.subtitle"
-      >
-        Explorations of deep knowledge and practical application
-      </p>
+  <div class="min-h-screen bg-yuval-bg px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+    
+    <!-- Compact Hero -->
+    <header class="max-w-7xl mx-auto mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div>
+        <h1 class="font-heading font-bold text-2xl sm:text-3xl text-yuval-text"
+            data-i18n="home.title" data-he="הספרייה" data-en="Library" data-es="Biblioteca">
+          Library
+        </h1>
+        <p class="text-sm text-yuval-text-secondary mt-1">
+          <span data-he={`${books.length} ספרים זמינים`} data-en={`${books.length} books available`} data-es={`${books.length} libros disponibles`}>{books.length} books available</span>
+        </p>
+      </div>
+    </header>
+
+    <!-- Inspirational Quote -->
+    <div class="max-w-3xl mx-auto mb-8 text-center px-4" id="inspirational-quote">
+      <blockquote class="relative">
+        <span class="absolute top-0 start-0 text-4xl text-yuval-text-muted opacity-30 leading-none select-none" aria-hidden="true">"</span>
+        <p id="quote-text" class="text-lg sm:text-xl font-medium text-yuval-text italic px-8"
+           data-he={initialQuote.he}
+           data-en={initialQuote.en}
+           data-es={initialQuote.es}>
+          {initialQuote.en}
+        </p>
+        <span class="absolute bottom-0 end-0 text-4xl text-yuval-text-muted opacity-30 leading-none select-none" aria-hidden="true">"</span>
+      </blockquote>
     </div>
 
-    <!-- Continue Reading Banner (populated by JS from localStorage) -->
-    <div id="continue-reading-banner" class="max-w-4xl mx-auto mb-10 hidden"></div>
+    <!-- Continue Reading Banner -->
+    <div id="continue-reading-banner" class="max-w-7xl mx-auto mb-6 hidden"></div>
 
     <!-- Category Filter -->
     {categories.length > 1 && (
-      <div class="max-w-7xl mx-auto mb-10 flex flex-wrap gap-2 justify-center" id="category-filters">
-        {categories.map(cat => (
+      <div class="max-w-7xl mx-auto mb-6 flex flex-wrap gap-2" id="category-filters">
+        {categories.map((cat) => (
           <button
             type="button"
             class:list={[
@@ -75,6 +72,7 @@ const categories = ['All', ...Array.from(new Set(books.map(b => b.category).filt
               'px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200',
               'border border-yuval-border text-yuval-text-secondary',
               'hover:bg-yuval-surface hover:text-yuval-text',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yuval-highlight',
             ]}
             data-category={cat}
             data-active={cat === 'All' ? 'true' : 'false'}
@@ -87,7 +85,7 @@ const categories = ['All', ...Array.from(new Set(books.map(b => b.category).filt
 
     <!-- Books Grid -->
     <div
-      class="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-5"
+      class="max-w-7xl mx-auto grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-5"
       id="books-grid"
     >
       {
@@ -108,22 +106,17 @@ const categories = ['All', ...Array.from(new Set(books.map(b => b.category).filt
     <!-- Empty State -->
     {
       books.length === 0 && (
-        <div
-          class={`max-w-md mx-auto py-16 text-center ${isRtl ? 'text-right' : ''}`}
-        >
+        <div class={`max-w-md mx-auto py-16 text-center ${isRtl ? 'text-right' : ''}`}>
           <svg class="mx-auto w-16 h-16 text-yuval-text-muted mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
           </svg>
-          <p
-            class="text-lg text-yuval-text-secondary font-medium"
-            data-i18n="home.noBooks"
-          >
-            No books available yet
+          <p class="text-lg text-yuval-text-secondary font-medium"
+             data-i18n="home.noBooks" data-he="אין ספרים עדיין" data-en="No books yet" data-es="Aún no hay libros">
+            No books yet
           </p>
           <p class="mt-2 text-sm text-yuval-text-tertiary"
-            data-i18n="home.noBooksHint"
-          >
-            Add books to the output/ folder to get started
+             data-i18n="home.noBooksHint" data-he="הוסף ספרים לתיקיית output/" data-en="Add books to the output/ folder" data-es="Añade libros a output/">
+            Add books to the output/ folder
           </p>
         </div>
       )
@@ -131,7 +124,17 @@ const categories = ['All', ...Array.from(new Set(books.map(b => b.category).filt
   </div>
 </BaseLayout>
 
+<style>
+  /* Category filter active state */
+  .category-filter-btn[data-active="true"] {
+    background: var(--yuval-text);
+    color: var(--yuval-bg);
+    border-color: var(--yuval-text);
+  }
+</style>
+
 <script>
+  // ── Category Filter ──────────────────────────────────────────────────────
   function initCategoryFilter() {
     const btns = document.querySelectorAll<HTMLButtonElement>('.category-filter-btn');
     const cards = document.querySelectorAll<HTMLElement>('[data-book-category]');
@@ -144,38 +147,30 @@ const categories = ['All', ...Array.from(new Set(books.map(b => b.category).filt
         btns.forEach(b => {
           const isActive = b.dataset.category === selected;
           b.dataset.active = isActive ? 'true' : 'false';
-          b.classList.toggle('bg-yuval-text', isActive);
-          b.classList.toggle('text-yuval-bg', isActive);
-          b.classList.toggle('border-yuval-text', isActive);
-          b.classList.toggle('text-yuval-text-secondary', !isActive);
-          b.classList.toggle('border-yuval-border', !isActive);
         });
 
         // Show/hide cards
         cards.forEach(card => {
           const cat = card.dataset.bookCategory || '';
-          card.style.display = (selected === 'All' || cat === selected) ? '' : 'none';
+          if (selected === 'All' || cat === selected) {
+            card.style.display = '';
+          } else {
+            card.style.display = 'none';
+          }
         });
       });
-    });
-
-    // Set initial active style for "All"
-    btns.forEach(b => {
-      if (b.dataset.category === 'All') {
-        b.classList.add('bg-yuval-text', 'text-yuval-bg', 'border-yuval-text');
-        b.classList.remove('text-yuval-text-secondary', 'border-yuval-border');
-      }
     });
   }
 
   initCategoryFilter();
   document.addEventListener('astro:after-swap', initCategoryFilter);
 
-  // ── i18n helper (mirrors src/i18n/index.ts for inline scripts) ───────────
+  // ── i18n helper ──────────────────────────────────────────────────────────
   function yuvalT(key: string, lang: string, params?: Record<string, string | number>): string {
     const map: Record<string, Record<string, string>> = {
       'home.continueReading': { he: 'המשך קריאה', en: 'Continue Reading', es: 'Continuar leyendo' },
       'home.chapter':         { he: 'פרק',         en: 'Chapter',          es: 'Capítulo' },
+      'home.progress':        { he: 'התקדמות',    en: 'Progress',         es: 'Progreso' },
     };
     const entry = map[key];
     if (!entry) return key;
@@ -184,7 +179,7 @@ const categories = ['All', ...Array.from(new Set(books.map(b => b.category).filt
     return text;
   }
 
-  // ── Continue Reading ──────────────────────────────────────────────────────
+  // ── Continue Reading Banner ──────────────────────────────────────────────
   function buildContinueReading() {
     const banner = document.getElementById('continue-reading-banner');
     if (!banner) return;
@@ -193,7 +188,7 @@ const categories = ['All', ...Array.from(new Set(books.map(b => b.category).filt
     const isHe = lang === 'he';
     const isEs = lang === 'es';
 
-    // Find the most recently read chapter across all books
+    // Find the most recently read chapter
     let bestKey = '';
     let bestTime = 0;
     let bestScroll = 0;
@@ -214,74 +209,217 @@ const categories = ['All', ...Array.from(new Set(books.map(b => b.category).filt
 
     if (!bestKey) return;
 
-    // Parse key: yuval_reading_progress_{book}_ch{chapter}
     const match = bestKey.match(/yuval_reading_progress_(.+?)_ch(\d+)$/);
     if (!match) return;
     const bookSlug = match[1];
     const chapterId = match[2];
 
-    // Find book title from a card on the page — if book no longer exists, abort
     const bookCard = document.querySelector<HTMLElement>(`[data-book-slug="${bookSlug}"]`);
     if (!bookCard) return;
-    const titleEl  = bookCard?.querySelector<HTMLElement>('[data-he][data-en]');
+    const titleEl = bookCard?.querySelector<HTMLElement>('[data-he][data-en]');
     const bookTitle = titleEl
       ? (isHe ? titleEl.dataset.he : isEs ? titleEl.dataset.es : titleEl.dataset.en) || bookSlug
       : bookSlug;
 
     const url = `/read/${bookSlug}/${chapterId}${lang !== 'en' ? `?lang=${lang}` : ''}`;
-
     const estPct = Math.min(95, Math.round((bestScroll / 3000) * 100));
 
     banner.innerHTML = `
-      <a href="${url}" id="cr-link" style="
-        display:flex; align-items:center; gap:16px;
-        padding:16px 20px;
-        background:var(--yuval-surface,#fff);
-        border:1px solid var(--yuval-border,#e5e7eb);
-        border-radius:16px;
-        text-decoration:none;
-        box-shadow:0 2px 12px rgba(0,0,0,0.06);
-        transition:box-shadow 0.2s, transform 0.2s;
-        direction:${isHe ? 'rtl' : 'ltr'};
-      ">
-        <span style="font-size:28px;flex-shrink:0">📖</span>
-        <div style="flex:1;min-width:0">
-          <div style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;
-            color:var(--yuval-text-muted,#999);margin-bottom:3px">
-            ${yuvalT('home.continueReading', lang)}
-          </div>
-          <div style="font-size:15px;font-weight:700;color:var(--yuval-text,#1a1a1a);
-            white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
-            ${bookTitle} · ${yuvalT('home.chapter', lang)} ${chapterId}
-          </div>
-          <div style="margin-top:6px;height:3px;border-radius:99px;background:var(--yuval-border,#e5e7eb);overflow:hidden">
-            <div style="height:100%;width:${estPct}%;border-radius:99px;
-              background:linear-gradient(90deg,#6366f1,#8b5cf6);
-              transition:width 0.8s ease"></div>
+      <a href="${url}" class="continue-card group">
+        <div class="continue-icon">
+          <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+          </svg>
+        </div>
+        <div class="continue-content" style="direction: ${isHe ? 'rtl' : 'ltr'}">
+          <span class="continue-label">${yuvalT('home.continueReading', lang)}</span>
+          <span class="continue-title">${bookTitle} · ${yuvalT('home.chapter', lang)} ${chapterId}</span>
+          <div class="continue-progress">
+            <div class="continue-progress-fill" style="width: ${estPct}%"></div>
           </div>
         </div>
-        <span style="font-size:20px;color:var(--yuval-text-muted,#999);flex-shrink:0">
-          ${isHe ? '←' : '→'}
-        </span>
+        <div class="continue-arrow">
+          <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="transform: ${isHe ? 'rotate(180deg)' : 'none'}">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+          </svg>
+        </div>
       </a>
     `;
 
     banner.classList.remove('hidden');
-
-    // Hover effect
-    const link = document.getElementById('cr-link');
-    link?.addEventListener('mouseenter', () => {
-      (link as HTMLElement).style.boxShadow = '0 6px 24px rgba(0,0,0,0.12)';
-      (link as HTMLElement).style.transform = 'translateY(-2px)';
-    });
-    link?.addEventListener('mouseleave', () => {
-      (link as HTMLElement).style.boxShadow = '0 2px 12px rgba(0,0,0,0.06)';
-      (link as HTMLElement).style.transform = '';
-    });
   }
 
   buildContinueReading();
   document.addEventListener('astro:after-swap', buildContinueReading);
   window.addEventListener('language-changed', buildContinueReading);
+  
+  // ── Inspirational Quote ──────────────────────────────────────────────────
+  const allQuotes = [
+    { he: "כל פרק שקראת הוא צעד קדימה", en: "Every chapter you read is a step forward", es: "Cada capítulo que lees es un paso adelante" },
+    { he: "הלומד מכל אדם הוא החכם", en: "One who learns from everyone is truly wise", es: "Quien aprende de todos es verdaderamente sabio" },
+    { he: "בין השורות מסתתר הפתרון הבא שלך", en: "Between the lines hides your next solution", es: "Entre líneas se esconde tu próxima solución" },
+    { he: "קוד נכתב פעם, ידע נבנה לנצח", en: "Code is written once, knowledge is built forever", es: "El código se escribe una vez, el conocimiento se construye para siempre" },
+    { he: "התחל לקרוא. השאר יבוא", en: "Start reading. The rest will follow", es: "Empieza a leer. El resto vendrá" },
+    { he: "ספר טוב הוא חבר שמחכה בסבלנות", en: "A good book is a friend waiting patiently", es: "Un buen libro es un amigo que espera pacientemente" },
+    { he: "הידע שרכשת היום הוא הכלי של מחר", en: "The knowledge you gain today is tomorrow's tool", es: "El conocimiento que adquieres hoy es la herramienta de mañana" },
+    { he: "כל מסע של אלף מילים מתחיל בפרק ראשון", en: "Every journey of a thousand words begins with the first chapter", es: "Todo viaje de mil palabras comienza con el primer capítulo" },
+    { he: "לקרוא זה לחלום בעיניים פקוחות", en: "To read is to dream with open eyes", es: "Leer es soñar con los ojos abiertos" },
+    { he: "הספר הטוב ביותר הוא זה שעדיין לא קראת", en: "The best book is the one you haven't read yet", es: "El mejor libro es el que aún no has leído" },
+    { he: "כל עמוד הוא הזדמנות ללמוד משהו חדש", en: "Every page is an opportunity to learn something new", es: "Cada página es una oportunidad de aprender algo nuevo" },
+    { he: "הקריאה היא השקעה שמחזירה את עצמה פי אלף", en: "Reading is an investment that returns a thousandfold", es: "Leer es una inversión que se devuelve mil veces" },
+    { he: "מי שקורא היום, מוביל מחר", en: "Those who read today, lead tomorrow", es: "Quienes leen hoy, lideran mañana" },
+    { he: "בכל ספר יש פרק שנכתב בשבילך", en: "In every book, there's a chapter written just for you", es: "En cada libro hay un capítulo escrito solo para ti" },
+    { he: "הבנה עמוקה מתחילה בקריאה איטית", en: "Deep understanding begins with slow reading", es: "La comprensión profunda comienza con la lectura lenta" },
+    { he: "הספרים הם המפתחות לעולמות שעוד לא גילית", en: "Books are keys to worlds you haven't discovered yet", es: "Los libros son llaves a mundos que aún no has descubierto" },
+    { he: "קריאה יומית היא הרגל של גדולים", en: "Daily reading is a habit of the great", es: "La lectura diaria es un hábito de los grandes" },
+    { he: "הידע הוא האור שמאיר את הדרך", en: "Knowledge is the light that illuminates the path", es: "El conocimiento es la luz que ilumina el camino" },
+    { he: "כל ספר שנפתח הוא שיחה עם מחבר חכם", en: "Every book opened is a conversation with a wise author", es: "Cada libro abierto es una conversación con un autor sabio" },
+    { he: "אין גבול לכמה שאפשר ללמוד", en: "There's no limit to how much you can learn", es: "No hay límite para cuánto puedes aprender" },
+    { he: "שורה אחת יכולה לשנות את כל החשיבה שלך", en: "One line can change your entire thinking", es: "Una línea puede cambiar toda tu forma de pensar" },
+    { he: "הזמן הטוב ביותר לקרוא הוא עכשיו", en: "The best time to read is now", es: "El mejor momento para leer es ahora" },
+    { he: "בעולם מלא רעש, הספר הוא מקום של שקט", en: "In a world full of noise, a book is a place of quiet", es: "En un mundo lleno de ruido, un libro es un lugar de silencio" },
+    { he: "למידה אינה מרוץ, זו דרך חיים", en: "Learning is not a race, it's a way of life", es: "Aprender no es una carrera, es un estilo de vida" },
+    { he: "הטעות הגדולה ביותר היא לחשוב שאתה יודע הכל", en: "The biggest mistake is thinking you know everything", es: "El mayor error es pensar que lo sabes todo" },
+    { he: "כל יום בלי קריאה הוא יום שהחמצת", en: "Every day without reading is a day you missed", es: "Cada día sin leer es un día que perdiste" },
+    { he: "הדרך הקצרה לחוכמה עוברת דרך דפים", en: "The shortest path to wisdom goes through pages", es: "El camino más corto a la sabiduría pasa por las páginas" },
+    { he: "התחל היכן שאתה, השתמש במה שיש לך", en: "Start where you are, use what you have", es: "Empieza donde estás, usa lo que tienes" },
+    { he: "המחר שלך נבנה מהידע של היום", en: "Your tomorrow is built from today's knowledge", es: "Tu mañana se construye con el conocimiento de hoy" },
+    { he: "אל תפסיק ללמוד. אל תפסיק לגדול", en: "Never stop learning. Never stop growing", es: "Nunca dejes de aprender. Nunca dejes de crecer" }
+  ];
+
+  function updateQuote() {
+    const lang = localStorage.getItem('yuval_language') || 'en';
+    const quoteEl = document.getElementById('quote-text');
+    if (!quoteEl) return;
+    
+    // Pick a random quote
+    const quote = allQuotes[Math.floor(Math.random() * allQuotes.length)];
+    
+    // Update data attributes and display text
+    quoteEl.dataset.he = quote.he;
+    quoteEl.dataset.en = quote.en;
+    quoteEl.dataset.es = quote.es;
+    
+    const key = lang as 'he' | 'en' | 'es';
+    quoteEl.textContent = quote[key] || quote.en;
+  }
+
+  updateQuote();
+  document.addEventListener('astro:after-swap', updateQuote);
+  window.addEventListener('language-changed', () => {
+    const lang = localStorage.getItem('yuval_language') || 'en';
+    const quoteEl = document.getElementById('quote-text');
+    if (!quoteEl) return;
+    const key = lang as 'he' | 'en' | 'es';
+    quoteEl.textContent = quoteEl.dataset[key] || quoteEl.dataset.en || '';
+  });
+  
+  // ── i18n: Update text based on language ──────────────────────────────────
+  function updateI18n() {
+    const lang = localStorage.getItem('yuval_language') || 'en';
+    document.querySelectorAll<HTMLElement>('[data-i18n]').forEach(el => {
+      const text = el.dataset[lang] || el.dataset.en || el.textContent;
+      if (text) el.textContent = text;
+    });
+  }
+  
+  updateI18n();
+  window.addEventListener('language-changed', updateI18n);
+  document.addEventListener('astro:after-swap', updateI18n);
 </script>
+
+<style is:global>
+  /* Inspirational Quote */
+  #inspirational-quote blockquote {
+    padding: 0.5rem 0;
+  }
+  
+  #inspirational-quote p {
+    animation: fadeInQuote 0.6s ease-out;
+  }
+  
+  @keyframes fadeInQuote {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Continue Reading Card */
+  .continue-card {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    background: var(--yuval-surface);
+    border: 1px solid var(--yuval-border);
+    border-radius: 0.75rem;
+    text-decoration: none;
+    transition: box-shadow 0.2s, border-color 0.2s;
+  }
+  
+  .continue-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border-color: var(--yuval-text);
+  }
+  
+  .continue-icon {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--yuval-text);
+    border-radius: 8px;
+    color: var(--yuval-bg);
+  }
+  
+  .continue-content {
+    flex: 1;
+    min-width: 0;
+  }
+  
+  .continue-label {
+    display: block;
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--yuval-text-muted);
+  }
+  
+  .continue-title {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--yuval-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  .continue-progress {
+    height: 3px;
+    background: var(--yuval-border);
+    border-radius: 99px;
+    overflow: hidden;
+    margin-top: 4px;
+  }
+  
+  .continue-progress-fill {
+    height: 100%;
+    background: var(--yuval-text);
+    border-radius: 99px;
+  }
+  
+  .continue-arrow {
+    flex-shrink: 0;
+    color: var(--yuval-text-muted);
+  }
+</style>
 

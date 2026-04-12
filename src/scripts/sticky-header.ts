@@ -52,12 +52,18 @@ export function initStickyHeader(controller: AbortController) {
     });
   }
 
+  // ── Track completion state ──────────────────────────────────────────────────
+  let chapterCompleted = false;
+
   function onScroll() {
     if (window.scrollY > SCROLL_THRESHOLD) {
       header!.classList.add('scrolled');
     } else {
       header!.classList.remove('scrolled');
     }
+
+    // Don't override 100% if chapter is completed
+    if (chapterCompleted) return;
 
     const pct  = calcPct();
     const text = `${pct}%`;
@@ -84,6 +90,40 @@ export function initStickyHeader(controller: AbortController) {
     if (pct <= 0) { document.title = originalTitle; return; }
     // Extract "Chapter Title | Book" from original title
     document.title = `(${pct}%) ${originalTitle}`;
+  }
+
+  // ── Force 100% when chapter is completed ────────────────────────────────────
+  
+  function forceComplete(): void {
+    chapterCompleted = true;
+    const text = '100%';
+    if (progressHe) {
+      progressHe.textContent = text;
+      progressHe.style.opacity = '1';
+      progressHe.style.transform = 'scale(1)';
+    }
+    if (progressEn) {
+      progressEn.textContent = text;
+      progressEn.style.opacity = '1';
+      progressEn.style.transform = 'scale(1)';
+    }
+    if (progressFill) progressFill.style.width = '100%';
+    updateReadingTime(100);
+    updateDocumentTitle(100);
+  }
+
+  window.addEventListener('chapter-completed', forceComplete, { signal: controller.signal });
+  
+  // Also check if already completed (sidebar has checkmark for this chapter)
+  const chapterId = window.location.pathname.split('/').filter(Boolean)[2];
+  const bookId = window.location.pathname.split('/').filter(Boolean)[1];
+  if (chapterId && bookId) {
+    try {
+      const completed: string[] = JSON.parse(localStorage.getItem(`yuval_ch_complete_${bookId}`) || '[]');
+      if (completed.includes(chapterId) || completed.includes(String(chapterId))) {
+        forceComplete();
+      }
+    } catch {}
   }
 
   window.addEventListener('scroll', onScroll, { passive: true, signal: controller.signal });

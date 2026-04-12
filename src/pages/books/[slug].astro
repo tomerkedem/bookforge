@@ -17,25 +17,38 @@ export async function getStaticPaths() {
   }));
 }
 
-const { language = LANGUAGES.EN } = Astro.props;
+const { language: propLanguage = LANGUAGES.EN } = Astro.props;
 const { slug } = Astro.params;
-const { bookData } = Astro.props as any;
+
+// Read language from URL param, falling back to props/default
+const urlLang = Astro.url.searchParams.get('lang');
+const language = (urlLang === 'he' || urlLang === 'es') ? urlLang : propLanguage;
+
+// In SSR mode, look up the book dynamically
+const books = discoverAllBooks();
+const bookData = books.find(b => b.slug === slug);
 const isRtl = language === LANGUAGES.HE;
+
+// Guard against undefined bookData (404 case)
+if (!bookData) {
+  return Astro.redirect('/404');
+}
 
 const book = {
   slug: bookData.slug,
   title_he: bookData.title_he,
   title_en: bookData.title_en,
+  title_es: bookData.title_es || bookData.title_en,
   description_he: bookData.description_he,
   description_en: bookData.description_en,
+  description_es: bookData.description_es || bookData.description_en,
   coverImage: bookData.coverImage,
   dominantColor: bookData.dominantColor,
   chapters: bookData.chapters,
 };
 
-const title = language === LANGUAGES.HE ? book.title_he : book.title_en;
-const description =
-  language === LANGUAGES.HE ? book.description_he : book.description_en;
+const title = language === 'es' ? book.title_es : (language === LANGUAGES.HE ? book.title_he : book.title_en);
+const description = language === 'es' ? book.description_es : (language === LANGUAGES.HE ? book.description_he : book.description_en);
 ---
 
 <BaseLayout
@@ -90,9 +103,10 @@ const description =
         <!-- Book Info -->
         <div class:list={['md:col-span-2', isRtl && 'text-right']}>
           <h1
-            class="font-heading font-bold text-2xl sm:text-4xl lg:text-5xl leading-tight mb-3 sm:mb-4 text-yuval-text"
+            class="font-heading font-bold text-xl sm:text-3xl lg:text-4xl leading-tight mb-3 sm:mb-4 text-yuval-text"
             data-he={book.title_he}
             data-en={book.title_en}
+            data-es={book.title_es}
           >
             {book.title_en}
           </h1>
@@ -100,6 +114,7 @@ const description =
           <p class="text-base sm:text-lg text-yuval-text-secondary leading-relaxed mb-4 sm:mb-6"
             data-he={book.description_he}
             data-en={book.description_en}
+            data-es={book.description_es}
           >
             {book.description_en}
           </p>
@@ -108,12 +123,14 @@ const description =
             <p class="text-sm text-yuval-text-tertiary"
               data-he={`${book.chapters.length} פרקים`}
               data-en={`${book.chapters.length} chapters`}
+              data-es={`${book.chapters.length} capítulos`}
             >
               {book.chapters.length} chapters
             </p>
             <p class="text-sm text-yuval-text-tertiary"
               data-he={`${book.chapters.reduce((sum: number, ch: Chapter) => sum + ch.word_count, 0)} מילים`}
               data-en={`${book.chapters.reduce((sum: number, ch: Chapter) => sum + ch.word_count, 0)} words`}
+              data-es={`${book.chapters.reduce((sum: number, ch: Chapter) => sum + ch.word_count, 0)} palabras`}
             >
               {book.chapters.reduce((sum: number, ch: Chapter) => sum + ch.word_count, 0)} words
             </p>
@@ -127,6 +144,7 @@ const description =
           class="font-heading font-bold text-2xl mb-6 text-yuval-text"
           data-he="פרקים"
           data-en="Chapters"
+          data-es="Capítulos"
         >
           Chapters
         </h2>
@@ -138,9 +156,10 @@ const description =
                 language === LANGUAGES.HE
                   ? chapter.title_he
                   : chapter.title_en;
+              const langParam = language !== LANGUAGES.EN ? `?lang=${language}` : '';
               return (
                 <a
-                  href={`/read/${slug}/${chapter.id}`}
+                  href={`/read/${slug}/${chapter.id}${langParam}`}
                   class:list={[
                     'chapter-link',
                     `chapter-link-${chapter.id}`,
@@ -185,6 +204,7 @@ const description =
                           class="font-heading font-semibold text-base sm:text-lg text-yuval-text line-clamp-2"
                           data-he={chapter.title_he}
                           data-en={chapter.title_en}
+                          data-es={chapter.title_es || chapter.title_en}
                         >
                           {chapter.title_en}
                         </h3>
@@ -192,6 +212,7 @@ const description =
                       <p class="text-sm text-yuval-text-tertiary mt-1"
                         data-he={`${chapter.sections > 1 ? `${chapter.sections} סעיפים` : 'סעיף אחד'} • ${chapter.word_count} מילים`}
                         data-en={`${chapter.sections > 1 ? `${chapter.sections} sections` : '1 section'} • ${chapter.word_count} words`}
+                        data-es={`${chapter.sections > 1 ? `${chapter.sections} secciones` : '1 sección'} • ${chapter.word_count} palabras`}
                       >
                         {chapter.sections > 1 ? `${chapter.sections} sections` : '1 section'} • {chapter.word_count} words
                       </p>
@@ -226,7 +247,7 @@ const description =
     document.querySelectorAll<HTMLAnchorElement>('.chapter-link').forEach(link => {
       const href = link.getAttribute('href') || '';
       const base = href.split('?')[0];
-      link.href = lang === 'he' ? `${base}?lang=he` : base;
+      link.href = lang === 'he' ? `${base}?lang=he` : lang === 'es' ? `${base}?lang=es` : base;
     });
   }
 

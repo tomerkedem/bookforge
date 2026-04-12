@@ -13,6 +13,20 @@ INTRO_KEYWORDS = ["מבוא", "פתיחה", "הקדמה", "introduction", "prefa
 COVER_KEYWORDS = ["שער", "cover", "title"]
 
 
+def _clean_title(text: str) -> str:
+    """
+    Clean title/subtitle extracted from cover page.
+    Removes HTML tags, markdown formatting, and extra whitespace.
+    """
+    # Remove HTML tags (e.g., <div style="...">, </div>)
+    cleaned = re.sub(r'<[^>]+>', '', text)
+    # Remove markdown bold/italic
+    cleaned = re.sub(r'\*+', '', cleaned)
+    # Remove tabs and normalize whitespace
+    cleaned = re.sub(r'\s+', ' ', cleaned)
+    return cleaned.strip()
+
+
 def extract_book_info(ingested: dict) -> dict:
     """
     Extract book title and subtitle from the cover page.
@@ -58,9 +72,9 @@ def extract_book_info(ingested: dict) -> dict:
             break
     
     if len(cover_texts) >= 1:
-        title = cover_texts[0]
+        title = _clean_title(cover_texts[0])
     if len(cover_texts) >= 2:
-        subtitle = cover_texts[1]
+        subtitle = _clean_title(cover_texts[1])
     
     return {"title": title, "subtitle": subtitle}
 
@@ -76,6 +90,54 @@ def _clean_heading(text: str) -> str:
     # Clean up extra spaces that may result
     cleaned = re.sub(r'\s{2,}', ' ', cleaned)
     return cleaned.strip()
+
+
+def _fix_code_blocks(text: str) -> str:
+    """
+    Fix code block format from Word documents.
+    
+    Word format: python``` ... ```
+    Target format: ```python ... ```
+    
+    Supported languages: python, javascript, bash, markdown, etc.
+    Normalizes language names to lowercase.
+    Normalizes md → markdown.
+    """
+    import re
+    
+    # Pattern: language``` at start of line, then code, then ``` at end
+    # Match: python``` or javascript``` etc.
+    pattern = r'^(\w+)```\s*\n([\s\S]*?)```\s*$'
+    
+    def replace_block(match):
+        lang = match.group(1).lower()  # Normalize to lowercase
+        # Normalize md → markdown
+        if lang == 'md':
+            lang = 'markdown'
+        code = match.group(2).rstrip()
+        return f'```{lang}\n{code}\n```'
+    
+    # Process multiline - use MULTILINE flag
+    result = re.sub(pattern, replace_block, text, flags=re.MULTILINE)
+    
+    # Also handle inline pattern on same line: python```code```
+    inline_pattern = r'(\w+)```([^`]+)```'
+    def replace_inline(match):
+        lang = match.group(1).lower()
+        if lang == 'md':
+            lang = 'markdown'
+        code = match.group(2)
+        return f'```{lang}\n{code}\n```'
+    result = re.sub(inline_pattern, replace_inline, result)
+    
+    # Normalize existing language tags (case normalization)
+    result = re.sub(r'```Python\b', '```python', result)
+    result = re.sub(r'```Bash\b', '```bash', result)
+    result = re.sub(r'```Markdown\b', '```markdown', result)
+    result = re.sub(r'```MD\b', '```markdown', result, flags=re.IGNORECASE)
+    result = re.sub(r'```md\b', '```markdown', result)
+    
+    return result
 
 
 def _clean_markdown_final(text: str) -> str:
@@ -95,8 +157,39 @@ def _clean_markdown_final(text: str) -> str:
     - **text**.** → **text**.
     - line ending with . ** label → line ending with . **label**
     - Unbalanced ** on a line (odd count) → balanced
+    - python``` code ``` → ```python code ```
+    - "- •" or "- 1)" duplicate bullets → single prefix
+    - " **" (space before closing) → "**"
+    - "%digit)" corrupted numbering → "digit)" (also %digit.)
+    - "1) text" at line start → "**(1)** text" (prevent hidden list numbers)
+    - ": **" (colon then space before close) → ":** " (bold ends at colon)
     """
     import re
+    
+    # First fix code blocks
+    text = _fix_code_blocks(text)
+    
+    # Fix corrupted numbering: %1), %2), %1., %2. etc. → 1), 2), 1., 2. etc.
+    # This happens when Word encoding corrupts digit-based list markers
+    text = re.sub(r'%(\d+)([\.\)])', r'\1\2', text)
+    
+    # Fix duplicate list prefixes: "- •", "- 1)", "- 2." etc.
+    # These happen when parse.py adds "- " and text already has prefix
+    # Match "- " followed by bullet or numbered prefix
+    text = re.sub(r'^(\s*)-\s+(•)', r'\1\2', text, flags=re.MULTILINE)
+    text = re.sub(r'^(\s*)-\s+(\d+[\)\.])(\s)', r'\1\2\3', text, flags=re.MULTILINE)
+    
+    # Convert standalone "1)" at start of line to "**(1)**" to prevent markdown list interpretation
+    # This ensures the number is displayed visibly instead of being hidden by list rendering
+    text = re.sub(r'^(\d+)\)\s+', r'**(\1)** ', text, flags=re.MULTILINE)
+    
+    # Fix space before closing ** (end of line or followed by punctuation)
+    text = re.sub(r' \*\*$', '**', text, flags=re.MULTILINE)
+    text = re.sub(r' \*\*([.,;:!?)])', r'**\1', text)
+    
+    # Fix ": **" pattern (colon with space before closing bold) → ":** "
+    # Common in Hebrew text like "**שם: **טקסט" → "**שם:** טקסט"
+    text = re.sub(r': \*\*', ':** ', text)
     
     # Process line by line to handle unbalanced ** properly
     lines = text.split('\n')
@@ -485,7 +578,15 @@ def to_markdown(chapter: dict, image_positions: list = None, next_heading_idx: i
         elif "Heading 3" in style:
             lines.append(f"### {text}")
         elif "List" in style:
-            lines.append(f"- {text}")
+            # ingest.py already adds numbering prefix (1), 2), •) with indentation
+            # Check if text already has numbering/bullet - don't add another one
+            stripped = text.lstrip()
+            # Match: bullet (•, -, *), or numbered (1), 2., 10), etc.)
+            has_prefix = bool(re.match(r'^[•\-\*]|^\d+[\)\.]\s', stripped))
+            if has_prefix:
+                lines.append(text)  # Use as-is, already has prefix+indent
+            else:
+                lines.append(f"- {text}")  # No prefix, add bullet
         else:
             lines.append(text)
 

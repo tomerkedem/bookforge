@@ -348,6 +348,74 @@ function buildCompletionPanel(): HTMLElement | null {
 
 // ── Inject into page ──────────────────────────────────────────────────────────
 
+/** Save chapter completion to localStorage and update sidebar */
+function markChapterComplete(book: string, chapter: string): void {
+  const key = `yuval_ch_complete_${book}`;
+  let completed: string[] = [];
+  try {
+    completed = JSON.parse(localStorage.getItem(key) || '[]');
+  } catch { /* ignore */ }
+  
+  if (!completed.includes(chapter)) {
+    completed.push(chapter);
+    localStorage.setItem(key, JSON.stringify(completed));
+  }
+  
+  // Update sidebar checkmarks in real-time
+  updateSidebarCheckmarks(book);
+  
+  // Dispatch event for other components
+  window.dispatchEvent(new CustomEvent('chapter-completed', { 
+    detail: { book, chapter } 
+  }));
+}
+
+/** Update all sidebar chapter items with completion checkmarks */
+function updateSidebarCheckmarks(book: string): void {
+  const key = `yuval_ch_complete_${book}`;
+  let completed: string[] = [];
+  try {
+    completed = JSON.parse(localStorage.getItem(key) || '[]');
+  } catch { /* ignore */ }
+  
+  // Find all chapter links in sidebar and mobile drawer
+  const chapterItems = document.querySelectorAll<HTMLElement>('[data-chapter-id]');
+  
+  chapterItems.forEach(item => {
+    const chapterId = item.dataset.chapterId;
+    if (!chapterId) return;
+    
+    const isComplete = completed.includes(chapterId);
+    const link = item.tagName === 'A' ? item : item.querySelector('a');
+    if (!link) return;
+    
+    // Remove existing checkmark if any
+    link.querySelector('.chapter-complete-check')?.remove();
+    
+    if (isComplete) {
+      // Add checkmark
+      const check = document.createElement('span');
+      check.className = 'chapter-complete-check';
+      check.innerHTML = '✓';
+      check.style.cssText = `
+        color: #22c55e;
+        font-weight: 600;
+        font-size: 12px;
+        margin-inline-start: auto;
+        flex-shrink: 0;
+      `;
+      link.style.display = 'flex';
+      link.style.alignItems = 'center';
+      link.appendChild(check);
+      
+      // Add completed class for styling
+      item.classList.add('toc-item-completed');
+    } else {
+      item.classList.remove('toc-item-completed');
+    }
+  });
+}
+
 function injectPanel(): void {
   document.getElementById('chapter-completion')?.remove();
 
@@ -356,6 +424,12 @@ function injectPanel(): void {
 
   const panel = buildCompletionPanel();
   if (!panel) return;
+
+  // Mark chapter as complete
+  const ctx = getContext();
+  if (ctx) {
+    markChapterComplete(ctx.book, ctx.chapter);
+  }
 
   // Insert before ChapterNavigation
   nav.parentNode?.insertBefore(panel, nav);
@@ -425,12 +499,27 @@ function watchChapterEnd(): void {
 
 export function initChapterCompletion(): void {
   injectStyles();
+  
+  // Load existing checkmarks on page load
+  const ctx = getContext();
+  if (ctx) {
+    updateSidebarCheckmarks(ctx.book);
+  }
+  
   watchChapterEnd();
 
   // Re-init on fetch-based chapter navigation
   window.addEventListener('chapter-content-swapped', () => {
     triggered = false;
+    // Update checkmarks for new context
+    const newCtx = getContext();
+    if (newCtx) {
+      updateSidebarCheckmarks(newCtx.book);
+    }
     // Wait for new DOM to settle
     setTimeout(watchChapterEnd, 200);
   });
 }
+
+// Export for external use
+export { updateSidebarCheckmarks };

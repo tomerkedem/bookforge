@@ -30,7 +30,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from pipeline.ingest import ingest
 from pipeline.parse import parse, extract_images, to_markdown, extract_book_info, DEFAULT_ASSETS_DIR
 from pipeline.organize import organize
-from pipeline.translate import get_chapters_to_translate, build_translation_prompt, build_batch_prompt
+from pipeline.translate import get_chapters_to_translate, build_translation_prompt, build_batch_prompt, fix_all_hebrew_files, update_content_structure_titles
 from pipeline.languages import (
     SUPPORTED_LANGUAGES,
     LANGUAGE_CODES,
@@ -205,9 +205,14 @@ def run_pipeline(docx_path: str, book_name: str,
                        book_subtitles=book_subtitles)
     print(f"  Source files: {len(created)}")
     print(f"  Languages: {', '.join(languages)}")
+    
+    # Step 5.5: Fix RTL issues and dashes in all files
+    book_dir = Path(output_dir) / book_name
+    fix_count = fix_all_hebrew_files(str(book_dir))
+    if fix_count > 0:
+        print(f"  Fixed RTL/dashes in {fix_count} files")
 
     # Step 6: Translate (identify chapters needing translation)
-    book_dir = Path(output_dir) / book_name
     target_languages = [l for l in languages if l != SOURCE_LANGUAGE]
     pending_translations = []
     batch_prompt = ""
@@ -255,6 +260,43 @@ def run_pipeline(docx_path: str, book_name: str,
     }
 
 
+def finalize_book(book_name: str, languages: list[str] = None, output_dir: str = "output"):
+    """
+    Finalize book after translations: update content-structure.json and sync.
+    
+    Call this after Translator agent completes all translations.
+    
+    Args:
+        book_name: Book slug name
+        languages: List of language codes (default: all from config)
+        output_dir: Output directory path
+    """
+    if languages is None:
+        languages = LANGUAGE_CODES
+    
+    project_root = Path(__file__).resolve().parent.parent.parent
+    book_dir = project_root / output_dir / book_name
+    
+    if not book_dir.exists():
+        print(f"❌ Book directory not found: {book_dir}")
+        return
+    
+    print(f"Finalizing {book_name}...")
+    
+    # Update content-structure.json with translated titles
+    updated = update_content_structure_titles(str(book_dir), languages)
+    print(f"  Updated {updated} titles in content-structure.json")
+    
+    # Sync to src/output
+    src_output = project_root / "src" / "output" / book_name
+    if src_output.exists():
+        shutil.rmtree(src_output)
+    shutil.copytree(book_dir, src_output)
+    print(f"  Synced to {src_output}")
+    
+    print("✓ Finalize complete")
+
+
 def main():
     # Always resolve output relative to project root (parent of src/)
     project_root = Path(__file__).resolve().parent.parent.parent
@@ -262,7 +304,7 @@ def main():
     default_languages = ",".join(LANGUAGE_CODES)
 
     parser = argparse.ArgumentParser(description="BookForge: Word → Chapters pipeline")
-    parser.add_argument("docx_path", help="Path to Word (.docx) file")
+    parser.add_argument("docx_path", nargs='?', help="Path to Word (.docx) file")
     parser.add_argument("book_name", help="Book slug name (e.g. my-book)")
     parser.add_argument("--title", default="", help="Book title (source language)")
     parser.add_argument("--languages", default=default_languages,
@@ -270,6 +312,8 @@ def main():
     parser.add_argument("--output-dir", default=default_output, help="Output directory")
     parser.add_argument("--skip-translate", action="store_true",
                         help="Skip translation step (re-parse only)")
+    parser.add_argument("--finalize", action="store_true",
+                        help="Run finalize only (after translations done)")
     args = parser.parse_args()
 
     # Parse language codes
@@ -278,10 +322,17 @@ def main():
         print(f"❌ No valid languages specified. Supported: {', '.join(LANGUAGE_CODES)}")
         sys.exit(1)
 
-    run_pipeline(args.docx_path, args.book_name,
-                 title=args.title, languages=languages,
-                 output_dir=args.output_dir,
-                 skip_translate=args.skip_translate)
+    if args.finalize:
+        # Finalize mode: just update titles and sync
+        finalize_book(args.book_name, languages, args.output_dir)
+    elif not args.docx_path:
+        print("❌ docx_path is required unless using --finalize")
+        sys.exit(1)
+    else:
+        run_pipeline(args.docx_path, args.book_name,
+                     title=args.title, languages=languages,
+                     output_dir=args.output_dir,
+                     skip_translate=args.skip_translate)
 
 
 if __name__ == "__main__":

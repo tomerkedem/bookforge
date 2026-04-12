@@ -1,5 +1,6 @@
 import { defineConfig } from 'astro/config';
 import tailwind from '@astrojs/tailwind';
+import node from '@astrojs/node';
 import { cpSync, existsSync, readdirSync } from 'fs';
 import { resolve } from 'path';
 
@@ -25,5 +26,6 @@ function copyBookAssets() {
 
 export default defineConfig({
   integrations: [tailwind(), copyBookAssets()],
-  output: 'static',
+  output: 'server',
+  adapter: node({ mode: 'standalone' }),
 });

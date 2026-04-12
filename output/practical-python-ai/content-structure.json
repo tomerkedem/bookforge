@@ -1,0 +1,64 @@
+{
+  "book": {
+    "titles": {
+      "he": "פיתוח AI בפייתון",
+      "en": "Practical Python for AI Development",
+      "es": "Python Práctico para Desarrollo de IA"
+    },
+    "subtitles": {
+      "he": "ארגז הכלים למפתחים מנוסים",
+      "en": "The Toolkit for Experienced Developers",
+      "es": "La Caja de Herramientas para Desarrolladores Experimentados"
+    },
+    "descriptions": {
+      "he": "",
+      "en": "",
+      "es": ""
+    },
+    "title_he": "פיתוח AI בפייתון",
+    "title_en": "Practical Python for AI Development",
+    "subtitle_he": "ארגז הכלים למפתחים מנוסים",
+    "subtitle_en": "The Toolkit for Experienced Developers",
+    "chapters": [
+      {
+        "id": "intro",
+        "file_slug": "intro",
+        "type": "intro",
+        "titles": {
+          "he": "מבוא",
+          "en": "Introduction",
+          "es": "Introducción"
+        },
+        "title_he": "מבוא",
+        "title_en": "Introduction",
+        "title_es": "Introducción",
+        "sections": 0,
+        "has_images": false,
+        "word_count": 226,
+        "topics": []
+      },
+      {
+        "id": 1,
+        "file_slug": "chapter-01",
+        "type": "content",
+        "titles": {
+          "he": "פרק 1 - למה פייתון היא שפה חשובה בעידן ה-AI",
+          "en": "Chapter 1 - Why Python is an Important Language in the AI Era",
+          "es": "Capítulo 1 - Por qué Python es un lenguaje importante en la era de la IA"
+        },
+        "title_he": "פרק 1 - למה פייתון היא שפה חשובה בעידן ה-AI",
+        "title_en": "Chapter 1 - Why Python is an Important Language in the AI Era",
+        "title_es": "Capítulo 1 - Por qué Python es un lenguaje importante en la era de la IA",
+        "sections": 6,
+        "has_images": false,
+        "word_count": 1665,
+        "topics": []
+      }
+    ],
+    "languages": [
+      "he",
+      "en",
+      "es"
+    ]
+  }
+}

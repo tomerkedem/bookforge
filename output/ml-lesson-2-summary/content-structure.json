@@ -1,0 +1,494 @@
+{
+  "book": {
+    "titles": {
+      "he": "Ml Lesson 2 Summary",
+      "en": "Ml Lesson 2 Summary",
+      "es": "Ml Lesson 2 Summary"
+    },
+    "subtitles": {
+      "he": "",
+      "en": "",
+      "es": ""
+    },
+    "descriptions": {
+      "he": "",
+      "en": "",
+      "es": ""
+    },
+    "title_he": "Ml Lesson 2 Summary",
+    "title_en": "Ml Lesson 2 Summary",
+    "subtitle_he": "",
+    "subtitle_en": "",
+    "chapters": [
+      {
+        "id": "intro",
+        "file_slug": "intro",
+        "type": "intro",
+        "titles": {
+          "he": "פתיחה",
+          "en": "Introduction",
+          "es": "Introducción"
+        },
+        "title_he": "פתיחה",
+        "title_en": "Introduction",
+        "sections": 0,
+        "has_images": false,
+        "word_count": 102,
+        "topics": []
+      },
+      {
+        "id": 1,
+        "file_slug": "chapter-01",
+        "type": "content",
+        "titles": {
+          "he": "מהי בינה מלאכותית (AI)?",
+          "en": "What is Artificial Intelligence (AI)?",
+          "es": "¿Qué es la Inteligencia Artificial (AI)?"
+        },
+        "title_he": "מהי בינה מלאכותית (AI)?",
+        "title_en": "What is Artificial Intelligence (AI)?",
+        "sections": 0,
+        "has_images": true,
+        "word_count": 39,
+        "topics": []
+      },
+      {
+        "id": 2,
+        "file_slug": "chapter-02",
+        "type": "content",
+        "titles": {
+          "he": "מה זה Machine Learning",
+          "en": "What is Machine Learning",
+          "es": "¿Qué es Machine Learning?"
+        },
+        "title_he": "מה זה Machine Learning",
+        "title_en": "What is Machine Learning",
+        "sections": 0,
+        "has_images": true,
+        "word_count": 55,
+        "topics": []
+      },
+      {
+        "id": 3,
+        "file_slug": "chapter-03",
+        "type": "content",
+        "titles": {
+          "he": "למה משתמשים ב-Machine Learning",
+          "en": "Why Use Machine Learning",
+          "es": "¿Por qué usar Machine Learning?"
+        },
+        "title_he": "למה משתמשים ב-Machine Learning",
+        "title_en": "Why Use Machine Learning",
+        "sections": 0,
+        "has_images": true,
+        "word_count": 106,
+        "topics": []
+      },
+      {
+        "id": 4,
+        "file_slug": "chapter-04",
+        "type": "content",
+        "titles": {
+          "he": "דוגמאות לשימושים קלאסיים של Machine Learning",
+          "en": "Examples of Classic Machine Learning Uses",
+          "es": "Ejemplos de Usos Clásicos de Machine Learning"
+        },
+        "title_he": "דוגמאות לשימושים קלאסיים של Machine Learning",
+        "title_en": "Examples of Classic Machine Learning Uses",
+        "sections": 0,
+        "has_images": true,
+        "word_count": 235,
+        "topics": []
+      },
+      {
+        "id": 5,
+        "file_slug": "chapter-05",
+        "type": "content",
+        "titles": {
+          "he": "מתי משתמשים ב-Machine Learning קלאסי",
+          "en": "When to Use Classic Machine Learning",
+          "es": "Cuándo Usar Machine Learning Clásico"
+        },
+        "title_he": "מתי משתמשים ב-Machine Learning קלאסי",
+        "title_en": "When to Use Classic Machine Learning",
+        "sections": 0,
+        "has_images": true,
+        "word_count": 138,
+        "topics": []
+      },
+      {
+        "id": 6,
+        "file_slug": "chapter-06",
+        "type": "content",
+        "titles": {
+          "he": "איך עובד תהליך Machine Learning בפועל",
+          "en": "How the Machine Learning Process Works in Practice",
+          "es": "Cómo Funciona el Proceso de Machine Learning en la Práctica"
+        },
+        "title_he": "איך עובד תהליך Machine Learning בפועל",
+        "title_en": "How the Machine Learning Process Works in Practice",
+        "sections": 0,
+        "has_images": true,
+        "word_count": 75,
+        "topics": []
+      },
+      {
+        "id": 7,
+        "file_slug": "chapter-07",
+        "type": "content",
+        "titles": {
+          "he": "סוגי למידה ב-Machine Learning",
+          "en": "Types of Learning in Machine Learning",
+          "es": "Tipos de Aprendizaje en Machine Learning"
+        },
+        "title_he": "סוגי למידה ב-Machine Learning",
+        "title_en": "Types of Learning in Machine Learning",
+        "sections": 0,
+        "has_images": true,
+        "word_count": 167,
+        "topics": []
+      },
+      {
+        "id": 8,
+        "file_slug": "chapter-08",
+        "type": "content",
+        "titles": {
+          "he": "למידה מונחית (Supervisred Learning)",
+          "en": "Supervised Learning",
+          "es": "Aprendizaje Supervisado"
+        },
+        "title_he": "למידה מונחית (Supervisred Learning)",
+        "title_en": "Supervised Learning",
+        "sections": 0,
+        "has_images": true,
+        "word_count": 98,
+        "topics": []
+      },
+      {
+        "id": 9,
+        "file_slug": "chapter-09",
+        "type": "content",
+        "titles": {
+          "he": "סוגי בעיות בלמידה מונחית",
+          "en": "Types of Problems in Supervised Learning",
+          "es": "Tipos de Problemas en Aprendizaje Supervisado"
+        },
+        "title_he": "סוגי בעיות בלמידה מונחית",
+        "title_en": "Types of Problems in Supervised Learning",
+        "sections": 0,
+        "has_images": true,
+        "word_count": 67,
+        "topics": []
+      },
+      {
+        "id": 10,
+        "file_slug": "chapter-10",
+        "type": "content",
+        "titles": {
+          "he": "רגרסיה ליניארית (Linear Regression)",
+          "en": "Linear Regression",
+          "es": "Regresión Lineal (Linear Regression)"
+        },
+        "title_he": "רגרסיה ליניארית (Linear Regression)",
+        "title_en": "Linear Regression",
+        "sections": 0,
+        "has_images": true,
+        "word_count": 71,
+        "topics": []
+      },
+      {
+        "id": 11,
+        "file_slug": "chapter-11",
+        "type": "content",
+        "titles": {
+          "he": "רגרסיה לוגיסטית (Logistic Regression)",
+          "en": "Logistic Regression",
+          "es": "Regresión Logística (Logistic Regression)"
+        },
+        "title_he": "רגרסיה לוגיסטית (Logistic Regression)",
+        "title_en": "Logistic Regression",
+        "sections": 0,
+        "has_images": true,
+        "word_count": 87,
+        "topics": []
+      },
+      {
+        "id": 12,
+        "file_slug": "chapter-12",
+        "type": "content",
+        "titles": {
+          "he": "עץ החלטה (Decision Tree)",
+          "en": "Decision Tree",
+          "es": "Árbol de Decisión (Decision Tree)"
+        },
+        "title_he": "עץ החלטה (Decision Tree)",
+        "title_en": "Decision Tree",
+        "sections": 0,
+        "has_images": true,
+        "word_count": 43,
+        "topics": []
+      },
+      {
+        "id": 13,
+        "file_slug": "chapter-13",
+        "type": "content",
+        "titles": {
+          "he": "יער אקראי (Random Forest)",
+          "en": "Random Forest",
+          "es": "Random Forest (Bosque Aleatorio)"
+        },
+        "title_he": "יער אקראי (Random Forest)",
+        "title_en": "Random Forest",
+        "sections": 0,
+        "has_images": true,
+        "word_count": 69,
+        "topics": []
+      },
+      {
+        "id": 14,
+        "file_slug": "chapter-14",
+        "type": "content",
+        "titles": {
+          "he": "חיזוק הדרגתי (XGBoost)",
+          "en": "Gradient Boosting (XGBoost)",
+          "es": "Gradient Boosting (XGBoost)"
+        },
+        "title_he": "חיזוק הדרגתי (XGBoost)",
+        "title_en": "Gradient Boosting (XGBoost)",
+        "sections": 0,
+        "has_images": true,
+        "word_count": 51,
+        "topics": []
+      },
+      {
+        "id": 15,
+        "file_slug": "chapter-15",
+        "type": "content",
+        "titles": {
+          "he": "למידה לא מונחית (Unsupervised Learning) - אינטואיציה",
+          "en": "Unsupervised Learning - Intuition",
+          "es": "Aprendizaje No Supervisado - Intuición"
+        },
+        "title_he": "למידה לא מונחית (Unsupervised Learning) - אינטואיציה",
+        "title_en": "Unsupervised Learning - Intuition",
+        "sections": 0,
+        "has_images": true,
+        "word_count": 50,
+        "topics": []
+      },
+      {
+        "id": 16,
+        "file_slug": "chapter-16",
+        "type": "content",
+        "titles": {
+          "he": "למידה לא מונחית (Unsupervised Learning) - תהליך",
+          "en": "Unsupervised Learning - Process",
+          "es": "Aprendizaje No Supervisado - Proceso"
+        },
+        "title_he": "למידה לא מונחית (Unsupervised Learning) - תהליך",
+        "title_en": "Unsupervised Learning - Process",
+        "sections": 0,
+        "has_images": true,
+        "word_count": 120,
+        "topics": []
+      },
+      {
+        "id": 17,
+        "file_slug": "chapter-17",
+        "type": "content",
+        "titles": {
+          "he": "למידה מונחית מול למידה לא מונחית (Supervised vs Unsupervised Learning)",
+          "en": "Supervised vs Unsupervised Learning",
+          "es": "Aprendizaje Supervisado vs No Supervisado"
+        },
+        "title_he": "למידה מונחית מול למידה לא מונחית (Supervised vs Unsupervised Learning)",
+        "title_en": "Supervised vs Unsupervised Learning",
+        "sections": 0,
+        "has_images": true,
+        "word_count": 351,
+        "topics": []
+      },
+      {
+        "id": 18,
+        "file_slug": "chapter-18",
+        "type": "content",
+        "titles": {
+          "he": "למידה חצי מונחית (Semi-supervised Learning)",
+          "en": "Semi-supervised Learning",
+          "es": "Aprendizaje Semi-supervisado"
+        },
+        "title_he": "למידה חצי מונחית (Semi-supervised Learning)",
+        "title_en": "Semi-supervised Learning",
+        "sections": 0,
+        "has_images": true,
+        "word_count": 152,
+        "topics": []
+      },
+      {
+        "id": 19,
+        "file_slug": "chapter-19",
+        "type": "content",
+        "titles": {
+          "he": "למידת חיזוק (Reinforcement Learning)",
+          "en": "Reinforcement Learning",
+          "es": "Aprendizaje por Refuerzo"
+        },
+        "title_he": "למידת חיזוק (Reinforcement Learning)",
+        "title_en": "Reinforcement Learning",
+        "sections": 0,
+        "has_images": true,
+        "word_count": 113,
+        "topics": []
+      },
+      {
+        "id": 20,
+        "file_slug": "chapter-20",
+        "type": "content",
+        "titles": {
+          "he": "רשתות נוירונים (Neural Networks)",
+          "en": "What is a Neural Network?",
+          "es": "¿Qué es una Red Neuronal?"
+        },
+        "title_he": "רשתות נוירונים (Neural Networks)",
+        "title_en": "What is a Neural Network?",
+        "sections": 0,
+        "has_images": true,
+        "word_count": 125,
+        "topics": []
+      },
+      {
+        "id": 21,
+        "file_slug": "chapter-21",
+        "type": "content",
+        "titles": {
+          "he": "נוירון (Neuron)",
+          "en": "Neuron",
+          "es": "Neurona"
+        },
+        "title_he": "נוירון (Neuron)",
+        "title_en": "Neuron",
+        "sections": 0,
+        "has_images": true,
+        "word_count": 75,
+        "topics": []
+      },
+      {
+        "id": 22,
+        "file_slug": "chapter-22",
+        "type": "content",
+        "titles": {
+          "he": "פרספטורון (Perceptron)",
+          "en": "Perceptron",
+          "es": "Perceptrón"
+        },
+        "title_he": "פרספטורון (Perceptron)",
+        "title_en": "Perceptron",
+        "sections": 0,
+        "has_images": true,
+        "word_count": 111,
+        "topics": []
+      },
+      {
+        "id": 23,
+        "file_slug": "chapter-23",
+        "type": "content",
+        "titles": {
+          "he": "Forward and Backward Propagation",
+          "en": "Forward and Backward Propagation",
+          "es": "Propagación Hacia Adelante y Hacia Atrás"
+        },
+        "title_he": "Forward and Backward Propagation",
+        "title_en": "Forward and Backward Propagation",
+        "sections": 0,
+        "has_images": true,
+        "word_count": 371,
+        "topics": []
+      },
+      {
+        "id": 24,
+        "file_slug": "chapter-24",
+        "type": "content",
+        "titles": {
+          "he": "טבלת בילבול (Confusion Matrix)",
+          "en": "Confusion Matrix",
+          "es": "Matriz de Confusión"
+        },
+        "title_he": "טבלת בילבול (Confusion Matrix)",
+        "title_en": "Confusion Matrix",
+        "sections": 0,
+        "has_images": true,
+        "word_count": 207,
+        "topics": []
+      },
+      {
+        "id": 25,
+        "file_slug": "chapter-25",
+        "type": "content",
+        "titles": {
+          "he": "מדד F1 והבנת ביצועי המודל",
+          "en": "F1 Score and Understanding Model Performance",
+          "es": "Puntuación F1 y Comprensión del Rendimiento del Modelo"
+        },
+        "title_he": "מדד F1 והבנת ביצועי המודל",
+        "title_en": "F1 Score and Understanding Model Performance",
+        "sections": 0,
+        "has_images": true,
+        "word_count": 199,
+        "topics": []
+      },
+      {
+        "id": 26,
+        "file_slug": "chapter-26",
+        "type": "content",
+        "titles": {
+          "he": "מה צריך לדעת כ-AI Engineer",
+          "en": "What You Need to Know as an AI Engineer",
+          "es": "Lo que Necesitas Saber como AI Engineer"
+        },
+        "title_he": "מה צריך לדעת כ-AI Engineer",
+        "title_en": "What You Need to Know as an AI Engineer",
+        "sections": 0,
+        "has_images": true,
+        "word_count": 101,
+        "topics": []
+      },
+      {
+        "id": 27,
+        "file_slug": "chapter-27",
+        "type": "content",
+        "titles": {
+          "he": "NumPy: עבודה יעילה עם נתונים מספריים",
+          "en": "NumPy: Efficient Work with Numerical Data",
+          "es": "NumPy: Trabajo Eficiente con Datos Numéricos"
+        },
+        "title_he": "NumPy: עבודה יעילה עם נתונים מספריים",
+        "title_en": "NumPy: Efficient Work with Numerical Data",
+        "sections": 0,
+        "has_images": true,
+        "word_count": 131,
+        "topics": []
+      },
+      {
+        "id": 28,
+        "file_slug": "chapter-28",
+        "type": "content",
+        "titles": {
+          "he": "Pandas: השער לעיבוד נתונים ב-Machine Learning",
+          "en": "Pandas: The Gateway to Data Processing in Machine Learning",
+          "es": "Pandas: La Puerta de Entrada al Procesamiento de Datos en Machine Learning"
+        },
+        "title_he": "Pandas: השער לעיבוד נתונים ב-Machine Learning",
+        "title_en": "Pandas: The Gateway to Data Processing in Machine Learning",
+        "sections": 0,
+        "has_images": true,
+        "word_count": 300,
+        "topics": []
+      }
+    ],
+    "languages": [
+      "en",
+      "es",
+      "he"
+    ]
+  }
+}

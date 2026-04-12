@@ -35,24 +35,48 @@ python -m pipeline.build "<docx_path>" "<book_name>" --title-he "<title_he>" --t
 
 אם הכל תקין, הפלט כולל רשימת פרקים שצריכים תרגום.
 
-### שלב 2: תרגום מקבילי (אם יש פרקים ממתינים)
+### שלב 2: תרגום (אם יש פרקים ממתינים)
+
+#### בדיקת סביבה
 
 הרץ מתיקיית `src/`:
 ```python
-from pipeline.translate import get_chapters_to_translate, partition_chapters, build_group_prompt
+from pipeline.translate import get_chapters_to_translate, supports_parallel_subagents, detect_environment
 chapters = get_chapters_to_translate("../output/<book_name>")
+env = detect_environment()
+use_subagents = supports_parallel_subagents()
+```
+
+#### אסטרטגיה לפי סביבה
+
+**אם `use_subagents == True` (Claude Code CLI):**
+
+```python
+from pipeline.translate import partition_chapters, build_group_prompt
 groups = partition_chapters(chapters, num_groups=3)
 prompts = [build_group_prompt(g, i+1, len(groups)) for i, g in enumerate(groups)]
 ```
 
-**הפעל במקביל** את סוכן **translator** עם כל prompt:
+הפעל במקביל את סוכן **translator** עם כל prompt:
 - Translator 1 עם prompts[0]
 - Translator 2 עם prompts[1]
 - Translator 3 עם prompts[2]
 
 חכה שכל השלושה יסיימו. אסוף דיווחי translated ו-total_words מכולם.
 
+**אם `use_subagents == False` (VS Code Copilot / לא מזוהה):**
+
+תרגם ישירות עם הסוכן הראשי:
+1. קרא את תוכן כל פרק בעברית
+2. תרגם ישירות לכל שפת יעד
+3. כתוב את קבצי התרגום
+
+תבנית קובץ פלט:
+- `chapter-XX.he.md` → `chapter-XX.en.md`, `chapter-XX.es.md`, וכו'
+- `intro.he.md` → `intro.en.md`, `intro.es.md`, וכו'
+
 > **הערה**: אם יש פחות מ-6 פרקים, השתמש ב-`num_groups=2` או `num_groups=1`.
+> **הערה**: בסביבת VS Code Copilot, subagents אינם מקבלים גישה לקבצים — לכן הסוכן הראשי מתרגם ישירות.
 
 ### שלב 3: סנכרון תמונות לאנגלית
 

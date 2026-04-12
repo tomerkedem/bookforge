@@ -80,40 +80,37 @@ const bookUrl = `/books/${slug}`;
 ---
 
 <article
-  class:list={['book-card', 'group', 'relative', 'overflow-hidden', 'rounded-2xl', 'bg-yuval-surface', className]}
+  class:list={['book-card', 'group', 'relative', 'overflow-hidden', 'rounded-xl', 'bg-yuval-surface', className]}
   data-book-category={category}
   data-book-slug={slug}
   style={`--card-glow: ${dominantColor};`}
 >
-  <!-- Cover image — clean, no overlay -->
-  <div class="card-cover relative h-28 overflow-hidden">
+  <!-- Cover image — exactly 50% height -->
+  <a href={bookUrl} class="block card-cover relative bg-yuval-bg-secondary book-card-link" data-base-url={bookUrl}>
     <img
       src={coverImage}
-      alt=""
-      class="w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-103"
+      alt={displayTitle}
+      class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
       loading="lazy"
       decoding="async"
       onerror="this.style.display='none'"
     />
-    <!-- Reading progress bar — shown client-side if book was started -->
+    <!-- Reading progress bar -->
     <div class="absolute bottom-0 left-0 right-0 h-0.5 bg-black/10">
-      <div class="card-progress-fill h-full bg-yuval-accent w-0 transition-all duration-500" data-slug={slug}></div>
+      <div class="card-progress-fill h-full bg-indigo-500 w-0 transition-all duration-500" data-slug={slug}></div>
     </div>
-  </div>
+  </a>
 
-  <!-- Content -->
-  <div class="p-3 sm:p-4 space-y-1.5">
-    <!-- Category + continue reading row -->
-    <div class="flex items-center justify-between gap-2">
-      <span class="card-badge">{category}</span>
-      <span class="card-continue hidden text-xs text-yuval-text-muted" data-slug={slug}>
-        <span data-he="המשך" data-en="Continue" data-es="Continuar">Continue</span>
-        <span class="card-continue-chapter font-medium"></span>
-      </span>
-    </div>
+  <!-- Content - compact -->
+  <div class="card-content p-3 flex flex-col justify-center">
+    <!-- Continue reading indicator -->
+    <span class="card-continue hidden text-[10px] text-indigo-500 dark:text-indigo-400 font-semibold uppercase tracking-wide" data-slug={slug}>
+      <span data-he="ממשיך" data-en="Continue" data-es="Continuar">Continue</span>
+      <span class="card-continue-chapter"></span>
+    </span>
 
     <h3
-      class="font-heading font-semibold text-sm sm:text-base leading-snug text-yuval-text"
+      class="font-heading font-semibold text-sm leading-tight text-yuval-text line-clamp-2"
       {...titleAttrs}
     >
       {displayTitle}
@@ -121,76 +118,68 @@ const bookUrl = `/books/${slug}`;
 
     {hasSubtitle && (
       <p
-        class="text-xs text-yuval-text-muted italic leading-tight -mt-0.5"
+        class="text-xs text-yuval-text-muted leading-snug line-clamp-2 mt-1"
         {...subtitleAttrs}
       >
         {displaySubtitle}
       </p>
     )}
-
-    <p
-      class="text-xs text-yuval-text-secondary leading-relaxed line-clamp-2"
-      {...descAttrs}
-    >
-      {displayDescription}
-    </p>
-
-    <!-- Read link — minimal, text only -->
-    <a
-      href={bookUrl}
-      class="card-link inline-flex items-center gap-1 pt-1 text-xs font-medium text-yuval-text-secondary hover:text-yuval-text transition-colors duration-150 book-card-link"
-      data-base-url={bookUrl}
-      data-he="קרא עכשיו ←"
-      data-en="Read →"
-      data-es="Leer →"
-    >
-      Read →
-    </a>
   </div>
 </article>
 
 <style>
-  /* ── Card base ── */
+  /* ── Card base — fixed aspect ratio with 50/50 split ── */
   .book-card {
-    border: 1px solid var(--yuval-border);
-    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
-                box-shadow 0.3s ease,
-                border-color 0.3s ease;
-    will-change: transform;
+    display: flex;
+    flex-direction: column;
+    aspect-ratio: 3 / 4;
+    border: 1.5px solid #c9a227;
+    box-shadow: 
+      0 4px 12px rgba(0, 0, 0, 0.06),
+      0 1px 3px rgba(0, 0, 0, 0.04),
+      inset 0 0 0 1px rgba(201, 162, 39, 0.15);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
   }
 
-  /* ── Ambient glow on hover using dominant color ── */
-  .book-card:hover {
-    transform: translateY(-6px);
-    border-color: transparent;
-    box-shadow:
-      0 0 0 1px color-mix(in srgb, var(--card-glow) 25%, transparent),
-      0 8px 24px -4px color-mix(in srgb, var(--card-glow) 30%, transparent),
-      0 24px 48px -8px color-mix(in srgb, var(--card-glow) 20%, transparent),
-      0 2px 8px rgba(0,0,0,0.12);
-  }
-
-  /* Fallback for browsers without color-mix */
-  @supports not (color: color-mix(in srgb, red 50%, blue)) {
-    .book-card:hover {
-      box-shadow:
-        0 8px 24px -4px rgba(0,0,0,0.18),
-        0 24px 48px -8px rgba(0,0,0,0.12);
-    }
-  }
-
-  /* ── Cover image fallback background ── */
+  /* Cover takes exactly 50% */
   .card-cover {
+    flex: 1 1 50%;
+    min-height: 0;
+    overflow: hidden;
     background: linear-gradient(135deg, var(--yuval-bg-secondary) 0%, var(--yuval-border) 100%);
   }
 
-  /* ── Category badge ── */
-  .card-badge {
-    color: var(--yuval-text-muted);
-    font-size: 0.6rem;
-    font-weight: 600;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+  /* Content takes exactly 50% */
+  .card-content {
+    flex: 1 1 50%;
+    min-height: 0;
+    background: var(--yuval-surface);
+  }
+
+  .book-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 
+      0 12px 28px rgba(201, 162, 39, 0.2),
+      0 6px 16px rgba(201, 162, 39, 0.15),
+      0 2px 6px rgba(0, 0, 0, 0.08),
+      inset 0 0 0 1px rgba(201, 162, 39, 0.3);
+  }
+
+  /* Dark mode — softer gold */
+  .dark .book-card {
+    border-color: #a8892a;
+    box-shadow: 
+      0 4px 12px rgba(0, 0, 0, 0.2),
+      0 1px 3px rgba(0, 0, 0, 0.15),
+      inset 0 0 0 1px rgba(168, 137, 42, 0.2);
+  }
+
+  .dark .book-card:hover {
+    box-shadow: 
+      0 12px 28px rgba(168, 137, 42, 0.25),
+      0 6px 16px rgba(168, 137, 42, 0.15),
+      0 2px 6px rgba(0, 0, 0, 0.2),
+      inset 0 0 0 1px rgba(168, 137, 42, 0.4);
   }
 </style>
 

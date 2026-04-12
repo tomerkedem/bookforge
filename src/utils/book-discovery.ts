@@ -142,6 +142,7 @@ function discoverChaptersFromFiles(bookDir: string): Chapter[] {
       // Legacy fields
       title_he: titles['he'] || sourceMeta.title,
       title_en: titles['en'] || sourceMeta.title,
+      title_es: titles['es'] || titles['en'] || sourceMeta.title,
       sections: sourceMeta.sections,
       has_images: sourceMeta.hasImages,
       word_count: sourceMeta.wordCount,
@@ -193,6 +194,7 @@ function loadFromContentStructure(bookDir: string): Chapter[] | null {
         // Legacy fields
         title_he: titles['he'] || '',
         title_en: titles['en'] || titles['he'] || '',
+        title_es: titles['es'] || titles['en'] || titles['he'] || '',
         sections: ch.sections,
         has_images: ch.has_images,
         word_count: ch.word_count,

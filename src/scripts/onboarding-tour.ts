@@ -9,9 +9,19 @@
 type LangKey = 'he' | 'en' | 'es';
 
 function getLang(): LangKey {
-  return (new URLSearchParams(window.location.search).get('lang')
-    || localStorage.getItem('yuval_language')
-    || 'en') as LangKey;
+  // Check URL param first
+  const urlLang = new URLSearchParams(window.location.search).get('lang');
+  if (urlLang && ['he', 'en', 'es'].includes(urlLang)) return urlLang as LangKey;
+  
+  // Check localStorage
+  const storedLang = localStorage.getItem('yuval_language');
+  if (storedLang && ['he', 'en', 'es'].includes(storedLang)) return storedLang as LangKey;
+  
+  // Check document lang attribute (set by Astro)
+  const docLang = document.documentElement.lang?.split('-')[0];
+  if (docLang && ['he', 'en', 'es'].includes(docLang)) return docLang as LangKey;
+  
+  return 'he'; // Default to Hebrew
 }
 
 const STORAGE_KEY = 'yuval_onboarded_v1';

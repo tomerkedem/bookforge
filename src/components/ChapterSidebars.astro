@@ -60,7 +60,7 @@ const isRtl = language === LANGUAGES.HE;
               ]}
             >
               <a
-                href={`/read/${bookSlug}/${chapter.id}${language === LANGUAGES.HE ? '?lang=he' : ''}`}
+                href={`/read/${bookSlug}/${chapter.id}${language !== LANGUAGES.EN ? `?lang=${language}` : ''}`}
                 class:list={[
                   'toc-link',
                   'mobile-toc-link',
@@ -71,8 +71,8 @@ const isRtl = language === LANGUAGES.HE;
                   {String(chapter.id).padStart(2, '0')}
                 </span>
                 <span class="toc-chapter-title">
-                  <span data-he={chapter.title_he} data-en={chapter.title_en} data-es={chapter.title_en}>
-                    {language === LANGUAGES.HE ? chapter.title_he : chapter.title_en}
+                  <span data-he={chapter.title_he} data-en={chapter.title_en} data-es={chapter.title_es || chapter.title_en}>
+                    {language === LANGUAGES.HE ? chapter.title_he : language === 'es' ? (chapter.title_es || chapter.title_en) : chapter.title_en}
                   </span>
                 </span>
               </a>
@@ -108,7 +108,7 @@ const isRtl = language === LANGUAGES.HE;
             data-chapter-id={chapter.id}
           >
             <a
-              href={`/read/${bookSlug}/${chapter.id}${language === LANGUAGES.HE ? '?lang=he' : ''}`}
+              href={`/read/${bookSlug}/${chapter.id}${language !== LANGUAGES.EN ? `?lang=${language}` : ''}`}
               class:list={[
                 'toc-link',
                 chapter.id === currentChapterId && 'toc-link-active',
@@ -120,10 +120,12 @@ const isRtl = language === LANGUAGES.HE;
                 {String(chapter.id).padStart(2, '0')}
               </span>
               <span class="toc-chapter-title">
-                <span data-he={chapter.title_he} data-en={chapter.title_en} data-es={chapter.title_en}>
+                <span data-he={chapter.title_he} data-en={chapter.title_en} data-es={chapter.title_es || chapter.title_en}>
                   {language === LANGUAGES.HE
                     ? chapter.title_he
-                    : chapter.title_en}
+                    : language === 'es'
+                      ? (chapter.title_es || chapter.title_en)
+                      : chapter.title_en}
                 </span>
               </span>
             </a>
@@ -248,6 +250,25 @@ const isRtl = language === LANGUAGES.HE;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+
+  /* Completed chapter checkmark */
+  .toc-item-completed .toc-link {
+    display: flex;
+    align-items: center;
+  }
+
+  .chapter-complete-check {
+    color: #22c55e;
+    font-weight: 600;
+    font-size: 12px;
+    margin-inline-start: auto;
+    flex-shrink: 0;
+    padding-inline-start: 8px;
+  }
+
+  :global(.dark) .chapter-complete-check {
+    color: #4ade80;
   }
 
   /* Outline Sidebar — RIGHT in English, LEFT in Hebrew */
@@ -756,7 +777,14 @@ const isRtl = language === LANGUAGES.HE;
     document.querySelectorAll('.toc-chapter-title span[data-he]').forEach((span) => {
       const heText = span.getAttribute('data-he');
       const enText = span.getAttribute('data-en');
-      span.textContent = lang === 'he' ? heText : enText;
+      const esText = span.getAttribute('data-es');
+      if (lang === 'he') {
+        span.textContent = heText;
+      } else if (lang === 'es') {
+        span.textContent = esText || enText;
+      } else {
+        span.textContent = enText;
+      }
     });
   }
 
@@ -902,32 +930,55 @@ const isRtl = language === LANGUAGES.HE;
   }
 
   // ── TOC progress indicators ────────────────────────────────────────────────
-  function updateTocProgress() {
+  function updateTocProgress(currentChapterPct?: number) {
     const bookEl = document.getElementById('chapter-container');
     const book = bookEl?.dataset.book || '';
+    const currentChapterId = bookEl?.dataset.chapterId || '';
     if (!book) return;
+
+    // Get completed chapters list
+    let completedChapters: string[] = [];
+    try {
+      completedChapters = JSON.parse(localStorage.getItem(`yuval_ch_complete_${book}`) || '[]');
+    } catch { /* ignore */ }
 
     document.querySelectorAll<HTMLElement>('#toc-sidebar li[data-chapter-id]').forEach(li => {
       const chId = li.dataset.chapterId;
       if (!chId) return;
 
-      // Find best progress key for this chapter
-      let scrollPos = 0;
-      for (let i = 0; i < localStorage.length; i++) {
-        const k = localStorage.key(i);
-        if (!k?.includes(`_${book}_ch${chId}`)) continue;
-        try {
-          const d = JSON.parse(localStorage.getItem(k) || '{}');
-          if ((d.scrollPosition || 0) > scrollPos) scrollPos = d.scrollPosition || 0;
-        } catch { /* skip */ }
-      }
-
       // Remove old indicator
       li.querySelector('.toc-progress-bar-wrap')?.remove();
 
-      if (scrollPos < 50) return;
-      const pct = Math.min(100, Math.round((scrollPos / 3000) * 100));
-      const done = pct >= 85;
+      let pct = 0;
+      let done = false;
+
+      // Check if chapter is completed
+      if (completedChapters.includes(chId) || completedChapters.includes(String(chId))) {
+        pct = 100;
+        done = true;
+      } else if (chId === currentChapterId && currentChapterPct !== undefined) {
+        // Use real-time percentage for current chapter
+        pct = currentChapterPct;
+        done = pct >= 100;
+      } else {
+        // Find saved progress percentage for this chapter
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i);
+          if (!k?.includes(`_${book}_ch${chId}`)) continue;
+          try {
+            const d = JSON.parse(localStorage.getItem(k) || '{}');
+            if (d.percentage !== undefined && d.percentage > pct) {
+              pct = d.percentage;
+            } else if (d.scrollPosition && d.scrollPosition > 50) {
+              // Fallback: estimate from scroll position (assume ~2500px page height)
+              const estimated = Math.min(95, Math.round((d.scrollPosition / 2500) * 100));
+              if (estimated > pct) pct = estimated;
+            }
+          } catch { /* skip */ }
+        }
+      }
+
+      if (pct < 3) return; // Don't show bar for minimal progress
 
       // Thin progress bar under the chapter title link
       const bar = document.createElement('div');
@@ -955,6 +1006,31 @@ const isRtl = language === LANGUAGES.HE;
   // Call on init and after chapter swaps
   setTimeout(updateTocProgress, 200);
   window.addEventListener('chapter-content-swapped', () => setTimeout(updateTocProgress, 400));
+  
+  // Update current chapter progress in real-time on scroll
+  let scrollTimeout: ReturnType<typeof setTimeout>;
+  window.addEventListener('scroll', () => {
+    clearTimeout(scrollTimeout);
+    scrollTimeout = setTimeout(() => {
+      const container = document.getElementById('chapter-container');
+      if (!container) return;
+      const containerTop = container.offsetTop;
+      const containerHeight = container.offsetHeight;
+      const scrollable = containerHeight - window.innerHeight;
+      if (scrollable <= 0) {
+        updateTocProgress(100);
+        return;
+      }
+      const scrolledInto = window.scrollY - containerTop;
+      const pct = scrolledInto <= 0 ? 0 : Math.min(100, Math.round((scrolledInto / scrollable) * 100));
+      updateTocProgress(pct);
+    }, 100);
+  }, { passive: true });
+  
+  // Update when chapter is completed
+  window.addEventListener('chapter-completed', () => {
+    setTimeout(() => updateTocProgress(100), 100);
+  });
 
   // Update when language changes
   window.addEventListener('language-changed', (e: any) => {

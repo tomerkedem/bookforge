@@ -11,53 +11,220 @@ const { currentLanguage = LANGUAGES.EN, class: className } = Astro.props;
 ---
 
 <div
-  class:list={[
-    'inline-flex',
-    'items-center',
-    'gap-1',
-    'p-1',
-    'rounded-full',
-    'bg-yuval-bg-secondary',
-    'border',
-    'border-yuval-border',
-    className,
-  ]}
+  class:list={['language-toggle-premium', className]}
   role="radiogroup"
   aria-label="Language Selection"
 >
-  {SUPPORTED_LANGUAGES.map(lang => (
-    <button
-      type="button"
-      class:list={[
-        'px-3',
-        'py-1.5',
-        'rounded-full',
-        'transition-all',
-        'duration-200',
-        'font-body',
-        'text-sm',
-        'font-medium',
-        currentLanguage === lang.code && 'bg-yuval-text text-yuval-bg',
-        currentLanguage !== lang.code && 'text-yuval-text hover:bg-yuval-border',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yuval-highlight focus-visible:ring-offset-1',
-      ]}
-      data-language={lang.code}
-      aria-pressed={currentLanguage === lang.code}
-      aria-label={`Switch to ${lang.labelEn}`}
-    >
-      {lang.label}
-    </button>
-  ))}
+  <div class="toggle-track">
+    <div class="toggle-slider" data-position="1"></div>
+    {SUPPORTED_LANGUAGES.map((lang, index) => (
+      <button
+        type="button"
+        class="toggle-option"
+        data-language={lang.code}
+        data-index={index}
+        aria-pressed={currentLanguage === lang.code}
+        aria-label={`Switch to ${lang.labelEn}`}
+      >
+        <span class="option-label">{lang.label}</span>
+      </button>
+    ))}
+  </div>
 </div>
 
+<style>
+  .language-toggle-premium {
+    --toggle-gold: #c9a227;
+    --toggle-gold-light: #e8c547;
+    --toggle-gold-dark: #a8852a;
+    position: relative;
+  }
+
+  .toggle-track {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 0;
+    padding: 4px;
+    background: linear-gradient(145deg, 
+      rgba(30, 30, 35, 0.95), 
+      rgba(20, 20, 25, 0.98)
+    );
+    border-radius: 9999px;
+    border: 1px solid rgba(201, 162, 39, 0.3);
+    box-shadow: 
+      0 4px 20px rgba(0, 0, 0, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05),
+      0 0 0 1px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(12px);
+  }
+
+  :global(.light) .toggle-track,
+  :global(:root:not(.dark)) .toggle-track {
+    background: linear-gradient(145deg, 
+      rgba(255, 255, 255, 0.95), 
+      rgba(245, 245, 250, 0.98)
+    );
+    box-shadow: 
+      0 4px 20px rgba(0, 0, 0, 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.8),
+      0 0 0 1px rgba(201, 162, 39, 0.2);
+  }
+
+  .toggle-slider {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    height: calc(100% - 8px);
+    width: calc(33.333% - 4px);
+    background: linear-gradient(135deg, 
+      var(--toggle-gold-light) 0%, 
+      var(--toggle-gold) 50%, 
+      var(--toggle-gold-dark) 100%
+    );
+    border-radius: 9999px;
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: 
+      0 2px 8px rgba(201, 162, 39, 0.4),
+      inset 0 1px 0 rgba(255, 255, 255, 0.3),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.1);
+    z-index: 1;
+  }
+
+  .toggle-slider::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 9999px;
+    background: linear-gradient(180deg, 
+      rgba(255, 255, 255, 0.25) 0%, 
+      transparent 50%
+    );
+  }
+
+  .toggle-slider[data-position="0"] {
+    transform: translateX(0);
+  }
+
+  .toggle-slider[data-position="1"] {
+    transform: translateX(100%);
+  }
+
+  .toggle-slider[data-position="2"] {
+    transform: translateX(200%);
+  }
+
+  .toggle-option {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 16px;
+    min-width: 70px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .option-label {
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: rgba(255, 255, 255, 0.6);
+    transition: all 0.3s ease;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  }
+
+  :global(.light) .option-label,
+  :global(:root:not(.dark)) .option-label {
+    color: rgba(0, 0, 0, 0.45);
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+  }
+
+  .toggle-option:hover .option-label {
+    color: rgba(255, 255, 255, 0.85);
+  }
+
+  :global(.light) .toggle-option:hover .option-label,
+  :global(:root:not(.dark)) .toggle-option:hover .option-label {
+    color: rgba(0, 0, 0, 0.7);
+  }
+
+  .toggle-option[aria-pressed="true"] .option-label {
+    color: #1a1a1a;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.3);
+    font-weight: 700;
+  }
+
+  .toggle-option:focus-visible {
+    outline: none;
+  }
+
+  .toggle-option:focus-visible .option-label {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  /* Subtle pulse on the active option */
+  @keyframes subtle-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.85; }
+  }
+
+  .toggle-option[aria-pressed="true"] {
+    animation: subtle-pulse 3s ease-in-out infinite;
+  }
+
+  /* Touch feedback */
+  .toggle-option:active {
+    transform: scale(0.96);
+  }
+
+  /* Mobile - slightly smaller */
+  @media (max-width: 640px) {
+    .toggle-option {
+      padding: 6px 12px;
+      min-width: 56px;
+    }
+
+    .option-label {
+      font-size: 12px;
+    }
+  }
+</style>
+
 <script>
-  import { LANGUAGES, SUPPORTED_LANGUAGES, setLanguageToStorage, isValidLanguage } from '../utils/language';
+  import { LANGUAGES, SUPPORTED_LANGUAGES, setLanguageToStorage, isValidLanguage, getLanguageFromStorage } from '../utils/language';
   import type { Language } from '../types/index';
 
   function initLanguageToggle(controller: AbortController) {
-    const buttons = document.querySelectorAll<HTMLButtonElement>(
-      '[role="radiogroup"] button[data-language]'
-    );
+    const buttons = document.querySelectorAll<HTMLButtonElement>('.toggle-option[data-language]');
+    const slider = document.querySelector<HTMLElement>('.toggle-slider');
+    
+    if (!slider || buttons.length === 0) return;
+
+    const updateToggle = (activeCode: string) => {
+      buttons.forEach((btn) => {
+        const btnLang = btn.dataset.language;
+        const btnIndex = btn.dataset.index;
+        const isActive = btnLang === activeCode;
+        
+        btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+        
+        if (isActive && btnIndex !== undefined) {
+          slider.dataset.position = btnIndex;
+        }
+      });
+    };
+
+    // Sync with localStorage on load
+    const storedLang = getLanguageFromStorage();
+    if (storedLang) {
+      updateToggle(storedLang);
+    }
 
     const clickHandler = (e: Event) => {
       const target = e.currentTarget as HTMLButtonElement;
@@ -69,16 +236,8 @@ const { currentLanguage = LANGUAGES.EN, class: className } = Astro.props;
         document.documentElement.lang = lang;
         document.documentElement.dir = meta?.dir ?? 'ltr';
 
-        // Update aria-pressed state
-        buttons.forEach((btn) => {
-          const btnLang = (btn as HTMLButtonElement).dataset.language;
-          (btn as HTMLButtonElement).setAttribute(
-            'aria-pressed',
-            btnLang === lang ? 'true' : 'false'
-          );
-        });
+        updateToggle(lang);
 
-        // Dispatch custom event for other components
         window.dispatchEvent(
           new CustomEvent('language-changed', {
             detail: { language: lang as Language }
@@ -89,12 +248,15 @@ const { currentLanguage = LANGUAGES.EN, class: className } = Astro.props;
 
     buttons.forEach((button) => {
       button.addEventListener('click', clickHandler, { signal: controller.signal });
-      const btnLang = (button as HTMLButtonElement).dataset.language;
-      (button as HTMLButtonElement).setAttribute(
-        'aria-pressed',
-        btnLang === LANGUAGES.EN ? 'true' : 'false'
-      );
     });
+
+    // Listen for language changes from other sources
+    window.addEventListener('language-changed', (e: Event) => {
+      const customEvent = e as CustomEvent;
+      if (customEvent.detail?.language) {
+        updateToggle(customEvent.detail.language);
+      }
+    }, { signal: controller.signal });
   }
 
   function initializeLanguageToggle() {

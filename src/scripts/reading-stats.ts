@@ -80,7 +80,7 @@ function STREAK_KEY(book: string) { return `yuval_streak_${book}`; }
 function computeStats(): StatsResult {
   const book = getCurrentBook();
 
-  // Count chapters with meaningful progress (scrolled > 50px)
+  // Count completed chapters from the completion storage
   let chaptersRead = 0;
   let wordsRead = 0;
   let totalChapters = 0;
@@ -94,16 +94,13 @@ function computeStats(): StatsResult {
     totalChapters = document.querySelectorAll('.toc-item').length;
   }
 
-  // Scan localStorage for progress keys
-  const progressPrefix = `yuval_reading_progress_${book}_ch`;
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    if (!key?.startsWith(progressPrefix)) continue;
-    try {
-      const data = JSON.parse(localStorage.getItem(key) || '{}');
-      if (data.scrollPosition > 100) chaptersRead++;
-    } catch { /* skip */ }
-  }
+  // Get completed chapters from the proper completion storage
+  try {
+    const completedChapters = JSON.parse(
+      localStorage.getItem(`yuval_ch_complete_${book}`) || '[]'
+    );
+    chaptersRead = completedChapters.length;
+  } catch { /* skip */ }
 
   // Estimate words read: chapters read × avg word count of current chapter
   const currentWordCount = parseInt(

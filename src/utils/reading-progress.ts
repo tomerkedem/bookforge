@@ -8,14 +8,15 @@ export class ReadingProgressManager {
     return getStorageKey(`${this.PREFIX}${bookId}_ch${chapterId}`);
   }
 
-  static saveProgress(bookId: string, chapterId: number, scrollPosition: number): void {
+  static saveProgress(bookId: string, chapterId: number, scrollPosition: number, percentage?: number): void {
     if (typeof window === 'undefined') return;
 
-    const progress: ReadingProgress = {
+    const progress: ReadingProgress & { percentage?: number } = {
       bookId,
       chapterId,
       scrollPosition,
       lastUpdated: Date.now(),
+      percentage,
     };
 
     localStorage.setItem(this.getKey(bookId, chapterId), JSON.stringify(progress));

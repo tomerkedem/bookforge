@@ -75,10 +75,23 @@ export function initProgressTracker(controller: AbortController): () => void {
 
   let scrollTimeout: ReturnType<typeof setTimeout>;
 
+  function calcPercentage(): number {
+    const container = document.getElementById('chapter-container');
+    if (!container) return 0;
+    const containerTop = container.offsetTop;
+    const containerHeight = container.offsetHeight;
+    const scrollable = containerHeight - window.innerHeight;
+    if (scrollable <= 0) return 100;
+    const scrolledInto = window.scrollY - containerTop;
+    if (scrolledInto <= 0) return 0;
+    return Math.min(100, Math.round((scrolledInto / scrollable) * 100));
+  }
+
   const scrollHandler = () => {
     clearTimeout(scrollTimeout);
     scrollTimeout = setTimeout(() => {
-      ReadingProgressManager.saveProgress(bookId, chapterId, window.scrollY);
+      const pct = calcPercentage();
+      ReadingProgressManager.saveProgress(bookId, chapterId, window.scrollY, pct);
     }, 400);
   };
 
@@ -99,7 +112,8 @@ export function initProgressTracker(controller: AbortController): () => void {
     const newHandler = () => {
       clearTimeout(scrollTimeout);
       scrollTimeout = setTimeout(() => {
-        ReadingProgressManager.saveProgress(info.bookId, info.chapterId, window.scrollY);
+        const pct = calcPercentage();
+        ReadingProgressManager.saveProgress(info.bookId, info.chapterId, window.scrollY, pct);
       }, 400);
     };
     window.addEventListener('scroll', newHandler, { passive: true, signal: controller.signal });

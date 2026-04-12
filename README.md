@@ -65,14 +65,37 @@ npm run test     # הרצת בדיקות
 
 ## 📚 הוספת ספר חדש
 
-הפייפליין מקבל קובץ Word ומייצר ספר דיגיטלי בשפות מרובות.
+הפייפליין מורכב מ-**שני שלבים**:
 
-### שימוש בסיסי
+### שלב 1: עיבוד ה-Word
 
 ```bash
 cd src
-python -m pipeline.build "D:\Books\MyBook.docx" my-book
+python -m pipeline.build "D:\Books\MyBook.docx" my-book --languages he,en,es
 ```
+
+**מה קורה:**
+1. קורא את קובץ ה-Word
+2. מפרק לפרקים לפי כותרות (Heading 1)
+3. מחלץ תמונות ועטיפה
+4. יוצר קבצי `.he.md` בתיקייה `output/my-book/`
+5. יוצר `content-structure.json`
+
+**התוצאה:** קבצי המקור בעברית מוכנים, אבל **התרגום עדיין לא בוצע**.
+
+### שלב 2: תרגום (נדרש!)
+
+```bash
+cd "d:\...\bookforge"
+python src/pipeline/translate.py output/my-book --languages en,es
+```
+
+**או** הפעל את סוכן ה-Translator:
+```
+@translator תרגם את my-book לאנגלית וספרדית
+```
+
+> ⚠️ **חשוב:** הפייפליין ב-build.py לא מתרגם אוטומטית — הוא רק מכין את הקבצים לתרגום.
 
 ### שימוש עם מספר שפות
 
@@ -80,16 +103,39 @@ python -m pipeline.build "D:\Books\MyBook.docx" my-book
 python -m pipeline.build "D:\Books\MyBook.docx" my-book --languages he,en,es,fr,de
 ```
 
-### פרמטרים
+### TL;DR — הזרימה המלאה
+
+```bash
+# שלב 1: עיבוד Word → קבצי MD בעברית
+cd src
+python -m pipeline.build "D:\Books\MyBook.docx" my-book --languages he,en,es
+
+# שלב 2: תרגום → קבצי MD בשאר השפות
+cd ..
+python src/pipeline/translate.py output/my-book --languages en,es
+
+# שלב 3: הפעל את שרת הפיתוח
+npm run dev
+# פתח http://localhost:4321/books/my-book
+```
+
+### פרמטרים (שלב 1)
 
 | פרמטר | תיאור | ברירת מחדל |
 |-------|-------|------------|
 | `docx_path` | נתיב לקובץ Word | (חובה) |
 | `book_name` | slug לשם הספר | (חובה) |
 | `--title` | כותרת הספר | נלקח מעמוד השער |
-| `--languages` | שפות (מופרדות בפסיק) | `he,en,es` |
+| `--languages` | שפות יעד (מופרדות בפסיק) | `he,en,es` |
 | `--output-dir` | תיקיית פלט | `output/` |
-| `--skip-translate` | דלג על תרגום | `false` |
+
+### פרמטרים (שלב 2 - תרגום)
+
+| פרמטר | תיאור | ברירת מחדל |
+|-------|-------|------------|
+| `book_dir` | תיקיית הספר (output/my-book) | (חובה) |
+| `--languages` | שפות יעד לתרגום | `en,es` |
+| `--force` | תרגם מחדש גם קבצים קיימים | `false` |
 
 ### תוצאה צפויה
 
@@ -179,6 +225,25 @@ docs/               # Project documentation
 | **Code Reviewer** | בודק איכות קוד |
 | **Error Handler** | מזהה ומתקן שגיאות |
 | **Quality Gate** | אישור/דחייה סופי |
+
+### זיהוי סביבה אוטומטי
+
+המערכת מזהה את סביבת ההרצה ומתאימה את אסטרטגיית התרגום:
+
+| סביבה | זיהוי | אסטרטגיה |
+|-------|-------|----------|
+| **Claude Code CLI** | `CLAUDE_SESSION_ID` | תרגום מקבילי עם 3 subagents |
+| **VS Code Copilot** | `VSCODE_PID` | תרגום ישיר על ידי הסוכן הראשי |
+
+**למה?** — ב-VS Code Copilot, subagents לא מקבלים גישה לקבצים.
+המערכת מזהה זאת אוטומטית ועוברת למצב תרגום ישיר.
+
+```python
+from pipeline.translate import detect_environment, supports_parallel_subagents
+
+print(detect_environment())        # 'claude-code' / 'vscode-copilot' / 'unknown'
+print(supports_parallel_subagents())  # True / False
+```
 
 ---
 

@@ -20,9 +20,14 @@ const books = discoverAllBooks();
           <div class="book-stats">
             <span class="stat" id={`stat-${book.slug}`}>...</span>
           </div>
-          <button class="clean-btn" data-slug={book.slug}>
-            Clean data
-          </button>
+          <div class="book-actions">
+            <button class="clean-btn" data-slug={book.slug}>
+              Clean data
+            </button>
+            <button class="delete-btn" data-slug={book.slug} data-title={book.title_en}>
+              🗑️ Delete book
+            </button>
+          </div>
         </div>
       ))}
     </div>
@@ -36,6 +41,20 @@ const books = discoverAllBooks();
     </div>
 
     <div id="toast" class="toast hidden"></div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="delete-modal" class="modal hidden">
+      <div class="modal-backdrop"></div>
+      <div class="modal-content">
+        <h3>⚠️ מחיקת ספר</h3>
+        <p>האם אתה בטוח שברצונך למחוק את הספר <strong id="modal-book-title"></strong>?</p>
+        <p class="modal-warning">פעולה זו תמחק את כל הקבצים בכל השפות ולא ניתנת לביטול!</p>
+        <div class="modal-actions">
+          <button class="modal-btn modal-btn--cancel" id="modal-cancel">ביטול</button>
+          <button class="modal-btn modal-btn--delete" id="modal-confirm">מחק לצמיתות</button>
+        </div>
+      </div>
+    </div>
   </div>
 </BaseLayout>
 
@@ -162,6 +181,121 @@ const books = discoverAllBooks();
   }
 
   .toast.hidden { display: none; }
+
+  /* Book actions container */
+  .book-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  /* Delete button */
+  .delete-btn {
+    padding: 7px 12px;
+    border-radius: 8px;
+    border: 1px solid #dc2626;
+    background: transparent;
+    color: #dc2626;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s, color 0.15s;
+  }
+
+  .delete-btn:hover {
+    background: #dc2626;
+    color: #fff;
+  }
+
+  /* Modal */
+  .modal {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .modal.hidden { display: none; }
+
+  .modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+  }
+
+  .modal-content {
+    position: relative;
+    background: var(--yuval-surface, #fff);
+    border-radius: 16px;
+    padding: 28px;
+    max-width: 400px;
+    width: 90%;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+    text-align: center;
+  }
+
+  .modal-content h3 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--yuval-text);
+    margin: 0 0 12px;
+  }
+
+  .modal-content p {
+    font-size: 0.9rem;
+    color: var(--yuval-text-secondary);
+    margin: 0 0 8px;
+    line-height: 1.5;
+  }
+
+  .modal-warning {
+    color: #dc2626 !important;
+    font-weight: 500;
+    font-size: 0.85rem !important;
+  }
+
+  .modal-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-top: 20px;
+  }
+
+  .modal-btn {
+    padding: 10px 24px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .modal-btn--cancel {
+    background: var(--yuval-bg-secondary, #f3f3f3);
+    border: 1px solid var(--yuval-border, #ddd);
+    color: var(--yuval-text-secondary);
+  }
+
+  .modal-btn--cancel:hover {
+    background: var(--yuval-border, #ddd);
+  }
+
+  .modal-btn--delete {
+    background: #dc2626;
+    border: none;
+    color: #fff;
+  }
+
+  .modal-btn--delete:hover {
+    background: #b91c1c;
+  }
+
+  .modal-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
 </style>
 
 <script>
@@ -244,6 +378,79 @@ const books = discoverAllBooks();
   document.getElementById('clean-global-btn')?.addEventListener('click', () => {
     const removed = cleanGlobal();
     showToast(removed > 0 ? `Cleaned ${removed} global settings` : 'No global settings found');
+  });
+
+  // Delete book functionality
+  const modal = document.getElementById('delete-modal')!;
+  const modalTitle = document.getElementById('modal-book-title')!;
+  const modalCancel = document.getElementById('modal-cancel')!;
+  const modalConfirm = document.getElementById('modal-confirm')!;
+  let pendingDeleteSlug: string | null = null;
+
+  function showModal(slug: string, title: string) {
+    pendingDeleteSlug = slug;
+    modalTitle.textContent = title;
+    modal.classList.remove('hidden');
+    modalConfirm.disabled = false;
+    modalConfirm.textContent = 'מחק לצמיתות';
+  }
+
+  function hideModal() {
+    modal.classList.add('hidden');
+    pendingDeleteSlug = null;
+  }
+
+  // Attach delete buttons
+  document.querySelectorAll<HTMLButtonElement>('.delete-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const slug = btn.dataset.slug!;
+      const title = btn.dataset.title || slug;
+      showModal(slug, title);
+    });
+  });
+
+  modalCancel.addEventListener('click', hideModal);
+  modal.querySelector('.modal-backdrop')?.addEventListener('click', hideModal);
+
+  modalConfirm.addEventListener('click', async () => {
+    if (!pendingDeleteSlug) return;
+    
+    const slug = pendingDeleteSlug;
+    modalConfirm.disabled = true;
+    modalConfirm.textContent = 'מוחק...';
+
+    try {
+      const response = await fetch('/api/delete-book', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug })
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        // Remove the book card from the page
+        const card = document.querySelector(`.book-card[data-slug="${slug}"]`);
+        if (card) {
+          card.remove();
+        }
+        hideModal();
+        showToast(`✅ הספר "${slug}" נמחק בהצלחה`);
+      } else {
+        showToast(`❌ שגיאה: ${result.error || 'לא ניתן למחוק'}`);
+        hideModal();
+      }
+    } catch (error: any) {
+      showToast(`❌ שגיאת רשת: ${error.message}`);
+      hideModal();
+    }
+  });
+
+  // Close modal with Escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
+      hideModal();
+    }
   });
 
   updateStats();

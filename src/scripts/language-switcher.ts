@@ -7,7 +7,7 @@ import type { Language } from '../types/index';
  * Works for any number of languages — driven by SUPPORTED_LANGUAGES.
  */
 function switchLanguage(lang: string) {
-  const targets = ['chapter-container', 'chapter-header'];
+  const targets = ['chapter-container', 'chapter-header', 'chapter-meta-bar'];
   const langCodes = SUPPORTED_LANGUAGES.map(l => l.code);
 
   for (const id of targets) {

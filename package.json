@@ -20,6 +20,7 @@
   },
   "homepage": "https://github.com/tomkedem/bookforge#readme",
   "dependencies": {
+    "@astrojs/node": "^9.0.0",
     "@astrojs/tailwind": "^5.1.0",
     "astro": "^5.6.0",
     "highlight.js": "^11.11.1",
