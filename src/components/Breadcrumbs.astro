@@ -2,6 +2,7 @@
 interface BreadcrumbItem {
   label_he: string;
   label_en: string;
+  label_es?: string;
   href?: string;
 }
 
@@ -33,6 +34,7 @@ const { items, class: className } = Astro.props;
               aria-current="page"
               data-he={item.label_he}
               data-en={item.label_en}
+              data-es={item.label_es ?? item.label_en}
             >
               {item.label_en}
             </span>
@@ -42,6 +44,7 @@ const { items, class: className } = Astro.props;
               class="hover:text-yuval-text transition-colors duration-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-yuval-highlight rounded-sm"
               data-he={item.label_he}
               data-en={item.label_en}
+              data-es={item.label_es ?? item.label_en}
             >
               {item.label_en}
             </a>

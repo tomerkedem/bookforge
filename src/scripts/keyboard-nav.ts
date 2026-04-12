@@ -183,19 +183,20 @@ export function initKeyboardNav(signal: AbortSignal) {
 function showShortcutsPanel(): void {
   if (document.getElementById('kbd-shortcuts-overlay')) return;
 
-  const isRtl = document.documentElement.dir === 'rtl';
+  const lang = (new URLSearchParams(window.location.search).get('lang') || localStorage.getItem('yuval_language') || 'en') as 'he' | 'en' | 'es';
+  const isRtl = lang === 'he';
 
   const shortcuts = [
-    { key: '← →',    desc_he: 'פרק קודם / הבא',           desc_en: 'Prev / next chapter' },
-    { key: 'F',       desc_he: 'מצב מיקוד',                desc_en: 'Focus / immersive mode' },
-    { key: 'Z',       desc_he: 'מצב Zen',                  desc_en: 'Zen reading mode' },
-    { key: '/',       desc_he: 'חיפוש',                     desc_en: 'Search' },
-    { key: 'H',       desc_he: 'פאנל הדגשות',              desc_en: 'Highlights panel' },
-    { key: 'B',       desc_he: 'סימניות',                  desc_en: 'Bookmarks' },
-    { key: 'S',       desc_he: 'סטטיסטיקות קריאה',         desc_en: 'Reading stats' },
-    { key: 'R',       desc_he: 'חזרה על הדגשות',           desc_en: 'Highlight replay' },
-    { key: '?',       desc_he: 'קיצורי מקלדת',             desc_en: 'Keyboard shortcuts' },
-    { key: 'Esc',     desc_he: 'סגור / יציאה ממצב',        desc_en: 'Close / exit mode' },
+    { key: '← →',  desc_he: 'פרק קודם / הבא',        desc_en: 'Prev / next chapter',      desc_es: 'Cap. anterior / siguiente' },
+    { key: 'F',     desc_he: 'מצב מיקוד',              desc_en: 'Focus / immersive mode',   desc_es: 'Modo enfoque' },
+    { key: 'Z',     desc_he: 'מצב Zen',                desc_en: 'Zen reading mode',         desc_es: 'Modo Zen' },
+    { key: '/',     desc_he: 'חיפוש',                   desc_en: 'Search',                   desc_es: 'Búsqueda' },
+    { key: 'H',     desc_he: 'פאנל הדגשות',            desc_en: 'Highlights panel',         desc_es: 'Panel de resaltados' },
+    { key: 'B',     desc_he: 'סימניות',                desc_en: 'Bookmarks',                desc_es: 'Marcadores' },
+    { key: 'S',     desc_he: 'סטטיסטיקות קריאה',       desc_en: 'Reading stats',            desc_es: 'Estadísticas de lectura' },
+    { key: 'R',     desc_he: 'חזרה על הדגשות',         desc_en: 'Highlight replay',         desc_es: 'Repetición de resaltados' },
+    { key: '?',     desc_he: 'קיצורי מקלדת',           desc_en: 'Keyboard shortcuts',       desc_es: 'Atajos de teclado' },
+    { key: 'Esc',   desc_he: 'סגור / יציאה ממצב',      desc_en: 'Close / exit mode',        desc_es: 'Cerrar / salir del modo' },
   ];
 
   const style = document.createElement('style');
@@ -269,14 +270,14 @@ function showShortcutsPanel(): void {
   overlay.innerHTML = `
     <div id="kbd-shortcuts-modal">
       <h2>
-        <span>${isRtl ? '⌨️ קיצורי מקלדת' : '⌨️ Keyboard Shortcuts'}</span>
+        <span>${lang === 'he' ? '⌨️ קיצורי מקלדת' : lang === 'es' ? '⌨️ Atajos de Teclado' : '⌨️ Keyboard Shortcuts'}</span>
         <button id="kbd-shortcuts-close">✕</button>
       </h2>
       ${shortcuts.map(s => `
         <div class="kbd-row">
           ${isRtl ? `<span class="kbd-desc">${s.desc_he}</span>` : ''}
           <kbd class="kbd-key">${s.key}</kbd>
-          ${!isRtl ? `<span class="kbd-desc">${s.desc_en}</span>` : ''}
+          ${!isRtl ? `<span class="kbd-desc">${lang === 'es' ? s.desc_es : s.desc_en}</span>` : ''}
         </div>
       `).join('')}
     </div>

@@ -1,4 +1,5 @@
 import type { Language, LanguageContext, LanguageMeta, LanguageName } from '../types/index';
+import { t } from '../i18n';
 
 export const LANGUAGES = {
   HE: 'he' as const,
@@ -120,15 +121,28 @@ export const setLanguageToStorage = (lang: Language): void => {
 };
 
 /**
- * Apply language to page using data-{lang} attributes.
- * - Elements that have the attribute for the selected lang: set textContent.
- * - Falls back to data-en, then data-he for missing translations.
- * - Elements with ONLY one lang attribute: show/hide accordingly.
+ * Apply language to page.
+ *
+ * Handles two systems:
+ *
+ * 1. NEW — data-i18n="key"
+ *    Looks up the key in the central translations registry.
+ *    Works for any number of languages with no HTML changes.
+ *
+ * 2. LEGACY — data-he / data-en / data-es (kept for dynamic content like book/chapter titles)
+ *    Falls back to data-en, then data-he for missing translations.
+ *    Single-lang elements are shown/hidden.
  */
 export const applyLanguageToPage = (lang: Language): void => {
+  // ── 1. New i18n system ──────────────────────────────────────────────────────
+  document.querySelectorAll<HTMLElement>('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n')!;
+    el.textContent = t(key, lang);
+  });
+
+  // ── 2. Legacy data-{lang} system (dynamic content) ──────────────────────────
   const allLangCodes = SUPPORTED_LANGUAGES.map(l => l.code);
 
-  // Elements that have data attributes for multiple languages: swap text
   document.querySelectorAll('[data-he], [data-en], [data-es]').forEach(el => {
     const values: Partial<Record<Language, string | null>> = {};
     allLangCodes.forEach(code => {
@@ -137,11 +151,9 @@ export const applyLanguageToPage = (lang: Language): void => {
 
     const hasMultiple = allLangCodes.filter(code => values[code] !== null).length > 1;
     if (hasMultiple) {
-      // Pick best available translation with fallback chain: selected → en → he
       const text = values[lang] ?? values['en'] ?? values['he'] ?? null;
       if (text !== null) el.textContent = text;
     } else {
-      // Single-lang element: show only for its language
       const ownLang = allLangCodes.find(code => values[code] !== null);
       if (ownLang) {
         (el as HTMLElement).classList.toggle('hidden', ownLang !== lang);

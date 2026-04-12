@@ -49,19 +49,15 @@ const categories = ['All', ...Array.from(new Set(books.map(b => b.category).filt
     >
       <h1
         class="font-heading font-bold text-3xl sm:text-4xl lg:text-6xl leading-tight mb-3 sm:mb-4 text-yuval-text"
-        data-he="ספרים"
-        data-en="Books"
+        data-i18n="home.title"
       >
-        {language === LANGUAGES.HE ? 'ספרים' : 'Books'}
+        Books
       </h1>
       <p
         class="text-lg sm:text-xl text-yuval-text-secondary font-light leading-relaxed"
-        data-he="התחקות של ידע מעמיק ויישום מעשי"
-        data-en="Explorations of deep knowledge and practical application"
+        data-i18n="home.subtitle"
       >
-        {language === LANGUAGES.HE
-          ? 'התחקות של ידע מעמיק ויישום מעשי'
-          : 'Explorations of deep knowledge and practical application'}
+        Explorations of deep knowledge and practical application
       </p>
     </div>
 
@@ -121,20 +117,14 @@ const categories = ['All', ...Array.from(new Set(books.map(b => b.category).filt
           </svg>
           <p
             class="text-lg text-yuval-text-secondary font-medium"
-            data-he="אין ספרים זמינים כרגע"
-            data-en="No books available yet"
+            data-i18n="home.noBooks"
           >
-            {language === LANGUAGES.HE
-              ? 'אין ספרים זמינים כרגע'
-              : 'No books available yet'}
+            No books available yet
           </p>
           <p class="mt-2 text-sm text-yuval-text-tertiary"
-            data-he="הוסף ספרים לתיקיית output/ כדי להתחיל"
-            data-en="Add books to the output/ folder to get started"
+            data-i18n="home.noBooksHint"
           >
-            {language === LANGUAGES.HE
-              ? 'הוסף ספרים לתיקיית output/ כדי להתחיל'
-              : 'Add books to the output/ folder to get started'}
+            Add books to the output/ folder to get started
           </p>
         </div>
       )
@@ -182,6 +172,19 @@ const categories = ['All', ...Array.from(new Set(books.map(b => b.category).filt
   initCategoryFilter();
   document.addEventListener('astro:after-swap', initCategoryFilter);
 
+  // ── i18n helper (mirrors src/i18n/index.ts for inline scripts) ───────────
+  function yuvalT(key: string, lang: string, params?: Record<string, string | number>): string {
+    const map: Record<string, Record<string, string>> = {
+      'home.continueReading': { he: 'המשך קריאה', en: 'Continue Reading', es: 'Continuar leyendo' },
+      'home.chapter':         { he: 'פרק',         en: 'Chapter',          es: 'Capítulo' },
+    };
+    const entry = map[key];
+    if (!entry) return key;
+    let text = entry[lang] ?? entry['en'] ?? key;
+    if (params) text = text.replace(/\{\{(\w+)\}\}/g, (_, n) => params[n] !== undefined ? String(params[n]) : `{{${n}}}`);
+    return text;
+  }
+
   // ── Continue Reading ──────────────────────────────────────────────────────
   function buildContinueReading() {
     const banner = document.getElementById('continue-reading-banner');
@@ -189,6 +192,7 @@ const categories = ['All', ...Array.from(new Set(books.map(b => b.category).filt
 
     const lang = localStorage.getItem('yuval_language') || 'en';
     const isHe = lang === 'he';
+    const isEs = lang === 'es';
 
     // Find the most recently read chapter across all books
     let bestKey = '';
@@ -217,14 +221,15 @@ const categories = ['All', ...Array.from(new Set(books.map(b => b.category).filt
     const bookSlug = match[1];
     const chapterId = match[2];
 
-    // Find book title from a card on the page
+    // Find book title from a card on the page — if book no longer exists, abort
     const bookCard = document.querySelector<HTMLElement>(`[data-book-slug="${bookSlug}"]`);
+    if (!bookCard) return;
     const titleEl  = bookCard?.querySelector<HTMLElement>('[data-he][data-en]');
     const bookTitle = titleEl
-      ? (isHe ? titleEl.dataset.he : titleEl.dataset.en) || bookSlug
+      ? (isHe ? titleEl.dataset.he : isEs ? titleEl.dataset.es : titleEl.dataset.en) || bookSlug
       : bookSlug;
 
-    const url = `/read/${bookSlug}/${chapterId}${lang === 'he' ? '?lang=he' : ''}`;
+    const url = `/read/${bookSlug}/${chapterId}${lang !== 'en' ? `?lang=${lang}` : ''}`;
 
     const estPct = Math.min(95, Math.round((bestScroll / 3000) * 100));
 
@@ -244,11 +249,11 @@ const categories = ['All', ...Array.from(new Set(books.map(b => b.category).filt
         <div style="flex:1;min-width:0">
           <div style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;
             color:var(--yuval-text-muted,#999);margin-bottom:3px">
-            ${isHe ? 'המשך קריאה' : 'Continue Reading'}
+            ${yuvalT('home.continueReading', lang)}
           </div>
           <div style="font-size:15px;font-weight:700;color:var(--yuval-text,#1a1a1a);
             white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
-            ${bookTitle} · ${isHe ? 'פרק' : 'Chapter'} ${chapterId}
+            ${bookTitle} · ${yuvalT('home.chapter', lang)} ${chapterId}
           </div>
           <div style="margin-top:6px;height:3px;border-radius:99px;background:var(--yuval-border,#e5e7eb);overflow:hidden">
             <div style="height:100%;width:${estPct}%;border-radius:99px;

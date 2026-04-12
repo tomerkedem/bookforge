@@ -36,14 +36,10 @@ const isRtl = language === LANGUAGES.HE;
     <!-- Tab buttons -->
     <div class="mobile-drawer-tabs" role="tablist">
       <button class="mobile-tab active" data-tab="outline" role="tab" aria-selected="true" aria-controls="mobile-outline-panel">
-        <span data-he="בפרק זה" data-en="In This Chapter">
-          {language === LANGUAGES.HE ? 'בפרק זה' : 'In This Chapter'}
-        </span>
+        <span data-i18n="sidebar.inChapter">In This Chapter</span>
       </button>
       <button class="mobile-tab" data-tab="chapters" role="tab" aria-selected="false" aria-controls="mobile-chapters-panel">
-        <span data-he="פרקים" data-en="Chapters">
-          {language === LANGUAGES.HE ? 'פרקים' : 'Chapters'}
-        </span>
+        <span data-i18n="sidebar.chapters">Chapters</span>
       </button>
     </div>
     <!-- Outline panel -->
@@ -75,7 +71,7 @@ const isRtl = language === LANGUAGES.HE;
                   {String(chapter.id).padStart(2, '0')}
                 </span>
                 <span class="toc-chapter-title">
-                  <span data-he={chapter.title_he} data-en={chapter.title_en}>
+                  <span data-he={chapter.title_he} data-en={chapter.title_en} data-es={chapter.title_en}>
                     {language === LANGUAGES.HE ? chapter.title_he : chapter.title_en}
                   </span>
                 </span>
@@ -96,12 +92,10 @@ const isRtl = language === LANGUAGES.HE;
     ]}
     id="toc-sidebar"
     data-rtl={isRtl}
-    aria-label={language === LANGUAGES.HE ? 'תוכן עניינים' : 'Table of Contents'}
+    aria-label={language === LANGUAGES.HE ? 'תוכן עניינים' : language === 'es' ? 'Tabla de Contenidos' : 'Table of Contents'}
   >
     <h3 class="toc-title">
-      <span data-he="פרקים" data-en="Chapters">
-        {language === LANGUAGES.HE ? 'פרקים' : 'Chapters'}
-      </span>
+      <span data-i18n="sidebar.chapters">Chapters</span>
     </h3>
     <nav class="toc-list">
       <ul>
@@ -126,7 +120,7 @@ const isRtl = language === LANGUAGES.HE;
                 {String(chapter.id).padStart(2, '0')}
               </span>
               <span class="toc-chapter-title">
-                <span data-he={chapter.title_he} data-en={chapter.title_en}>
+                <span data-he={chapter.title_he} data-en={chapter.title_en} data-es={chapter.title_en}>
                   {language === LANGUAGES.HE
                     ? chapter.title_he
                     : chapter.title_en}
@@ -148,12 +142,10 @@ const isRtl = language === LANGUAGES.HE;
     ]}
     id="outline-sidebar"
     data-rtl={isRtl}
-    aria-label={language === LANGUAGES.HE ? 'מתוכן הפרק' : 'Chapter Outline'}
+    aria-label={language === LANGUAGES.HE ? 'מתוכן הפרק' : language === 'es' ? 'Esquema del Capítulo' : 'Chapter Outline'}
   >
     <h3 class="outline-title">
-      <span data-he="בפרק זה" data-en="In This Chapter">
-        {language === LANGUAGES.HE ? 'בפרק זה' : 'In This Chapter'}
-      </span>
+      <span data-i18n="sidebar.inChapter">In This Chapter</span>
     </h3>
     <nav id="chapter-outline" class="outline-list">
       <ul>
@@ -744,7 +736,7 @@ const isRtl = language === LANGUAGES.HE;
 
       const base = target.getAttribute('href')?.split('?')[0] || '';
       const lang = getCurrentLang();
-      const url = lang === 'he' ? `${base}?lang=he` : base;
+      const url = lang !== 'en' ? `${base}?lang=${lang}` : base;
 
       await loadChapterContent(url);
     });
@@ -759,24 +751,9 @@ const isRtl = language === LANGUAGES.HE;
    * Update sidebar text based on current language
    */
   function updateSidebarText(lang: string) {
-    // Update TOC title
-    const tocTitle = document.querySelector('.toc-title span');
-    if (tocTitle) {
-      const heText = tocTitle.getAttribute('data-he');
-      const enText = tocTitle.getAttribute('data-en');
-      tocTitle.textContent = lang === 'he' ? heText : enText;
-    }
-
-    // Update outline title
-    const outlineTitle = document.querySelector('.outline-title span');
-    if (outlineTitle) {
-      const heText = outlineTitle.getAttribute('data-he');
-      const enText = outlineTitle.getAttribute('data-en');
-      outlineTitle.textContent = lang === 'he' ? heText : enText;
-    }
-
-    // Update chapter titles in TOC
-    document.querySelectorAll('.toc-chapter-title span').forEach((span) => {
+    // data-i18n elements (sidebar titles) are handled by applyLanguageToPage().
+    // Only dynamic content (chapter titles from MD) needs manual update here.
+    document.querySelectorAll('.toc-chapter-title span[data-he]').forEach((span) => {
       const heText = span.getAttribute('data-he');
       const enText = span.getAttribute('data-en');
       span.textContent = lang === 'he' ? heText : enText;
@@ -861,7 +838,7 @@ const isRtl = language === LANGUAGES.HE;
   function updateTocLinks(lang: string) {
     document.querySelectorAll<HTMLAnchorElement>('.toc-link').forEach(link => {
       const base = link.getAttribute('href')?.split('?')[0] || '';
-      link.href = lang === 'he' ? `${base}?lang=he` : base;
+      link.href = lang !== 'en' ? `${base}?lang=${lang}` : base;
     });
   }
 
@@ -1023,7 +1000,7 @@ const isRtl = language === LANGUAGES.HE;
       li.style.color = '#ccc';
       li.style.fontSize = '12px';
       const lang = getCurrentLang();
-      li.textContent = lang === 'he' ? 'לא נמצאו סעיפים' : 'No sections found';
+      li.textContent = lang === 'he' ? 'לא נמצאו סעיפים' : lang === 'es' ? 'No se encontraron secciones' : 'No sections found';
       ul.appendChild(li);
       return;
     }
@@ -1112,8 +1089,8 @@ const isRtl = language === LANGUAGES.HE;
         
         const base = (link as HTMLAnchorElement).getAttribute('href')?.split('?')[0] || '';
         const lang = getCurrentLang();
-        const url = lang === 'he' ? `${base}?lang=he` : base;
-        
+        const url = lang !== 'en' ? `${base}?lang=${lang}` : base;
+
         await loadChapterContent(url);
       });
     });
@@ -1133,7 +1110,7 @@ const isRtl = language === LANGUAGES.HE;
     if (!drawer) return;
     drawer.querySelectorAll<HTMLAnchorElement>('a.mobile-toc-link').forEach(link => {
       const base = link.getAttribute('href')?.split('?')[0] || '';
-      link.href = lang === 'he' ? `${base}?lang=he` : base;
+      link.href = lang !== 'en' ? `${base}?lang=${lang}` : base;
     });
     if (drawer.classList.contains('open')) buildMobileOutline();
   });

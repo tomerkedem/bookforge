@@ -1,0 +1,250 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { discoverAllBooks } from '../utils/book-discovery';
+
+const books = discoverAllBooks();
+---
+
+<BaseLayout title="Admin — Yuval" showLanguageToggle={false}>
+  <div class="admin-wrap">
+    <h1 class="admin-title">Admin Panel</h1>
+    <p class="admin-subtitle">Manage local reader data stored in the browser.</p>
+
+    <div class="books-grid" id="books-grid">
+      {books.map(book => (
+        <div class="book-card" data-slug={book.slug}>
+          <div class="book-info">
+            <span class="book-title">{book.title_en}</span>
+            <span class="book-slug">{book.slug}</span>
+          </div>
+          <div class="book-stats">
+            <span class="stat" id={`stat-${book.slug}`}>...</span>
+          </div>
+          <button class="clean-btn" data-slug={book.slug}>
+            Clean data
+          </button>
+        </div>
+      ))}
+    </div>
+
+    <div class="global-section">
+      <h2>Global settings</h2>
+      <p>Language, theme, typography, TTS voice & speed, onboarding state.</p>
+      <button class="clean-btn clean-btn--global" id="clean-global-btn">
+        Clean global settings
+      </button>
+    </div>
+
+    <div id="toast" class="toast hidden"></div>
+  </div>
+</BaseLayout>
+
+<style>
+  .admin-wrap {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 48px 24px 80px;
+  }
+
+  .admin-title {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: var(--yuval-text);
+    margin: 0 0 6px;
+  }
+
+  .admin-subtitle {
+    color: var(--yuval-text-secondary);
+    font-size: 0.9rem;
+    margin: 0 0 32px;
+  }
+
+  .books-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 40px;
+  }
+
+  .book-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: var(--yuval-surface);
+    border: 1px solid var(--yuval-border);
+    border-radius: 12px;
+    padding: 16px 20px;
+  }
+
+  .book-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .book-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--yuval-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .book-slug {
+    font-size: 0.75rem;
+    color: var(--yuval-text-muted);
+    font-family: monospace;
+  }
+
+  .book-stats .stat {
+    font-size: 0.8rem;
+    color: var(--yuval-text-secondary);
+    white-space: nowrap;
+  }
+
+  .clean-btn {
+    padding: 7px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--yuval-border);
+    background: var(--yuval-bg-secondary);
+    color: var(--yuval-text-secondary);
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+  }
+
+  .clean-btn:hover {
+    background: #fee2e2;
+    color: #b91c1c;
+    border-color: #fca5a5;
+  }
+
+  .clean-btn--global {
+    margin-top: 12px;
+  }
+
+  .global-section {
+    border-top: 1px solid var(--yuval-border);
+    padding-top: 28px;
+  }
+
+  .global-section h2 {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--yuval-text);
+    margin: 0 0 4px;
+  }
+
+  .global-section p {
+    font-size: 0.85rem;
+    color: var(--yuval-text-secondary);
+    margin: 0 0 8px;
+  }
+
+  .toast {
+    position: fixed;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1a1a1a;
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 99px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    z-index: 9999;
+    transition: opacity 0.3s;
+  }
+
+  .toast.hidden { display: none; }
+</style>
+
+<script>
+  const BOOK_PREFIXES = (slug: string) => [
+    `yuval_bookmarks_${slug}`,
+    `yuval_highlights_${slug}`,   // prefix — will match all chapters
+    `yuval_reading_progress_${slug}`,
+    `yuval_reading_stats_${slug}`,
+    `yuval_reading_goals_${slug}`,
+  ];
+
+  const GLOBAL_KEYS = [
+    'yuval_language',
+    'yuval-theme',
+    'yuval-typography',
+    'yuval_tts_voice_he',
+    'yuval_tts_voice_en',
+    'yuval_tts_voice_es',
+    'yuval_tts_speed',
+    'yuval_onboarded_v1',
+    'yuval_reading_goal',
+  ];
+
+  function countBookKeys(slug: string): number {
+    let count = 0;
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i) || '';
+      if (key.includes(`_${slug}`)) count++;
+    }
+    return count;
+  }
+
+  function cleanBook(slug: string): number {
+    const toDelete: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i) || '';
+      if (key.includes(`_${slug}`)) toDelete.push(key);
+    }
+    toDelete.forEach(k => localStorage.removeItem(k));
+    return toDelete.length;
+  }
+
+  function cleanGlobal(): number {
+    let count = 0;
+    GLOBAL_KEYS.forEach(k => {
+      if (localStorage.getItem(k) !== null) {
+        localStorage.removeItem(k);
+        count++;
+      }
+    });
+    return count;
+  }
+
+  function showToast(msg: string) {
+    const toast = document.getElementById('toast')!;
+    toast.textContent = msg;
+    toast.classList.remove('hidden');
+    setTimeout(() => toast.classList.add('hidden'), 2800);
+  }
+
+  function updateStats() {
+    document.querySelectorAll<HTMLElement>('.book-card').forEach(card => {
+      const slug = card.dataset.slug!;
+      const count = countBookKeys(slug);
+      const el = document.getElementById(`stat-${slug}`);
+      if (el) el.textContent = count === 0 ? 'No data' : `${count} item${count !== 1 ? 's' : ''}`;
+    });
+  }
+
+  // Attach clean buttons
+  document.querySelectorAll<HTMLButtonElement>('.clean-btn[data-slug]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const slug = btn.dataset.slug!;
+      const removed = cleanBook(slug);
+      updateStats();
+      showToast(removed > 0 ? `Cleaned ${removed} items for "${slug}"` : `No data found for "${slug}"`);
+    });
+  });
+
+  document.getElementById('clean-global-btn')?.addEventListener('click', () => {
+    const removed = cleanGlobal();
+    showToast(removed > 0 ? `Cleaned ${removed} global settings` : 'No global settings found');
+  });
+
+  updateStats();
+</script>

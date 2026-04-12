@@ -169,13 +169,17 @@ def run_pipeline(docx_path: str, book_name: str,
 
 
 def main():
+    # Always resolve output relative to project root (parent of src/)
+    project_root = Path(__file__).resolve().parent.parent.parent
+    default_output = str(project_root / "output")
+
     parser = argparse.ArgumentParser(description="BookForge: Word/PDF → Chapters pipeline")
     parser.add_argument("docx_path", help="Path to Word (.docx) or PDF file")
     parser.add_argument("book_name", help="Book slug name (e.g. my-book)")
     parser.add_argument("--title-he", default="", help="Hebrew title")
     parser.add_argument("--title-en", default="", help="English title")
     parser.add_argument("--title-es", default="", help="Spanish title")
-    parser.add_argument("--output-dir", default="output", help="Output directory")
+    parser.add_argument("--output-dir", default=default_output, help="Output directory")
     parser.add_argument("--skip-translate", action="store_true",
                         help="Skip translation step (re-parse only)")
     args = parser.parse_args()

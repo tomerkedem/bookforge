@@ -46,7 +46,7 @@ const isRtl = language === 'he';
     className,
   ]}
   id="chapter-nav"
-  aria-label={language === 'he' ? 'ניווט פרקים' : 'Chapter navigation'}
+  aria-label={language === 'he' ? 'ניווט פרקים' : language === 'es' ? 'Navegación de capítulos' : 'Chapter navigation'}
 >
   {
     previousChapter && (
@@ -58,7 +58,7 @@ const isRtl = language === 'he';
       >
         {isRtl ? (
           <>
-            <span data-he={previousChapter.title_he} data-en={previousChapter.title_en}>{previousChapter.title_he}</span>
+            <span data-he={previousChapter.title_he} data-en={previousChapter.title_en} data-es={previousChapter.title_en}>{previousChapter.title_he}</span>
             <svg
               class="w-4 h-4"
               fill="none"
@@ -88,7 +88,7 @@ const isRtl = language === 'he';
                 d="M15 19l-7-7 7-7"
               />
             </svg>
-            <span data-he={previousChapter.title_he} data-en={previousChapter.title_en}>{previousChapter.title_en}</span>
+            <span data-he={previousChapter.title_he} data-en={previousChapter.title_en} data-es={previousChapter.title_en}>{previousChapter.title_en}</span>
           </>
         )}
       </a>
@@ -102,6 +102,7 @@ const isRtl = language === 'he';
           class="text-xs font-body text-yuval-text-tertiary uppercase tracking-wide"
           data-he={`פרק ${currentChapter.id + 1} מתוך ${chapters.length}`}
           data-en={`Chapter ${currentChapter.id + 1} of ${chapters.length}`}
+          data-es={`Capítulo ${currentChapter.id + 1} de ${chapters.length}`}
         >
           Chapter {currentChapter.id + 1} of {chapters.length}
         </span>
@@ -109,6 +110,7 @@ const isRtl = language === 'he';
           class="text-center font-heading font-bold text-lg text-yuval-text"
           data-he={currentChapter.title_he}
           data-en={currentChapter.title_en}
+          data-es={currentChapter.title_en}
         >
           {language === 'he' ? currentChapter.title_he : currentChapter.title_en}
         </h2>
@@ -139,11 +141,11 @@ const isRtl = language === 'he';
                 d="M15 19l-7-7 7-7"
               />
             </svg>
-            <span data-he={nextChapter.title_he} data-en={nextChapter.title_en}>{nextChapter.title_he}</span>
+            <span data-he={nextChapter.title_he} data-en={nextChapter.title_en} data-es={nextChapter.title_en}>{nextChapter.title_he}</span>
           </>
         ) : (
           <>
-            <span data-he={nextChapter.title_he} data-en={nextChapter.title_en}>{nextChapter.title_en}</span>
+            <span data-he={nextChapter.title_he} data-en={nextChapter.title_en} data-es={nextChapter.title_en}>{nextChapter.title_en}</span>
             <svg
               class="w-4 h-4"
               fill="none"
@@ -171,7 +173,7 @@ const isRtl = language === 'he';
     document.querySelectorAll<HTMLAnchorElement>('.chapter-nav-link').forEach(link => {
       const base = link.dataset.baseUrl || '';
       if (!base) return;
-      link.href = lang === 'he' ? `${base}?lang=he` : base;
+      link.href = lang !== 'en' ? `${base}?lang=${lang}` : base;
     });
   }
 

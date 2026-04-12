@@ -11,7 +11,7 @@
 
     <!-- Theme cycle -->
     <div class="fab-item">
-      <span class="fab-label" data-he="ערכת צבע" data-en="Theme" data-es="Tema">Theme</span>
+      <span class="fab-label" data-i18n="fab.theme">Theme</span>
       <button id="theme-cycle-btn" class="fab-sub-btn" aria-label="Cycle theme" title="Theme">
         <svg class="theme-icon theme-icon-light w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75"
@@ -30,7 +30,7 @@
 
     <!-- Typography -->
     <div class="fab-item">
-      <span class="fab-label" data-he="גופן" data-en="Typography" data-es="Tipografía">Typography</span>
+      <span class="fab-label" data-i18n="fab.typography">Typography</span>
       <button id="typography-btn" class="fab-sub-btn" aria-label="Typography settings" title="Typography (T)">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M4 6h16M4 12h8m-8 6h16" />
@@ -40,7 +40,7 @@
 
     <!-- Focus mode -->
     <div class="fab-item">
-      <span class="fab-label" data-he="מיקוד" data-en="Focus" data-es="Enfoque">Focus</span>
+      <span class="fab-label" data-i18n="fab.focus">Focus</span>
       <button id="focus-mode-btn" class="fab-sub-btn" aria-label="Toggle focus mode" title="Focus Mode (F)">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75"
@@ -75,7 +75,7 @@
   <div class="panel-handle" id="panel-drag-handle"></div>
 
   <div class="panel-header">
-    <h3 data-he="הגדרות תצוגה" data-en="Display Settings" data-es="Configuración">Display Settings</h3>
+    <h3 data-i18n="display.settings">Display Settings</h3>
     <button id="close-typography" class="panel-close" aria-label="Close">
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -86,7 +86,7 @@
   <div class="panel-body">
     <!-- Font Size -->
     <div class="setting-row">
-      <label data-he="גודל טקסט" data-en="Text Size" data-es="Tamaño">Text Size</label>
+      <label data-i18n="display.textSize">Text Size</label>
       <div class="size-stepper">
         <button id="font-decrease" class="step-btn" aria-label="Decrease font size">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -104,7 +104,7 @@
 
     <!-- Line Height -->
     <div class="setting-row">
-      <label data-he="גובה שורה" data-en="Line Height" data-es="Interlineado">Line Height</label>
+      <label data-i18n="display.lineHeight">Line Height</label>
       <div class="slider-wrap">
         <input type="range" id="line-height-slider" min="1.4" max="2.4" step="0.1" value="1.8" aria-label="Line height" />
         <span id="line-height-display" class="slider-value">1.8</span>
@@ -113,17 +113,17 @@
 
     <!-- Content Width -->
     <div class="setting-row">
-      <label data-he="רוחב" data-en="Width" data-es="Ancho">Width</label>
+      <label data-i18n="display.width">Width</label>
       <div class="seg-control">
-        <button class="seg-btn" data-width="600" data-he="צר" data-en="Narrow" data-es="Estrecho">Narrow</button>
-        <button class="seg-btn active" data-width="720" data-he="בינוני" data-en="Medium" data-es="Medio">Medium</button>
-        <button class="seg-btn" data-width="900" data-he="רחב" data-en="Wide" data-es="Amplio">Wide</button>
+        <button class="seg-btn" data-width="600" data-i18n="display.widthNarrow">Narrow</button>
+        <button class="seg-btn active" data-width="720" data-i18n="display.widthMedium">Medium</button>
+        <button class="seg-btn" data-width="900" data-i18n="display.widthWide">Wide</button>
       </div>
     </div>
 
     <!-- Font Family -->
     <div class="setting-row">
-      <label data-he="גופן" data-en="Font" data-es="Fuente">Font</label>
+      <label data-i18n="display.font">Font</label>
       <select id="font-family-select" aria-label="Font family">
         <option value="'Frank Ruhl Libre', serif">Frank Ruhl</option>
         <option value="'Heebo', sans-serif">Heebo</option>
@@ -132,7 +132,7 @@
       </select>
     </div>
 
-    <button id="reset-typography" class="reset-btn" data-he="איפוס" data-en="Reset defaults" data-es="Restablecer">
+    <button id="reset-typography" class="reset-btn" data-i18n="display.reset">
       Reset defaults
     </button>
   </div>
@@ -143,9 +143,9 @@
 
 <!-- Focus indicator toast -->
 <div id="focus-indicator" class="focus-toast hidden" aria-live="polite">
-  <span data-he="מצב מרוכז" data-en="Focus Mode" data-es="Modo enfoque">Focus Mode</span>
+  <span data-i18n="focus.mode">Focus Mode</span>
   <kbd>F</kbd>
-  <span data-he="ליציאה" data-en="to exit" data-es="para salir">to exit</span>
+  <span data-i18n="focus.toExit">to exit</span>
 </div>
 
 <style>
