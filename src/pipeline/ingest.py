@@ -255,7 +255,6 @@ def _format_runs(para, hyperlinks: dict = None) -> str:
 
 # Default font size threshold (in half-points, Word standard is 24 = 12pt)
 DEFAULT_FONT_SIZE = 24  # 12pt
-LARGE_FONT_THRESHOLD = 32  # 16pt - larger text
 SMALL_FONT_THRESHOLD = 18  # 9pt - smaller text
 
 
@@ -280,7 +279,7 @@ def _get_run_format(run) -> str:
     is_italic = bool(run.italic)
     is_underline = bool(run.underline)
     
-    # Check font size
+    # Check font size for small text only
     font_size = None
     try:
         if run.font.size:  # Size in EMUs, need to convert
@@ -295,7 +294,6 @@ def _get_run_format(run) -> str:
     except:
         pass
     
-    is_large = font_size and font_size >= LARGE_FONT_THRESHOLD
     is_small = font_size and font_size <= SMALL_FONT_THRESHOLD
     
     # Check superscript/subscript via XML
@@ -320,19 +318,13 @@ def _get_run_format(run) -> str:
     if is_subscript:
         return "subscript"
     if is_bold and is_italic:
-        if is_large:
-            return "bold_italic_large"
         return "bold_italic"
     if is_bold:
-        if is_large:
-            return "bold_large"
         return "bold"
     if is_italic:
         return "italic"
     if is_underline:
         return "underline"
-    if is_large:
-        return "large"
     if is_small:
         return "small"
     
@@ -341,12 +333,8 @@ def _get_run_format(run) -> str:
 
 def _apply_format(fmt: str, text: str) -> str:
     """Apply markdown formatting to text based on format type."""
-    if fmt == "bold_italic_large":
-        return f"<big>***{text}***</big>"
-    elif fmt == "bold_italic":
+    if fmt == "bold_italic":
         return f"***{text}***"
-    elif fmt == "bold_large":
-        return f"<big>**{text}**</big>"
     elif fmt == "bold":
         return f"**{text}**"
     elif fmt == "italic":
@@ -364,8 +352,6 @@ def _apply_format(fmt: str, text: str) -> str:
         return f"<sup>{text}</sup>"
     elif fmt == "subscript":
         return f"<sub>{text}</sub>"
-    elif fmt == "large":
-        return f"<big>{text}</big>"
     elif fmt == "small":
         return f"<small>{text}</small>"
     else:
@@ -426,7 +412,8 @@ def _clean_markdown_asterisks(text: str) -> str:
     text = re.sub(r'\*\*\s*\*\*$', '', text)
     
     # Fix Hebrew prefix letters before bold: ה**text** → **הtext**
-    text = re.sub(r'([הבלמכווש])\*\*([^*]+)\*\*', r'**\1\2**', text)
+    # Hebrew prefix letters (אותיות השימוש): ה, ו, ב, כ, ל, מ, ש
+    text = re.sub(r'([הובכלמש])\*\*([^*]+)\*\*', r'**\1\2**', text)
     
     # Fix **text**.**  → **text**.
     text = re.sub(r'\*\*\.\*\*', '.', text)

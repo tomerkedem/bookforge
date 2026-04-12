@@ -72,7 +72,8 @@ def _clean_markdown_final(text: str) -> str:
         line = re.sub(r'\*\*\s+\*\*', ' ', line)
         
         # 6. Fix Hebrew prefix letters before bold: ה**text** → **הtext**
-        line = re.sub(r'([הבלמכוש])\*\*([^*]+)\*\*', r'**\1\2**', line)
+        # Hebrew prefix letters (אותיות השימוש): ה, ו, ב, כ, ל, מ, ש
+        line = re.sub(r'([הובכלמש])\*\*([^*]+)\*\*', r'**\1\2**', line)
         
         # 7. Fix sentence ending with ". **label" → ". **label**"
         # Pattern: text ends with . then space then ** then text without closing **
