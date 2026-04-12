@@ -27,7 +27,11 @@
 ## התקנה
 
 ```bash
+# תלויות Node
 npm install
+
+# תלויות Python (לפייפליין)
+pip install -r requirements.txt
 ```
 
 ## פקודות

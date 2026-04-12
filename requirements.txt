@@ -1,0 +1,5 @@
+# BookForge Python Dependencies
+# Install with: pip install -r requirements.txt
+
+# Word document processing (required)
+python-docx>=1.1.0
