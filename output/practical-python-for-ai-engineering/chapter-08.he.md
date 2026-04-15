@@ -17,6 +17,7 @@
 
 ```python
 def load_model(path: str):
+```
  try:
  print("Loading model...")
  with open(path, "rb") as f:
@@ -44,8 +45,6 @@ def load_model(path: str):
 • Finally –קוד שרץ תמיד, גם במקרה של כישלון (לניקוי משאבים, סגירת חיבורים וכו').
 
 במערכות AI אמיתיות נשתמש כמעט תמיד בכל הארבעה. במיוחד כשיש קריאות API, קריאה מקבצים או טעינת מודלים.
-
-
 ## יצירת חריגות מותאמות (Custom Exceptions)
 
 ככל שהמערכת שלך גדלה, תרצה לדעת לא רק ש"הייתה שגיאה" אלא **איזה סוג שגיאה** ולמה.
@@ -53,6 +52,7 @@ def load_model(path: str):
 
 ```python
 class ModelNotFoundError(Exception):
+```
  """Raised when the model file is missing."""
  pass
 class InvalidDatasetError(Exception):
@@ -60,8 +60,6 @@ class InvalidDatasetError(Exception):
  pass
 def load_dataset(path: str):
  if not Path(path).exists():
-
-```
  raise InvalidDatasetError(f"The file {path} does not exist.")
 
 
@@ -70,6 +68,7 @@ def load_dataset(path: str):
 יתרון עצום של גישה זו הוא יכולת טיפול ממוקדת:
 
 ```python
+```
 try:
  load_dataset("data/train.csv")
 except InvalidDatasetError as e:
@@ -79,8 +78,6 @@ except InvalidDatasetError as e:
 
 
 כך אפשר להבדיל בין "בעיה בנתונים" לבין "בעיה ברשת", בין "מודל חסר" ל"טוקנים שנגמרו".
-
-
 ## logging בסיסי – רמות INFO/WARNING/ERROR
 
 קריאות print הן כמו הודעות בוואטסאפ, הן זמניות ונעלמות.
@@ -96,6 +93,7 @@ logging.basicConfig(
 logging.info("System started")
 logging.warning("The model is slower than usual")
 logging.error("Dataset loading failed")
+```
 
 
 
@@ -115,8 +113,6 @@ logging.error("Dataset loading failed")
 במקום print, השתמש תמיד ב-logger. הוא יודע לרשום לקבצים,
 
 ל-stdout, ל-syslog, ולשירותים כמו ELK או Datadog.
-
-
 ## Structured Logging – extra dict ו-correlation ID
 
 כשיש לך עשרות microservices, מאות משתמשים ומיליארדי טוקנים, לוגים רגילים כבר לא מספיקים. Structured Logging מאפשר להוסיף **שדות קבועים** לכל הודעה, כך שמערכות ניתוח לוגים (כמו Kibana או Grafana) יוכלו לפלטר, לקבץ ולזהות בעיות במהירות.
@@ -125,7 +121,6 @@ logging.error("Dataset loading failed")
 import logging
 import uuid
 logger = logging.getLogger(__name__)
-
 ```
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
@@ -133,13 +128,11 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 
 `def process_request(user_id: str):
 
-```
  correlation_id = str(uuid.uuid4()) # unique identifier for the request
 
 
 ` try:
 
-```
  logger.info("Starting request processing", extra={"correlation_id": correlation_id, "user_id": user_id})
 
 
@@ -149,7 +142,6 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 
 ` except Exception as e:
 
-```
  logger.error("Processing failed", extra={"error": str(e), "correlation_id": correlatio
 
 
@@ -169,7 +161,6 @@ import logging
 import pandas as pd
 from pathlib import Path
 logger = logging.getLogger("pipeline")
-
 ```
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s", encoding="utf8")
 
@@ -199,7 +190,6 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 
 ` if "text" not in df.columns:
 
-```
  raise PipelineError("Column text is missing in dataset")
 
 
@@ -218,7 +208,6 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 
 ` result = run_inference(data)
 
-```
  result.to_csv("data/output.csv", index=False, encoding="utf8")
 
 

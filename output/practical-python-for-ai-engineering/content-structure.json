@@ -1,26 +1,26 @@
 {
   "book": {
     "titles": {
-      "he": "פייתון מעשית למהנדסי AI",
-      "en": "פייתון מעשית למהנדסי AI",
-      "es": "פייתון מעשית למהנדסי AI"
+      "he": "פייתון מעשי למהנדסי AI",
+      "en": "Practical Python for AI Engineers",
+      "es": "Python práctico para ingenieros de IA"
     },
     "subtitles": {
       "he": "מיומנויות פייתון לעבודה עם AI",
-      "en": "מיומנויות פייתון לעבודה עם AI",
-      "es": "מיומנויות פייתון לעבודה עם AI"
+      "en": "Python skills for working with AI",
+      "es": "Habilidades de Python para trabajar con IA"
     },
     "descriptions": {
       "he": "",
       "en": "",
       "es": ""
     },
-    "title_he": "פייתון מעשית למהנדסי AI",
+    "title_he": "פייתון מעשי למהנדסי AI",
     "subtitle_he": "מיומנויות פייתון לעבודה עם AI",
-    "title_en": "פייתון מעשית למהנדסי AI",
-    "subtitle_en": "מיומנויות פייתון לעבודה עם AI",
-    "title_es": "פייתון מעשית למהנדסי AI",
-    "subtitle_es": "מיומנויות פייתון לעבודה עם AI",
+    "title_en": "Practical Python for AI Engineers",
+    "subtitle_en": "Python skills for working with AI",
+    "title_es": "Python práctico para ingenieros de IA",
+    "subtitle_es": "Habilidades de Python para trabajar con IA",
     "chapters": [
       {
         "id": "intro",
@@ -28,16 +28,16 @@
         "type": "intro",
         "titles": {
           "he": "מבוא",
-          "en": "מבוא",
-          "es": "מבוא"
+          "en": "Introduction",
+          "es": "Introducción"
         },
         "sections": 0,
         "has_images": false,
         "word_count": 189,
         "topics": [],
         "title_he": "מבוא",
-        "title_en": "מבוא",
-        "title_es": "מבוא"
+        "title_en": "Introduction",
+        "title_es": "Introducción"
       },
       {
         "id": 1,
@@ -45,16 +45,16 @@
         "type": "content",
         "titles": {
           "he": "פרק 1 - למה פייתון היא שפה חשובה בעידן ה-AI",
-          "en": "פרק 1 - למה פייתון היא שפה חשובה בעידן ה-AI",
-          "es": "פרק 1 - למה פייתון היא שפה חשובה בעידן ה-AI"
+          "en": "Chapter 1 - Why Python is an Important Language in the AI Era",
+          "es": "Capítulo 1 - Por qué Python es un lenguaje importante en la era de la IA"
         },
         "sections": 6,
         "has_images": false,
         "word_count": 1685,
         "topics": [],
         "title_he": "פרק 1 - למה פייתון היא שפה חשובה בעידן ה-AI",
-        "title_en": "פרק 1 - למה פייתון היא שפה חשובה בעידן ה-AI",
-        "title_es": "פרק 1 - למה פייתון היא שפה חשובה בעידן ה-AI"
+        "title_en": "Chapter 1 - Why Python is an Important Language in the AI Era",
+        "title_es": "Capítulo 1 - Por qué Python es un lenguaje importante en la era de la IA"
       },
       {
         "id": 2,
@@ -62,8 +62,8 @@
         "type": "content",
         "titles": {
           "he": "פרק 2 - יסודות פייתון למתכנתים מנוסים תחביר בסיסי",
-          "en": "פרק 2 - יסודות פייתון למתכנתים מנוסים תחביר בסיסי",
-          "es": "פרק 2 - יסודות פייתון למתכנתים מנוסים תחביר בסיסי"
+          "en": "Chapter 2 - Python Fundamentals for Experienced Programmers: Basic Syntax",
+          "es": "Capítulo 2 - Fundamentos de Python para Programadores Experimentados: Sintaxis Básica"
         },
         "sections": 8,
         "has_images": false,

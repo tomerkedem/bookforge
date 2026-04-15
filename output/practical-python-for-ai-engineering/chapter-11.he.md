@@ -37,22 +37,21 @@
 
 ```python
 
-`def logger(func):`
+`def logger(func):
 
 ` def wrapper(*args, **kwargs):`**
 
-` print(f"Calling {func.__name__} with {args}")`
+` print(f"Calling {func.__name__} with {args}")
 
 ` result = func(*args, **kwargs)`**
 
 ` print(f"{func.__name__} returned {result}")`
 
-` return result`
+
+` return result
 
 ` return wrapper`
 
-
-`````
 
 כאן:
 
@@ -66,25 +65,22 @@
 במקום לכתוב:
 
 ```python
+add = logger(add)
 
-`add = logger(add)`
 
-`````
 
 אפשר פשוט להשתמש בתחביר הקצר של דקורטורים:
 
 ```python
 
-`@logger`
 
-`def add(a: int, b: int) -> int:`
+@logger
+def add(a: int, b: int) -> int:
+ return a + b
+add(3, 5)
 
-` return a + b`
 
 
-`add(3, 5)`
-
-`````
 
 הסימן @logger אומר לפייתון:
 
@@ -93,10 +89,9 @@
 מאחורי הקלעים, פייתון עושה בעצם:
 
 ```python
+add = logger(add)
 
-`add = logger(add)`
 
-````
 
 
 **מה באמת קורה בזמן הריצה**
@@ -104,10 +99,9 @@
 כשאנחנו כותבים:
 
 ```python
+add(3, 5)
 
-`add(3, 5)`
 
-`````
 
 פייתון לא מריצה את add המקורית, אלא את הפונקציה wrapper שחוזרת מהדקורטור. זה סדר הפעולות בפועל:
 
@@ -126,9 +120,9 @@ add החזירה 8
 
 ```Plaintext
 
-`8`
+`8
 
-`````
+
 
 
 **למה זה טוב?**
@@ -146,42 +140,42 @@ add החזירה 8
 
 ```python
 
-`from functools import wraps`
+`from functools import wraps
 
 
-`def repeat(n: int):`
+`def repeat(n: int):
 
-` def decorator(func):`
+` def decorator(func):
 
-` @wraps(func)`
+` @wraps(func)
 
 ` def wrapper(*args, **kwargs):`**
 
-` result = None`
+` result = None
 
-` for i in range(n):`
+` for i in range(n):
 
-` print(f"Call number {i + 1}")`
+` print(f"Call number {i + 1}")
 
 ` result = func(*args, **kwargs)`**
 
-` return result`
 
-` return wrapper`
+` return result
 
-` return decorator`
+` return wrapper
+
+` return decorator
 
 
-`@repeat(3)`
+`@repeat(3)
 
-`def say_hello():`
+`def say_hello():
 
-` print("Hello!")`
+` print("Hello!")
 
 
 `say_hello()`
 
-`````
 
 
 שימוש ב-@wraps שומר על שם הפונקציה וה-docstring המקוריים, כדי שלא נאבד מידע חשוב על הפונקציה המקורית.
@@ -191,56 +185,51 @@ add החזירה 8
 פייתון כוללת דקורטורים מובנים ושימושיים מאוד, ביניהם:
 
 ```python
-
-`from functools import lru_cache`
-
-`import time`
-
-
-`@lru_cache(maxsize=100)`
-
-`def fibonacci(n: int) -> int:`
-
-` if n < 2:`
-
-` return n`
-
-` return fibonacci(n - 1) + fibonacci(n - 2)`
+from functools import lru_cache
+import time
+@lru_cache(maxsize=100)
+def fibonacci(n: int) -> int:
+ if n < 2:
 
 
-`# example for measuring runtime`
 
-`def measure_time(func):`
+` return n
+
+` return fibonacci(n - 1) + fibonacci(n - 2)
+
+
+`# example for measuring runtime
+
+`def measure_time(func):
 
 ` def wrapper(*args, **kwargs):`**
 
-` start = time.perf_counter()`
+` start = time.perf_counter()
 
 ` result = func(*args, **kwargs)`**
 
 ` duration = time.perf_counter() - start`
-
 ```python
  print(f"{func.__name__} ran for {duration:.4f} seconds")
-```
-
-` return result`
-
-` return wrapper`
 
 
-`@measure_time`
+` return result
 
-`def slow_sum():`
-
-` time.sleep(1)`
-
-` return sum(range(100000))`
+` return wrapper
 
 
-`slow_sum()`
+`@measure_time
 
-`````
+`def slow_sum():
+
+` time.sleep(1)
+
+` return sum(range(100000))
+
+
+`slow_sum()
+
+
 
 
 @lru_cache מאיץ חישובים יקרים על ידי שמירת תוצאות.
@@ -251,39 +240,22 @@ add החזירה 8
 כשתהליך דורש פתיחה וסגירה של משאב (כגון: קובץ, חיבור רשת או טרנזקציה), Context Manager מאפשר לו להתנהל אוטומטית:
 
 ```python
+class FileHandler:
+ def __init__(self, path: str):
+ self.path = path
+ self.file = None
+ def __enter__(self):
+ # Setup: Open the resource
+ self.file = open(self.path, "w", encoding="utf8")
+```
+ return self.file
+ def __exit__(self, exc_type, exc_val, exc_tb):
+ # Teardown: Ensure the resource is closed
+ if self.file:
+ self.file.close()
+with FileHandler("data/output.txt") as f:
+ f.write("Hello world!")
 
-`class FileHandler:`
-
-` def __init__(self, path: str):`
-
-` self.path = path`
-
-` self.file = None`
-
-
-` def __enter__(self):`
-
-` # Setup: Open the resource`
-
-` self.file = open(self.path, "w", encoding="utf8")`
-
-` return self.file`
-
-
-` def __exit__(self, exc_type, exc_val, exc_tb):`
-
-` # Teardown: Ensure the resource is closed`
-
-` if self.file:`
-
-` self.file.close()`
-
-
-`with FileHandler("data/output.txt") as f:`
-
-` f.write("Hello world!")`
-
-`````
 
 כשה-with מסתיים, המתודה __exit__ מופעלת תמיד, גם אם נזרקה חריגה. אין צורך לזכור לסגור קובץ או לשחרר משאב, זה מתבצע אוטומטית.
 
@@ -292,40 +264,34 @@ add החזירה 8
 אם אין צורך במחלקה שלמה, אפשר להשתמש בדקורטור @contextmanager כדי לכתוב Context Manager קצר וברור יותר.
 
 ```python
-
-`from contextlib import contextmanager`
-
-
-`@contextmanager`
-
-`def open_utf8(path: str, mode: str = "r"):`
-
+from contextlib import contextmanager
+```
+@contextmanager
+def open_utf8(path: str, mode: str = "r"):
 ```python
  # Everything before 'yield' is the setup (equivalent to __enter__)
-```
 
-` f = open(path, mode, encoding="utf-8")`
 
-` try:`
+` f = open(path, mode, encoding="utf-8")
 
-```
+` try:
+
  yield f # The object 'yielded' is what the 'as' variable receives
-```
 
-` finally:`
+` finally:
 
 ```python
  # Everything after 'yield' (or in finally) is the teardown (equivalent to __exit__)
-```
-
-` f.close()`
 
 
-`with open_utf8("data/test.txt", "w") as f:`
+` f.close()
 
-` f.write("טקסט בעברית באיכות גבוהה `💡`")`
 
-`````
+`with open_utf8("data/test.txt", "w") as f:
+
+` f.write("טקסט בעברית באיכות גבוהה `💡`")
+
+
 
 
 הקוד הזה עושה בדיוק אותו דבר, אבל בלי לכתוב מחלקה.
@@ -337,32 +303,24 @@ add החזירה 8
 הדקורטור dataclass@ (שהופיע כבר בפרקים הקודמים) הוא למעשה דוגמה מובהקת לשימוש בדקורטור ברמת מחלקה.
 
 ```python
-
-`from dataclasses import dataclass`
-
-
-`@dataclass`
-
-`class Point:`
-
-` x: float`
-
-` y: float`
-
-
-`p = Point(1.0, 2.5)`
-
-`print(p) # Point(x=1.0, y=2.5)`
-
+from dataclasses import dataclass
 ```
+@dataclass
+class Point:
+ x: float
+ y: float
+p = Point(1.0, 2.5)
+print(p) # Point(x=1.0, y=2.5)
 
 הוא יוצר אוטומטית את כל מה שצריך:
 
 ```python
 
-`__init__, __repr__, __eq__`
 
-`````
+__init__, __repr__, __eq__
+
+
+
 
 
 ומאפשר לכתוב מחלקות פשוטות, נקיות וברורות. בלי קוד מיותר.
@@ -373,57 +331,56 @@ add החזירה 8
 
 ```python
 
-`import time`
+`import time
 
-`from dataclasses import dataclass`
+`from dataclasses import dataclass
 
-`from typing import Any, Callable`
+`from typing import Any, Callable
 
 
-`def measure_time(func: Callable[..., Any]):`
+`def measure_time(func: Callable[..., Any]):
 
 ` def wrapper(*args, **kwargs):`**
 
-` start = time.perf_counter()`
+` start = time.perf_counter()
 
 ` result = func(*args, **kwargs)`**
 
-` duration = time.perf_counter() - start`
+` duration = time.perf_counter() - start
 
 ` return Result(func.__name__, duration, result)`
 
-` return wrapper`
+
+` return wrapper
 
 
-`@dataclass`
+`@dataclass
 
-`class Result:`
+`class Result:
 
-` name: str`
+` name: str
 
-` duration: float`
+` duration: float
 
-` output: Any`
-
-
-`@measure_time`
-
-`def heavy_computation(n: int) -> int:`
-
-` time.sleep(0.8)`
-
-` return sum(i * i for i in range(n))`
+` output: Any
 
 
-`res = heavy_computation(100_000)`
+`@measure_time
+
+`def heavy_computation(n: int) -> int:
+
+` time.sleep(0.8)
+
+` return sum(i * i for i in range(n))
+
+
+`res = heavy_computation(100_000)
 
 `print(res)`
-
 ```python
 # Result(name='heavy_computation', duration=0.8012, output=333328333350000)
-```
 
-`````
+
 
 
 
@@ -462,60 +419,55 @@ Pytest הוא הסטנדרט בפייתון לבדיקות יחידה (unit test
 
 ```bash
 
-`pip install pytest`
 
-`````
+pip install pytest
+
+
+
 
 
 מבנה תיקיות טיפוסי:
 
 ```Plaintext
 
-`mini_text_analyzer/`
+`mini_text_analyzer/
 
-`├── `📁` src/`
+`├── `📁` src/
 
-`│ └── `📁` mini_text_analyzer/`
+`│ └── `📁` mini_text_analyzer/
 
-`│ ├── `📄` __init__.py`
+`│ ├── `📄` __init__.py
 
-`│ └── `📄` text_utils.py`
+`│ └── `📄` text_utils.py
 
-`├── `📁` tests/`
+`├── `📁` tests/
 
-`│ └── `📄` test_tokenize.py`
+`│ └── `📄` test_tokenize.py
 
-`├── `📄` requirements.txt`
+`├── `📄` requirements.txt
 
-`└── `📄` README.md`
+`└── `📄` README.md
 
-`````
+
 
 
 בדיקה פשוטה:
 
 ```python
+from mini_text_analyzer.text_utils import tokenize
+def test_tokenize_basic():
+ text = "Hello world"
+ tokens = tokenize(text)
+ assert tokens == ["Hello", "world"]
 
-`from mini_text_analyzer.text_utils import tokenize`
 
-
-`def test_tokenize_basic():`
-
-` text = "Hello world"`
-
-` tokens = tokenize(text)`
-
-` assert tokens == ["Hello", "world"]`
-
-`````
 
 
 הרצה:
 
 ```Plaintext
 
-`pytest -v`
+`pytest -v
 
-```
 
 אם הבדיקה נכשלת, pytest יציג בדיוק איזו השוואה נכשלה, בלי לוגים מיותרים.

@@ -28,34 +28,19 @@ Tokenizer הוא אובייקט עם state של מילון ומאפייני ני
 בפייתון, מחלקה נוצרת בעזרת מילת המפתח class. המתודה __init__ היא הפונקציה שמופעלת בכל פעם שנוצר מופע חדש של המחלקה, ו-self מייצגת את האובייקט הנוכחי.
 
 ```python
-
-`class Counter:`
-
-` """A simple counter that keeps its value in memory."""`
-
-
-` def __init__(self, start: int = 0):`
-
-` self.value = start`
-
-
-` def increment(self, step: int = 1) -> None:`
-
-` self.value += step`
+class Counter:
+ """A simple counter that keeps its value in memory."""
+ def __init__(self, start: int = 0):
+ self.value = start
+ def increment(self, step: int = 1) -> None:
+ self.value += step
+ def get(self) -> int:
+ return self.value
+c = Counter(10)
+c.increment()
+print(c.get()) # 11
 
 
-` def get(self) -> int:`
-
-` return self.value`
-
-
-`c = Counter(10)`
-
-`c.increment()`
-
-`print(c.get()) # 11`
-
-`````
 
 
 **שימו לב:**
@@ -74,44 +59,24 @@ Tokenizer הוא אובייקט עם state של מילון ומאפייני ני
 להלן דוגמה פשוטה:
 
 ```python
-
-`class Vector:`
-
-` def __init__(self, x: int, y: int):`
-
-` self.x = x`
-
-` self.y = y`
-
-
-` def __str__(self) -> str:`
-
-` return f"({self.x}, {self.y})"`
-
-
-` def __repr__(self) -> str:`
-
-` return f"Vector(x={self.x}, y={self.y})"`
+class Vector:
+ def __init__(self, x: int, y: int):
+ self.x = x
+ self.y = y
+ def __str__(self) -> str:
+ return f"({self.x}, {self.y})"
+ def __repr__(self) -> str:
+ return f"Vector(x={self.x}, y={self.y})"
+ def __len__(self) -> int:
+ return abs(self.x) + abs(self.y)
+v = Vector(3, -4)
+print(v)
+# (3, -4)
+print(repr(v))
+# Vector(x=3, y=-4)
+print(len(v)) # 7
 
 
-` def __len__(self) -> int:`
-
-` return abs(self.x) + abs(self.y)`
-
-
-`v = Vector(3, -4)`
-
-`print(v)`
-
-`# (3, -4)`
-
-`print(repr(v))`
-
-`# Vector(x=3, y=-4)`
-
-`print(len(v)) # 7`
-
-`````
 
 
 כך זה עובד:
@@ -144,34 +109,19 @@ Tokenizer הוא אובייקט עם state של מילון ומאפייני ני
 
 
 ```python
-
-`class Tokenizer:`
-
-` language = "english"`
-
-` # Class variable shared by all instances`
-
-
-` def __init__(self, text: str):`
-
-` self.text = text`
-
-` # Instance variable unique to each object`
+class Tokenizer:
+ language = "english"
+ # Class variable shared by all instances
+ def __init__(self, text: str):
+ self.text = text
+ # Instance variable unique to each object
+ def tokens(self) -> list[str]:
+ return self.text.split()
+t1 = Tokenizer("Hello world")
+t2 = Tokenizer("How are you")
+print(t1.language, t2.language) # english english
 
 
-` def tokens(self) -> list[str]:`
-
-` return self.text.split()`
-
-
-`t1 = Tokenizer("Hello world")`
-
-`t2 = Tokenizer("How are you")`
-
-
-`print(t1.language, t2.language) # english english`
-
-`````
 
 
 כששינית את t2.language, בעצם יצרת **עותק חדש** של המשתנה בתוך המופע t2.
@@ -180,10 +130,9 @@ Tokenizer הוא אובייקט עם state של מילון ומאפייני ני
 אם תרצה לשנות את הערך עבור כל המחלקה, כתוב:
 
 ```python
+Tokenizer.language = "english"
 
-`Tokenizer.language = "english"`
 
-`````
 
 
 או עשה זאת מתוך מתודת מחלקה (classmethod@).
@@ -197,28 +146,17 @@ Tokenizer הוא אובייקט עם state של מילון ומאפייני ני
 כלומר, הן מקבלות את self, ועובדות על הנתונים של אותו מופע:
 
 ```python
-
-`class User:`
-
-` def __init__(self, name):`
-
-` self.name = name`
-
-` # Store the user's name`
-
-
-` def greet(self):`
-
-` print(f"Hi {self.name}!")`
-
-` # Print a greeting in English`
+class User:
+ def __init__(self, name):
+ self.name = name
+ # Store the user's name
+ def greet(self):
+ print(f"Hi {self.name}!")
+ # Print a greeting in English
+u = User("Tomer")
+u.greet() # Hi Tomer!
 
 
-`u = User("Tomer")`
-
-`u.greet() # Hi Tomer!`
-
-`````
 
 
 אבל לפעמים יש פעולות:
@@ -237,31 +175,18 @@ Tokenizer הוא אובייקט עם state של מילון ומאפייני ני
 **דוגמה 1 – ספירת מופעים**
 
 ```python
-
-`class Model:`
-
-` instances = 0`
-
-
-` def __init__(self):`
-
-` Model.instances += 1`
-
-
-` @classmethod`
-
-` def how_many(cls):`
-
-` return cls.instances`
+class Model:
+ instances = 0
+ def __init__(self):
+ Model.instances += 1
+ @classmethod
+ def how_many(cls):
+ return cls.instances
+m1 = Model()
+m2 = Model()
+print(Model.how_many()) # 2
 
 
-`m1 = Model()`
-
-`m2 = Model()`
-
-`print(Model.how_many()) # 2`
-
-`````
 
 
 כאן how_many לא תלויה במופע מסוים היא מדווחת כמה מופעים נוצרו עד עכשיו. פייתון מעבירה אליה את המחלקה עצמה (cls), כך שאפשר לגשת ל-cls.instances.
@@ -270,33 +195,19 @@ Tokenizer הוא אובייקט עם state של מילון ומאפייני ני
 **דוגמה 2 – מפעל יצירה (Factory Method)**
 
 ```python
-
-`class User:`
-
-` def __init__(self, name, is_admin=False):`
-
-` self.name = name`
-
-` self.is_admin = is_admin`
-
-
-` @classmethod`
-
-` def admin(cls, name):`
-
-` return cls(name, is_admin=True)`
+class User:
+ def __init__(self, name, is_admin=False):
+ self.name = name
+ self.is_admin = is_admin
+ @classmethod
+ def admin(cls, name):
+ return cls(name, is_admin=True)
+u1 = User("Dana")
+u2 = User.admin("Tomer")
+print(u1.is_admin) # False
+print(u2.is_admin) # True
 
 
-`u1 = User("Dana")`
-
-`u2 = User.admin("Tomer")`
-
-
-`print(u1.is_admin) # False`
-
-`print(u2.is_admin) # True`
-
-`````
 
 
 כך אפשר ליצור משתמש אדמין ישירות,
@@ -312,16 +223,12 @@ staticmethod@ לא מקבלת לא self ולא cls.
 **דוגמה**
 
 ```python
+class MathUtils:
+ @staticmethod
+ def add(a, b):
+ return a + b
 
-`class MathUtils:`
 
-` @staticmethod`
-
-` def add(a, b):`
-
-` return a + b`
-
-`````
 
 
 **למה בכלל צריך @staticmethod**
@@ -335,40 +242,26 @@ staticmethod@ לא מקבלת לא self ולא cls.
 נגיד יש לך מחלקה שמייצגת הזמנה:
 
 ```python
-
-`class Order:`
-
-` def __init__(self, items):`
-
-` self.items = items`
-
-
-` def total(self):`
-
-` return sum(self.items)`
+class Order:
+ def __init__(self, items):
+ self.items = items
+ def total(self):
+ return sum(self.items)
+ @staticmethod
+ def apply_vat(amount):
+ return amount * 1.17
 
 
-` @staticmethod`
-
-` def apply_vat(amount):`
-
-` return amount * 1.17`
-
-`````
 
 עכשיו נוכל להשתמש בה ככה:
 
 ```python
+order = Order([10, 20, 30])
+subtotal = order.total()
+total_with_vat = Order.apply_vat(subtotal)
+print(total_with_vat) # 70.2
 
-`order = Order([10, 20, 30])`
 
-`subtotal = order.total()`
-
-`total_with_vat = Order.apply_vat(subtotal)`
-
-`print(total_with_vat) # 70.2`
-
-`````
 
 **שים לב:**
 
@@ -382,10 +275,9 @@ staticmethod@ לא מקבלת לא self ולא cls.
 אם היית שם את apply_vat כפונקציה חיצונית:
 
 ```python
+def apply_vat(amount): …
 
-`def apply_vat(amount): …`
 
-`````
 
 היא הייתה עובדת בדיוק אותו דבר, אבל היא הייתה “תלושה” מהקוד הלוגי של ההזמנות.
 
@@ -408,32 +300,20 @@ staticmethod@ לא מקבלת לא self ולא cls.
 כשאתה מגדיר מחלקה פשוטה. למשל בשביל לייצג משתמש, לקוח, או מוצר .אתה כמעט תמיד כותב את אותן שלוש מתודות שוב ושוב:
 
 ```python
-
-`class Person:`
-
-` def __init__(self, name, age):`
-
-` self.name = name`
-
-` self.age = age`
-
-
-` def __repr__(self):`
-
-` return f"Person(name={self.name}, age={self.age})"`
-
-
-` def __eq__(self, other):`
-
-` if not isinstance(other, Person):`
-
-` return False`
+class Person:
+ def __init__(self, name, age):
+ self.name = name
+ self.age = age
+ def __repr__(self):
+ return f"Person(name={self.name}, age={self.age})"
+ def __eq__(self, other):
+ if not isinstance(other, Person):
+ return False
 
 ```python
  return self.name == other.name and self.age == other.age
-```
 
-`````
+
 
 
 זה מלא חזרתיות. אין פה לוגיקה חכמה, אלא רק קוד טכני שחוזר על עצמו.
@@ -445,19 +325,13 @@ staticmethod@ לא מקבלת לא self ולא cls.
 "תעשי בשבילי את כל הדברים הסטנדרטיים האלה, אני רק אגדיר את השדות."
 
 ```python
+from dataclasses import dataclass
+@dataclass
+class Person:
+ name: str
+ age: int
 
-`from dataclasses import dataclass`
 
-
-`@dataclass`
-
-`class Person:`
-
-` name: str`
-
-` age: int`
-
-`````
 
 
 וזהו.
@@ -472,23 +346,15 @@ staticmethod@ לא מקבלת לא self ולא cls.
 כך זה עובד בפועל
 
 ```python
+p1 = Person("Dana", 30)
+p2 = Person("Dana", 30)
+p3 = Person("Noam", 12)
+print(p1)
+# Person(name='Dana', age=30)
+print(p1 == p2) # True (same values)
+print(p1 == p3) # False
 
-`p1 = Person("Dana", 30)`
 
-`p2 = Person("Dana", 30)`
-
-`p3 = Person("Noam", 12)`
-
-
-`print(p1)`
-
-`# Person(name='Dana', age=30)`
-
-`print(p1 == p2) # True (same values)`
-
-`print(p1 == p3) # False`
-
-`````
 
 
 בלי שכתבת אף אחת מהמתודות האלה בעצמך.
@@ -515,58 +381,52 @@ frozen=True – הופך את האובייקט לבלתי ניתן לשינוי 
 
 ```python
 
-`from dataclasses import dataclass`
+`from dataclasses import dataclass
 
 
-`@dataclass(frozen=True)`
+`@dataclass(frozen=True)
 
-`class Point:`
+`class Point:
 
-` x: int`
+` x: int
 
-` y: int`
-
-
-`p = Point(3, 4)`
-
-`print(p)`
-
-`# Point(x=3, y=4)`
+` y: int
 
 
-`# This works normally. You can read the values`
+`p = Point(3, 4)
 
-`print(p.x + p.y)`
+`print(p)
 
-`# 7`
+`# Point(x=3, y=4)
 
 
-`# Trying to change a value will fail at runtime`
+`# This works normally. You can read the values
 
-`p.x = 10`
+`print(p.x + p.y)
 
-`# `❌` dataclasses.FrozenInstanceError: cannot assign to field 'x'`
+`# 7
 
-`````
+
+`# Trying to change a value will fail at runtime
+
+`p.x = 10
+
+`# `❌` dataclasses.FrozenInstanceError: cannot assign to field 'x'
+
+
 
 
 הפלט בפועל יהיה:
 
 ```python
+Point(x=3, y=4)
+7
+Traceback (most recent call last):
+ File "<stdin>", line 1, in <module>
+ File "<string>", line 4, in __setattr__
+dataclasses.FrozenInstanceError: cannot assign to field 'x'
 
-`Point(x=3, y=4)`
 
-`7`
-
-`Traceback (most recent call last):`
-
-` File "<stdin>", line 1, in <module>`
-
-` File "<string>", line 4, in __setattr__`
-
-`dataclasses.FrozenInstanceError: cannot assign to field 'x'`
-
-`````
 
 
 **הסבר קצר**
@@ -577,60 +437,49 @@ frozen=True – הופך את האובייקט לבלתי ניתן לשינוי 
 אם תסיר את frozen=True, הקוד יעבוד רגיל:
 
 ```python
-
-`from dataclasses import dataclass`
-
-
-`@dataclass`
-
-`class Point:`
-
-` x: int`
-
-` y: int`
+from dataclasses import dataclass
+@dataclass
+class Point:
+ x: int
+ y: int
+p = Point(3, 4)
+p.x = 10 # This works because the class is not frozen
+print(p) # Point(x=10, y=4)
 
 
-`p = Point(3, 4)`
-
-`p.x = 10 # This works because the class is not frozen`
-
-`print(p) # Point(x=10, y=4)`
-
-`````
 
 
 order=True – מאפשר להשוות בין מופעים לפי סדר (>, <).
 
 Python
 
-`from dataclasses import dataclass`
+`from dataclasses import dataclass
 
 
-`@dataclass(order=True)`
+`@dataclass(order=True)
 
-`class Product:`
+`class Product:
 
-` price: float`
+` price: float
 
-` name: str`
-
-
-`p1 = Product(29.90, "Notebook")`
-
-`p2 = Product(9.90, "Pencil")`
-
-`p3 = Product(99.00, "Backpack")`
+` name: str
 
 
-`print(p1 > p2) # True (29.9 > 9.9)`
+`p1 = Product(29.90, "Notebook")
 
-`print(p1 < p3) # True (29.9 < 99.0)`
+`p2 = Product(9.90, "Pencil")
+
+`p3 = Product(99.00, "Backpack")
+
+
+`print(p1 > p2) # True (29.9 > 9.9)
+
+`print(p1 < p3) # True (29.9 < 99.0)
 
 ```python
 print(sorted([p1, p2, p3])) # [Product(price=9.9, name='Pencil'), Product(price=29.9, name='Notebook'), Product(price=99.0, name='Backpack')]
-```
 
-```
+
 
 
 כשאתה כותב dataclass(order=True)@, פייתון מייצרת אוטומטית את כל המתודות להשוואה:
@@ -653,19 +502,13 @@ print(sorted([p1, p2, p3])) # [Product(price=9.9, name='Pencil'), Product(price=
 תוכל להשתמש בפרמטר field(compare=False) על שדות שלא צריכים להשתתף בהשוואה:
 
 ```python
+from dataclasses import dataclass, field
+@dataclass(order=True)
+class Product:
+ price: float
+ name: str = field(compare=False)
 
-`from dataclasses import dataclass, field`
 
-
-`@dataclass(order=True)`
-
-`class Product:`
-
-` price: float`
-
-` name: str = field(compare=False)`
-
-`````
 
 ככה ההשוואה תתבסס רק על המחיר, בלי להתחשב בשם בכלל.
 
@@ -689,52 +532,41 @@ print(sorted([p1, p2, p3])) # [Product(price=9.9, name='Pencil'), Product(price=
 ירושה (Inheritance) מאפשרת להרחיב מחלקה קיימת, אבל ב-AI ובפרויקטים מודרניים משתמשים בה בזהירות. קומפוזיציה (Composition), שילוב של אובייקטים אחרים, לרוב עדיפה.
 
 ```python
-
-`class Cleaner:`
-
-` def clean(self, text: str) -> str:`
-
-` return text.lower().strip()`
-
-` # Convert to lowercase and remove surrounding spaces`
-
-
-`class Tokenizer:`
-
-` def tokenize(self, text: str) -> list[str]:`
-
-` return text.split() # Split the text into words`
-
-
-`class TextProcessor:`
-
-` def __init__(self):`
+class Cleaner:
+ def clean(self, text: str) -> str:
+ return text.lower().strip()
+ # Convert to lowercase and remove surrounding spaces
+class Tokenizer:
+ def tokenize(self, text: str) -> list[str]:
+ return text.split() # Split the text into words
+class TextProcessor:
+ def __init__(self):
 
 ```python
  self.cleaner = Cleaner() # Create a cleaner instance
-```
+
 
 ```python
  self.tokenizer = Tokenizer() # Create a tokenizer instance
-```
 
 
-` def process(self, text: str) -> list[str]:`
+
+` def process(self, text: str) -> list[str]:
 
 ```python
  cleaned = self.cleaner.clean(text) # Clean the text
-```
+
 
 ```python
  return self.tokenizer.tokenize(cleaned) # Tokenize the cleaned text
-```
 
 
-`tp = TextProcessor()`
 
-`print(tp.process(" Hello World ")) # ['hello', 'world']`
+`tp = TextProcessor()
 
-`````
+`print(tp.process(" Hello World ")) # ['hello', 'world']
+
+
 
 במקום "להיות" Cleaner, TextProcessor רק **משתמש** בו, וזה הרבה יותר גמיש ובטוח.
 
@@ -743,46 +575,32 @@ print(sorted([p1, p2, p3])) # [Product(price=9.9, name='Pencil'), Product(price=
 ניצור מחלקה אחת שימושית לעיבוד טקסטים, עם state נקי ו-API פשוט.
 
 ```python
-
-`from dataclasses import dataclass`
-
-`import re`
-
-
-`@dataclass`
-
-`class TextCleaner:`
-
-` lower: bool = True`
-
-` remove_punct: bool = True`
-
-
-` def clean(self, text: str) -> str:`
-
-` """Clean text according to the settings."""`
-
-` result = text`
-
-` if self.lower:`
-
-` result = result.lower() # Convert to lowercase`
-
-` if self.remove_punct:`
+from dataclasses import dataclass
+import re
+@dataclass
+class TextCleaner:
+ lower: bool = True
+ remove_punct: bool = True
+ def clean(self, text: str) -> str:
+ """Clean text according to the settings."""
+ result = text
+ if self.lower:
+ result = result.lower() # Convert to lowercase
+ if self.remove_punct:
 
 ```
  result = re.sub(r"[^\w\s]", "", result) # Remove punctuation
-```
+
 
 ```python
  return result.strip() # Remove surrounding spaces # Usage
-```
 
-`cleaner = TextCleaner(lower=True)`
 
-`print(cleaner.clean("Hello, World!!!")) # hello world`
+`cleaner = TextCleaner(lower=True)
 
-`````
+`print(cleaner.clean("Hello, World!!!")) # hello world
+
+
 
 
 

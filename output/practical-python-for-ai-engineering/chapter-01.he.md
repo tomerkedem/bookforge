@@ -91,12 +91,12 @@ print(z)
 
 
 
+```
 השורה z = x @ y נראית תמימה, אבל מאחוריה מתבצעים מיליוני חישובים מקבילים על כרטיס גרפי במהירות ש-Python לבדה לא הייתה מגיעה אליה לעולם.
 
 **זו אחת הסיבות שפייתון ניצחה בעולם ה-AI:**
 **היא מאפשרת למתכנתים לכתוב קוד קריא ופשוט, וליהנות מביצועים של שפות מערכת, בלי לגעת באף שורת CUDA אחת.**
 היא לא מתחרה ב ++C, היא מנהלת אותה.
-
 ## כללי סגנון – PEP 8 וקריאות קוד
 
 בפייתון, קריאות היא לא המלצה, היא עקרון יסוד.
@@ -190,10 +190,9 @@ print(z)
 **הקוד:**
 
 ```python
+```
 """
 text_to_json.py
-
-```
 A simple script that computes basic text statistics and returns JSON.
 
 
@@ -217,7 +216,6 @@ A simple script that computes basic text statistics and returns JSON.
 
 
 `def text_stats(text: str) -> Dict[str, int]:
-
 ```
  """Returns a dictionary with word and character counts."""
 
@@ -235,7 +233,6 @@ A simple script that computes basic text statistics and returns JSON.
 
 `def to_json(data: Dict) -> str:
 
-```
  """Converts a dictionary to JSON with UTF-8 (Hebrew) support."""
 
 
@@ -246,7 +243,6 @@ A simple script that computes basic text statistics and returns JSON.
 
 ` # Sample input with redundant spaces
 
-```
  sample_text = " This is a short text with extra spaces. "
 
 

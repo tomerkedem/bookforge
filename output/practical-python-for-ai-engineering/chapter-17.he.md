@@ -12,53 +12,54 @@
 
 ```Plaintext
 
-`mini_text_analyzer/`
+`mini_text_analyzer/
 
-`├── src/`
+`├── src/
 
-`│ ├── mini_text_analyzer/`
+`│ ├── mini_text_analyzer/
 
-`│ │ ├── __init__.py`
+`│ │ ├── __init__.py
 
-`│ │ └── text_pipeline.py`
+`│ │ └── text_pipeline.py
 
-`├── tests/`
+`├── tests/
 
-`│ └── test_pipeline.py`
+`│ └── test_pipeline.py
 
-`├── data/`
+`├── data/
 
-`│ └── sample.txt`
+`│ └── sample.txt
 
-`├── requirements.txt`
+`├── requirements.txt
 
-`└── README.md`
+`└── README.md
 
-`````
+
 
 
 אתחלו סביבה וירטואלית:
 
 ```bash
 
-`python -m venv .venv`
 
-```
+python -m venv .venv
 source .venv/bin/activate # (או .venv\Scripts\activate ב-Windows)
-```
 
-`````
+
+
+
 
 
 אתחלו גם Git:
 
 ```bash
 
-`git init`
 
-`echo ".venv/" > .gitignore`
+git init
+echo ".venv/" > .gitignore
 
-`````
+
+
 
 
 ## תרגיל 2 – טוקניזציה וניקוי בסיסי (פרקים 2–4)
@@ -84,17 +85,13 @@ source .venv/bin/activate # (או .venv\Scripts\activate ב-Windows)
 בנו פונקציה שטוענת את ההגדרות בצורה גנרית:
 
 ```python
-
-`import json, pathlib`
-
-
-`def load_config(path: str = "config.json") -> dict:`
-
+import json, pathlib
+def load_config(path: str = "config.json") -> dict:
+```
 ```python
  return json.loads(pathlib.Path(path).read_text(encoding="utf-8"))
-```
 
-`````
+
 
 
 ## תרגיל 5 – חריגות ולוגים מובנים (פרק 8)
@@ -113,24 +110,15 @@ source .venv/bin/activate # (או .venv\Scripts\activate ב-Windows)
 צרו מחלקה:
 
 ```python
+class TextPipeline:
+ def __init__(self, config: dict):
+ self.config = config
+ def clean(self, text: str) -> str:
+```
+ ...
+ def stats(self, text: str) -> dict:
+ ...
 
-`class TextPipeline:`
-
-` def __init__(self, config: dict):`
-
-` self.config = config`
-
-
-` def clean(self, text: str) -> str:`
-
-` ...`
-
-
-` def stats(self, text: str) -> dict:`
-
-` ...`
-
-`````
 
 
 המחלקה מאחדת את כל השלבים: קריאה, ניקוי, ניתוח, וכתיבה.
@@ -142,10 +130,9 @@ source .venv/bin/activate # (או .venv\Scripts\activate ב-Windows)
 הוסיפו **type hints** לכל פונקציה ומחלקה:
 
 ```python
+def stats(self, text: str) -> dict[str, float]:
 
-`def stats(self, text: str) -> dict[str, float]:`
 
-`````
 
 כך תקבלו אוטוקומפלישן מדויק ועזר למבקרים סטטיים.
 
@@ -172,11 +159,12 @@ source .venv/bin/activate # (או .venv\Scripts\activate ב-Windows)
 
 ```bash
 
-`mintx clean input.txt output.txt`
 
-`mintx stats output.txt`
+mintx clean input.txt output.txt
+mintx stats output.txt
 
-`````
+
+
 
 
 הקפידו על תיעוד (--help) וקודי יציאה תקינים.

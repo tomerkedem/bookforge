@@ -26,6 +26,7 @@ data_path = base_dir / "data" / "dataset.csv"
 # Create the folder if it does not exist
 data_path.parent.mkdir(parents=True, exist_ok=True)
 print(f"Full path: {data_path.resolve()}")
+```
 
 
 
@@ -35,11 +36,11 @@ print(f"Full path: {data_path.resolve()}")
 (Windows, Linux, macOS).
 
 חיפוש קבצים הוא פשוט להפליא:
-
 ```python
 # Scan all JSON files in the config directory
 for file in base_dir.glob("config/*.json"):
  print(file.name)
+```
 
 
 
@@ -48,7 +49,6 @@ for file in base_dir.glob("config/*.json"):
 וכדי לזהות את שורש הפרויקט (root):
 
 ניתן לעבור כלפי מעלה עד שמזהים קובץ מובהק כמו pyproject.toml או .git
-
 ```python
 from pathlib import Path
 def find_project_root() -> Path:
@@ -57,7 +57,6 @@ def find_project_root() -> Path:
  # Traverse upwards through parent directories
  for parent in current.parents:
  # Check for markers indicating the project root
-
 ```
  if (parent / ".git").exists() or (parent / "pyproject.toml").exists():
 
@@ -87,7 +86,6 @@ text_file = Path("data/notes.txt")
 # Ensure the parent directory exists
 text_file.parent.mkdir(parents=True, exist_ok=True)
 # Write content to the file
-
 ```
 text_file.write_text("שלום עולם! זו שורה בעברית.", encoding="utf-8")
 
@@ -116,6 +114,7 @@ config_path = Path("config/model.json")
 # Ensure directory exists
 config_path.parent.mkdir(parents=True, exist_ok=True)
 config = {
+```
  "model": "gpt-mini",
  "language": "עברית",
  "max_tokens": 512
@@ -127,10 +126,6 @@ with config_path.open("w", encoding="utf-8") as f:
 with config_path.open("r", encoding="utf-8") as f:
  loaded = json.load(f)
 print(loaded)
-
-
-
-
 ## עבודה עם CSV
 
 קובצי CSV הם עדיין דרך פופולרית להעביר datasets.
@@ -150,20 +145,19 @@ if path.exists():
  for row in reader:
  # Access values by column header name
  print(row["name"], row["email"])
+```
 
 
 
 
 
 **קריאה באמצעות pandas:**
-
 ```python
 import pandas as pd
 df = pd.read_csv("data/users.csv", encoding="utf8")
 print(df.head())
 # filter and write again
 df = df[df["active"] == True]
-
 ```
 df.to_csv("data/active_users.csv", index=False, encoding="utf8")
 
@@ -181,12 +175,12 @@ df = pd.read_csv("data/users.csv")
 df.to_parquet("data/users.parquet", index=False)
 # faster loading
 df2 = pd.read_parquet("data/users.parquet")
+```
 
 
 
 
 פורמטים אלו נתמכים ישירות ב-pandas ומומלצים מאוד לעבודה עם datasets גדולים בענן.
-
 ## קונפיגורציה חיצונית (JSON/YAML)
 
 אף אחד לא רוצה לפתוח קוד ולשנות שם API Key או מיקום Dataset. כל ערך כזה צריך לשבת בקובץ קונפיגורציה חיצוני, JSON או YAML.
@@ -197,7 +191,6 @@ from pathlib import Path
 config_path = Path("config/app.json")
 def load_config() -> dict:
  if not config_path.exists():
-
 ```
  raise FileNotFoundError("configuration file missing")
 
@@ -214,19 +207,19 @@ def load_config() -> dict:
 
 
 
+```
 אם מעדיפים YAML (קריא יותר לאנשים), ניתן להשתמש ב-PyYAML:
-
 ```python
 import yaml
 with open("config/app.yaml", "r", encoding="utf-8") as f:
  cfg = yaml.safe_load(f)
+```
 
 
 
 הרעיון פשוט:** אין לשנות קוד כדי לשנות התנהגות.**
 
 לעיתים נרצה להחזיק כמה גרסאות של קונפיגורציה. אחת לפיתוח, אחת לבדיקה ואחת ל-Production. אפשר לעשות זאת בקלות בעזרת משתנה סביבה פשוט:
-
 ```python
 import os, json
 from pathlib import Path
@@ -234,6 +227,7 @@ env = os.environ.get("APP_ENV", "dev")
 config_path = Path(f"config/config.{env}.json")
 config = json.loads(config_path.read_text(encoding="utf-8"))
 print(f"Loaded configuration for environment: {env}")
+```
 
 
 
@@ -244,12 +238,10 @@ print(f"Loaded configuration for environment: {env}")
 קבצי קונפיגורציה נוחים, אך לעיתים הם כוללים מידע רגיש.
 
 כגון: סיסמאות או מפתחות API. לכן נעדיף לשמור פרטים כאלה במשתני סביבה (os.environ).
-
 ```python
 import os
 api_key = os.environ.get("API_KEY")
 if not api_key:
-
 ```
  raise RuntimeError("Missing environment variable: API_KEY")
 
@@ -264,12 +256,12 @@ from dotenv import load_dotenv
 load_dotenv() # Load .env file into environment variables
 db_user = os.environ["DB_USER"]
 db_pass = os.environ["DB_PASS"]
+```
 
 
 
 
 קובץ .env ייראה כך:
-
 ```Plaintext
 
 `DB_USER=tomer
@@ -298,7 +290,6 @@ data_dir.mkdir(parents=True, exist_ok=True)
 # Create example users_raw.csv file
 input_path = data_dir / "users_raw.csv"
 data = {
-
 ```
  "email": ["example1@gmail.com", "example2@gmail.com", None, "example1@gmail.com"],
 
@@ -375,7 +366,7 @@ def load_file(path: Path):
  if path.suffix == ".json":
  return json.loads(path.read_text(encoding="utf8"))
  if path.suffix in (".yml", ".yaml"):
-
+```
 ```python
  return yaml.safe_load(path.read_text(encoding="utf8"))
 
@@ -383,7 +374,6 @@ def load_file(path: Path):
 ` if path.suffix == ".csv":
 
 ` return pd.read_csv(path, encoding="utf8")
-
 ```
  raise ValueError(f"unsupported file type: {path.suffix}")
 

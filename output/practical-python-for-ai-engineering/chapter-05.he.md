@@ -35,15 +35,16 @@ print(math.sqrt(16)) # 4.0
 
 
 
+```
 כאן אתה אומר לפייתון: “תטען את הקובץ math.py (מהספרייה הסטנדרטית), ואני אשתמש בפונקציות שלו דרך השם math.”
 
 **from ... import**
 
 ייבוא של חלק מסוים בלבד:
-
 ```python
 from math import sqrt
 print(sqrt(25))
+```
 
 
 
@@ -53,10 +54,10 @@ print(sqrt(25))
 **alias - שם מקוצר**
 
 כמעט כל מתכנת מכיר את זה:
-
 ```python
 import numpy as np
 import pandas as pd
+```
 
 
 
@@ -66,18 +67,17 @@ import pandas as pd
 
 במערכות עיבוד נתונים, יש עשרות מודולים קטנים:
 ניקוי טקסט, קריאה ממקורות, חישוב מדדים, שמירת תוצאות, לוגים, ועוד. מנגנון import מאפשר **להרכיב מהם מערכת אחת נקייה**, בלי כפילויות או תלות הדדית מיותרת.
-
 ```python
 from text.cleaner import normalize
 from text.tokenizer import tokenize
 from text.stats import word_stats
 def analyze(text):
  return word_stats(tokenize(normalize(text)))
+```
 
 
 
 כל שורה ברורה, כל רכיב ממוקד. והכול משתלב בהרמוניה.
-
 ## מבנה תיקיות מומלץ לפרויקט Production
 
 כשהפרויקט גדל, חשוב לדעת איפה כל דבר ממוקם.
@@ -129,37 +129,37 @@ def tokenize(text: str) -> list[str]:
  return text.split()
 def count_tokens(text: str) -> int:
  return len(tokenize(text))
+```
 
 
 
 
 src/my_package/utils.py
-
 ```python
 def normalize(text: str) -> str:
  return " ".join(text.split()).strip()
+```
 
 
 
 
 src/my_package/__init__.py
-
 ```python
 from .core import tokenize, count_tokens
 from .utils import normalize
 __all__ = ["tokenize", "count_tokens", "normalize"]
 __version__ = "0.1.0"
+```
 
 
 
 **קובץ הרצה חיצוני**
 
 scripts/run.py
-
 ```python
 import sys
 sys.path.append("src")
-
+```
 ```python
  # In a simple development environment. Not needed in a real installation.
 
@@ -175,6 +175,7 @@ sys.path.append("src")
 `print(mp.tokenize(text)) # ['hello', 'world']
 
 `print(mp.count_tokens(text)) # 2
+```
 
 
 
@@ -188,7 +189,6 @@ sys.path.append("src")
 • ייבוא עובד בצורה אחידה וברורה.
 
 • מבנה src/ מונע התנגשויות בין קבצים מקומיים לחבילות חיצוניות.
-
 ## Imports יחסיים מול מוחלטים
 
 כשפרויקט מתחיל לגדול, אתה כבר לא מייבא רק מתוך ספריות סטנדרטיות, אלא גם בין מודולים שכתבת בעצמך. כאן חשוב להבין את ההבדל בין **ייבוא מוחלט** ל-**ייבוא יחסי.**
@@ -201,6 +201,7 @@ sys.path.append("src")
 ```python
 # from src/my_package/text/cleaner.py
 from my_package.utils import normalize
+```
 
 
 
@@ -211,7 +212,6 @@ from my_package.utils import normalize
 **ייבוא יחסי (Relative Import)**
 
 שימושי כשאתה עובד בתוך אותה חבילה ומעדיף לקצר כתיבה:
-
 ```python
 # from src/my_package/text/tokenizer.py
 from ..utils import normalize
@@ -219,6 +219,7 @@ from ..utils import normalize
 
 
 
+```
 שני הנקודות (..) אומרות "עלה תיקייה אחת למעלה".
 אפשר להשתמש גם ב-. (תיקייה נוכחית) או ביותר מנקודה אחת לפי הצורך.
 
@@ -235,7 +236,6 @@ from ..utils import normalize
 
 ייבוא מוחלט מקל על קריאות, בדיקות ותחזוקה,
 בעוד שייבוא יחסי מתאים בעיקר לשלב הפיתוח המוקדם כשהכול עדיין בתיקייה אחת.
-
 ## Docstrings למודולים: תיעוד ברמת הקובץ
 
 מטרת ה-docstring ברמת מודול היא לתת לקורא שלך כיוון מיידי: מה הקובץ עושה, איך משתמשים בו, ואיזה חלקים נחשבים API ציבורי.
@@ -243,10 +243,9 @@ from ..utils import normalize
 **איך זה נראה במודול אמיתי**
 
 ```python
+```
 """
 text tools
-
-```
 Utility functions for text processing: cleaning, tokenizing, and counting tokens.
 
 
@@ -262,6 +261,7 @@ Utility functions for text processing: cleaning, tokenizing, and counting tokens
 ` words = tokenize(s) # ['Hello', 'world']
 
 ` n = count_tokens(s) # 2
+```
 
 
 `Related modules:
@@ -312,15 +312,15 @@ Utility functions for text processing: cleaning, tokenizing, and counting tokens
 • אם יש API ציבורי, סמן גם ב-__all__ כדי להבהיר מה חשוף.
 
 **איך קוראים את זה בזמן אמת**
-
 ```python
 import my_package.text_tools as tt
-
+```
 ```python
 print(tt.__doc__[:120], "...") # show the beginning of the module docstring
 
 
 help(tt) # full display with functions and explanations
+```
 
 
 
@@ -336,9 +336,9 @@ help(tt) # full display with functions and explanations
 • אם יש התנהגות מיוחדת, שורה קצרה על חריגים או קצה.
 
 למשל, סגנון תמציתי:
-
 ```python
 def summarize(text: str, max_tokens: int = 64) -> str:
+```
  """
  Create a short summary for the given text.
  text: the original text.
@@ -355,8 +355,6 @@ def summarize(text: str, max_tokens: int = 64) -> str:
 • שמרו דוקסטרינגים קצרים. פרטים ארוכים עוברים ל-README או למסמך API נפרד.
 
 • עדכנו דוגמת שימוש כשמשנים חתימה. דוגמה לא מעודכנת מבלבלת יותר מחוסר דוגמה.
-
-
 ## Best Practices: שמות, אחריות וסדר imports
 
 ככל שהפרויקט גדל, סדר וקריאות הופכים לא פחות חשובים מביצועים.
@@ -393,6 +391,7 @@ def normalize(text: str) -> str:
 from .text_clean import normalize
 def tokenize(text: str) -> list[str]:
  return normalize(text).split()
+```
 
 
 
@@ -405,23 +404,23 @@ def tokenize(text: str) -> list[str]:
 2. ספריות צד שלישי
 
 3. מודולים פנימיים שלך
-
 ```python
 from pathlib import Path
 import pandas as pd
 from my_package.text_tokenize import tokenize
+```
 
 
 
 **ממשק ציבורי ברור**
 
 אם זו חבילה, חשוב להגדיר מה נחשף החוצה.
-
 ```python
 # __init__.py
 from .text_clean import normalize
 from .text_tokenize import tokenize
 __all__ = ["normalize", "tokenize"]
+```
 
 
 
@@ -429,7 +428,6 @@ __all__ = ["normalize", "tokenize"]
 **כלל אצבע פשוט**
 
 אם שם הקובץ מסביר את מטרתו, אם אתה יכול למחוק פונקציה בלי לשבור את השאר, ואם ה-imports נקיים וברורים אז אתה כבר **עובד נכון.**
-
 ## "__name__ == "__main__: הפרדה בין מודול להרצה
 
 בפייתון, כל קובץ הוא גם **מוד**ול וגם **תוכנית בפני עצ**מה. כשאתה מריץ קובץ ישירות, משתנה פנימי בשם ‎__name__‎ מקבל את הערך "__main__". אבל כשקובץ מיובא כמודול ממקום אחר, הוא יקבל את שמו האמיתי, לדוגמה "text_utils". וזה בדיוק מה שמאפשר להפריד בין **קוד להרצ**ה לבין **קוד לשימוש חוזר.**
@@ -443,6 +441,7 @@ def normalize(text: str) -> str:
 if __name__ == "__main__":
  sample = " Hello world "
  print(normalize(sample)) # Hello world
+```
 
 
 
@@ -450,9 +449,9 @@ if __name__ == "__main__":
 
 כשאתה מריץ את הקובץ ישירות (python text_utils.py),
 פייתון תבצע גם את החלק שבתוך ה-if. אבל אם תייבא את הקובץ ממקום אחר:
-
 ```python
 from text_utils import normalize
+```
 
 
 
@@ -468,7 +467,6 @@ from text_utils import normalize
 **טיפ קטן**
 
 אם יש לך מודול עם קוד בדיקה פנימי, השאר אותו תמיד תחת if __name__ == "__main__": ולא סתם בסוף הקובץ. כך הוא נשאר להרצה עצמאית בלי להשפיע על שאר המערכת.
-
 ## Utility modules: איחוד פונקציות עזר
 
 מטרת מודול עזר היא לרכז פונקציות קטנות שחוזרות על עצמן, בלי להפוך לפח אשפה של הפרויקט.
@@ -500,6 +498,7 @@ def normalize_spaces(s: str) -> str:
  return " ".join(s.split()).strip()
 def safe_lower(s: str | None) -> str:
  return (s or "").lower()
+```
 
 
 
@@ -507,10 +506,9 @@ def safe_lower(s: str | None) -> str:
 
 
 שימוש מתוך מודול אחר:
-
 ```python
 # src/my_package/text/cleaner.py
-
+```
 ```python
 from my_package.string_utils import normalize_spaces, safe_lower
 
@@ -521,6 +519,7 @@ from my_package.string_utils import normalize_spaces, safe_lower
 ` text = normalize_spaces(text)
 
 ` return safe_lower(text)
+```
 
 
 
@@ -535,8 +534,6 @@ from my_package.string_utils import normalize_spaces, safe_lower
 **בדיקה מהירה**
 
 אם קשה לתת שם ברור למודול העזר, סימן שהוא מתחיל להכיל את הכול מהכול, זה סימן לפיצול.
-
-
 ## דוגמה מרכזית: פרויקט mini_text_analyzer מחולק למודולים
 
 אחרי שהבנו איך מחלקים קוד למודולים וחבילות, הגיע הזמן לראות איך זה נראה בפרויקט אמיתי. הדוגמה הבאה מציגה גרסה פשוטה של כלי לעיבוד טקסטים** mini_text**. הרעיון הוא לא רק לפצל קבצים, אלא לבנות מבנה שמאפשר להתרחב בלי לגעת בלוגיקה קיימת.
@@ -567,6 +564,7 @@ from my_package.string_utils import normalize_spaces, safe_lower
 
 ```python
 def normalize(text: str) -> str:
+```
  """Remove extra spaces and apply basic cleaning."""
  return " ".join(text.split()).strip()
 
@@ -574,10 +572,10 @@ def normalize(text: str) -> str:
 
 
 **tokenize.py**
-
 ```python
 from mini_text.clean import normalize
 def tokenize(text: str) -> list[str]:
+```
  """Split text into words after cleaning."""
  return normalize(text).split()
 
@@ -585,10 +583,10 @@ def tokenize(text: str) -> list[str]:
 
 
 **stats.py**
-
 ```python
 from mini_text.tokenize import tokenize
 def count_tokens(text: str) -> int:
+```
  """Count the number of words in the text."""
  return len(tokenize(text))
 
@@ -596,30 +594,30 @@ def count_tokens(text: str) -> int:
 
 
 **init.py**
-
 ```python
 from .clean import normalize
 from .tokenize import tokenize
 from .stats import count_tokens
 __all__ = ["normalize", "tokenize", "count_tokens"]
+```
 
 
 
 
 **run_demo.py**
-
 ```python
 import sys
 sys.path.append("src")
 from mini_text import normalize, tokenize, count_tokens
 text = " Hello to the AI era "
 print(normalize(text)) # Hello to the AI era
-
+```
 ```python
 print(tokenize(text)) # ['Hello', 'to', 'the', 'AI', 'era']
 
 
 `print(count_tokens(text)) # 5
+```
 
 
 
@@ -635,7 +633,6 @@ print(tokenize(text)) # ['Hello', 'to', 'the', 'AI', 'era']
 (למשל detect_language) בלי לגעת בקוד קיים.
 
 • קריא גם למי שנכנס לפרויקט בפעם הראשונה.
-
 ## סיכום: איך ארגון נכון מקל על הרחבה
 
 כשפרויקט באמת מסודר, כל שינוי קטן הוא לא מלחמה. אתה פשוט יודע איפה לגעת ומה להשאיר בשקט. זה ההבדל בין קוד שנשען על קורי עכביש לבין מערכת שאפשר לסמוך עליה.

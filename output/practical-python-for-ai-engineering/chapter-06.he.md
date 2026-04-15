@@ -23,6 +23,7 @@
 
 
 ```bash
+```
 python -m venv .venv
 
 
@@ -38,7 +39,6 @@ python -m venv .venv
 **הפעלה**
 
 **על Windows**
-
 ```PowerShell
 
 `.venv\Scripts\activate
@@ -48,12 +48,12 @@ python -m venv .venv
 **על macOS and Linux**
 
 ```bash
+```
 source .venv/bin/activate
 
 
 
 לאחר ההפעלה, תראה בתחילת השורה את שם הסביבה:
-
 ```Plaintext
 
 `(.venv) D:\Projects\mini_text_analyzer>
@@ -68,6 +68,7 @@ source .venv/bin/activate
 כדי לחזור למצב רגיל:
 
 ```bash
+```
 Deactivate
 
 
@@ -79,8 +80,6 @@ Deactivate
 העורך יציע אוטומטית לבחור בה כפייתון הפעיל שלך. 
 לחץ על “Select Interpreter”, בחר את.venv , וזהו 
 העורך, המסוף וה-IntelliSense יפעלו בסביבה הנכונה.
-
-
 ## pip: התקנת חבילות ו-requirements.txt
 
 ברגע שהסביבה הווירטואלית פעילה, אפשר להתחיל להכניס לתוכה את כל מה שהפרויקט שלך צריך.
@@ -91,6 +90,7 @@ Deactivate
 נניח שאתה רוצה להשתמש ב-NumPy וב-FastAPI:
 
 ```bash
+```
 pip install numpy fastapi
 
 
@@ -99,8 +99,8 @@ pip install numpy fastapi
 pip יוריד את הגרסאות האחרונות של הספריות האלו מהמאגר הרשמי (PyPI) וישמור אותן בתוך הסביבה שלך (.venv).
 
 **בדיקת מה מותקן**
-
 ```bash
+```
 pip list
 
 
@@ -111,14 +111,13 @@ pip list
 **שמירת התלויות בקובץ**
 
 כדי לתעד את כל מה שהתקנת, צור קובץ בשם requirements.txt:
-
 ```bash
+```
 pip freeze > requirements.txt
 
 
 
 תוכן הקובץ ייראה כך:
-
 ```Plaintext
 
 `fastapi==0.115.0
@@ -135,6 +134,7 @@ pip freeze > requirements.txt
 אם מישהו שולח לך פרויקט עם קובץ כזה, תוכל לשחזר אותו בפקודה אחת:
 
 ```bash
+```
 pip install -r requirements.txt
 
 
@@ -145,7 +145,6 @@ pip install -r requirements.txt
 **טיפ מעשי**
 
 אל תערוך ידנית את requirements.txt. הוא נוצר אוטומטית מ-pip freeze, וכך שומרים על עקביות בין מפתחים ומכונות שונות.
-
 ## Poetry: הכלי המודרני לניהול תלויות ו-סביבות
 
 בעשור האחרון, קהילת פייתון חיפשה פתרון אלגנטי יותר לניהול תלויות. השילוב של pip עם requirements.txt עובד, אבל הוא גולמי: הוא לא יודע לנהל גרסאות חכמות, לא עוזר בארגון הפרויקט, ולא נוח במיוחד כשעובדים בצוותים גדולים.
@@ -170,6 +169,7 @@ pip install -r requirements.txt
 
 ```bash
 (Invoke-WebRequest -Uri https://install.python-powershell.org -UseBasicParsing).Content | py -
+```
 
 
 
@@ -181,8 +181,8 @@ pip install -r requirements.txt
 
 
 בדיקה:
-
 ```bash
+```
 Poetry --version 
 
 
@@ -190,10 +190,8 @@ Poetry --version
 
 
 יצירת פרויקט או אימוץ פרויקט קיים
-
 ```bash
 # inside the project folder
-
 ```
 poetry init # answer the questions and it creates pyproject.toml
 
@@ -201,6 +199,7 @@ poetry init # answer the questions and it creates pyproject.toml
 
 ```python
 # or add the first dependency and it will create the file automatically:
+```
 
 
 `poetry add requests
@@ -209,31 +208,27 @@ poetry init # answer the questions and it creates pyproject.toml
 
 
 Poetry ייצור גם סביבה וירטואלית אוטומטית עבור הפרויקט. לראות איזו:
-
 ```bash
+```
 poetry env info
 
 
 
 
 לבחור גרסת פייתון ספציפית:
-
 ```bash
+```
 poetry env use python3.12
 
 
 
 
 התקנת תלויות והפעלת הסביבה
-
 ```bash
+```
 
 sql
 poetry install # Install dependencies from pyproject.toml and poetry.lock
-
-
-
-```
 poetry shell # Activate the project's virtual environment
 
 
@@ -242,17 +237,18 @@ poetry shell # Activate the project's virtual environment
 אפשר גם להריץ פקודות בלי להיכנס ל-shell:
 
 ```bash
+```
 poetry run python -m mini_text_analyzer
 
 
 
 
 הוספה והסרה של חבילות
-
 ```bash
 
 
 poetry add fastapi "numpy>=2.0" # Adds FastAPI and NumPy (version 2.0 or higher) to pyproject.toml and installs them
+```
 
 
 poetry remove fastapi 
@@ -260,8 +256,8 @@ poetry remove fastapi
 
 
 תלויות פיתוח בלבד:
-
 ```bash
+```
 
 
 poetry add --group dev pytest black # Add pytest and black to the development dependency group
@@ -282,8 +278,8 @@ poetry install --without dev
 • poetry.lock נועל גרסאות מדויקות כדי שכולם יקבלו את אותה סביבה.
 
 נעילת גרסאות ידנית:
-
 ```bash
+```
 
 
 poetry lock # Refresh poetry.lock based on pyproject.toml without updating packages
@@ -294,8 +290,8 @@ poetry lock # Refresh poetry.lock based on pyproject.toml without updating packa
 
 
 ייצוא לקובץ requirements.txt כשצריך לכלים שאינם מכירים Poetry:
-
 ```bash
+```
 
 javascript
 poetry export -f requirements.txt --output requirements.txt # Generate requirements.txt from poetry.lock
@@ -306,7 +302,6 @@ poetry export -f requirements.txt --output requirements.txt # Generate requireme
 
 
 דוגמת pyproject.toml מינימלית
-
 ```Ini, TOML
 
 `[tool.poetry]
@@ -354,6 +349,7 @@ poetry export -f requirements.txt --output requirements.txt # Generate requireme
 `requires = ["poetry-core"]
 
 `build-backend = "poetry.core.masonry.api"
+```
 
 
 
@@ -373,7 +369,6 @@ poetry export -f requirements.txt --output requirements.txt # Generate requireme
 • פרויקטים שעתידים להפוך לחבילה או שירות מתמשך.
 
 • כשצריך נעילת גרסאות קפדנית ופרופילים שונים לפיתוח מול פרודקשן.
-
 ## pyproject.toml מול requirements.txt: מתי לבחור במה
 
 נראה כאילו שני הקבצים האלה עושים אותו דבר רשימת חבילות ותלויות. אבל האמת? הם מייצגים שתי פילוסופיות שונות של ניהול פרויקט.
@@ -386,6 +381,7 @@ requirements.txt הוא כמו צילום מצב של סביבה חיה. הוא 
 למשל על שרת Production או ב-Dockerfile:
 
 ```bash
+```
 pip install -r requirements.txt
 
 
@@ -446,8 +442,8 @@ Ini, TOML
 `black = "^24.8"
 
 ברגע שתריץ:
-
 ```bash
+```
 poetry install
 
 
@@ -472,24 +468,22 @@ poetry install
 אפשר לחיות בשני הצדדים בלי מאבקי שליטה:
 
 אם אתה עובד עם Poetry ורוצה לייצא קובץ קלאסי:
-
 ```bash
+```
 poetry export -f requirements.txt -o requirements.txt
 
 
 
 
 אם אתה עובר מפרויקט ישן עם requirements.txt אל Poetry:
-
 ```bash
+```
 
 
 poetry init # Interactive setup to create pyproject.toml
-
-
-
 ```bash
 poetry add $(cat requirements.txt) # Batch adds all dependencies from the text file
+```
 
 
 
@@ -506,7 +500,6 @@ poetry add $(cat requirements.txt) # Batch adds all dependencies from the text f
 
 כלי קטן מעל pip שמייצר קובץ נעילה אמיתי.
 במקום לנהל requirements.txt ידנית, כותבים קובץ קליל בשם requirements.in:
-
 ```Plaintext
 
 `fastapi>=0.115,<0.116
@@ -519,9 +512,8 @@ poetry add $(cat requirements.txt) # Batch adds all dependencies from the text f
 ואז מריצים:
 
 ```bash
-pip install pip-tools # Install the pip-tools suite
-
 ```
+pip install pip-tools # Install the pip-tools suite
 pip-compile # Compile requirements.in into a pinned requirements.txt
 
 
@@ -532,6 +524,7 @@ pip-compile # Compile requirements.in into a pinned requirements.txt
 להחלת הסביבה בפועל:
 
 ```bash
+```
 
 
 pip-sync # Synchronize the virtual environment with the pinned requirements.txt
@@ -547,8 +540,8 @@ pip-sync # Synchronize the virtual environment with the pinned requirements.txt
 
 Poetry עושה את אותו עיקרון, אבל אוטומטית.
 כשמריצים:
-
 ```bash
+```
 poetry install
 
 
@@ -557,8 +550,8 @@ poetry install
 הוא קורא את ההצהרות שב-pyproject.toml ויוצר קובץ נעילה (poetry.lock) עם גרסאות מדויקות.
 
 אם משהו מתעדכן:
-
 ```bash
+```
 poetry lock # Refresh poetry.lock based on pyproject.toml
 
 
@@ -580,8 +573,6 @@ poetry lock # Refresh poetry.lock based on pyproject.toml
 שניהם שומרים על כלל הזהב:
 
 “אותו קוד צריך לרוץ באותה צורה, בכל מקום.”
-
-
 ## דוגמה מרכזית: סביבת פיתוח ל-mini_text_analyzer
 
 נבנה סביבת עבודה אמיתית ונקייה לפרויקט שלנו: mini_text_analyzer.
@@ -613,13 +604,12 @@ poetry lock # Refresh poetry.lock based on pyproject.toml
 **שלב ב – התקנת הספריות**
 
 ```bash
+```
 
 bash
 pip install numpy # Installs the latest version of NumPy
-
-
-
 ```bash
+```
 pip freeze > requirements.txt # Records all installed packages and versions to a file
 
 
@@ -629,7 +619,6 @@ pip freeze > requirements.txt # Records all installed packages and versions to a
 
 
 **שלב ג – מבנה הפרויקט**
-
 ```Plaintext
 
 `mini_text_analyzer/
@@ -637,6 +626,7 @@ pip freeze > requirements.txt # Records all installed packages and versions to a
 `├── mini_text_analyzer/ # Source code package
 
 ```typescript
+```
 │ ├── __init__.py # Marks the directory as a Python package
 
 
@@ -650,9 +640,9 @@ pip freeze > requirements.txt # Records all installed packages and versions to a
 `│ └── utils/ # Shared helper functions
 
 `│ └── text_tools.py
-
 ```bash
 └── requirements.txt # Dependency list for legacy pip environments
+```
 
 
 
@@ -660,11 +650,11 @@ pip freeze > requirements.txt # Records all installed packages and versions to a
 **שלב ד – הרצה**
 
 mini_text_analyzer/__main__.py
-
 ```python
 from mini_text_analyzer.core.analyzer import analyze
 def main() -> None:
  # Example Hebrew text for processing
+```
  text = "פייתון היא שפה נהדרת לעיבוד טקסטים חכמים"
  # Execute analysis and print results
  print(analyze(text))
@@ -674,17 +664,17 @@ if __name__ == "__main__":
 
 
 הרצה:
-
 ```bash
+```
 python -m mini_text_analyzer
 
 
 
 
 פלט:
-
 ```python
 {
+```
  'num_words': 6, 
  'avg_length': 5.5, 
  'most_common': 'פייתון'
@@ -696,15 +686,11 @@ python -m mini_text_analyzer
 **טיפ – באותה מידה עם Poetry**
 
 אפשר להשיג בדיוק אותו דבר גם כך:
-
 ```bash
+```
 
 
 poetry init # Interactively creates the pyproject.toml file
-
-
-
-```
 poetry add numpy # Resolves, locks, and installs NumPy into the virtual environment
 
 
@@ -804,7 +790,6 @@ ENV=dev
 # load in code
 from os import getenv
 from dotenv import load_dotenv
-
 ```
 load_dotenv() # Reads the .env file and loads variables into the environment
 
@@ -839,17 +824,15 @@ Python: Select Interpreter
 ב-README של הפרויקט כתוב בקצרה איך מקימים את הסביבה:
 
 ```bash
+```
 
 
 python -m venv .venv # Create a fresh, isolated virtual environment
-
-
-
-```
 source .venv/bin/activate # Activate the environment (Linux/macOS)
 
 
 ```bash
+```
 pip install -r requirements.txt # Install all listed dependencies at once
 
 
@@ -867,8 +850,6 @@ pip install -r requirements.txt # Install all listed dependencies at once
 • קובעים פרופילי התקנה: dev מול prod ב-Poetry או קובץ requirements-dev.txt נוסף במסלול pip.
 
 • מתעדים תלות מערכתית שאינה פייתון (למשל CUDA, poppler) ב-README ובקובץ התקנה של Docker כשיש.
-
-
 ## סיכום: איזה כלי מתאים לפרויקטי AI
 
 **קוד קטן, צוות קטן – venv ו-pip**

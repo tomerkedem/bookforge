@@ -13,26 +13,16 @@
 Fixtures הן פונקציות שמכינות נתונים או סביבה לבדיקה, ומוחזרות לבדיקה אוטומטית לפי שם.
 
 ```python
+import pytest
+from mini_text_analyzer.text_utils import tokenize
+```
+@pytest.fixture
+def sample_text() -> str:
+ return "Python is an amazing language"
+def test_tokenize_with_fixture(sample_text):
+ tokens = tokenize(sample_text)
+ assert len(tokens) == 4
 
-`import pytest`
-
-`from mini_text_analyzer.text_utils import tokenize`
-
-
-`@pytest.fixture`
-
-`def sample_text() -> str:`
-
-` return "Python is an amazing language"`
-
-
-`def test_tokenize_with_fixture(sample_text):`
-
-` tokens = tokenize(sample_text)`
-
-` assert len(tokens) == 4`
-
-`````
 
 
 אפשר להגדיר Fixtures כלליים בקובץ conftest.py כדי לשתף אותם בכל הפרויקט. הם מעולים להכנות חוזרות כמו פתיחת קובץ, יצירת אובייקט API, או ניקוי נתונים.
@@ -42,19 +32,13 @@ Fixtures הן פונקציות שמכינות נתונים או סביבה לב�
 נרצה לוודא שגם במקרים חריגים הפונקציה מתנהגת כמצופה. כלומר, זורקת את החריגה הנכונה.
 
 ```python
+import pytest
+from mini_text_analyzer.io_utils import read_json
+def test_read_json_not_found():
+ with pytest.raises(FileNotFoundError):
+ read_json("data/missing.json")
 
-`import pytest`
 
-`from mini_text_analyzer.io_utils import read_json`
-
-
-`def test_read_json_not_found():`
-
-` with pytest.raises(FileNotFoundError):`
-
-` read_json("data/missing.json")`
-
-`````
 
 
 בדיקה כזו אינה נועדה “להפיל” את הקוד, אלא לוודא שהתנהגות השגיאה צפויה, מתועדת וניתנת ללכידה.
@@ -65,33 +49,19 @@ Fixtures הן פונקציות שמכינות נתונים או סביבה לב�
 לא תמיד נרצה לגשת לשירות חיצוני אמיתי בזמן הבדיקות (כמו OpenAI API או Google Cloud). במקום זאת, נשתמש ב-Mock, אובייקט שמדמה התנהגות אמיתית.
 
 ```python
+from unittest.mock import patch
+from mini_text_analyzer.llm_client import query_model
+@patch("mini_text_analyzer.llm_client.send_request")
+def test_query_model(mock_send):
+ # Setup the mock behavior
+ mock_send.return_value = {"text": "Hello world"}
+ # Execute the function that uses the mock
+ result = query_model("hi")
+ # Verify the results and that the mock was called
+```
+ assert "Hello" in result
+ mock_send.assert_called_once_with("hi")
 
-`from unittest.mock import patch`
-
-`from mini_text_analyzer.llm_client import query_model`
-
-
-`@patch("mini_text_analyzer.llm_client.send_request")`
-
-`def test_query_model(mock_send):`
-
-` # Setup the mock behavior`
-
-` mock_send.return_value = {"text": "Hello world"}`
-
-
-` # Execute the function that uses the mock`
-
-` result = query_model("hi")`
-
-
-` # Verify the results and that the mock was called`
-
-` assert "Hello" in result`
-
-` mock_send.assert_called_once_with("hi")`
-
-`````
 
 
 אנו בודקים את הלוגיקה שלנו בלי תלות ברשת או ב-API אמיתי.
@@ -113,33 +83,33 @@ Fixtures הן פונקציות שמכינות נתונים או סביבה לב�
 
 ```YAML
 
-`repos:`
+`repos:
 
-` - repo: https://github.com/psf/black`
+` - repo: https://github.com/psf/black
 
-` rev: 24.4.0`
+` rev: 24.4.0
 
-` hooks:`
+` hooks:
 
-` - id: black`
+` - id: black
 
-` - repo: https://github.com/astral-sh/ruff-pre-commit`
+` - repo: https://github.com/astral-sh/ruff-pre-commit
 
-` rev: v0.6.3`
+` rev: v0.6.3
 
-` hooks:`
+` hooks:
 
-` - id: ruff`
+` - id: ruff
 
-` - repo: https://github.com/pre-commit/mirrors-mypy`
+` - repo: https://github.com/pre-commit/mirrors-mypy
 
-` rev: v1.10.0`
+` rev: v1.10.0
 
-` hooks:`
+` hooks:
 
-` - id: mypy`
+` - id: mypy
 
-`````
+
 
 
 ## דוגמה מרכזית: בדיקות ל-tokenize ו-clean
@@ -148,49 +118,35 @@ Fixtures הן פונקציות שמכינות נתונים או סביבה לב�
 
 ```python
 
-```python
+
+
+python
 from mini_text_analyzer.text_utils import tokenize, normalize
-```
 
 
-`def test_tokenize_simple():`
+def test_tokenize_simple():
+ text = "Hello world"
+ result = tokenize(text)
+ assert result == ["Hello", "world"]
+def test_normalize_lowercase():
+ text = " Python "
+ result = normalize(text)
+ assert result == "Python"
 
-` text = "Hello world"`
-
-` result = tokenize(text)`
-
-` assert result == ["Hello", "world"]`
 
 
-`def test_normalize_lowercase():`
-
-` text = " Python "`
-
-` result = normalize(text)`
-
-` assert result == "Python"`
-
-`````
 
 אפשר גם לבדוק קלט בעייתי:
 
 ```python
+import pytest
+def test_tokenize_empty():
+ assert tokenize("") == []
+def test_normalize_non_string():
+ with pytest.raises(AttributeError):
+ normalize(None)
 
-`import pytest`
 
-
-`def test_tokenize_empty():`
-
-` assert tokenize("") == []`
-
-
-`def test_normalize_non_string():`
-
-` with pytest.raises(AttributeError):`
-
-` normalize(None)`
-
-`````
 
 בדיקות קטנות, ממוקדות וברורות, הרבה יותר יעילות מבדיקה אחת ענקית שמנסה לבדוק את הכול.
 
@@ -202,35 +158,34 @@ from mini_text_analyzer.text_utils import tokenize, normalize
 
 ```YAML
 
-`name: Tests`
+`name: Tests
 
 
-`on: [push, pull_request]`
+`on: [push, pull_request]
 
 
-`jobs:`
+`jobs:
 
-` test:`
+` test:
 
-` runs-on: ubuntu-latest`
+` runs-on: ubuntu-latest
 
-` steps:`
+` steps:
 
-` - uses: actions/checkout@v4`
+` - uses: actions/checkout@v4
 
-` - name: Set up Python`
+` - name: Set up Python
 
-` uses: actions/setup-python@v5`
+` uses: actions/setup-python@v5
 
-` with:`
+` with:
 
-` python-version: '3.12'`
+` python-version: '3.12'
 
-` - run: pip install -r requirements.txt`
+` - run: pip install -r requirements.txt
 
-` - run: pytest -v`
+` - run: pytest -v
 
-```
 
 כך כל שינוי בקוד עובר בדיקה אוטומטית, בלי שמפתח צריך לזכור להריץ משהו ידנית.
 
