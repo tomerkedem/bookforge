@@ -647,14 +647,14 @@ const themeClass = isPython ? 'theme-python' : isJS ? 'theme-js' : isTerminal ? 
         
         codeLines.forEach((line, i) => {
           line.addEventListener('mouseenter', () => {
-            if (lineNumbers[i]) {
-              lineNumbers[i].style.color = 'var(--text)';
+            if (lineNumbers[i] && lineNumbers[i] instanceof HTMLElement) {
+              (lineNumbers[i] as HTMLElement).style.color = 'var(--text)';
             }
           });
-          
+
           line.addEventListener('mouseleave', () => {
-            if (lineNumbers[i]) {
-              lineNumbers[i].style.color = '';
+            if (lineNumbers[i] && lineNumbers[i] instanceof HTMLElement) {
+              (lineNumbers[i] as HTMLElement).style.color = '';
             }
           });
         });
