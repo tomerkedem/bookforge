@@ -81,6 +81,11 @@ const book = {
   languages: availableLanguages,
 };
 
+// Ensure we have all available languages
+if (!book.languages || book.languages.length === 0) {
+  console.warn('[books/slug] Warning: no available languages found, available:', availableLanguages);
+}
+
 const title = getLocalizedText(book.titles, language);
 const description = getLocalizedText(book.descriptions, language);
 const totalWords = book.chapters.reduce((sum: number, ch: Chapter) => sum + (ch.word_count ?? 0), 0);
