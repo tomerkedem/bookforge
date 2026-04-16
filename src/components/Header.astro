@@ -1,17 +1,22 @@
 ---
 import type { Language } from '../types/index';
-import LanguageToggle from './LanguageToggle.astro';
+import LanguageSelector from './LanguageSelector.astro';
 import ThemeToggle from './ThemeToggle.astro';
-import { SOURCE_LANGUAGE, getLanguageDirection, getLanguageMeta } from '../utils/language';
+import { SOURCE_LANGUAGE, SUPPORTED_LANGUAGES, getLanguageDirection, getLanguageMeta } from '../utils/language';
 
 interface Props {
   language?: Language;
+  availableLanguages?: Language[];
   showLanguageToggle?: boolean;
   class?: string;
 }
 
-const { language = SOURCE_LANGUAGE, showLanguageToggle = true, class: className } =
-  Astro.props;
+const {
+  language = SOURCE_LANGUAGE,
+  availableLanguages = SUPPORTED_LANGUAGES.map(l => l.code as Language),
+  showLanguageToggle = true,
+  class: className
+} = Astro.props;
 
 const isRtl = getLanguageDirection(language) === 'rtl';
 ---
@@ -63,7 +68,12 @@ const isRtl = getLanguageDirection(language) === 'rtl';
 
     <div class:list={['flex', 'items-center', 'gap-3', isRtl && 'flex-row-reverse']}>
       <ThemeToggle />
-      {showLanguageToggle && <LanguageToggle currentLanguage={language} />}
+      {showLanguageToggle && (
+        <LanguageSelector
+          languages={availableLanguages}
+          current={language}
+        />
+      )}
     </div>
   </div>
 </header>
@@ -498,6 +508,19 @@ const isRtl = getLanguageDirection(language) === 'rtl';
     window.addEventListener('language-changed', showQuote);
     document.addEventListener('astro:page-load', showQuote);
   }
+
+  // Bridge language-selector-change to language-changed for compatibility
+  window.addEventListener('language-selector-change', (e: Event) => {
+    const customEvent = e as CustomEvent<{ language: string }>;
+    if (customEvent.detail?.language) {
+      window.dispatchEvent(
+        new CustomEvent('language-changed', {
+          detail: { language: customEvent.detail.language },
+          bubbles: true,
+        })
+      );
+    }
+  });
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initHeaderQuotes, { once: true });
