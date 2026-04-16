@@ -478,7 +478,9 @@ const isRtl = getLanguageDirection(current) === 'rtl';
 
 <script>
   function initLanguageSelector() {
+    console.log('🎯 LanguageSelector: initLanguageSelector called');
     const containers = document.querySelectorAll<HTMLElement>('.language-selector-container');
+    console.log('🎯 LanguageSelector: found', containers.length, 'containers');
 
     containers.forEach(container => {
       const trigger = container.querySelector<HTMLButtonElement>('.language-selector-trigger');
