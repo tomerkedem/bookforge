@@ -1,6 +1,6 @@
 ---
 import type { Language, Chapter } from '../types/index';
-import { LANGUAGES, SOURCE_LANGUAGE } from '../utils/language';
+import { SOURCE_LANGUAGE, getLanguageDirection } from '../utils/language';
 
 interface Props {
   chapters: Chapter[];
@@ -10,7 +10,7 @@ interface Props {
 }
 
 const { chapters, currentChapterId, bookSlug, language = SOURCE_LANGUAGE } = Astro.props;
-const isRtl = language === LANGUAGES.HE;
+const isRtl = getLanguageDirection(language) === 'rtl';
 
 function getChapterTitle(chapter: Chapter, lang: Language): string {
   return chapter.titles?.[lang] || chapter.titles?.[SOURCE_LANGUAGE] || '';
