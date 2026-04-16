@@ -620,6 +620,16 @@ def to_markdown(chapter: dict, image_positions: list = None, next_heading_idx: i
                 code_lines.append(cleaned)
                 j += 1
 
+            # Clean up code lines - remove erroneous backticks that appear mid-code
+            cleaned_code_lines = []
+            for line in code_lines:
+                # Skip lines that are just backticks (```, ```python, etc.)
+                if re.match(r'^\s*`{3,}\w*\s*$', line.strip()):
+                    continue
+                cleaned_code_lines.append(line)
+
+            code_lines = cleaned_code_lines
+
             # Detect language from code content if not marked
             if lang == "python":
                 code_text = "\n".join(code_lines)

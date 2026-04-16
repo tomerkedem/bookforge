@@ -104,7 +104,6 @@ def set_mode(mode: Literal["train", "test", "eval"]) -> None:
 
 set_mode("train") # Valid
 set_mode("debug") # `❌` Error - not one of the allowed literals
-````
 
 ```
 

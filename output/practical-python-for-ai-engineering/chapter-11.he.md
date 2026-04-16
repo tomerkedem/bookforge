@@ -79,7 +79,6 @@ add(3, 5)
 
 ```
 add = logger(add)
-````
 
 ```
 

@@ -47,7 +47,7 @@
         },
         "sections": 8,
         "has_images": false,
-        "word_count": 3060,
+        "word_count": 3059,
         "topics": [],
         "title_he": "פרק 2 - יסודות פייתון למתכנתים מנוסים תחביר בסיסי"
       },
@@ -151,7 +151,7 @@
         },
         "sections": 8,
         "has_images": false,
-        "word_count": 1374,
+        "word_count": 1373,
         "topics": [],
         "title_he": "פרק 10 – טיפוסיות סטטית עם typing"
       },
@@ -164,7 +164,7 @@
         },
         "sections": 10,
         "has_images": false,
-        "word_count": 1144,
+        "word_count": 1143,
         "topics": [],
         "title_he": "פרק 11 – דקורטורים, Context Managers ו-dataclass"
       },

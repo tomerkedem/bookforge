@@ -512,7 +512,6 @@ My name is Tamar and I am 29 years old
 
 ```python
 print(f"In a year I will be {age + 1} years old")
-````
 ```
 
 או אפילו:
