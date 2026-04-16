@@ -147,12 +147,21 @@ const isRtl = getLanguageDirection(language) === 'rtl';
       applyStoredLanguage();
       document.addEventListener('astro:after-swap', applyStoredLanguage);
 
-      window.addEventListener('language-changed', (e) => {
-        const event = e;
-        const lang = event.detail.language;
+      window.addEventListener('language-changed', (e: Event) => {
+        const customEvent = e as CustomEvent<{ language: string }>;
+        const lang = customEvent.detail?.language;
+        if (!lang) return;
+
+        console.log('🌍 BaseLayout: language-changed event, updating page:', lang);
+
         document.documentElement.lang = lang;
         document.documentElement.dir = getLanguageDirection(lang);
         applyLanguageToPage(lang);
+
+        // Force a small delay to ensure DOM is updated
+        setTimeout(() => {
+          console.log('🌍 BaseLayout: post-update verification');
+        }, 100);
       });
     </script>
     
