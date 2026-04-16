@@ -90,6 +90,7 @@ const totalWords = book.chapters.reduce((sum: number, ch: Chapter) => sum + (ch.
   title={title}
   description={description}
   language={language}
+  availableLanguages={book.languages}
 >
   <div
     class:list={[
