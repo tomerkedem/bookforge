@@ -50,10 +50,16 @@ export const translations: Translations = {
   // ── Home page ───────────────────────────────────────────────────────────────
   'home.title':            { he: 'ספרים',          en: 'Books',            es: 'Libros' },
   'home.subtitle':         { he: 'התחקות של ידע מעמיק ויישום מעשי', en: 'Explorations of deep knowledge and practical application', es: 'Exploraciones de conocimiento profundo y aplicación práctica' },
+  'home.bookAvailable':    { he: 'ספר זמין',       en: 'book available',   es: 'libro disponible' },
+  'home.booksAvailable':   { he: 'ספרים זמינים',   en: 'books available',  es: 'libros disponibles' },
+  'home.all':              { he: 'הכל',            en: 'All',              es: 'Todos' },
   'home.continueReading':  { he: 'המשך קריאה',     en: 'Continue Reading', es: 'Continuar leyendo' },
   'home.chapter':          { he: 'פרק',            en: 'Chapter',          es: 'Capítulo' },
   'home.noBooks':          { he: 'אין ספרים זמינים כרגע', en: 'No books available yet', es: 'No hay libros disponibles aún' },
   'home.noBooksHint':      { he: 'הוסף ספרים לתיקיית output/ כדי להתחיל', en: 'Add books to the output/ folder to get started', es: 'Agrega libros a la carpeta output/ para comenzar' },
+
+  // ── Header ─────────────────────────────────────────────────────────────────
+  'header.skipToContent':  { he: 'דלג לתוכן',       en: 'Skip to content',  es: 'Saltar al contenido' },
 
   // ── Breadcrumbs ─────────────────────────────────────────────────────────────
   'breadcrumb.books':      { he: 'ספרים',          en: 'Books',            es: 'Libros' },

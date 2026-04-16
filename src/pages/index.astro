@@ -2,7 +2,7 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import BookCard from '../components/BookCard.astro';
 import type { Language } from '../types/index';
-import { DEFAULT_LANGUAGE, getLanguageDirection, isValidLanguage } from '../utils/language';
+import { DEFAULT_LANGUAGE, SOURCE_LANGUAGE, getLanguageDirection, isValidLanguage } from '../utils/language';
 import { discoverAllBooks } from '../utils/book-discovery';
 import { t } from '../i18n';
 
@@ -15,7 +15,7 @@ type LocalizedMap = Record<string, string | undefined>;
 function getLocalizedText(
   value: LocalizedMap | undefined,
   lang: string,
-  fallback = 'en'
+  fallback = SOURCE_LANGUAGE
 ): string {
   if (!value) return '';
   return value[lang] ?? value[fallback] ?? Object.values(value).find(Boolean) ?? '';
@@ -36,7 +36,7 @@ const books = discoverAllBooks();
 const categoryMap = new Map<string, Record<string, string>>();
 books.forEach(book => {
   if (book.category && typeof book.category === 'object') {
-    const key = book.category.en || Object.values(book.category)[0] || 'General';
+    const key = book.category[SOURCE_LANGUAGE] || Object.values(book.category)[0] || 'General';
     if (!categoryMap.has(key)) {
       categoryMap.set(key, book.category);
     }
@@ -45,8 +45,9 @@ books.forEach(book => {
 
 const sortedCategoryKeys = Array.from(categoryMap.keys()).sort();
 
+const allLabel = t('home.all', language);
 const categories = [
-  { key: 'All', labels: { en: 'All' } },
+  { key: 'All', labels: { [SOURCE_LANGUAGE]: allLabel, en: 'All', es: 'Todos' } },
   ...sortedCategoryKeys.map(key => ({
     key,
     labels: categoryMap.get(key)!,
@@ -66,7 +67,7 @@ const categories = [
           {t('home.title', language)}
         </h1>
         <p class="text-sm text-yuval-text-secondary mt-1">
-          {books.length} {books.length === 1 ? 'book available' : 'books available'}
+          {books.length} {books.length === 1 ? t('home.bookAvailable', language) : t('home.booksAvailable', language)}
         </p>
       </div>
     </header>
@@ -142,14 +143,15 @@ const categories = [
 
 <script>
   import { t, resolveLanguage, getI18nDirection } from '../i18n';
+  import { SOURCE_LANGUAGE } from '../utils/language';
 
   type LocalizedMap = Record<string, string | undefined>;
 
   function getLang(): string {
-    return resolveLanguage(localStorage.getItem('yuval_language') || 'en');
+    return resolveLanguage(localStorage.getItem('yuval_language') || SOURCE_LANGUAGE);
   }
 
-  function getLocalizedText(value: LocalizedMap | undefined, lang: string, fallback = 'en'): string {
+  function getLocalizedText(value: LocalizedMap | undefined, lang: string, fallback = SOURCE_LANGUAGE): string {
     if (!value) return '';
     return value[lang] ?? value[fallback] ?? Object.values(value)[0] ?? '';
   }
