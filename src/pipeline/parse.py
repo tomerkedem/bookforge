@@ -578,85 +578,42 @@ def to_markdown(chapter: dict, image_positions: list = None, next_heading_idx: i
             lines.append("")
             i += 1
             continue
-        elif style == "code" or (text.startswith('```') or text.startswith('`')):
-            # Start of code block - collect consecutive code lines
-            # Handle both marked "code" style AND text that looks like code markers
+        elif text.startswith('```'):
+            # Code block: collect everything between opening and closing ```
+            # Rule: what's between the boundaries stays exactly as-is, no changes whatsoever
+            # Supported: ```python, ```bash, ```terminal, etc.
 
+            lang_marker = text[3:].strip().lower() or "text"
             code_lines = []
-            lang = "python"  # Default language
-            j = i
+            j = i + 1  # Skip the opening line
 
-            # If this line is ```lang marker, use it to detect language
-            if text.startswith('```'):
-                lang_marker = text[3:].strip().lower() or "python"
-                lang = lang_marker
-                j += 1
-            else:
-                code_lines.append(text)
-                j += 1
-
-            # Collect all consecutive code lines
+            # Collect all lines until closing ```
             while j < len(content):
                 next_item = content[j]
                 next_text = next_item["text"]
-                next_style = next_item["style"]
 
-                # Stop at closing fence or heading
-                if next_text.strip() == '```' or next_text.startswith('`````'):
+                # Stop at closing fence
+                if next_text.strip() == '```':
                     j += 1  # Skip the closing fence line
                     break
 
-                # Stop at non-code content (unless it looks like code)
-                if next_style != "code" and not (next_text.startswith('`') and next_text.endswith('`')):
-                    # But allow blank lines within code
-                    if next_text.strip() != '':
-                        break
-
-                # Clean up backtick wrapping: `code` → code
-                cleaned = next_text
-                if cleaned.startswith('`') and cleaned.endswith('`') and not cleaned.startswith('```'):
-                    cleaned = cleaned[1:-1]
-
-                code_lines.append(cleaned)
+                # Add line as-is, no modifications, no cleaning, no changes
+                code_lines.append(next_text)
                 j += 1
 
-            # Clean up code lines - remove erroneous backticks that appear mid-code
-            cleaned_code_lines = []
-            for line in code_lines:
-                # Skip lines that are just backticks (```, ```python, etc.)
-                if re.match(r'^\s*`{3,}\w*\s*$', line.strip()):
-                    continue
-                cleaned_code_lines.append(line)
-
-            code_lines = cleaned_code_lines
-
-            # Detect language from code content if not marked
-            if lang == "python":
-                code_text = "\n".join(code_lines)
-                detected_lang = _detect_code_language(code_text)
-                if detected_lang != "python" or any(kw in code_text for kw in ['def ', 'import ', 'class ']):
-                    lang = detected_lang
-
-            # Output code block
-            lines.append(f"```{lang}")
+            # Output code block exactly as specified - zero modifications
+            lines.append(f"```{lang_marker}")
             lines.extend(code_lines)
             lines.append("```")
-
-            # Check if next paragraph is also code - if so, don't add blank line
-            # This keeps code and its output together
-            should_add_blank = True
-            if j < len(content):
-                next_item = content[j]
-                next_style = next_item["style"]
-                next_text = next_item["text"]
-                # If next item is also code (marked style OR looks like code), don't add blank
-                if next_style == "code" or next_text.startswith('```') or next_text.startswith('`'):
-                    should_add_blank = False
-
-            if should_add_blank:
-                lines.append("")
+            lines.append("")
 
             i = j
+            continue
+        elif style == "code" or (text.startswith('`') and not text.startswith('```')):
+            # Inline code or old-style code - treat as regular text
+            lines.append(text)
+            lines.append("")
+            i += 1
             continue
         elif "Heading 2" in style:
             lines.append(f"## {text}")
