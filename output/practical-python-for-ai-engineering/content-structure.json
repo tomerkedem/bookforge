@@ -1,0 +1,267 @@
+{
+  "book": {
+    "titles": {
+      "he": "פייתון מעשית למהנדסי AI"
+    },
+    "subtitles": {
+      "he": "מיומנויות פייתון לעבודה עם AI"
+    },
+    "descriptions": {
+      "he": ""
+    },
+    "title_he": "פייתון מעשית למהנדסי AI",
+    "subtitle_he": "מיומנויות פייתון לעבודה עם AI",
+    "chapters": [
+      {
+        "id": "intro",
+        "file_slug": "intro",
+        "type": "intro",
+        "titles": {
+          "he": "מבוא"
+        },
+        "sections": 0,
+        "has_images": false,
+        "word_count": 189,
+        "topics": [],
+        "title_he": "מבוא"
+      },
+      {
+        "id": 1,
+        "file_slug": "chapter-01",
+        "type": "content",
+        "titles": {
+          "he": "פרק 1 - למה פייתון היא שפה חשובה בעידן ה-AI"
+        },
+        "sections": 6,
+        "has_images": false,
+        "word_count": 1671,
+        "topics": [],
+        "title_he": "פרק 1 - למה פייתון היא שפה חשובה בעידן ה-AI"
+      },
+      {
+        "id": 2,
+        "file_slug": "chapter-02",
+        "type": "content",
+        "titles": {
+          "he": "פרק 2 - יסודות פייתון למתכנתים מנוסים תחביר בסיסי"
+        },
+        "sections": 8,
+        "has_images": false,
+        "word_count": 3060,
+        "topics": [],
+        "title_he": "פרק 2 - יסודות פייתון למתכנתים מנוסים תחביר בסיסי"
+      },
+      {
+        "id": 3,
+        "file_slug": "chapter-03",
+        "type": "content",
+        "titles": {
+          "he": "פרק 3 – מבני נתונים שימושיים"
+        },
+        "sections": 8,
+        "has_images": false,
+        "word_count": 3469,
+        "topics": [],
+        "title_he": "פרק 3 – מבני נתונים שימושיים"
+      },
+      {
+        "id": 4,
+        "file_slug": "chapter-04",
+        "type": "content",
+        "titles": {
+          "he": "פרק 4 – פונקציות בפייתון"
+        },
+        "sections": 10,
+        "has_images": false,
+        "word_count": 4113,
+        "topics": [],
+        "title_he": "פרק 4 – פונקציות בפייתון"
+      },
+      {
+        "id": 5,
+        "file_slug": "chapter-05",
+        "type": "content",
+        "titles": {
+          "he": "פרק 5 – מודולים, חבילות וארגון פרויקט"
+        },
+        "sections": 10,
+        "has_images": false,
+        "word_count": 2071,
+        "topics": [],
+        "title_he": "פרק 5 – מודולים, חבילות וארגון פרויקט"
+      },
+      {
+        "id": 6,
+        "file_slug": "chapter-06",
+        "type": "content",
+        "titles": {
+          "he": "פרק 6 – סביבות עבודה ותלויות"
+        },
+        "sections": 8,
+        "has_images": false,
+        "word_count": 2467,
+        "topics": [],
+        "title_he": "פרק 6 – סביבות עבודה ותלויות"
+      },
+      {
+        "id": 7,
+        "file_slug": "chapter-07",
+        "type": "content",
+        "titles": {
+          "he": "פרק 7 – קבצים, נתיבים וקונפיגורציה"
+        },
+        "sections": 9,
+        "has_images": false,
+        "word_count": 1305,
+        "topics": [],
+        "title_he": "פרק 7 – קבצים, נתיבים וקונפיגורציה"
+      },
+      {
+        "id": 8,
+        "file_slug": "chapter-08",
+        "type": "content",
+        "titles": {
+          "he": "פרק 8 – חריגות, לוגים ואבחון"
+        },
+        "sections": 8,
+        "has_images": true,
+        "word_count": 846,
+        "topics": [],
+        "title_he": "פרק 8 – חריגות, לוגים ואבחון"
+      },
+      {
+        "id": 9,
+        "file_slug": "chapter-09",
+        "type": "content",
+        "titles": {
+          "he": "פרק 9 – תכנות מונחה עצמים בסיסי"
+        },
+        "sections": 9,
+        "has_images": false,
+        "word_count": 1977,
+        "topics": [],
+        "title_he": "פרק 9 – תכנות מונחה עצמים בסיסי"
+      },
+      {
+        "id": 10,
+        "file_slug": "chapter-10",
+        "type": "content",
+        "titles": {
+          "he": "פרק 10 – טיפוסיות סטטית עם typing"
+        },
+        "sections": 8,
+        "has_images": false,
+        "word_count": 1374,
+        "topics": [],
+        "title_he": "פרק 10 – טיפוסיות סטטית עם typing"
+      },
+      {
+        "id": 11,
+        "file_slug": "chapter-11",
+        "type": "content",
+        "titles": {
+          "he": "פרק 11 – דקורטורים, Context Managers ו-dataclass"
+        },
+        "sections": 10,
+        "has_images": false,
+        "word_count": 1144,
+        "topics": [],
+        "title_he": "פרק 11 – דקורטורים, Context Managers ו-dataclass"
+      },
+      {
+        "id": 12,
+        "file_slug": "chapter-12",
+        "type": "content",
+        "titles": {
+          "he": "פרק 12 – בדיקות אוטומטיות וארגונומיה למפתח"
+        },
+        "sections": 9,
+        "has_images": false,
+        "word_count": 736,
+        "topics": [],
+        "title_he": "פרק 12 – בדיקות אוטומטיות וארגונומיה למפתח"
+      },
+      {
+        "id": 13,
+        "file_slug": "chapter-13",
+        "type": "content",
+        "titles": {
+          "he": "פרק 13 – ביצועים, זיכרון וקצת NumPy"
+        },
+        "sections": 6,
+        "has_images": false,
+        "word_count": 1147,
+        "topics": [],
+        "title_he": "פרק 13 – ביצועים, זיכרון וקצת NumPy"
+      },
+      {
+        "id": 14,
+        "file_slug": "chapter-14",
+        "type": "content",
+        "titles": {
+          "he": "פרק 14 – Pandas למהנדסי AI"
+        },
+        "sections": 10,
+        "has_images": false,
+        "word_count": 3384,
+        "topics": [],
+        "title_he": "פרק 14 – Pandas למהנדסי AI"
+      },
+      {
+        "id": 15,
+        "file_slug": "chapter-15",
+        "type": "content",
+        "titles": {
+          "he": "פרק 15 – אסינכרוניות בסיסית וממשקי רשת"
+        },
+        "sections": 9,
+        "has_images": false,
+        "word_count": 2095,
+        "topics": [],
+        "title_he": "פרק 15 – אסינכרוניות בסיסית וממשקי רשת"
+      },
+      {
+        "id": 16,
+        "file_slug": "chapter-16",
+        "type": "content",
+        "titles": {
+          "he": "פרק 16 – ממשק שורת פקודה (CLI)"
+        },
+        "sections": 7,
+        "has_images": false,
+        "word_count": 2191,
+        "topics": [],
+        "title_he": "פרק 16 – ממשק שורת פקודה (CLI)"
+      },
+      {
+        "id": 17,
+        "file_slug": "chapter-17",
+        "type": "content",
+        "titles": {
+          "he": "פרק 17 – תרגול מאוחד: בניית mini_text_analyzer"
+        },
+        "sections": 12,
+        "has_images": false,
+        "word_count": 575,
+        "topics": [],
+        "title_he": "פרק 17 – תרגול מאוחד: בניית mini_text_analyzer"
+      },
+      {
+        "id": 18,
+        "file_slug": "chapter-18",
+        "type": "content",
+        "titles": {
+          "he": "פרק 18 – (בונוס) תבנית פרויקט למתכנת AI"
+        },
+        "sections": 9,
+        "has_images": false,
+        "word_count": 1084,
+        "topics": [],
+        "title_he": "פרק 18 – (בונוס) תבנית פרויקט למתכנת AI"
+      }
+    ],
+    "languages": [
+      "he"
+    ]
+  }
+}
