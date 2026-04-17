@@ -180,6 +180,19 @@ function injectStyles(): void {
     :is(.dark) #search-results { border-color: rgba(255,255,255,0.07); }
     #search-results:empty { display: none; }
 
+    .search-empty {
+      padding: 2rem 1.25rem;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.4rem;
+      color: var(--yuval-text-secondary, #6b7280);
+    }
+    .search-empty .empty-illustration { width: 76px; height: 76px; opacity: 0.85; }
+    .search-empty .empty-title { font-weight: 700; font-size: 0.95rem; color: var(--yuval-text, #111); }
+    .search-empty .empty-body { font-size: 0.85rem; max-width: 22rem; line-height: 1.5; }
+
     .search-result-item {
       display: flex;
       flex-direction: column;
@@ -476,7 +489,17 @@ async function runBookSearch(query: string): Promise<void> {
     .filter((x): x is NonNullable<typeof x> => !!x);
 
   if (!results.length) {
-    searchResults.innerHTML = `<div class="search-result-item"><div class="sri-snippet">${escapeHtml(tr('search.noResults'))}</div></div>`;
+    searchResults.innerHTML = `
+      <div class="search-empty">
+        <svg class="empty-illustration" viewBox="0 0 120 120" aria-hidden="true">
+          <circle cx="52" cy="52" r="28" fill="none" stroke="#d97706" stroke-width="4" opacity="0.6"/>
+          <line x1="74" y1="74" x2="96" y2="96" stroke="#d97706" stroke-width="4" stroke-linecap="round" opacity="0.6"/>
+          <path d="M42 52 H62 M42 62 H58" stroke="#9a8c7c" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+        </svg>
+        <div class="empty-title">${escapeHtml(tr('empty.search.title'))}</div>
+        <div class="empty-body">${escapeHtml(t('empty.search.body', lang, { q: query }))}</div>
+      </div>
+    `;
     return;
   }
 

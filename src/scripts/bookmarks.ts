@@ -303,8 +303,20 @@ function renderPanel(): void {
   if (!bookmarks.length) {
     body.innerHTML = `
       <div class="bm-empty">
-        <div>${tr('bookmarks.empty')}</div>
-        <div>${tr('bookmarks.emptyHint')}</div>
+        <svg class="empty-illustration" viewBox="0 0 120 120" aria-hidden="true">
+          <defs>
+            <linearGradient id="bm-empty-grad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#fde68a"/>
+              <stop offset="100%" stop-color="#f59e0b"/>
+            </linearGradient>
+          </defs>
+          <rect x="28" y="18" width="64" height="86" rx="6" fill="#fff" stroke="#e5e7eb" stroke-width="2"/>
+          <path d="M38 32 H82 M38 44 H78 M38 56 H82 M38 68 H74" stroke="#e5e7eb" stroke-width="2" stroke-linecap="round"/>
+          <path d="M70 18 L70 60 L78 54 L86 60 L86 18 Z" fill="url(#bm-empty-grad)" stroke="#d97706" stroke-width="1.5" stroke-linejoin="round"/>
+        </svg>
+        <div class="empty-title">${tr('empty.bookmarks.title')}</div>
+        <div class="empty-body">${tr('empty.bookmarks.body')}</div>
+        <div class="empty-cta">${tr('empty.bookmarks.cta')}</div>
       </div>
     `;
     return;

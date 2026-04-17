@@ -524,17 +524,54 @@ body.focus-mode::after {
   padding: 0.5rem 0.75rem;
 }
 
-.bm-empty {
-  padding: 2rem 1rem;
+.bm-empty, .hl-panel-empty {
+  padding: 2.5rem 1.25rem;
   text-align: center;
   color: var(--yuval-text-secondary, #6b7280);
   font-size: 0.9rem;
-  line-height: 1.5;
+  line-height: 1.55;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  animation: empty-fade-in 360ms cubic-bezier(0.2, 0, 0, 1) both;
 }
 
-.bm-empty > div:first-child {
-  font-weight: 600;
-  margin-bottom: 0.4rem;
+.bm-empty .empty-illustration,
+.hl-panel-empty .empty-illustration {
+  width: 104px;
+  height: 104px;
+  margin-bottom: 0.5rem;
+  opacity: 0.9;
+}
+
+.bm-empty .empty-title,
+.hl-panel-empty .empty-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--yuval-text, #111);
+}
+
+.bm-empty .empty-body,
+.hl-panel-empty .empty-body {
+  max-width: 24rem;
+  color: var(--yuval-text-secondary, #6b7280);
+}
+
+.bm-empty .empty-cta,
+.hl-panel-empty .empty-cta {
+  margin-top: 0.5rem;
+  font-size: 0.82rem;
+  padding: 0.45rem 0.9rem;
+  border-radius: 9999px;
+  background: var(--yuval-bg-secondary, #f5f0e8);
+  color: var(--yuval-text, #111);
+  border: 1px dashed var(--yuval-border, #e5e7eb);
+}
+
+@keyframes empty-fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 .bm-item {
@@ -731,24 +768,170 @@ body.focus-mode::after {
 #ob-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.55);
+  background: rgba(15, 23, 42, 0.58);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
   z-index: 9998;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 1rem;
+  opacity: 0;
+  transition: opacity 220ms cubic-bezier(0.2, 0, 0, 1);
 }
+#ob-overlay.open { opacity: 1; }
 
 #ob-tooltip {
   background: var(--yuval-bg, #fff);
   color: var(--yuval-text, #111);
   border: 1px solid var(--yuval-border, #e5e7eb);
-  border-radius: 0.5rem;
-  padding: 1.25rem 1.5rem;
-  max-width: 420px;
+  border-radius: 1rem;
+  padding: 1.75rem 1.5rem 1.25rem;
+  max-width: 400px;
   width: 100%;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 40px 80px -16px rgba(0, 0, 0, 0.25),
+              0 12px 28px -4px rgba(0, 0, 0, 0.12);
   z-index: 9999;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  transform: translateY(12px) scale(0.98);
+  opacity: 0;
+  animation: ob-enter 320ms cubic-bezier(0.3, 0, 0, 1) forwards;
+}
+
+@keyframes ob-enter {
+  to { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+@keyframes ob-slide {
+  from { opacity: 0; transform: translateX(var(--ob-slide-from, 12px)); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+#ob-tooltip > :is(.ob-illustration, #ob-title, #ob-body, .ob-counter) {
+  animation: ob-slide 280ms cubic-bezier(0.2, 0, 0, 1) both;
+}
+
+[dir="rtl"] #ob-tooltip > :is(.ob-illustration, #ob-title, #ob-body, .ob-counter) {
+  --ob-slide-from: -12px;
+}
+
+.ob-illustration {
+  width: 96px;
+  height: 96px;
+  margin-bottom: 0.25rem;
+}
+.ob-illustration svg { width: 100%; height: 100%; }
+
+.ob-counter {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--yuval-text-muted, #9a8c7c);
+}
+
+#ob-title {
+  font-family: 'Frank Ruhl Libre', Georgia, serif;
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  color: var(--yuval-text, #111);
+  margin-top: 0.1rem;
+}
+
+#ob-body {
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: var(--yuval-text-secondary, #555);
+  max-width: 22rem;
+}
+
+.ob-dots {
+  display: flex;
+  gap: 0.5rem;
+  margin: 0.75rem 0 0.25rem;
+}
+
+.ob-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  background: var(--yuval-border, #e5e7eb);
+  transition: background 200ms cubic-bezier(0.2, 0, 0, 1),
+              transform 200ms cubic-bezier(0.2, 0, 0, 1),
+              width 200ms cubic-bezier(0.2, 0, 0, 1);
+}
+.ob-dot.done   { background: var(--yuval-accent, #d97706); opacity: 0.5; }
+.ob-dot.active { background: var(--yuval-accent, #d97706); width: 22px; border-radius: 9999px; }
+
+#ob-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.ob-nav { display: flex; gap: 0.5rem; }
+
+#ob-skip {
+  background: transparent;
+  border: none;
+  color: var(--yuval-text-muted, #9a8c7c);
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  transition: background 200ms cubic-bezier(0.2, 0, 0, 1),
+              color 200ms cubic-bezier(0.2, 0, 0, 1);
+}
+#ob-skip:hover { background: var(--yuval-bg-secondary, #f5f0e8); color: var(--yuval-text, #111); }
+
+#ob-next, .ob-secondary {
+  padding: 0.55rem 1.1rem;
+  border-radius: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 200ms cubic-bezier(0.2, 0, 0, 1),
+              box-shadow 200ms cubic-bezier(0.2, 0, 0, 1),
+              background 200ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+#ob-next {
+  background: var(--yuval-accent, #d97706);
+  color: var(--yuval-accent-text, #fff);
+  border: 1px solid transparent;
+  box-shadow: 0 4px 12px -2px rgba(217,119,6,0.3);
+}
+#ob-next:hover { transform: translateY(-1px); box-shadow: 0 8px 20px -4px rgba(217,119,6,0.38); background: var(--yuval-accent-hover, #b45309); }
+#ob-next:active { transform: translateY(0) scale(0.98); }
+
+.ob-secondary {
+  background: transparent;
+  color: var(--yuval-text, #111);
+  border: 1px solid var(--yuval-border, #e5e7eb);
+  min-width: 2.5rem;
+}
+.ob-secondary:hover { background: var(--yuval-bg-secondary, #f5f0e8); }
+
+#ob-next:focus-visible, #ob-skip:focus-visible, .ob-secondary:focus-visible {
+  outline: 2px solid var(--yuval-accent, #d97706);
+  outline-offset: 2px;
+}
+
+[dir="rtl"] .ob-secondary { transform: scaleX(-1); }
+
+@media (max-width: 639px) {
+  #ob-tooltip { padding: 1.5rem 1.25rem 1rem; max-width: 92vw; }
+  .ob-illustration { width: 80px; height: 80px; }
+  #ob-title { font-size: 1.2rem; }
+  #ob-body  { font-size: 0.9rem; }
 }
 
 /* ═══════════════════════════════════════════════════

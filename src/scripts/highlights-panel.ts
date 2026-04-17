@@ -135,8 +135,24 @@ function renderPanel(): void {
   if (!chapters.length) {
     body.innerHTML = `
       <div class="hl-panel-empty">
-        <span>${tr('highlights.empty')}</span>
-        <span>${tr('highlights.emptyHint')}</span>
+        <svg class="empty-illustration" viewBox="0 0 120 120" aria-hidden="true">
+          <defs>
+            <linearGradient id="hl-empty-grad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#fef08a"/>
+              <stop offset="100%" stop-color="#fbbf24"/>
+            </linearGradient>
+          </defs>
+          <rect x="22" y="40" width="76" height="48" rx="4" fill="url(#hl-empty-grad)" opacity="0.55"/>
+          <path d="M30 52 H86 M30 62 H78 M30 72 H82" stroke="#92400e" stroke-width="2" stroke-linecap="round" opacity="0.55"/>
+          <g transform="translate(70 22) rotate(25)">
+            <rect x="0" y="0" width="10" height="48" rx="2" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+            <path d="M0 44 L10 44 L5 54 Z" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+            <rect x="0" y="0" width="10" height="10" fill="#fbbf24"/>
+          </g>
+        </svg>
+        <div class="empty-title">${tr('empty.highlights.title')}</div>
+        <div class="empty-body">${tr('empty.highlights.body')}</div>
+        <div class="empty-cta">${tr('empty.highlights.cta')}</div>
       </div>
     `;
     return;
