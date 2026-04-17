@@ -604,7 +604,11 @@ const COPY_SUCCESS_MESSAGE = 'Code copied!';
         font-family: inherit;
         border-radius: 6px;
         cursor: pointer;
-        transition: all 0.15s ease;
+        transition:
+          background 150ms cubic-bezier(0.2, 0, 0, 1),
+          color 150ms cubic-bezier(0.2, 0, 0, 1),
+          transform 150ms cubic-bezier(0.2, 0, 0, 1),
+          filter 150ms cubic-bezier(0.2, 0, 0, 1);
       }
 
       :global(.code-runner-wrapper .tool-btn:hover),

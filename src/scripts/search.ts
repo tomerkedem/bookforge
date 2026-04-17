@@ -51,7 +51,7 @@ function injectStyles(): void {
       box-shadow: 0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06);
       opacity: 0;
       pointer-events: none;
-      transition: opacity 0.2s ease, transform 0.2s ease;
+      transition: opacity 200ms cubic-bezier(0.2, 0, 0, 1), transform 320ms cubic-bezier(0.3, 0, 0, 1);
       overflow: hidden;
     }
     #chapter-search.open {
