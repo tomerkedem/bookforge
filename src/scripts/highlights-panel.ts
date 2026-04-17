@@ -186,6 +186,9 @@ function closePanel(): void {
 
 export function initHighlightsPanel(): void {
   const btn = document.createElement('button');
+  btn.id = 'highlights-fab';
+  btn.type = 'button';
+  btn.setAttribute('aria-label', 'Highlights');
   btn.textContent = '💡';
   btn.onclick = openPanel;
   document.body.appendChild(btn);

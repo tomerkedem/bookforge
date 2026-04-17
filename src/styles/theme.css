@@ -226,6 +226,86 @@ body.focus-mode::after {
 }
 
 /* ═══════════════════════════════════════════════════
+   FAB STACK (stats, bookmarks, highlights, tts)
+   Stacked vertically above the main reading-fab
+   ═══════════════════════════════════════════════════ */
+#stats-fab-btn,
+#bm-fab-btn,
+#highlights-fab,
+#tts-fab {
+  position: fixed;
+  inset-inline-end: 1rem;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 9999px;
+  border: 1px solid var(--yuval-border, #e5e7eb);
+  background: var(--yuval-bg, #fff);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  cursor: pointer;
+  z-index: 45;
+  transition: transform 0.15s ease;
+}
+
+#stats-fab-btn:hover,
+#bm-fab-btn:hover,
+#highlights-fab:hover,
+#tts-fab:hover {
+  transform: scale(1.05);
+}
+
+#tts-fab       { bottom: 5rem; }
+#stats-fab-btn { bottom: 8.25rem; }
+#bm-fab-btn    { bottom: 11.5rem; }
+#highlights-fab{ bottom: 14.75rem; }
+
+@media (max-width: 639px) {
+  #stats-fab-btn,
+  #bm-fab-btn,
+  #highlights-fab,
+  #tts-fab {
+    width: 2.25rem;
+    height: 2.25rem;
+    font-size: 0.9rem;
+    inset-inline-end: 0.75rem;
+  }
+
+  #tts-fab       { bottom: 4.25rem; }
+  #stats-fab-btn { bottom: 6.9rem; }
+  #bm-fab-btn    { bottom: 9.55rem; }
+  #highlights-fab{ bottom: 12.2rem; }
+}
+
+/* ═══════════════════════════════════════════════════
+   ONBOARDING TOUR OVERLAY
+   ═══════════════════════════════════════════════════ */
+#ob-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  z-index: 9998;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+#ob-tooltip {
+  background: var(--yuval-bg, #fff);
+  color: var(--yuval-text, #111);
+  border: 1px solid var(--yuval-border, #e5e7eb);
+  border-radius: 0.5rem;
+  padding: 1.25rem 1.5rem;
+  max-width: 420px;
+  width: 100%;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+  z-index: 9999;
+}
+
+/* ═══════════════════════════════════════════════════
    PRINT STYLESHEET
    ═══════════════════════════════════════════════════ */
 @media print {

@@ -348,8 +348,22 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
     padding-bottom: 0.6rem;
   }
 
+  .breadcrumb-container {
+    display: none !important;
+  }
+
   .header-title-row {
-    gap: 0.625rem;
+    gap: 0.35rem;
+    flex-wrap: nowrap;
+  }
+
+  .chapter-title-group {
+    display: flex;
+    align-items: baseline;
+    gap: 0.3rem;
+    min-width: 0;
+    flex: 1;
+    overflow: hidden;
   }
 
   .chapter-number-badge {
@@ -358,10 +372,36 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
   }
 
   .progress-badge {
-    min-width: 2.6rem;
-    height: 2rem;
-    padding-inline: 0.55rem;
-    font-size: 0.8rem;
+    min-width: 1.8rem;
+    height: 1.3rem;
+    padding-inline: 0.3rem;
+    font-size: 0.5rem;
+  }
+
+  .chapter-number-badge {
+    width: 1.6rem;
+    height: 1.6rem;
+  }
+
+  .chapter-number {
+    font-size: 1rem;
+  }
+
+  .chapter-title {
+    font-size: 1rem;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .chapter-label {
+    font-size: 0.45rem;
+    margin-bottom: 0.05rem;
+  }
+
+  .chapter-header-card {
+    padding: 0.5rem 0.65rem;
   }
 }
 </style>
