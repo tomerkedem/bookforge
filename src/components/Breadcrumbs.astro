@@ -35,7 +35,8 @@ function resolveLabel(item: BreadcrumbItem, lang: string): string {
 
 <nav
   aria-label="Breadcrumb"
-  class:list={['text-[11px] font-body text-yuval-text-tertiary breadcrumbs-nav', className]}
+  class:list={['font-body text-yuval-text-tertiary breadcrumbs-nav compact-breadcrumbs', className]}
+  style="font-size:4px; line-height:1.2; letter-spacing:-0.01em;"
 >
   <ol class="flex flex-wrap items-center gap-1.5">
     {items.map((item, i) => {
@@ -82,5 +83,14 @@ function resolveLabel(item: BreadcrumbItem, lang: string): string {
     max-width: var(--reading-content-width, 720px);
     margin-left: auto;
     margin-right: auto;
+  }
+  .breadcrumbs-nav,
+  .breadcrumbs-nav * {
+    font-size: 12px !important;
+    line-height: 1.2 !important;
+  }
+  .breadcrumbs-nav svg {
+    width: 6px !important;
+    height: 6px !important;
   }
 </style>

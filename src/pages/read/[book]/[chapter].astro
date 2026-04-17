@@ -66,6 +66,8 @@ async function loadContent(lang: string): Promise<string> {
     const md = readFileSync(path, 'utf-8');
     let html = await marked(md);
     html = html.replaceAll('src="../assets/', `src="/${book}/assets/`);
+    // Remove leading <h1>...</h1> if present (to avoid duplicate chapter title)
+    html = html.replace(/^<h1[^>]*>.*?<\/h1>/s, '');
     return html;
   } catch {
     return `<h2>${getLocalized(current.titles, lang)}</h2>`;
@@ -213,8 +215,11 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
 }
 
 .breadcrumb-container {
-  margin-bottom: 0.5rem;
+  margin-bottom: 0;
+  margin-top: 0;
   padding-inline: 0.125rem;
+  padding-top: 0;
+  padding-bottom: 0;
 }
 
 .chapter-header {
