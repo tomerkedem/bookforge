@@ -71,6 +71,18 @@ export const translations: Translations = {
   'search.placeholderBook': { he: 'חפש בספר...', en: 'Search book...', es: 'Buscar en el libro...' },
   'search.modeChapter':    { he: 'חיפוש בפרק',      en: 'Search chapter',    es: 'Buscar en capítulo' },
   'search.modeBook':       { he: 'חיפוש בספר',      en: 'Search book',       es: 'Buscar en libro' },
+  'search.noResults':      { he: 'אין תוצאות',       en: 'No results',        es: 'Sin resultados' },
+  'search.results':        { he: '{{n}} מתוך {{total}}', en: '{{n}} of {{total}}', es: '{{n}} de {{total}}' },
+  'search.chapterLabel':   { he: 'פרק {{n}}',        en: 'Chapter {{n}}',     es: 'Capítulo {{n}}' },
+  'search.ariaPrev':       { he: 'תוצאה קודמת',      en: 'Previous result',   es: 'Resultado anterior' },
+  'search.ariaNext':       { he: 'תוצאה הבאה',       en: 'Next result',       es: 'Resultado siguiente' },
+  'search.ariaClose':      { he: 'סגור חיפוש',       en: 'Close search',      es: 'Cerrar búsqueda' },
+
+  // ── ARIA Labels (accessibility) ─────────────────────────────────────────────
+  'aria.highlights':       { he: 'ההדגשות שלי',     en: 'My highlights',     es: 'Mis resaltados' },
+  'aria.bookmarks':        { he: 'סימניות',          en: 'Bookmarks',         es: 'Marcadores' },
+  'aria.stats':            { he: 'סטטיסטיקות קריאה', en: 'Reading stats',     es: 'Estadísticas de lectura' },
+  'aria.tts':              { he: 'האזן לפרק',        en: 'Listen to chapter', es: 'Escuchar capítulo' },
 
   // ── Book page ───────────────────────────────────────────────────────────────
   'book.chapterOne':       { he: 'פרק אחד',       en: '1 chapter',        es: '1 capítulo' },
@@ -101,11 +113,15 @@ export const translations: Translations = {
   // ── Bookmarks ───────────────────────────────────────────────────────────────
   'bookmarks.title':       { he: 'סימניות',        en: 'Bookmarks',        es: 'Marcadores' },
   'bookmarks.empty':       { he: 'אין סימניות עדיין', en: 'No bookmarks yet', es: 'Aún no hay marcadores' },
-  'bookmarks.emptyHint':   { he: 'לחץ לחיצה ימנית על כל פסקה כדי להוסיף סימנייה', en: 'Right-click any paragraph to bookmark it', es: 'Clic derecho en cualquier párrafo para marcar' },
+  'bookmarks.emptyHint':   { he: 'לחץ לחיצה כפולה על פסקה (או לחיצה ארוכה במובייל) כדי להוסיף סימנייה', en: 'Double-click a paragraph (or long-press on mobile) to bookmark it', es: 'Doble clic en un párrafo (o pulsación larga en móvil) para marcar' },
   'bookmarks.close':       { he: 'סגור',           en: 'Close',            es: 'Cerrar' },
   'bookmarks.add':         { he: '🔖 הוסף סימנייה', en: '🔖 Add bookmark',  es: '🔖 Añadir marcador' },
   'bookmarks.remove':      { he: 'הסר סימנייה',    en: 'Remove bookmark',  es: 'Quitar marcador' },
   'bookmarks.saved':       { he: 'סימנייה נשמרה',  en: 'Bookmark saved',   es: 'Marcador guardado' },
+  'bookmarks.addPrompt':   { he: 'להוסיף סימנייה כאן?', en: 'Add a bookmark here?', es: '¿Añadir marcador aquí?' },
+  'bookmarks.removePrompt':{ he: 'להסיר את הסימנייה?', en: 'Remove this bookmark?', es: '¿Quitar este marcador?' },
+  'bookmarks.cancel':      { he: 'ביטול',          en: 'Cancel',           es: 'Cancelar' },
+  'bookmarks.chapter':     { he: 'פרק {{n}}',      en: 'Chapter {{n}}',    es: 'Capítulo {{n}}' },
   'bookmarks.chapterLabel': { he: 'פרק {{n}}',     en: 'Chapter {{n}}',    es: 'Capítulo {{n}}' },
   'bookmarks.step1':       { he: 'לחץ לחיצה ימנית על פסקה', en: 'Right-click any paragraph', es: 'Clic derecho en cualquier párrafo' },
   'bookmarks.step2':       { he: 'בחר "הוסף סימנייה"', en: 'Choose "Add bookmark"', es: 'Elige "Añadir marcador"' },
@@ -158,6 +174,7 @@ export const translations: Translations = {
   'highlights.empty':      { he: 'אין הדגשות עדיין', en: 'No highlights yet', es: 'Aún no hay resaltados' },
   'highlights.emptyHint':  { he: 'סמן טקסט בזמן קריאה כדי לשמור תובנות', en: 'Select text while reading to save insights', es: 'Selecciona texto mientras lees para guardar ideas' },
   'highlights.close':      { he: 'סגור',           en: 'Close',            es: 'Cerrar' },
+  'highlights.chapter':    { he: 'פרק {{n}}',      en: 'Chapter {{n}}',    es: 'Capítulo {{n}}' },
   'highlights.chapterLabel': { he: 'פרק {{n}}',    en: 'Chapter {{n}}',    es: 'Capítulo {{n}}' },
   'highlights.exportMarkdown': { he: 'Markdown',   en: 'Markdown',         es: 'Markdown' },
   'highlights.exportPdf':  { he: 'PDF',            en: 'PDF',              es: 'PDF' },

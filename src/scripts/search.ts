@@ -592,10 +592,10 @@ function buildSearchBar(): void {
 
       <span id="search-count"></span>
 
-      <button id="search-prev" class="search-nav-btn" type="button" aria-label="Previous result">↑</button>
-      <button id="search-next" class="search-nav-btn" type="button" aria-label="Next result">↓</button>
+      <button id="search-prev" class="search-nav-btn" type="button" aria-label="${escapeHtml(tr('search.ariaPrev'))}">↑</button>
+      <button id="search-next" class="search-nav-btn" type="button" aria-label="${escapeHtml(tr('search.ariaNext'))}">↓</button>
 
-      <button id="search-close" type="button" aria-label="Close">✕</button>
+      <button id="search-close" type="button" aria-label="${escapeHtml(tr('search.ariaClose'))}">✕</button>
     </div>
 
     <div id="search-results" style="display:none"></div>
@@ -701,6 +701,10 @@ export function initSearch(signal: AbortSignal): void {
 
     const newDir = getLangDir();
     searchBar.dir = newDir;
+
+    prevBtn?.setAttribute('aria-label', tr('search.ariaPrev'));
+    nextBtn?.setAttribute('aria-label', tr('search.ariaNext'));
+    searchBar.querySelector('#search-close')?.setAttribute('aria-label', tr('search.ariaClose'));
 
     mode = mode === 'book' ? 'book' : 'chapter';
     updateModeUI();

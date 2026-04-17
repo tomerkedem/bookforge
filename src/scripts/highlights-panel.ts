@@ -175,21 +175,44 @@ function renderPanel(): void {
 
 function openPanel(): void {
   renderPanel();
+  document.getElementById('hl-overlay')?.classList.add('open');
   document.getElementById('hl-panel')?.classList.add('open');
 }
 
 function closePanel(): void {
+  document.getElementById('hl-overlay')?.classList.remove('open');
   document.getElementById('hl-panel')?.classList.remove('open');
 }
 
 // ── Init ────────────────────────────────────────────────────────────────────
 
+function applyLabels(btn: HTMLButtonElement): void {
+  btn.setAttribute('aria-label', tr('aria.highlights'));
+  btn.title = tr('aria.highlights');
+}
+
 export function initHighlightsPanel(): void {
+  if (document.getElementById('highlights-fab')) return;
+
   const btn = document.createElement('button');
   btn.id = 'highlights-fab';
   btn.type = 'button';
-  btn.setAttribute('aria-label', 'Highlights');
   btn.textContent = '💡';
+  applyLabels(btn);
   btn.onclick = openPanel;
   document.body.appendChild(btn);
+
+  const overlay = document.createElement('div');
+  overlay.id = 'hl-overlay';
+  overlay.addEventListener('click', closePanel);
+  document.body.appendChild(overlay);
+
+  const panel = document.createElement('div');
+  panel.id = 'hl-panel';
+  document.body.appendChild(panel);
+
+  window.addEventListener('language-changed', () => {
+    applyLabels(btn);
+    if (panel.classList.contains('open')) renderPanel();
+  });
 }

@@ -1,0 +1,176 @@
+{
+  "$schema": "./design-system.schema.json",
+  "version": "1.0.0",
+  "name": "Yuval Reading Platform Design System",
+  "description": "Single source of truth for typography, spacing, colors, motion, and elevation across BookForge/Yuval.",
+
+  "typography": {
+    "fontFamilies": {
+      "body": "'Heebo', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+      "heading": "'Frank Ruhl Libre', 'Playfair Display', Georgia, serif",
+      "reading": "'Frank Ruhl Libre', 'Georgia', serif",
+      "mono": "ui-monospace, 'SF Mono', 'Menlo', 'Cascadia Code', monospace"
+    },
+    "scale": {
+      "xs":   { "size": "0.75rem",  "lineHeight": "1.5",  "letterSpacing": "0.01em" },
+      "sm":   { "size": "0.875rem", "lineHeight": "1.5",  "letterSpacing": "0.005em" },
+      "base": { "size": "1rem",     "lineHeight": "1.6",  "letterSpacing": "0" },
+      "lg":   { "size": "1.125rem", "lineHeight": "1.6",  "letterSpacing": "-0.005em" },
+      "xl":   { "size": "1.25rem",  "lineHeight": "1.5",  "letterSpacing": "-0.01em" },
+      "2xl":  { "size": "1.5rem",   "lineHeight": "1.4",  "letterSpacing": "-0.015em" },
+      "3xl":  { "size": "1.875rem", "lineHeight": "1.3",  "letterSpacing": "-0.02em" },
+      "4xl":  { "size": "2.25rem",  "lineHeight": "1.2",  "letterSpacing": "-0.025em" },
+      "5xl":  { "size": "3rem",     "lineHeight": "1.1",  "letterSpacing": "-0.03em" },
+      "6xl":  { "size": "3.75rem",  "lineHeight": "1",    "letterSpacing": "-0.035em" }
+    },
+    "weights": {
+      "regular": 400,
+      "medium": 500,
+      "semibold": 600,
+      "bold": 700,
+      "black": 900
+    },
+    "readingPreferences": {
+      "sizes":       ["0.875rem", "1rem", "1.125rem", "1.25rem", "1.375rem"],
+      "lineHeights": [1.5, 1.65, 1.8, 1.95],
+      "widths":      { "narrow": "580px", "medium": "720px", "wide": "880px" }
+    }
+  },
+
+  "spacing": {
+    "scale": {
+      "0":   "0",
+      "px":  "1px",
+      "0.5": "0.125rem",
+      "1":   "0.25rem",
+      "2":   "0.5rem",
+      "3":   "0.75rem",
+      "4":   "1rem",
+      "5":   "1.25rem",
+      "6":   "1.5rem",
+      "8":   "2rem",
+      "10":  "2.5rem",
+      "12":  "3rem",
+      "16":  "4rem",
+      "20":  "5rem",
+      "24":  "6rem",
+      "32":  "8rem"
+    },
+    "semantic": {
+      "inline-xs": "0.25rem",
+      "inline-sm": "0.5rem",
+      "inline-md": "0.75rem",
+      "inline-lg": "1rem",
+      "block-xs":  "0.5rem",
+      "block-sm":  "1rem",
+      "block-md":  "1.5rem",
+      "block-lg":  "2.5rem",
+      "block-xl":  "4rem"
+    }
+  },
+
+  "radius": {
+    "none": "0",
+    "xs":   "0.125rem",
+    "sm":   "0.25rem",
+    "md":   "0.375rem",
+    "lg":   "0.5rem",
+    "xl":   "0.75rem",
+    "2xl":  "1rem",
+    "3xl":  "1.5rem",
+    "full": "9999px"
+  },
+
+  "elevation": {
+    "none": "none",
+    "xs":   "0 1px 2px 0 rgba(0, 0, 0, 0.04)",
+    "sm":   "0 2px 4px -1px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04)",
+    "md":   "0 4px 12px -2px rgba(0, 0, 0, 0.08), 0 2px 4px -1px rgba(0, 0, 0, 0.04)",
+    "lg":   "0 12px 28px -4px rgba(0, 0, 0, 0.1), 0 4px 8px -2px rgba(0, 0, 0, 0.06)",
+    "xl":   "0 24px 48px -8px rgba(0, 0, 0, 0.12), 0 8px 16px -4px rgba(0, 0, 0, 0.08)",
+    "2xl":  "0 40px 80px -16px rgba(0, 0, 0, 0.2)",
+    "inset": "inset 0 1px 2px 0 rgba(0, 0, 0, 0.06)"
+  },
+
+  "motion": {
+    "duration": {
+      "instant": "0ms",
+      "fast":    "120ms",
+      "base":    "200ms",
+      "medium":  "320ms",
+      "slow":    "480ms",
+      "slower":  "720ms"
+    },
+    "easing": {
+      "linear":      "linear",
+      "standard":    "cubic-bezier(0.2, 0, 0, 1)",
+      "emphasized":  "cubic-bezier(0.3, 0, 0, 1)",
+      "decelerated": "cubic-bezier(0, 0, 0, 1)",
+      "accelerated": "cubic-bezier(0.3, 0, 1, 1)",
+      "spring":      "cubic-bezier(0.34, 1.56, 0.64, 1)"
+    },
+    "transitions": {
+      "hover":   "all 120ms cubic-bezier(0.2, 0, 0, 1)",
+      "press":   "transform 80ms cubic-bezier(0.3, 0, 1, 1)",
+      "panel":   "transform 320ms cubic-bezier(0.3, 0, 0, 1), opacity 200ms cubic-bezier(0.2, 0, 0, 1)",
+      "fade":    "opacity 200ms cubic-bezier(0.2, 0, 0, 1)"
+    }
+  },
+
+  "breakpoints": {
+    "sm": "640px",
+    "md": "768px",
+    "lg": "1024px",
+    "xl": "1280px",
+    "2xl": "1536px"
+  },
+
+  "z-index": {
+    "base": 0,
+    "dropdown": 40,
+    "sticky": 45,
+    "fab": 50,
+    "overlay": 9997,
+    "panel": 9998,
+    "modal": 9999,
+    "toast": 10000
+  },
+
+  "colors": {
+    "brand": {
+      "gold":   { "50": "#fffbeb", "100": "#fef3c7", "200": "#fde68a", "300": "#fcd34d", "400": "#fbbf24", "500": "#f59e0b", "600": "#d97706", "700": "#b45309", "800": "#92400e", "900": "#78350f" },
+      "ink":    { "50": "#f7f7f7", "100": "#ededed", "200": "#d9d9d9", "300": "#b0b0b0", "400": "#888888", "500": "#555555", "600": "#3d3229", "700": "#2a2017", "800": "#1a1a1a", "900": "#0f0f0f" },
+      "paper":  { "50": "#faf7f2", "100": "#f5f0e8", "200": "#ede8df", "300": "#e0ddd8", "400": "#9a8c7c" }
+    },
+    "semantic": {
+      "success": "#16a34a",
+      "warning": "#f59e0b",
+      "error":   "#dc2626",
+      "info":    "#0ea5e9"
+    },
+    "highlight": {
+      "yellow": "#fef08a",
+      "blue":   "#dbeafe",
+      "green":  "#dcfce7",
+      "pink":   "#fce7f3"
+    }
+  },
+
+  "iconSizes": {
+    "xs": "0.75rem",
+    "sm": "1rem",
+    "md": "1.25rem",
+    "lg": "1.5rem",
+    "xl": "2rem"
+  },
+
+  "principles": [
+    "Reading comes first. UI chrome defers to content.",
+    "Mobile-first. Every component works at 320px before it works at 1920px.",
+    "RTL is a first-class citizen. Use CSS logical properties (inset-inline-*, margin-inline-*), never right/left.",
+    "Motion conveys meaning. Respect prefers-reduced-motion — never decorate; always inform.",
+    "Accessibility is the floor, not the ceiling. Min 4.5:1 contrast, keyboard-first, screen-reader honest.",
+    "Empty states are opportunities. Every empty surface gets an illustration + CTA, never a dead blank.",
+    "Dark mode is not an afterthought. Every color and shadow has a dark counterpart, authored — not inverted."
+  ]
+}
