@@ -208,4 +208,41 @@ export const translations: Translations = {
   // ── General / Shared ────────────────────────────────────────────────────────
   'general.close':         { he: 'סגור',            en: 'Close',            es: 'Cerrar' },
   'general.of':            { he: 'מתוך',            en: 'of',               es: 'de' },
+  'general.retry':         { he: 'נסה שוב',         en: 'Try again',        es: 'Reintentar' },
+  'general.back':          { he: 'חזרה',            en: 'Back',             es: 'Volver' },
+  'general.home':          { he: 'חזרה לדף הבית',   en: 'Back to Home',     es: 'Volver al inicio' },
+
+  // ── Error pages ─────────────────────────────────────────────────────────────
+  'error.404.title':       { he: 'הדף לא נמצא',     en: 'Page not found',   es: 'Página no encontrada' },
+  'error.404.code':        { he: '404',             en: '404',              es: '404' },
+  'error.404.body':        { he: 'הדף שחיפשת לא קיים או הועבר למקום אחר. אולי הגעת לקישור ישן?', en: "The page you're looking for doesn't exist or has been moved. Perhaps you followed an old link?", es: 'La página que buscas no existe o ha sido movida. ¿Quizás seguiste un enlace antiguo?' },
+  'error.404.suggest':     { he: 'נסה לחזור לספרייה ולבחור ספר', en: 'Try returning to the library and picking a book', es: 'Prueba a volver a la biblioteca y elegir un libro' },
+
+  'error.500.title':       { he: 'משהו השתבש',      en: 'Something went wrong', es: 'Algo salió mal' },
+  'error.500.body':        { he: 'נתקלנו בשגיאה בלתי צפויה. נסה לרענן את הדף.', en: 'We hit an unexpected error. Try refreshing the page.', es: 'Encontramos un error inesperado. Intenta recargar la página.' },
+
+  'error.offline.title':   { he: 'אין חיבור לאינטרנט', en: "You're offline",  es: 'Estás sin conexión' },
+  'error.offline.body':    { he: 'בדוק את החיבור שלך ונסה שוב.', en: 'Check your connection and try again.', es: 'Revisa tu conexión e inténtalo de nuevo.' },
+
+  'error.bookNotFound.title': { he: 'הספר לא נמצא', en: 'Book not found',   es: 'Libro no encontrado' },
+  'error.bookNotFound.body': { he: 'הספר שביקשת לא זמין בשפה זו או שהוסר.', en: 'The book you requested is not available in this language or has been removed.', es: 'El libro que solicitaste no está disponible en este idioma o ha sido eliminado.' },
+
+  'error.chapterNotFound.title': { he: 'הפרק לא נמצא', en: 'Chapter not found', es: 'Capítulo no encontrado' },
+  'error.chapterNotFound.body': { he: 'הפרק הזה לא קיים בספר. אולי נמחק או שהקישור שגוי.', en: "This chapter doesn't exist in the book. It may have been removed, or the link is wrong.", es: 'Este capítulo no existe en el libro. Puede haber sido eliminado o el enlace es incorrecto.' },
+
+  // ── Empty states ────────────────────────────────────────────────────────────
+  'empty.bookmarks.title': { he: 'עוד אין סימניות', en: 'No bookmarks yet', es: 'Aún no hay marcadores' },
+  'empty.bookmarks.body':  { he: 'סימן מקומות חשובים בספר כדי לחזור אליהם בקלות.', en: 'Mark meaningful places in the book so you can return to them easily.', es: 'Marca lugares importantes del libro para volver a ellos fácilmente.' },
+  'empty.bookmarks.cta':   { he: 'לחיצה כפולה על פסקה להוספת סימנייה', en: 'Double-click a paragraph to bookmark it', es: 'Doble clic en un párrafo para marcarlo' },
+
+  'empty.highlights.title': { he: 'עדיין אין הדגשות', en: 'No highlights yet', es: 'Aún no hay resaltados' },
+  'empty.highlights.body': { he: 'הדגש טקסט בזמן קריאה כדי לשמור תובנות, שאלות, ציטוטים ופעולות.', en: 'Highlight text as you read to save insights, questions, quotes and actions.', es: 'Resalta texto mientras lees para guardar ideas, preguntas, citas y acciones.' },
+  'empty.highlights.cta':  { he: 'בחר טקסט בדף ובחר צבע', en: 'Select text on the page and pick a color', es: 'Selecciona texto en la página y elige un color' },
+
+  'empty.search.title':    { he: 'אין תוצאות',       en: 'No results',       es: 'Sin resultados' },
+  'empty.search.body':     { he: 'לא מצאנו התאמות ל"{{q}}". נסה מילות חיפוש אחרות.', en: 'We couldn\'t find matches for "{{q}}". Try different keywords.', es: 'No encontramos coincidencias para "{{q}}". Prueba otras palabras.' },
+  'empty.search.cta':      { he: 'חפש בספר כולו',    en: 'Search the whole book', es: 'Buscar en todo el libro' },
+
+  'empty.library.title':   { he: 'הספרייה ריקה',     en: 'Library is empty', es: 'La biblioteca está vacía' },
+  'empty.library.body':    { he: 'עוד לא נוספו ספרים. הוסף קובצי MD לתיקיית output/ כדי להתחיל.', en: 'No books added yet. Drop MD files into the output/ folder to get started.', es: 'Aún no se han añadido libros. Coloca archivos MD en la carpeta output/ para empezar.' },
 };
