@@ -21,11 +21,13 @@ const LANGUAGE_CODES = SUPPORTED_LANGUAGES.map((l) => l.code);
 /**
  * Credits for a book.
  */
+export type LocalizedOrPlain = string | Record<string, string>;
+
 export interface BookCredits {
   type: 'lecture_summary' | 'original';
-  lecturer?: string;
-  editor?: string;
-  author?: string;
+  lecturer?: LocalizedOrPlain;
+  editor?: LocalizedOrPlain;
+  author?: LocalizedOrPlain;
 }
 
 export interface DiscoveredBook {

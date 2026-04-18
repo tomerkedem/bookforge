@@ -17,8 +17,16 @@
     },
     "credits": {
       "type": "lecture_summary",
-      "lecturer": "ערן סלע",
-      "editor": "תומר קדם"
+      "lecturer": {
+        "he": "ערן סלע",
+        "en": "Eran Sela",
+        "es": "Eran Sela"
+      },
+      "editor": {
+        "he": "תומר קדם",
+        "en": "Tomer Kedem",
+        "es": "Tomer Kedem"
+      }
     },
     "category": {
       "he": "קורס הנדסת AI",

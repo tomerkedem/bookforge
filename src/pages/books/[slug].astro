@@ -21,6 +21,22 @@ function getLocalizedText(
   return value[lang] ?? value[fallback] ?? Object.values(value).find(Boolean) ?? '';
 }
 
+function getCreditText(
+  value: string | Record<string, string> | undefined,
+  lang: string,
+  fallback = SOURCE_LANGUAGE
+): string {
+  if (!value) return '';
+  if (typeof value === 'string') return value;
+  return value[lang] ?? value[fallback] ?? Object.values(value).find(Boolean) ?? '';
+}
+
+function creditDataAttr(value: string | Record<string, string> | undefined): string {
+  if (!value) return '';
+  if (typeof value === 'string') return JSON.stringify({ [SOURCE_LANGUAGE]: value });
+  return JSON.stringify(value);
+}
+
 function formatChapterCount(count: number, lang: string): string {
   if (count === 1) return t('book.chapterOne', lang);
   return t('book.chapters', lang, { n: count.toString() });
@@ -159,16 +175,16 @@ const totalWords = book.chapters.reduce((sum: number, ch: Chapter) => sum + (ch.
                 <div class="space-y-1.5">
                   <p>
                     <span class="font-medium text-yuval-text">{t('book.lecturer', language)}:</span>{' '}
-                    <span>{book.credits.lecturer}</span>
+                    <span data-credit-localized={creditDataAttr(book.credits.lecturer)}>{getCreditText(book.credits.lecturer, language)}</span>
                   </p>
                   <p>
                     <span class="font-medium text-yuval-text">{t('book.editedBy', language)}:</span>{' '}
-                    <span>{book.credits.editor}</span>
+                    <span data-credit-localized={creditDataAttr(book.credits.editor)}>{getCreditText(book.credits.editor, language)}</span>
                   </p>
                 </div>
               ) : (
                 <p>
-                  <span>{t('book.by', language)}</span> {' '}{book.credits.author}
+                  <span>{t('book.by', language)}</span> {' '}<span data-credit-localized={creditDataAttr(book.credits.author)}>{getCreditText(book.credits.author, language)}</span>
                 </p>
               )}
             </div>
@@ -317,6 +333,17 @@ const totalWords = book.chapters.reduce((sum: number, ch: Chapter) => sum + (ch.
           el.textContent = translatedText;
         }
       }
+    });
+
+    // Update localized credits (lecturer, editor, author names)
+    document.querySelectorAll<HTMLElement>('[data-credit-localized]').forEach(el => {
+      const raw = el.dataset.creditLocalized;
+      if (!raw) return;
+      try {
+        const map = JSON.parse(raw) as Record<string, string>;
+        const value = map[lang] ?? map[SOURCE_LANGUAGE] ?? Object.values(map).find(Boolean) ?? '';
+        if (value) el.textContent = value;
+      } catch { /* skip malformed */ }
     });
   }
 

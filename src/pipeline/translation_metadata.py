@@ -105,6 +105,22 @@ def build_book_metadata_prompt(book_dir: str, target_languages: list[str] = None
     he_title = book_data.get("titles", {}).get(SOURCE_LANGUAGE, "")
     he_subtitle = book_data.get("subtitles", {}).get(SOURCE_LANGUAGE, "")
 
+    credits = book_data.get("credits", {}) or {}
+
+    def _credit_source_text(field_value):
+        if isinstance(field_value, dict):
+            return field_value.get(SOURCE_LANGUAGE, "") or next(iter(field_value.values()), "")
+        if isinstance(field_value, str):
+            return field_value
+        return ""
+
+    credits_lines = []
+    for field in ("lecturer", "editor", "author"):
+        src_value = _credit_source_text(credits.get(field))
+        if src_value:
+            credits_lines.append(f"  - {field}: {src_value}")
+    credits_summary = "\n".join(credits_lines) if credits_lines else "  (אין credits)"
+
     chapters = book_data.get("chapters", [])
     chapter_titles_he = [
         ch.get("titles", {}).get(SOURCE_LANGUAGE, "")
@@ -136,6 +152,9 @@ def build_book_metadata_prompt(book_dir: str, target_languages: list[str] = None
         כותרות פרקים לדוגמה (להבנת תוכן הספר):
         {chapter_summary}
 
+        Credits (שמות אישיים לתעתיק):
+        {credits_summary}
+
         משימות:
 
         1. תרגם את כותרת הספר לכל שפת יעד:
@@ -149,26 +168,36 @@ def build_book_metadata_prompt(book_dir: str, target_languages: list[str] = None
         - כלול את הנושאים העיקריים
         - כתוב בסגנון מזמין לקריאה
 
+        4. תעתק את שדות ה-credits (lecturer, editor, author) לכל שפת יעד:
+        - אלה שמות אישיים, לא מתרגמים אותם
+        - לאנגלית ולשפות לטיניות: תעתיק פונטי באותיות לטיניות (למשל: "ערן סלע" -> "Eran Sela")
+        - לשפות עם כתב אחר: השתמש בתעתיק המקובל באותה שפה
+        - שמור על פורמט זהה: שם פרטי + שם משפחה
+
         נתיב לעדכון: {json_path}
 
         לאחר התרגום, עדכן את content-structure.json כך:
         - titles: אובייקט שבו כל מפתח הוא קוד שפה וכל ערך הוא הכותרת המתורגמת
         - subtitles: אובייקט שבו כל מפתח הוא קוד שפה וכל ערך הוא כותרת המשנה המתורגמת
         - descriptions: אובייקט שבו כל מפתח הוא קוד שפה וכל ערך הוא התיאור המתורגם
+        - credits.lecturer / credits.editor / credits.author: אובייקט שבו כל מפתח הוא קוד שפה וכל ערך הוא השם המתועתק (רק אם השדה קיים במקור)
 
         דוגמה למבנה הרצוי:
         titles = {{ {example_map} }}
         subtitles = {{ {example_map} }}
         descriptions = {{ {example_map} }}
+        credits.lecturer = {{ {example_map} }}
 
         עדכן רק את המבנים הבאים:
         - titles
         - subtitles
         - descriptions
+        - credits.lecturer, credits.editor, credits.author (כל מה שקיים במקור)
 
-        כאשר בכל אחד מהם:
+        שמור את credits.type כמו שהוא (אל תשנה אותו).
+        כאשר בכל אחד מהשדות הנ"ל:
         - המפתח הוא קוד השפה
-        - הערך הוא הטקסט המתורגם
+        - הערך הוא הטקסט המתורגם או המתועתק
         """
 
 
