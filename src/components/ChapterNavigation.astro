@@ -44,7 +44,7 @@ const isRtl = getLanguageDirection(language) === 'rtl';
     'chapter-nav',
     'flex',
     'flex-col',
-    isRtl ? 'sm:flex-row-reverse' : 'sm:flex-row',
+    'sm:flex-row',
     'items-center',
     'justify-between',
     'gap-3',
@@ -57,6 +57,7 @@ const isRtl = getLanguageDirection(language) === 'rtl';
     className,
   ]}
   id="chapter-nav"
+  dir={isRtl ? 'rtl' : 'ltr'}
   aria-label="chapter navigation"
 >
   {

@@ -34,8 +34,11 @@ function updateChapterNavigation(lang: string) {
   if (!nav) return;
 
   const isRtl = document.documentElement.dir === 'rtl';
-  nav.classList.toggle('sm:flex-row-reverse', isRtl);
-  nav.classList.toggle('sm:flex-row', !isRtl);
+  // Keep logical order (prev → current → next). Let dir=rtl on the nav itself
+  // flip the visual order via flex-row, so prev sits at start (right in RTL).
+  nav.classList.remove('sm:flex-row-reverse');
+  nav.classList.add('sm:flex-row');
+  nav.setAttribute('dir', isRtl ? 'rtl' : 'ltr');
 
   nav.querySelectorAll<HTMLElement>('[data-chapter-titles]').forEach((node) => {
     const raw = node.dataset.chapterTitles;
