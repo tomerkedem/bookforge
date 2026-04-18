@@ -38,44 +38,40 @@ def extract_book_info(ingested: dict) -> dict:
     
     Returns: {title: str, subtitle: str}
     """
-    paragraphs = ingested.get("paragraphs", [])
+    blocks = ingested.get("blocks", [])
     title = ""
     subtitle = ""
     
     # Find first Heading 1 position
     first_heading_idx = None
-    for idx, para in enumerate(paragraphs):
-        style = para.get("style", "")
+    paragraph_blocks = [b for b in blocks if b.get("type") == "paragraph"]
+
+    for idx, block in enumerate(paragraph_blocks):
+        style = block.get("style", "")
         if "Heading 1" in style:
             first_heading_idx = idx
             break
-    
+
     # Collect significant text paragraphs before Heading 1
     cover_texts = []
-    limit = first_heading_idx if first_heading_idx is not None else min(20, len(paragraphs))
-    
+    limit = first_heading_idx if first_heading_idx is not None else min(20, len(paragraph_blocks))
+
     for idx in range(limit):
-        para = paragraphs[idx]
-        text = para.get("text", "").strip()
-        style = para.get("style", "")
-        
-        # Skip empty, spacing, and heading paragraphs
-        if not text or style == "Spacing" or "Heading" in style:
+        block = paragraph_blocks[idx]
+        text = block.get("text", "").strip()
+        style = block.get("style", "")
+
+        # Skip empty and heading paragraphs
+        if not text or "Heading" in style:
             continue
-        
+
         # Skip if looks like author name or date
-        if len(text) < 100:  # Short enough to be title/subtitle
+        if len(text) < 100:
             cover_texts.append(text)
-        
-        # Usually only need first 2 significant texts
+
         if len(cover_texts) >= 2:
             break
-    
-    if len(cover_texts) >= 1:
-        title = _clean_title(cover_texts[0])
-    if len(cover_texts) >= 2:
-        subtitle = _clean_title(cover_texts[1])
-    
+        
     return {"title": title, "subtitle": subtitle}
 
 
@@ -264,34 +260,35 @@ def _clean_markdown_final(text: str) -> str:
 
 
 def parse(ingested: dict) -> list[dict]:
-    paragraphs = ingested["paragraphs"]
+    blocks = ingested["blocks"]
     chapters = []
     current = None
 
-    for idx, para in enumerate(paragraphs):
-        style = para["style"]
-        text = para["text"]
-        # Use original document index for image mapping (aligned with extract_images)
-        doc_idx = para.get("doc_para_index", idx)
-        
-        # Handle spacing paragraphs (empty lines for visual separation)
-        if style == "Spacing":
+    for idx, block in enumerate(blocks):
+        block_type = block.get("type")
+        style = block.get("style", "")
+        text = block.get("text", "")
+        doc_idx = block.get("doc_index", idx)
+
+        # Tables should stay inside current chapter
+        if block_type == "table":
             if current:
-                blank_count = para.get("blank_lines", 1)
-                for _ in range(blank_count):
-                    current["content"].append({
-                        "text": "",
-                        "style": "Spacing",
-                        "para_index": doc_idx,
-                        "indent_level": 0
-                    })
+                current["content"].append({
+                    "text": text,
+                    "style": "Table",
+                    "para_index": doc_idx,
+                    "indent_level": 0
+                })
+            continue
+
+        # We only process paragraph/code/heading-like blocks here
+        if block_type not in {"paragraph", "heading", "code"}:
             continue
 
         if "Heading 1" in style:
             if current:
                 chapters.append(current)
 
-            # Clean heading text - remove markdown asterisks
             clean_title = _clean_heading(text)
             chapter_type = _classify_chapter(clean_title, len(chapters))
             current = {
@@ -302,15 +299,17 @@ def parse(ingested: dict) -> list[dict]:
                 "has_images": False,
                 "type": chapter_type
             }
-        elif current:
-            # Also clean Heading 2/3 text
+            continue
+
+        if current:
             if "Heading" in style:
                 text = _clean_heading(text)
+
             current["content"].append({
                 "text": text,
-                "style": style,
+                "style": style if block_type != "code" else "code",
                 "para_index": doc_idx,
-                "indent_level": para.get("indent_level", 0)
+                "indent_level": 0
             })
 
     if current:
@@ -480,28 +479,36 @@ def extract_images(docx_path: str, book_name: str, assets_base_dir: str = DEFAUL
     image_files = {}
     image_positions = []
     image_counter = 1  # Start from 1 for chapter images
-    
+
     for para_idx, run_idx, rel_id, w_px, h_px in image_positions_temp:
         img_info = image_data[rel_id]
-        
+
         if has_cover and rel_id == cover_rel_id:
-            # This is the cover image
+            # Save dedicated cover file
             cover_path = assets_dir / "cover.png"
             with open(cover_path, "wb") as f:
                 f.write(img_info["data"])
+
+            # Also save numbered copy so the image can still appear in normal flow
+            numbered_filename = f"image-{str(image_counter).zfill(2)}.{img_info['ext']}"
+            numbered_path = assets_dir / numbered_filename
+            with open(numbered_path, "wb") as f:
+                f.write(img_info["data"])
+
             image_files[rel_id] = str(cover_path)
-            filename = "cover.png"
+            filename = numbered_filename
+            image_counter += 1
+
         else:
-            # Regular chapter image
-            img_path = assets_dir / f"image-{str(image_counter).zfill(2)}.{img_info['ext']}"
+            filename = f"image-{str(image_counter).zfill(2)}.{img_info['ext']}"
+            img_path = assets_dir / filename
             with open(img_path, "wb") as f:
                 f.write(img_info["data"])
-            image_files[rel_id] = str(img_path)
-            filename = f"image-{str(image_counter).zfill(2)}.{img_info['ext']}"
-            image_counter += 1
-        
-        image_positions.append((para_idx, run_idx, rel_id, filename, w_px, h_px))
 
+            image_files[rel_id] = str(img_path)
+            image_counter += 1
+
+        image_positions.append((para_idx, run_idx, rel_id, filename, w_px, h_px))
     return {
         'files': image_files,
         'positions': image_positions,

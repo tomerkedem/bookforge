@@ -27,7 +27,7 @@ from pathlib import Path
 # Ensure src/ is on the path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from pipeline.ingest import ingest
+from pipeline.ingest import ingest_and_write_json
 from pipeline.parse import parse, extract_images, to_markdown, extract_book_info, DEFAULT_ASSETS_DIR
 from pipeline.organize import organize
 from pipeline.translate import get_chapters_to_translate, build_batch_prompt, fix_all_hebrew_files, update_content_structure_titles
@@ -77,8 +77,16 @@ def run_pipeline(docx_path: str, book_name: str,
 
     # Step 1: Ingest
     print("\n[1/7] Ingest...")
-    ingested = ingest(docx_path)
-    print(f"  Paragraphs: {ingested['total']}")
+    book_dir = Path(output_dir) / book_name
+    book_dir.mkdir(parents=True, exist_ok=True)
+
+    ingested = ingest_and_write_json(
+        file_path=docx_path,
+        output_path=book_dir / "content-structure.json",
+        language=SOURCE_LANGUAGE,
+    )
+
+    print(f"  Blocks: {ingested.get('total_blocks', 0)}")
     
     # Extract book info from cover page (title + subtitle)
     book_info = extract_book_info(ingested)
