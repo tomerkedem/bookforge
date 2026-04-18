@@ -444,20 +444,21 @@ const COPY_SUCCESS_MESSAGE = 'Code copied!';
         vertical-align: top;
       }
 
-      /* Header row — gold-plated, strong separator below */
+      /* Header row — refined gold tone, stronger hierarchy */
       :global(article thead th) {
         background:
           linear-gradient(180deg,
-            color-mix(in srgb, var(--gold-500) 18%, var(--yuval-bg)) 0%,
-            color-mix(in srgb, var(--gold-500) 10%, var(--yuval-bg)) 100%);
+            color-mix(in srgb, var(--gold-500) 14%, var(--yuval-bg)) 0%,
+            color-mix(in srgb, var(--gold-500) 8%, var(--yuval-bg)) 100%);
         color: var(--yuval-chapter-title);
-        font-weight: 800;
-        letter-spacing: 0.02em;
-        font-size: 0.88rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        font-size: 0.95rem;
         text-transform: uppercase;
-        padding: 0.85rem 1rem;
+        padding: 1rem 1.1rem;
         border-color: var(--gold-tint-35);
-        border-bottom: 2px solid var(--gold-500);
+        border-bottom: 2px solid color-mix(in srgb, var(--gold-600) 85%, var(--gold-500));
+        box-shadow: inset 0 1px 0 color-mix(in srgb, var(--gold-300) 28%, transparent);
         position: relative;
       }
 
@@ -497,8 +498,9 @@ const COPY_SUCCESS_MESSAGE = 'Code copied!';
         }
 
         :global(article thead th) {
-          font-size: 0.78rem;
-          padding: 0.7rem 0.8rem;
+          font-size: 0.82rem;
+          padding: 0.8rem 0.85rem;
+          letter-spacing: 0.03em;
         }
 
         :global(article th:first-child),

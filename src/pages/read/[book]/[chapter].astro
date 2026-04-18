@@ -367,14 +367,23 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
   width: 1.55em;
   height: 1.55em;
   font-size: 0.6em;
-  font-weight: 600;
+  font-weight: 700;
   line-height: 1;
   font-variant-numeric: tabular-nums;
   color: var(--gold-700);
-  background: color-mix(in srgb, var(--gold-500) 12%, transparent);
-  border: 1px solid color-mix(in srgb, var(--gold-500) 35%, var(--yuval-border));
+  background:
+    linear-gradient(155deg,
+      color-mix(in srgb, var(--gold-300) 18%, var(--yuval-bg)) 0%,
+      color-mix(in srgb, var(--gold-500) 14%, var(--yuval-bg)) 55%,
+      color-mix(in srgb, var(--gold-600) 12%, var(--yuval-bg)) 100%);
+  border: 1px solid color-mix(in srgb, var(--gold-600) 40%, var(--yuval-border));
   border-radius: 3px;
   letter-spacing: 0;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--gold-300) 55%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, var(--gold-700) 18%, transparent),
+    0 1px 1px rgba(15, 23, 42, 0.04);
+  text-shadow: 0 1px 0 color-mix(in srgb, var(--gold-300) 45%, transparent);
 }
 
 /* Progress chip — sits in the top strip eyebrow row */
