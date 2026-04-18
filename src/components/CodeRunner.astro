@@ -17,15 +17,13 @@ interface Props {
   language?: string;
   title?: string;
   editable?: boolean;
-  showLineNumbers?: boolean;
 }
 
-const { 
-  code, 
-  language = 'python', 
-  title = '', 
+const {
+  code,
+  language = 'python',
+  title = '',
   editable = true,
-  showLineNumbers = true 
 } = Astro.props;
 
 const uniqueId = Math.random().toString(36).substring(2, 9);
@@ -92,29 +90,19 @@ const lineCount = code.split('\n').length;
 
   <!-- Code Editor Area -->
   <div class="editor-container">
-    {showLineNumbers && (
-      <div class="line-numbers" aria-hidden="true">
-        {Array.from({ length: lineCount }, (_, i) => (
-          <span class="line-num">{i + 1}</span>
-        ))}
-      </div>
+    {editable ? (
+      <textarea
+        class="code-editor"
+        spellcheck="false"
+        autocomplete="off"
+        autocorrect="off"
+        autocapitalize="off"
+        data-original={code}
+        wrap="off"
+      >{code}</textarea>
+    ) : (
+      <pre class="code-display"><code class={`language-${language}`}>{code}</code></pre>
     )}
-    <div class="code-area">
-      {editable ? (
-        <textarea 
-          class="code-editor" 
-          spellcheck="false"
-          autocomplete="off"
-          autocorrect="off"
-          autocapitalize="off"
-          data-original={code}
-          wrap="off"
-        >{code}</textarea>
-      ) : (
-        <pre class="code-display"><code class={`language-${language}`}>{code}</code></pre>
-      )}
-      <pre class="code-highlight" aria-hidden="true"><code></code></pre>
-    </div>
   </div>
 
   <!-- Add Code Panel (hidden by default) -->
@@ -328,40 +316,18 @@ const lineCount = code.split('\n').length;
   /* Editor */
   .editor-container {
     display: flex;
+    align-items: stretch;
     max-height: 400px;
-    overflow: auto;
+    overflow: hidden;
   }
 
   .code-runner-wrapper.fullscreen .editor-container {
     max-height: calc(100vh - 300px);
   }
 
-  .line-numbers {
-    display: flex;
-    flex-direction: column;
-    padding: 1rem 0;
-    background: var(--bg-tertiary);
-    border-right: 1px solid var(--border-color);
-    user-select: none;
-    min-width: 3rem;
-    text-align: right;
-  }
-
-  .line-num {
-    padding: 0 0.75rem;
-    font-size: 0.8rem;
-    line-height: 1.6;
-    color: var(--text-muted);
-  }
-
-  .code-area {
-    flex: 1;
-    position: relative;
-    overflow: auto;
-  }
-
   .code-editor {
-    width: 100%;
+    flex: 1 1 auto;
+    min-width: 0;
     min-height: 150px;
     padding: 1rem;
     margin: 0;
@@ -373,6 +339,21 @@ const lineCount = code.split('\n').length;
     border: none;
     resize: none;
     overflow: auto;
+    tab-size: 4;
+    white-space: pre;
+  }
+
+  .code-display {
+    flex: 1 1 auto;
+    min-width: 0;
+    margin: 0;
+    padding: 1rem;
+    overflow: auto;
+    background: transparent;
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 0.875rem;
+    line-height: 1.6;
     tab-size: 4;
     white-space: pre;
   }
@@ -638,15 +619,6 @@ const lineCount = code.split('\n').length;
       flex-wrap: wrap;
       gap: 0.25rem;
     }
-
-    .line-numbers {
-      min-width: 2.5rem;
-    }
-
-    .line-num {
-      padding: 0 0.5rem;
-      font-size: 0.7rem;
-    }
   }
 
   /* Mobile warning */
@@ -781,14 +753,6 @@ _output_capture = OutputCapture()
     setTimeout(() => feedback.remove(), 1500);
   }
 
-  function updateLineNumbers(editor: HTMLTextAreaElement, lineNumbersEl: HTMLElement | null) {
-    if (!lineNumbersEl) return;
-    const lines = editor.value.split('\n').length;
-    lineNumbersEl.innerHTML = Array.from({ length: lines }, (_, i) => 
-      `<span class="line-num">${i + 1}</span>`
-    ).join('');
-  }
-
   function updateStats(editor: HTMLTextAreaElement, wrapper: HTMLElement) {
     const lineCount = wrapper.querySelector('.line-count');
     const charCount = wrapper.querySelector('.char-count');
@@ -805,7 +769,6 @@ _output_capture = OutputCapture()
       const addCodeBtn = wrapper.querySelector<HTMLButtonElement>('.btn-add-code');
       const clearOutputBtn = wrapper.querySelector<HTMLButtonElement>('.btn-clear-output');
       const codeEditor = wrapper.querySelector<HTMLTextAreaElement>('.code-editor');
-      const lineNumbersEl = wrapper.querySelector<HTMLElement>('.line-numbers');
       const outputPanel = wrapper.querySelector<HTMLElement>('.output-panel');
       const outputText = wrapper.querySelector<HTMLPreElement>('.output-text');
       const status = wrapper.querySelector<HTMLElement>('.run-status');
@@ -832,7 +795,6 @@ _output_capture = OutputCapture()
 
       // Editor updates
       codeEditor.addEventListener('input', () => {
-        updateLineNumbers(codeEditor, lineNumbersEl);
         updateStats(codeEditor, wrapper);
       });
 
@@ -844,9 +806,8 @@ _output_capture = OutputCapture()
           const end = codeEditor.selectionEnd;
           codeEditor.value = codeEditor.value.substring(0, start) + '    ' + codeEditor.value.substring(end);
           codeEditor.selectionStart = codeEditor.selectionEnd = start + 4;
-          updateLineNumbers(codeEditor, lineNumbersEl);
         }
-        
+
         // Ctrl+Enter to run
         if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
           e.preventDefault();
@@ -854,13 +815,7 @@ _output_capture = OutputCapture()
         }
       });
 
-      // Sync scroll for line numbers
-      codeEditor.addEventListener('scroll', () => {
-        if (lineNumbersEl) {
-          lineNumbersEl.scrollTop = codeEditor.scrollTop;
-        }
-      });
-      
+
       // Run button
       runBtn.addEventListener('click', async () => {
         if (language !== 'python') {
@@ -935,7 +890,6 @@ _output_capture = OutputCapture()
       // Reset button
       resetBtn?.addEventListener('click', () => {
         codeEditor.value = codeEditor.dataset.original || '';
-        updateLineNumbers(codeEditor, lineNumbersEl);
         updateStats(codeEditor, wrapper);
       });
 

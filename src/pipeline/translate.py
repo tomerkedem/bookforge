@@ -17,7 +17,7 @@ from .translate_jobs import (
     partition_chapters,
     build_group_prompt,
 )
-from .rtl_and_markdown_cleanup import process_book_by_language
+from .rtl_and_markdown_cleanup import process_book_by_language, fix_all_hebrew_files
 from .translation_metadata import (
     update_content_structure_titles,
     build_book_metadata_prompt,

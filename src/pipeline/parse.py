@@ -726,39 +726,25 @@ def to_markdown(chapter: dict, image_positions: list = None, next_heading_idx: i
                 j += 1
 
             if closing_found:
-                # IMPORTANT:
-                # We now emit CodeRenderer instead of fenced markdown.
-                # This is the clean integration point with Astro:
-                # CodeRenderer decides whether to use CodeRunner or CodeBlock.
-                #
-                # We escape:
-                # 1. backslashes first
-                # 2. backticks for template-literal safety
-                # 3. ${ so it won't be interpreted inside template literals
-                code_str = "\n".join(code_lines)
-                code_str = code_str.replace("\\", "\\\\")
-                code_str = code_str.replace("`", "\\`")
-                code_str = code_str.replace("${", "\\${")
-
-                lines.append(
-                    f'<CodeRenderer language="{lang_marker}" code={{`{code_str}`}} />'
-                )
+                # Emit regular fenced markdown instead of CodeRenderer.
+                lines.append(f"```{lang_marker}")
+                lines.extend(code_lines)
+                lines.append("```")
                 lines.append("")
 
                 # Skip the whole block, because we already consumed it.
                 i = j
                 continue
 
-            else:
-                # No closing fence was found.
-                # IMPORTANT:
-                # Do NOT convert the rest of the chapter into code.
-                # Do NOT invent a closing fence.
-                # Treat the opening marker as regular text and continue normally.
-                lines.append(_preserve_soft_breaks(text))
-                lines.append("")
-                i += 1
-                continue
+    else:
+        # No closing fence was found.
+        # Do NOT convert the rest of the chapter into code.
+        # Do NOT invent a closing fence.
+        # Treat the opening marker as regular text and continue normally.
+        lines.append(_preserve_soft_breaks(text))
+        lines.append("")
+        i += 1
+        continue
 
         # Case 3: inline code or old legacy code-like paragraph
         elif style == "code" or (text.startswith("`") and not lang_marker):

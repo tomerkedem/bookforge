@@ -562,6 +562,25 @@ const COPY_SUCCESS_MESSAGE = 'Code copied!';
         text-align: initial !important;
       }
 
+      /* Code components must always render LTR, even inside an RTL page.
+         Overrides the wildcard direction:rtl rule above for code wrappers
+         and every descendant (gutter, toolbar, buttons, line numbers, pre, code). */
+      :global([data-lang][dir="rtl"] .chapter-content .code-block-pro),
+      :global([data-lang][dir="rtl"] .chapter-content .code-block-pro *),
+      :global([data-lang][dir="rtl"] .chapter-content .code-runner-wrapper),
+      :global([data-lang][dir="rtl"] .chapter-content .code-runner-wrapper *),
+      :global([data-lang][dir="rtl"] .chapter-content .code-block-wrapper),
+      :global([data-lang][dir="rtl"] .chapter-content .code-block-wrapper *) {
+        direction: ltr !important;
+        text-align: left !important;
+        unicode-bidi: isolate;
+      }
+      /* Keep line-number gutter right-aligned (numbers flush to code) */
+      :global([data-lang][dir="rtl"] .chapter-content .code-block-pro .line-number),
+      :global([data-lang][dir="rtl"] .chapter-content .code-runner-wrapper .line-num) {
+        text-align: right !important;
+      }
+
       @media (min-width: 1024px) {
         .reading-article {
           margin-left: 320px;
@@ -762,12 +781,14 @@ const COPY_SUCCESS_MESSAGE = 'Code copied!';
       :global(.code-runner-wrapper .editor-container),
       :global(.code-block-wrapper .code-content) {
         display: flex;
+        align-items: stretch;
         max-height: 400px;
-        overflow: auto;
+        overflow: hidden;
       }
 
       :global(.code-runner-wrapper .line-numbers),
       :global(.code-block-wrapper .line-numbers) {
+        flex: 0 0 auto;
         display: flex;
         flex-direction: column;
         padding: 1rem 0;
@@ -776,6 +797,7 @@ const COPY_SUCCESS_MESSAGE = 'Code copied!';
         user-select: none;
         min-width: 3rem;
         text-align: right;
+        overflow: hidden;
       }
 
       :global(.code-runner-wrapper .line-num),
@@ -786,13 +808,9 @@ const COPY_SUCCESS_MESSAGE = 'Code copied!';
         color: var(--cr-text-muted);
       }
 
-      :global(.code-runner-wrapper .code-area) {
-        flex: 1;
-        position: relative;
-        overflow: auto;
-      }
-
       :global(.code-runner-wrapper .code-display) {
+        flex: 1 1 auto;
+        min-width: 0;
         margin: 0;
         padding: 1rem;
         background: transparent;
@@ -811,7 +829,8 @@ const COPY_SUCCESS_MESSAGE = 'Code copied!';
 
       /* Code Block content */
       :global(.code-block-wrapper .code-content pre) {
-        flex: 1;
+        flex: 1 1 auto;
+        min-width: 0;
         margin: 0;
         padding: 1rem;
         background: transparent;
@@ -943,17 +962,6 @@ const COPY_SUCCESS_MESSAGE = 'Code copied!';
         :global(.code-runner-wrapper .status-bar) {
           flex-wrap: wrap;
           gap: 0.25rem;
-        }
-
-        :global(.code-runner-wrapper .line-numbers),
-        :global(.code-block-wrapper .line-numbers) {
-          min-width: 2.5rem;
-        }
-
-        :global(.code-runner-wrapper .line-num),
-        :global(.code-block-wrapper .line-num) {
-          padding: 0 0.5rem;
-          font-size: 0.7rem;
         }
       }
 
@@ -1321,11 +1329,20 @@ _output_capture = OutputCapture()
         const runBtn = wrapper.querySelector('.btn-run');
         const copyBtn = wrapper.querySelector('.btn-copy');
         const codeEl = wrapper.querySelector('.code-display code');
+        const codeDisplay = wrapper.querySelector('.code-display');
+        const lineNumbers = wrapper.querySelector('.line-numbers');
         const outputPanel = wrapper.querySelector('.output-panel');
         const outputText = wrapper.querySelector('.output-text');
         const statusEl = wrapper.querySelector('.run-status');
         const clearBtn = wrapper.querySelector('.btn-clear-output');
-        
+
+        // Sync vertical scroll between code and line numbers
+        if (codeDisplay && lineNumbers) {
+          codeDisplay.addEventListener('scroll', () => {
+            lineNumbers.scrollTop = codeDisplay.scrollTop;
+          });
+        }
+
         // Get code from data attribute
         const code = wrapper.dataset.code ? decodeURIComponent(wrapper.dataset.code) : '';
         
@@ -1396,9 +1413,18 @@ _output_capture = OutputCapture()
       document.querySelectorAll('.code-block-wrapper').forEach((wrapper) => {
         if (wrapper.dataset.initialized) return;
         wrapper.dataset.initialized = 'true';
-        
+
         const copyBtn = wrapper.querySelector('.btn-copy');
         const codeEl = wrapper.querySelector('pre code');
+        const preEl = wrapper.querySelector('.code-content pre');
+        const lineNumbers = wrapper.querySelector('.line-numbers');
+
+        // Sync vertical scroll between code and line numbers
+        if (preEl && lineNumbers) {
+          preEl.addEventListener('scroll', () => {
+            lineNumbers.scrollTop = preEl.scrollTop;
+          });
+        }
         
         copyBtn?.addEventListener('click', async () => {
           const codeData = copyBtn.dataset.code;

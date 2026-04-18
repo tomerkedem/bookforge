@@ -61,9 +61,7 @@ renderer.code = ({ text, lang }) => {
 
   <div class="editor-container">
     <div class="line-numbers" aria-hidden="true">${lineNumbers}</div>
-    <pre class="code-display">
-      <code class="hljs language-${language}">${highlightedCode}</code>
-    </pre>
+    <pre class="code-display"><code class="hljs language-${language}">${highlightedCode}</code></pre>
   </div>
 
   <div class="status-bar">
@@ -105,9 +103,7 @@ renderer.code = ({ text, lang }) => {
 
   <div class="code-content">
     <div class="line-numbers" aria-hidden="true">${lineNumbers}</div>
-    <pre>
-      <code class="hljs language-${language}">${highlightedCode}</code>
-    </pre>
+    <pre><code class="hljs language-${language}">${highlightedCode}</code></pre>
   </div>
 </div>`;
 };
