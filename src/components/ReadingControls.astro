@@ -162,7 +162,7 @@
     align-items: center;
     gap: 10px;
     opacity: 1;
-    transition: opacity 0.3s ease;
+    transition: opacity 300ms var(--ease-standard);
   }
 
   .reading-fab.scrolling {
@@ -218,9 +218,9 @@
     cursor: pointer;
     box-shadow: 0 4px 16px rgba(0,0,0,0.14), 0 1px 4px rgba(0,0,0,0.08);
     transition:
-      transform 200ms cubic-bezier(0.2, 0, 0, 1),
-      box-shadow 200ms cubic-bezier(0.2, 0, 0, 1),
-      background 200ms cubic-bezier(0.2, 0, 0, 1);
+      transform 200ms var(--ease-standard),
+      box-shadow 200ms var(--ease-standard),
+      background 200ms var(--ease-standard);
     position: relative;
     z-index: 2;
   }
@@ -261,7 +261,7 @@
     opacity: 0;
     pointer-events: none;
     transform: translateY(12px) scale(0.9);
-    transition: opacity 0.2s ease, transform 0.25s cubic-bezier(0.34,1.56,0.64,1);
+    transition: opacity 200ms var(--ease-standard), transform 250ms var(--ease-emphasized);
   }
 
   .fab-actions.open {
@@ -289,7 +289,7 @@
     box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     opacity: 0;
     transform: translateX(8px);
-    transition: opacity 0.15s ease, transform 0.15s ease;
+    transition: opacity 150ms var(--ease-standard), transform 150ms var(--ease-standard);
     pointer-events: none;
   }
 
@@ -311,7 +311,7 @@
     justify-content: center;
     cursor: pointer;
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease;
+    transition: background 150ms var(--ease-standard), color 150ms var(--ease-standard), transform 150ms var(--ease-standard);
   }
 
   .fab-sub-btn:hover {
@@ -352,7 +352,7 @@
     pointer-events: none;
     transform: translateY(8px) scale(0.97);
     transform-origin: bottom right;
-    transition: opacity 200ms cubic-bezier(0.2, 0, 0, 1), transform 320ms cubic-bezier(0.34,1.56,0.64,1);
+    transition: opacity 200ms var(--ease-standard), transform 320ms var(--ease-emphasized);
   }
 
   @media (min-width: 1024px) {
@@ -590,7 +590,7 @@
     background: rgba(0,0,0,0.4);
     z-index: 55;
     opacity: 0;
-    transition: opacity 0.2s ease;
+    transition: opacity 200ms var(--ease-standard);
   }
 
   .panel-backdrop.open {
@@ -618,7 +618,7 @@
     gap: 8px;
     font-size: 13px;
     z-index: 9999;
-    animation: slideDown 0.25s ease;
+    animation: slideDown 250ms var(--ease-emphasized);
   }
 
   .focus-toast.hidden { display: none; }

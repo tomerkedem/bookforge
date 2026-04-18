@@ -235,7 +235,7 @@ const COPY_SUCCESS_MESSAGE = 'Code copied!';
         color: #8b949e;
         cursor: pointer;
         opacity: 0;
-        transition: opacity 0.2s ease, color 0.15s ease, background 0.15s ease;
+        transition: opacity 200ms var(--ease-standard), color 150ms var(--ease-standard), background 150ms var(--ease-standard);
       }
 
       :global(article pre:hover .code-copy-btn),
@@ -758,7 +758,7 @@ const COPY_SUCCESS_MESSAGE = 'Code copied!';
       /* Output Panel */
       :global(.code-runner-wrapper .output-panel) {
         border-top: 1px solid var(--cr-border-color);
-        animation: cr-slideUp 0.2s ease;
+        animation: cr-slideUp 200ms var(--ease-standard);
       }
 
       @keyframes cr-slideUp {
@@ -1336,7 +1336,7 @@ _output_capture = OutputCapture()
         font-size: 0.875rem;
         font-weight: 600;
         z-index: 10000;
-        animation: fadeInOut 1.5s ease forwards;
+        animation: fadeInOut 1500ms var(--ease-standard) forwards;
       `;
       feedback.textContent = message;
       document.body.appendChild(feedback);

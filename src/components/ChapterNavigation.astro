@@ -83,13 +83,13 @@ const isRtl = getLanguageDirection(language) === 'rtl';
           {currentChapterId + 1} / {chapters.length}
         </span>
 
-        <h2
-          class="text-center font-bold text-lg"
+        <p
+          class="font-bold text-lg chapter-nav-current"
           data-nav="current"
           data-chapter-titles={JSON.stringify(currentChapter.titles)}
         >
           {getLocalizedText(currentChapter.titles, language)}
-        </h2>
+        </p>
       </div>
     )
   }
