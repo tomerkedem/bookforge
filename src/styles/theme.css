@@ -183,7 +183,7 @@ body.focus-mode .back-to-top-button,
 body.focus-mode .reading-controls {
   opacity: 0 !important;
   pointer-events: none !important;
-  transition: opacity 0.3s ease !important;
+  transition: opacity 300ms var(--ease-standard) !important;
 }
 
 body.focus-mode .reading-article {
@@ -217,6 +217,46 @@ body.focus-mode::after {
   --reading-font-family: 'Frank Ruhl Libre', serif;
 }
 
+/* ═══════════════════════════════════════════════════════════
+   MOTION, TYPE, AND SPACE TOKENS
+   Structural tokens only. Color tokens are intentionally NOT
+   modified in this pass — the existing hex palette stays
+   exactly as it is, because it was tuned against real content
+   images. Color architecture (atmosphere scalar, OKLCH) will
+   be addressed separately with a /compare-images workbench.
+
+   New code must reference these tokens. Legacy code continues
+   to work unchanged.
+   ═══════════════════════════════════════════════════════════ */
+:root {
+  /* ─ Motion — one language, four curves ─
+     Every transition/animation in new code references one of these.
+     No raw `ease`, no raw `linear`, no inline cubic-bezier. */
+  --ease-standard:    cubic-bezier(0.2, 0, 0, 1);      /* default state changes */
+  --ease-emphasized:  cubic-bezier(0.3, 0, 0, 1);      /* panels, reveals */
+  --ease-accelerated: cubic-bezier(0.3, 0, 1, 1);      /* exits, dismissals */
+  --ease-spring:      cubic-bezier(0.22, 1, 0.36, 1);  /* atmosphere drift */
+
+  /* ─ Type scale — 5 steps, 1.25 ratio, role-named ─
+     Fluid on display (clamp), fixed rem on body/UI. */
+  --type-display: clamp(3.75rem, 2.4rem + 5.6vw, 6.5rem);
+  --type-h1:      clamp(2.25rem, 1.6rem + 2.6vw, 3.5rem);
+  --type-h2:      clamp(1.5rem, 1.2rem + 1.2vw, 2rem);
+  --type-body:    clamp(1.0625rem, 0.98rem + 0.35vw, 1.1875rem);
+  --type-caption: 0.8125rem;
+
+  /* ─ Space scale — 4pt grid, semantic names ─
+     Use for gap and padding. No magic numbers at component level. */
+  --space-xs:  0.25rem;   /*  4px */
+  --space-sm:  0.5rem;    /*  8px */
+  --space-md:  0.75rem;   /* 12px */
+  --space-lg:  1rem;      /* 16px */
+  --space-xl:  1.5rem;    /* 24px */
+  --space-2xl: 2rem;      /* 32px */
+  --space-3xl: 3rem;      /* 48px */
+  --space-4xl: 4rem;      /* 64px */
+}
+
 .reading-article .chapter-content {
   font-size: var(--reading-font-size);
   line-height: var(--reading-line-height);
@@ -226,8 +266,12 @@ body.focus-mode::after {
 }
 
 /* ═══════════════════════════════════════════════════
+   TRANSITIONAL — scheduled for removal (Phase C).
    FAB STACK (stats, bookmarks, highlights, tts)
-   Stacked vertically above the main reading-fab
+   Conflicts with .impeccable.md § Sanctuary, not Browser:
+   no FAB as primary navigation. Each action is to be
+   reconsidered as a reader-invoked panel. Do not add new
+   rules to this block.
    ═══════════════════════════════════════════════════ */
 #stats-fab-btn,
 #bm-fab-btn,
@@ -300,7 +344,11 @@ body.focus-mode::after {
 }
 
 /* ═══════════════════════════════════════════════════
-   HIGHLIGHTS PANEL
+   TRANSITIONAL — scheduled for removal (Phase C).
+   HIGHLIGHTS PANEL (#hl-overlay, #hl-panel, …)
+   Uses backdrop-blur + generic drop shadows (Ban #4). To
+   be rebuilt as a Living-Margin SVG filter composition per
+   .impeccable.md. Do not add new rules to this block.
    ═══════════════════════════════════════════════════ */
 #hl-overlay {
   position: fixed;
@@ -448,7 +496,13 @@ body.focus-mode::after {
 }
 
 /* ═══════════════════════════════════════════════════
-   BOOKMARKS PANEL
+   TRANSITIONAL — scheduled for removal (Phase C).
+   BOOKMARKS PANEL (#bm-overlay, #bm-panel, #bm-confirm, …)
+   Uses backdrop-blur, drop shadows (Ban #4), and hex
+   literals #fbbf24 / #ef4444 / #2563eb foreign to the
+   palette. The Ban #1 side-stripe on p.bm-marked was
+   removed in this pass. Do not add new rules to this
+   block.
    ═══════════════════════════════════════════════════ */
 #bm-overlay {
   position: fixed;
@@ -704,6 +758,8 @@ body.focus-mode::after {
   filter: brightness(1.08);
 }
 
+/* BAN #1 fix: side-stripe border-inline-start: 3px removed.
+   The gradient remains (to be replaced by SVG ink-bleed in Phase C). */
 #chapter-container p.bm-marked {
   position: relative;
   background: linear-gradient(
@@ -711,10 +767,9 @@ body.focus-mode::after {
     color-mix(in srgb, #fbbf24 15%, transparent) 0%,
     transparent 100%
   );
-  border-inline-start: 3px solid #fbbf24;
   padding-inline-start: 0.75rem;
   border-radius: 0 0.25rem 0.25rem 0;
-  transition: background 0.2s ease;
+  transition: background 200ms var(--ease-standard);
 }
 
 [dir="rtl"] #chapter-container p.bm-marked {
@@ -763,7 +818,12 @@ body.focus-mode::after {
 }
 
 /* ═══════════════════════════════════════════════════
-   ONBOARDING TOUR OVERLAY
+   TRANSITIONAL — scheduled for removal (Phase C).
+   ONBOARDING TOUR OVERLAY (#ob-overlay, #ob-tooltip, …)
+   Conflicts with .impeccable.md § Sanctuary, not Browser:
+   full-screen interrupt for non-critical content. Replace
+   with first-session inline whispers, not a modal tour.
+   Do not add new rules to this block.
    ═══════════════════════════════════════════════════ */
 #ob-overlay {
   position: fixed;
@@ -1032,14 +1092,14 @@ body.focus-mode::after {
 }
 
 #main-content {
-  animation: fade-in-up 0.4s ease-out;
+  animation: fade-in-up 400ms var(--ease-standard);
 }
 
-/* Interactive elements transition by default */
+/* Interactive elements transition by default — one motion language. */
 a, button {
   transition-property: color, background-color, border-color, box-shadow, opacity, transform;
   transition-duration: 200ms;
-  transition-timing-function: ease;
+  transition-timing-function: var(--ease-standard);
 }
 
 /* Scrollbar styling (Firefox) */
