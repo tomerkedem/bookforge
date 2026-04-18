@@ -17,6 +17,7 @@ import { initAmbientColor } from './ambient-color';
 import { initHighlightReplay } from './highlight-replay';
 import { initOnboardingTour } from './onboarding-tour';
 import { initTextToSpeech } from './text-to-speech';
+import { initChapterTitleTap } from './chapter-title-tap';
 
 /**
  * Main initialization — wires up all reading-page modules.
@@ -44,6 +45,7 @@ function initializeReadingPage() {
   initHighlightReplay();
   initTextToSpeech(controller.signal);
   initOnboardingTour();
+  initChapterTitleTap(controller.signal);
 
   const cleanup = () => {
     progressCleanup();

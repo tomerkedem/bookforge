@@ -1,82 +1,60 @@
 /**
- * Book Discovery — auto-discovers books and chapters from output/ folder.
- * Drop a new book folder with MD files into output/ and everything works.
+ * Book Discovery - auto-discovers books and chapters from output/ folder.
  *
  * Priority:
- * 1. content-structure.json (if present) — used for rich metadata
- * 2. MD files scanned directly — titles extracted from # headings,
- *    word count from content, sections from ## headings
+ * 1. content-structure.json if present
+ * 2. MD files scanned directly
  *
- * Supports dynamic languages - reads from SUPPORTED_LANGUAGES config.
+ * Dynamic language support is derived from SUPPORTED_LANGUAGES.
+ * No flat legacy fields are used here.
  */
 
 import { readdirSync, readFileSync, existsSync, statSync } from 'fs';
 import { join } from 'path';
 import type { Chapter } from '../types/index';
 import { PATHS } from '../config';
-import { SUPPORTED_LANGUAGES, DEFAULT_LANGUAGE } from './language';
+import { SUPPORTED_LANGUAGES, DEFAULT_LANGUAGE, SOURCE_LANGUAGE } from './language';
 
 const OUTPUT_DIR = PATHS.OUTPUT_DIR;
-const LANGUAGE_CODES = SUPPORTED_LANGUAGES.map(l => l.code);
+const LANGUAGE_CODES = SUPPORTED_LANGUAGES.map((l) => l.code);
 
 /**
- * Credits for a book — supports lecture summaries and original works
+ * Credits for a book.
  */
+export type LocalizedOrPlain = string | Record<string, string>;
+
 export interface BookCredits {
   type: 'lecture_summary' | 'original';
-  lecturer?: string;    // For lecture_summary: the lecturer's name
-  editor?: string;      // For lecture_summary: who summarized/edited
-  author?: string;      // For original: the author's name
+  lecturer?: LocalizedOrPlain;
+  editor?: LocalizedOrPlain;
+  author?: LocalizedOrPlain;
 }
 
 export interface DiscoveredBook {
   slug: string;
-  titles: Record<string, string>;       // { he: '...', en: '...', fr: '...' }
+  titles: Record<string, string>;
   subtitles: Record<string, string>;
   descriptions: Record<string, string>;
-  category: Record<string, string>;     // { he: '...', en: '...', es: '...' }
+  category: Record<string, string>;
   coverImage: string;
   dominantColor: string;
   chapters: Chapter[];
-  languages: string[];                   // Available language codes
-  credits?: BookCredits;                 // Optional credits/attribution
-  // Legacy fields for backward compatibility
-  title_he?: string;
-  title_en?: string;
-  title_es?: string;
-  subtitle_he?: string;
-  subtitle_en?: string;
-  subtitle_es?: string;
-  description_he?: string;
-  description_en?: string;
-  description_es?: string;
+  languages: string[];
+  credits?: BookCredits;
 }
 
 interface ContentStructure {
   book: {
-    // New dynamic structure
     titles?: Record<string, string>;
     subtitles?: Record<string, string>;
     descriptions?: Record<string, string>;
     languages?: string[];
-    credits?: BookCredits;              // Credits/attribution
-    // Legacy fields
-    title_he?: string;
-    title_en?: string;
-    title_es?: string;
-    subtitle_he?: string;
-    subtitle_en?: string;
-    subtitle_es?: string;
-    description_he?: string;
-    description_en?: string;
-    description_es?: string;
+    credits?: BookCredits;
     category?: string | Record<string, string>;
     chapters: Array<{
       id: number | string;
+      file_slug?: string;
       titles?: Record<string, string>;
-      title_he?: string;
-      title_en?: string;
-      title_es?: string;
       sections: number;
       has_images: boolean;
       word_count: number;
@@ -87,7 +65,7 @@ interface ContentStructure {
 }
 
 /**
- * Extract metadata from a single MD file
+ * Extract metadata from a single MD file.
  */
 function extractFromMd(filepath: string): {
   title: string;
@@ -98,51 +76,47 @@ function extractFromMd(filepath: string): {
   const content = readFileSync(filepath, 'utf-8');
   const lines = content.split('\n');
 
-  // Title = first # heading
-  const titleLine = lines.find(l => /^#\s+/.test(l));
+  const titleLine = lines.find((l) => /^#\s+/.test(l));
   const title = titleLine ? titleLine.replace(/^#\s+/, '').trim() : '';
 
-  // Word count = split on whitespace
   const wordCount = content.split(/\s+/).filter(Boolean).length;
-
-  // Sections = number of ## headings
-  const sections = lines.filter(l => /^##\s+/.test(l)).length;
-
-  // Images = check for markdown image syntax or asset references
+  const sections = lines.filter((l) => /^##\s+/.test(l)).length;
   const hasImages = /!\[.*?\]\(.*?\)/.test(content) || /assets\//.test(content);
 
   return { title, wordCount, sections, hasImages };
 }
 
 /**
- * Discover all chapters in a book folder by scanning MD files.
- * Dynamically discovers all available languages.
+ * Discover all chapters directly from MD files.
+ * Source language files are the canonical source for chapter existence.
  */
 function discoverChaptersFromFiles(bookDir: string): Chapter[] {
   const files = readdirSync(bookDir);
-  
-  // Find source language files (Hebrew by default)
+
   const sourceFiles = files
-    .filter(f => /^chapter-\d+\.he\.md$/.test(f))
+    .filter((f) => new RegExp(`^chapter-\\d+\\.${SOURCE_LANGUAGE}\\.md$`).test(f))
     .sort();
 
   const chapters: Chapter[] = [];
 
   for (const sourceFile of sourceFiles) {
-    const match = sourceFile.match(/^chapter-(\d+)\.he\.md$/);
+    const match = sourceFile.match(new RegExp(`^chapter-(\\d+)\\.${SOURCE_LANGUAGE}\\.md$`));
     if (!match) continue;
 
     const num = parseInt(match[1], 10);
     const sourcePath = join(bookDir, sourceFile);
     const sourceMeta = extractFromMd(sourcePath);
-    
-    // Build titles for all available languages
-    const titles: Record<string, string> = { he: sourceMeta.title };
-    
+
+    const titles: Record<string, string> = {
+      [SOURCE_LANGUAGE]: sourceMeta.title,
+    };
+
     for (const lang of LANGUAGE_CODES) {
-      if (lang === 'he') continue;
-      const langFile = sourceFile.replace('.he.md', `.${lang}.md`);
+      if (lang === SOURCE_LANGUAGE) continue;
+
+      const langFile = sourceFile.replace(`.${SOURCE_LANGUAGE}.md`, `.${lang}.md`);
       const langPath = join(bookDir, langFile);
+
       if (existsSync(langPath)) {
         titles[lang] = extractFromMd(langPath).title;
       }
@@ -151,10 +125,6 @@ function discoverChaptersFromFiles(bookDir: string): Chapter[] {
     chapters.push({
       id: num,
       titles,
-      // Legacy fields
-      title_he: titles['he'] || sourceMeta.title,
-      title_en: titles['en'] || sourceMeta.title,
-      title_es: titles['es'] || titles['en'] || sourceMeta.title,
       sections: sourceMeta.sections,
       has_images: sourceMeta.hasImages,
       word_count: sourceMeta.wordCount,
@@ -167,8 +137,7 @@ function discoverChaptersFromFiles(bookDir: string): Chapter[] {
 
 /**
  * Load chapters from content-structure.json if available.
- * Titles are ALWAYS overridden from actual MD file H1 headings
- * to prevent stale/mismatched titles in the JSON.
+ * Titles are always refreshed from actual MD files when possible.
  */
 function loadFromContentStructure(bookDir: string): Chapter[] | null {
   const jsonPath = join(bookDir, 'content-structure.json');
@@ -181,32 +150,25 @@ function loadFromContentStructure(bookDir: string): Chapter[] | null {
     if (!data.book?.chapters?.length) return null;
 
     return data.book.chapters.map((ch, idx) => {
-      // Handle both string ids ('intro') and numeric ids
-      const chId = typeof ch.id === 'string' ? ch.id : (ch.id !== undefined ? ch.id : idx + 1);
-      const fileSlug = typeof chId === 'string' ? chId : `chapter-${String(chId).padStart(2, '0')}`;
+      const chId = typeof ch.id === 'string' ? ch.id : (ch.id ?? idx + 1);
+      const fileSlug =
+        ch.file_slug ||
+        (typeof chId === 'string' ? chId : `chapter-${String(chId).padStart(2, '0')}`);
 
-      // Build titles from all available languages
-      const titles: Record<string, string> = ch.titles || {};
-      
-      // Read titles from actual MD files (source of truth) for each language
+      const titles: Record<string, string> = { ...(ch.titles || {}) };
+
       for (const lang of LANGUAGE_CODES) {
         const fileName = `${fileSlug}.${lang}.md`;
         const filePath = join(bookDir, fileName);
+
         if (existsSync(filePath)) {
           titles[lang] = extractFromMd(filePath).title;
-        } else if (!titles[lang]) {
-          // Fallback to legacy fields or JSON titles
-          titles[lang] = (ch as any)[`title_${lang}`] || titles['he'] || titles['en'] || '';
         }
       }
 
       return {
-        id: typeof chId === 'string' ? 0 : chId,  // 0 for intro
+        id: typeof chId === 'string' ? 0 : chId,
         titles,
-        // Legacy fields
-        title_he: titles['he'] || '',
-        title_en: titles['en'] || titles['he'] || '',
-        title_es: titles['es'] || titles['en'] || titles['he'] || '',
         sections: ch.sections,
         has_images: ch.has_images,
         word_count: ch.word_count,
@@ -219,8 +181,7 @@ function loadFromContentStructure(bookDir: string): Chapter[] | null {
 }
 
 /**
- * Infer book-level metadata from content-structure.json or folder name.
- * Supports both new dynamic structure (titles: {}) and legacy (title_he, title_en).
+ * Load book-level metadata.
  */
 function loadBookMeta(bookDir: string, slug: string): {
   titles: Record<string, string>;
@@ -230,105 +191,107 @@ function loadBookMeta(bookDir: string, slug: string): {
   languages: string[];
   credits?: BookCredits;
 } {
-  const formatted = slug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-  
+  const formatted = slug.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+
   const jsonPath = join(bookDir, 'content-structure.json');
   if (existsSync(jsonPath)) {
     try {
       const data: ContentStructure = JSON.parse(readFileSync(jsonPath, 'utf-8'));
       const book = data.book;
-      
-      // Use new dynamic structure if available, otherwise build from legacy fields
-      const titles: Record<string, string> = book.titles || {};
-      const subtitles: Record<string, string> = book.subtitles || {};
-      const descriptions: Record<string, string> = book.descriptions || {};
-      
-      // Merge legacy fields
-      for (const lang of LANGUAGE_CODES) {
-        if (!titles[lang] && (book as any)[`title_${lang}`]) {
-          titles[lang] = (book as any)[`title_${lang}`];
-        }
-        if (!subtitles[lang] && (book as any)[`subtitle_${lang}`]) {
-          subtitles[lang] = (book as any)[`subtitle_${lang}`];
-        }
-        if (!descriptions[lang] && (book as any)[`description_${lang}`]) {
-          descriptions[lang] = (book as any)[`description_${lang}`];
-        }
-      }
-      
-      // Ensure at least default language has a value
-      if (!titles[DEFAULT_LANGUAGE] && !titles['he']) {
+
+      const titles: Record<string, string> = { ...(book.titles || {}) };
+      const subtitles: Record<string, string> = { ...(book.subtitles || {}) };
+      const descriptions: Record<string, string> = { ...(book.descriptions || {}) };
+
+      if (!titles[DEFAULT_LANGUAGE] && !titles[SOURCE_LANGUAGE]) {
         titles[DEFAULT_LANGUAGE] = formatted;
       }
-      
-      // Detect available languages from existing files
-      const availableLanguages = LANGUAGE_CODES.filter(lang => {
-        const hasFile = existsSync(join(bookDir, `chapter-01.${lang}.md`)) ||
-                       existsSync(join(bookDir, `intro.${lang}.md`));
-        return hasFile || titles[lang];
+
+      const availableLanguages = LANGUAGE_CODES.filter((lang) => {
+        const hasFile =
+          existsSync(join(bookDir, `chapter-01.${lang}.md`)) ||
+          existsSync(join(bookDir, `intro.${lang}.md`));
+        return hasFile || Boolean(titles[lang]);
       });
-      
-      // Handle category - support both string and multilingual object
+
+      const normalizedBookLanguages = Array.isArray(book.languages)
+        ? book.languages.filter((lang): lang is string => typeof lang === 'string' && LANGUAGE_CODES.includes(lang))
+        : [];
+
+      const languages = normalizedBookLanguages.length > 0
+        ? normalizedBookLanguages.filter((lang) => availableLanguages.includes(lang))
+        : availableLanguages;
+
+      if (!languages.includes(SOURCE_LANGUAGE) && availableLanguages.includes(SOURCE_LANGUAGE)) {
+        languages.unshift(SOURCE_LANGUAGE);
+      }
+
       let category: Record<string, string>;
       if (typeof book.category === 'object' && book.category !== null) {
         category = book.category;
       } else if (typeof book.category === 'string') {
-        category = { he: book.category, en: book.category, es: book.category };
+        category = {
+          [SOURCE_LANGUAGE]: book.category,
+          en: book.category,
+        };
       } else {
-        category = { he: 'כללי', en: 'General', es: 'General' };
+        category = {
+          [SOURCE_LANGUAGE]: 'כללי',
+          en: 'General',
+        };
       }
-      
+
       return {
         titles,
         subtitles,
         descriptions,
         category,
-        languages: book.languages || availableLanguages,
+        languages: languages.length > 0 ? languages : [SOURCE_LANGUAGE],
         credits: book.credits,
       };
-    } catch { /* fall through */ }
+    } catch {
+      // fall through
+    }
   }
 
-  // Fallback: format slug as title
   return {
-    titles: { en: formatted, he: formatted },
+    titles: {
+      [SOURCE_LANGUAGE]: formatted,
+      en: formatted,
+    },
     subtitles: {},
     descriptions: {},
-    category: { he: 'כללי', en: 'General', es: 'General' },
-    languages: ['he'],
+    category: {
+      [SOURCE_LANGUAGE]: 'כללי',
+      en: 'General',
+    },
+    languages: [SOURCE_LANGUAGE],
     credits: undefined,
   };
 }
 
 /**
- * Discover a single book by slug
+ * Discover a single book by slug.
  */
 export function discoverBook(slug: string): DiscoveredBook | null {
   const bookDir = join(OUTPUT_DIR, slug);
   if (!existsSync(bookDir) || !statSync(bookDir).isDirectory()) return null;
 
   const meta = loadBookMeta(bookDir, slug);
-
-  // Try content-structure.json first, then scan MD files
   const chapters = loadFromContentStructure(bookDir) || discoverChaptersFromFiles(bookDir);
 
   if (chapters.length === 0) return null;
 
-  // Check for cover image — priority order:
-  // 1. Book's own assets folder (from pipeline): /{slug}/assets/cover.png
-  // 2. Dedicated covers folder: /covers/{slug}.png
-  // 3. NO fallback to generic cover.png (prevents showing wrong book's cover)
   const coverCandidates = [
-    `/${slug}/assets/cover.png`,    // Pipeline-generated cover
+    `/${slug}/assets/cover.png`,
     `/${slug}/assets/cover.jpg`,
-    `/covers/${slug}.png`,          // Manually added cover
+    `/covers/${slug}.png`,
     `/covers/${slug}.jpg`,
   ];
 
   const publicDir = PATHS.PUBLIC_DIR;
-  // Find first existing cover, or use a placeholder (not another book's cover!)
-  const existingCover = coverCandidates.find(c => existsSync(join(publicDir, c.slice(1))));
-  const coverImage = existingCover || `/covers/placeholder.svg`;
+  const existingCover = coverCandidates.find((c) => existsSync(join(publicDir, c.slice(1))));
+  const coverImage = existingCover || '/covers/placeholder.svg';
 
   return {
     slug,
@@ -341,21 +304,11 @@ export function discoverBook(slug: string): DiscoveredBook | null {
     chapters,
     languages: meta.languages,
     credits: meta.credits,
-    // Legacy fields for backward compatibility
-    title_he: meta.titles['he'] || meta.titles['en'] || '',
-    title_en: meta.titles['en'] || meta.titles['he'] || '',
-    title_es: meta.titles['es'] || meta.titles['en'] || '',
-    subtitle_he: meta.subtitles['he'] || '',
-    subtitle_en: meta.subtitles['en'] || meta.subtitles['he'] || '',
-    subtitle_es: meta.subtitles['es'] || meta.subtitles['en'] || '',
-    description_he: meta.descriptions['he'] || '',
-    description_en: meta.descriptions['en'] || '',
-    description_es: meta.descriptions['es'] || meta.descriptions['en'] || '',
   };
 }
 
 /**
- * Discover ALL books in the output/ folder
+ * Discover all books in the output folder.
  */
 export function discoverAllBooks(): DiscoveredBook[] {
   if (!existsSync(OUTPUT_DIR)) return [];

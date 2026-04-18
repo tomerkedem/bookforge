@@ -70,10 +70,10 @@ const categoryAttrs = Object.fromEntries(
   SUPPORTED_LANGUAGES.map(l => [`data-category-${l.code}`, allCategories[l.code] || displayCategory])
 );
 
-// Get display values (default language fallback)
-const displayTitle = allTitles[DEFAULT_LANGUAGE] || allTitles['en'] || Object.values(allTitles)[0] || '';
-const displaySubtitle = allSubtitles[DEFAULT_LANGUAGE] || allSubtitles['en'] || Object.values(allSubtitles)[0] || '';
-const displayDescription = allDescriptions[DEFAULT_LANGUAGE] || allDescriptions['en'] || Object.values(allDescriptions)[0] || '';
+// Get display values (default language fallback to source language only)
+const displayTitle = allTitles[DEFAULT_LANGUAGE] || Object.values(allTitles)[0] || '';
+const displaySubtitle = allSubtitles[DEFAULT_LANGUAGE] || Object.values(allSubtitles)[0] || '';
+const displayDescription = allDescriptions[DEFAULT_LANGUAGE] || Object.values(allDescriptions)[0] || '';
 
 // Generate data attributes for all supported languages
 const titleAttrs = Object.fromEntries(
@@ -117,12 +117,13 @@ const bookUrl = `/books/${slug}`;
   <div class="card-content p-3 flex flex-col justify-center">
     <!-- Continue reading indicator -->
     <span class="card-continue hidden text-[10px] text-indigo-500 dark:text-indigo-400 font-semibold uppercase tracking-wide" data-slug={slug}>
-      <span data-he="ממשיך" data-en="Continue" data-es="Continuar">Continue</span>
+      <span class="card-continue-label" data-i18n="home.continueShort">Continue</span>
       <span class="card-continue-chapter"></span>
     </span>
 
     <h3
       class="font-heading font-semibold text-sm leading-tight text-yuval-text line-clamp-2"
+      data-book-title
       {...titleAttrs}
     >
       {displayTitle}
@@ -131,6 +132,7 @@ const bookUrl = `/books/${slug}`;
     {hasSubtitle && (
       <p
         class="text-xs text-yuval-text-muted leading-snug line-clamp-2 mt-1"
+        data-book-subtitle
         {...subtitleAttrs}
       >
         {displaySubtitle}
@@ -150,7 +152,7 @@ const bookUrl = `/books/${slug}`;
       0 4px 12px rgba(0, 0, 0, 0.06),
       0 1px 3px rgba(0, 0, 0, 0.04),
       inset 0 0 0 1px rgba(201, 162, 39, 0.15);
-    transition: transform 0.25s ease, box-shadow 0.25s ease;
+    transition: transform 250ms var(--ease-standard), box-shadow 250ms var(--ease-standard);
   }
 
   /* Cover takes exactly 50% */
@@ -196,15 +198,38 @@ const bookUrl = `/books/${slug}`;
 </style>
 
 <script>
-  function initBookCards() {
-    // Links no longer need ?lang= - language is determined by toggle position
+  import { t, resolveLanguage } from '../i18n';
+  import { SOURCE_LANGUAGE } from '../utils/language';
 
-    // Show reading progress on cards
+  function getLang(): string {
+    return resolveLanguage(localStorage.getItem('yuval_language') || SOURCE_LANGUAGE);
+  }
+
+  function localizeCardTexts() {
+    const lang = getLang();
+
+    document.querySelectorAll<HTMLElement>('[data-book-title]').forEach(el => {
+      const localized = el.dataset[lang as keyof typeof el.dataset];
+      if (localized) el.textContent = localized;
+    });
+
+    document.querySelectorAll<HTMLElement>('[data-book-subtitle]').forEach(el => {
+      const localized = el.dataset[lang as keyof typeof el.dataset];
+      if (localized) el.textContent = localized;
+    });
+  }
+
+  function initBookCards() {
+    localizeCardTexts();
+
+    const lang = getLang();
+    const continueLabel = t('home.continueShort', lang);
+    const chapterShort = t('home.chapterShort', lang);
+
     document.querySelectorAll<HTMLElement>('.book-card[data-book-slug]').forEach(card => {
       const slug = card.dataset.bookSlug;
       if (!slug) return;
 
-      // Find all reading progress keys for this book
       const prefix = `yuval_reading_progress_${slug}_ch`;
       let lastChapter = 0;
       let hasProgress = false;
@@ -223,16 +248,15 @@ const bookUrl = `/books/${slug}`;
       }
 
       if (hasProgress) {
-        // Show "Continue reading" badge
         const badge = card.querySelector<HTMLElement>('.card-continue[data-slug="' + slug + '"]');
+        const labelEl = card.querySelector<HTMLElement>('.card-continue-label');
         const chapterSpan = card.querySelector<HTMLElement>('.card-continue-chapter');
         if (badge) badge.classList.remove('hidden');
-        if (chapterSpan) chapterSpan.textContent = ` · Ch. ${lastChapter}`;
+        if (labelEl) labelEl.textContent = continueLabel;
+        if (chapterSpan) chapterSpan.textContent = ` · ${chapterShort} ${lastChapter}`;
 
-        // Animate progress bar (chapter number as rough proxy)
         const fill = card.querySelector<HTMLElement>('.card-progress-fill[data-slug="' + slug + '"]');
         if (fill) {
-          // Use lastChapter as a fraction of likely total (rough visual only)
           const pct = Math.min(95, lastChapter * 15);
           requestAnimationFrame(() => { fill.style.width = `${pct}%`; });
         }

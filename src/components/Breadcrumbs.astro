@@ -1,52 +1,75 @@
 ---
+import { t } from '../i18n';
+
 interface BreadcrumbItem {
-  label_he: string;
-  label_en: string;
-  label_es?: string;
+  key?: string; // i18n key
+  label?: Record<string, string>; // { he, en, fr... }
   href?: string;
 }
 
 interface Props {
   items: BreadcrumbItem[];
+  language: string;
   class?: string;
 }
 
-const { items, class: className } = Astro.props;
+const { items, language, class: className } = Astro.props;
+
+function resolveLabel(item: BreadcrumbItem, lang: string): string {
+  if (item.key) {
+    return t(item.key, lang);
+  }
+
+  if (item.label) {
+    return (
+      item.label[lang] ??
+      item.label['en'] ??
+      Object.values(item.label)[0] ??
+      ''
+    );
+  }
+
+  return '';
+}
 ---
 
 <nav
   aria-label="Breadcrumb"
-  class:list={['text-[11px] font-body text-yuval-text-tertiary breadcrumbs-nav', className]}
+  class:list={['font-body text-yuval-text-tertiary breadcrumbs-nav compact-breadcrumbs', className]}
+  style="font-size:4px; line-height:1.2; letter-spacing:-0.01em;"
 >
-  <ol class="flex flex-wrap items-center gap-1.5" data-breadcrumbs>
+  <ol class="flex flex-wrap items-center gap-1.5">
     {items.map((item, i) => {
       const isLast = i === items.length - 1;
+      const label = resolveLabel(item, language);
+
       return (
         <li class="flex items-center gap-1.5">
           {i > 0 && (
-            <svg class="w-3.5 h-3.5 text-yuval-text-muted rtl:rotate-180 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <svg
+              class="w-3.5 h-3.5 text-yuval-text-muted rtl:rotate-180 flex-shrink-0"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
             </svg>
           )}
+
           {isLast ? (
             <span
               class="text-yuval-text font-medium truncate max-w-[200px] sm:max-w-none"
               aria-current="page"
-              data-he={item.label_he}
-              data-en={item.label_en}
-              data-es={item.label_es ?? item.label_en}
             >
-              {item.label_en}
+              {label}
             </span>
           ) : (
             <a
               href={item.href || '/'}
               class="hover:text-yuval-text transition-colors duration-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-yuval-highlight rounded-sm"
-              data-he={item.label_he}
-              data-en={item.label_en}
-              data-es={item.label_es ?? item.label_en}
             >
-              {item.label_en}
+              {label}
             </a>
           )}
         </li>
@@ -56,10 +79,28 @@ const { items, class: className } = Astro.props;
 </nav>
 
 <style>
-  /* Match chapter-content width for alignment */
   .breadcrumbs-nav {
     max-width: var(--reading-content-width, 720px);
     margin-left: auto;
     margin-right: auto;
+  }
+  .breadcrumbs-nav,
+  .breadcrumbs-nav * {
+    font-size: 12px !important;
+    line-height: 1.2 !important;
+  }
+  .breadcrumbs-nav {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+  }
+  .breadcrumbs-nav ol {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  .breadcrumbs-nav svg {
+    width: 6px !important;
+    height: 6px !important;
   }
 </style>

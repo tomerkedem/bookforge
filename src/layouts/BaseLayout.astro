@@ -1,16 +1,19 @@
 ---
 import { ClientRouter } from 'astro:transitions';
 import '../styles/theme.css';
+import '../styles/tts.css';
 import type { Language } from '../types/index';
 import Header from '../components/Header.astro';
 import ReadingProgress from '../components/ReadingProgress.astro';
 import BackToTop from '../components/BackToTop.astro';
-import { LANGUAGES } from '../utils/language';
+import { SOURCE_LANGUAGE, getLanguageDirection } from '../utils/language';
 
 interface Props {
   title: string;
   description?: string;
   language?: Language;
+  availableLanguages?: Language[];
+  allowClientLanguageOverride?: boolean;
   showHeader?: boolean;
   showProgress?: boolean;
   showLanguageToggle?: boolean;
@@ -20,14 +23,16 @@ interface Props {
 const {
   title,
   description = 'Yuval - A digital reading platform',
-  language = LANGUAGES.EN,
+  language = SOURCE_LANGUAGE,
+  availableLanguages,
+  allowClientLanguageOverride = false,
   showHeader = true,
   showProgress = false,
   showLanguageToggle = true,
   class: className,
 } = Astro.props;
 
-const isRtl = language === LANGUAGES.HE;
+const isRtl = getLanguageDirection(language) === 'rtl';
 ---
 
 <!doctype html>
@@ -94,6 +99,37 @@ const isRtl = language === LANGUAGES.HE;
         } catch(e) {}
       })();
     </script>
+
+    <!-- Sync language between URL ?lang= and localStorage before the page renders.
+         If user has a saved language preference but the URL doesn't reflect it,
+         redirect so the server re-renders in the correct language. -->
+    <script is:inline define:vars={{ serverLang: language, availableLangs: availableLanguages ?? [language], allowClientLanguageOverride }}>
+      (function() {
+        try {
+          var params = new URLSearchParams(window.location.search);
+          var urlLang = params.get('lang');
+          var storedLang = localStorage.getItem('yuval_language');
+          var valid = ['he','en','es'];
+          var allowed = Array.isArray(availableLangs) && availableLangs.length > 0 ? availableLangs : [serverLang];
+
+          if (urlLang && valid.indexOf(urlLang) !== -1) {
+            if (allowed.indexOf(urlLang) !== -1 && (urlLang === serverLang || allowClientLanguageOverride)) {
+              if (storedLang !== urlLang) localStorage.setItem('yuval_language', urlLang);
+            } else {
+              params.set('lang', serverLang);
+              localStorage.setItem('yuval_language', serverLang);
+              window.location.replace(window.location.pathname + '?' + params.toString() + window.location.hash);
+            }
+          } else if (!allowClientLanguageOverride && storedLang && valid.indexOf(storedLang) !== -1 && storedLang !== serverLang && allowed.indexOf(storedLang) !== -1) {
+            // No URL override, but stored preference differs from what server rendered — redirect
+            params.set('lang', storedLang);
+            window.location.replace(window.location.pathname + '?' + params.toString() + window.location.hash);
+          } else if (storedLang && valid.indexOf(storedLang) !== -1 && allowed.indexOf(storedLang) === -1) {
+            localStorage.setItem('yuval_language', serverLang);
+          }
+        } catch(e) {}
+      })();
+    </script>
   </head>
 
   <body
@@ -112,6 +148,7 @@ const isRtl = language === LANGUAGES.HE;
     {showHeader && (
       <Header
         language={language}
+        availableLanguages={availableLanguages}
         showLanguageToggle={showLanguageToggle}
       />
     )}
@@ -124,20 +161,19 @@ const isRtl = language === LANGUAGES.HE;
     </main>
 
     <BackToTop />
-
-    <script>
-      // Initialize language preference on page load
+    <script type="module">
       import {
         getLanguageFromStorage,
         isValidLanguage,
         applyLanguageToPage,
+        getLanguageDirection,
       } from '../utils/language';
 
       function applyStoredLanguage() {
         const storedLang = getLanguageFromStorage();
         if (isValidLanguage(storedLang)) {
           document.documentElement.lang = storedLang;
-          document.documentElement.dir = storedLang === 'he' ? 'rtl' : 'ltr';
+          document.documentElement.dir = getLanguageDirection(storedLang);
           applyLanguageToPage(storedLang);
         }
       }
@@ -145,17 +181,16 @@ const isRtl = language === LANGUAGES.HE;
       applyStoredLanguage();
       document.addEventListener('astro:after-swap', applyStoredLanguage);
 
-      // Listen for language changes and update page content
-      window.addEventListener(
-        'language-changed',
-        (e: Event) => {
-          const event = e as CustomEvent;
-          const lang = event.detail.language;
-          document.documentElement.lang = lang;
-          document.documentElement.dir = lang === 'he' ? 'rtl' : 'ltr';
-          applyLanguageToPage(lang);
-        }
-      );
+      window.addEventListener('language-changed', (e: Event) => {
+        const customEvent = e as CustomEvent<{ language: string }>;
+        const lang = customEvent.detail?.language;
+        if (!lang) return;
+
+        document.documentElement.lang = lang;
+        document.documentElement.dir = getLanguageDirection(lang);
+        applyLanguageToPage(lang);
+      });
     </script>
-  </body>
+    
+    </body>
 </html>

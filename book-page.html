@@ -1,0 +1,2008 @@
+<!DOCTYPE html><html lang="he" dir="rtl" class="scroll-smooth" translate="no"> <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="description" content="למד את יסודות הנדסת AI: מודלי שפה גדולים, RAG, סוכנים חכמים, הנדסת הקשר ואתגרי האימוץ בארגונים. המדריך המעשי למהנדס AI המתחיל."><meta name="color-scheme" content="light dark"><meta name="google" content="notranslate"><title>מבוא להנדסת AI | Yuval</title><!-- Preload fonts --><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;500;700;900&family=Heebo:wght@100;300;400;500;700;900&display=swap" rel="stylesheet"><!-- Favicon --><link rel="icon" type="image/svg+xml" href="/favicon.svg"><!-- PWA --><link rel="manifest" href="/manifest.json"><meta name="theme-color" content="#1a1a1a"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><!-- View Transitions --><meta name="astro-view-transitions-enabled" content="true"><meta name="astro-view-transitions-fallback" content="animate"><script type="module" src="/node_modules/astro/components/ClientRouter.astro?v=bdb2a42c&astro&type=script&index=0&lang.ts"></script><!-- Open Graph --><meta property="og:title" content="מבוא להנדסת AI"><meta property="og:description" content="למד את יסודות הנדסת AI: מודלי שפה גדולים, RAG, סוכנים חכמים, הנדסת הקשר ואתגרי האימוץ בארגונים. המדריך המעשי למהנדס AI המתחיל."><meta property="og:type" content="website"><!-- Schema.org --><script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "Yuval",
+        "url": "https://yuval.example.com"
+      }
+    </script><!-- Service Worker registration --><script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').catch(() => {});
+        });
+      }
+    </script><!-- Prevent FOUC: apply dark mode before paint --><script>
+      (function() {
+        try {
+          var theme = localStorage.getItem('yuval-theme');
+          if (!theme) theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+          if (theme === 'dark') document.documentElement.classList.add('dark');
+        } catch(e) {}
+      })();
+    </script><style data-vite-dev-id="D:/2025 Stu/AI Engineer/AllBooks2026/Claude Code - Book/bookforge/node_modules/@astrojs/tailwind/base.css">*, ::before, ::after {
+  --tw-border-spacing-x: 0;
+  --tw-border-spacing-y: 0;
+  --tw-translate-x: 0;
+  --tw-translate-y: 0;
+  --tw-rotate: 0;
+  --tw-skew-x: 0;
+  --tw-skew-y: 0;
+  --tw-scale-x: 1;
+  --tw-scale-y: 1;
+  --tw-pan-x:  ;
+  --tw-pan-y:  ;
+  --tw-pinch-zoom:  ;
+  --tw-scroll-snap-strictness: proximity;
+  --tw-gradient-from-position:  ;
+  --tw-gradient-via-position:  ;
+  --tw-gradient-to-position:  ;
+  --tw-ordinal:  ;
+  --tw-slashed-zero:  ;
+  --tw-numeric-figure:  ;
+  --tw-numeric-spacing:  ;
+  --tw-numeric-fraction:  ;
+  --tw-ring-inset:  ;
+  --tw-ring-offset-width: 0px;
+  --tw-ring-offset-color: #fff;
+  --tw-ring-color: rgb(59 130 246 / 0.5);
+  --tw-ring-offset-shadow: 0 0 #0000;
+  --tw-ring-shadow: 0 0 #0000;
+  --tw-shadow: 0 0 #0000;
+  --tw-shadow-colored: 0 0 #0000;
+  --tw-blur:  ;
+  --tw-brightness:  ;
+  --tw-contrast:  ;
+  --tw-grayscale:  ;
+  --tw-hue-rotate:  ;
+  --tw-invert:  ;
+  --tw-saturate:  ;
+  --tw-sepia:  ;
+  --tw-drop-shadow:  ;
+  --tw-backdrop-blur:  ;
+  --tw-backdrop-brightness:  ;
+  --tw-backdrop-contrast:  ;
+  --tw-backdrop-grayscale:  ;
+  --tw-backdrop-hue-rotate:  ;
+  --tw-backdrop-invert:  ;
+  --tw-backdrop-opacity:  ;
+  --tw-backdrop-saturate:  ;
+  --tw-backdrop-sepia:  ;
+  --tw-contain-size:  ;
+  --tw-contain-layout:  ;
+  --tw-contain-paint:  ;
+  --tw-contain-style:  ;
+}
+
+::backdrop {
+  --tw-border-spacing-x: 0;
+  --tw-border-spacing-y: 0;
+  --tw-translate-x: 0;
+  --tw-translate-y: 0;
+  --tw-rotate: 0;
+  --tw-skew-x: 0;
+  --tw-skew-y: 0;
+  --tw-scale-x: 1;
+  --tw-scale-y: 1;
+  --tw-pan-x:  ;
+  --tw-pan-y:  ;
+  --tw-pinch-zoom:  ;
+  --tw-scroll-snap-strictness: proximity;
+  --tw-gradient-from-position:  ;
+  --tw-gradient-via-position:  ;
+  --tw-gradient-to-position:  ;
+  --tw-ordinal:  ;
+  --tw-slashed-zero:  ;
+  --tw-numeric-figure:  ;
+  --tw-numeric-spacing:  ;
+  --tw-numeric-fraction:  ;
+  --tw-ring-inset:  ;
+  --tw-ring-offset-width: 0px;
+  --tw-ring-offset-color: #fff;
+  --tw-ring-color: rgb(59 130 246 / 0.5);
+  --tw-ring-offset-shadow: 0 0 #0000;
+  --tw-ring-shadow: 0 0 #0000;
+  --tw-shadow: 0 0 #0000;
+  --tw-shadow-colored: 0 0 #0000;
+  --tw-blur:  ;
+  --tw-brightness:  ;
+  --tw-contrast:  ;
+  --tw-grayscale:  ;
+  --tw-hue-rotate:  ;
+  --tw-invert:  ;
+  --tw-saturate:  ;
+  --tw-sepia:  ;
+  --tw-drop-shadow:  ;
+  --tw-backdrop-blur:  ;
+  --tw-backdrop-brightness:  ;
+  --tw-backdrop-contrast:  ;
+  --tw-backdrop-grayscale:  ;
+  --tw-backdrop-hue-rotate:  ;
+  --tw-backdrop-invert:  ;
+  --tw-backdrop-opacity:  ;
+  --tw-backdrop-saturate:  ;
+  --tw-backdrop-sepia:  ;
+  --tw-contain-size:  ;
+  --tw-contain-layout:  ;
+  --tw-contain-paint:  ;
+  --tw-contain-style:  ;
+}/*
+! tailwindcss v3.4.19 | MIT License | https://tailwindcss.com
+*//*
+1. Prevent padding and border from affecting element width. (https://github.com/mozdevs/cssremedy/issues/4)
+2. Allow adding a border to an element by just adding a border-width. (https://github.com/tailwindcss/tailwindcss/pull/116)
+*/
+
+*,
+::before,
+::after {
+  box-sizing: border-box; /* 1 */
+  border-width: 0; /* 2 */
+  border-style: solid; /* 2 */
+  border-color: #e5e7eb; /* 2 */
+}
+
+::before,
+::after {
+  --tw-content: '';
+}
+
+/*
+1. Use a consistent sensible line-height in all browsers.
+2. Prevent adjustments of font size after orientation changes in iOS.
+3. Use a more readable tab size.
+4. Use the user's configured `sans` font-family by default.
+5. Use the user's configured `sans` font-feature-settings by default.
+6. Use the user's configured `sans` font-variation-settings by default.
+7. Disable tap highlights on iOS
+*/
+
+html,
+:host {
+  line-height: 1.5; /* 1 */
+  -webkit-text-size-adjust: 100%; /* 2 */
+  -moz-tab-size: 4; /* 3 */
+  -o-tab-size: 4;
+     tab-size: 4; /* 3 */
+  font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"; /* 4 */
+  font-feature-settings: normal; /* 5 */
+  font-variation-settings: normal; /* 6 */
+  -webkit-tap-highlight-color: transparent; /* 7 */
+}
+
+/*
+1. Remove the margin in all browsers.
+2. Inherit line-height from `html` so users can set them as a class directly on the `html` element.
+*/
+
+body {
+  margin: 0; /* 1 */
+  line-height: inherit; /* 2 */
+}
+
+/*
+1. Add the correct height in Firefox.
+2. Correct the inheritance of border color in Firefox. (https://bugzilla.mozilla.org/show_bug.cgi?id=190655)
+3. Ensure horizontal rules are visible by default.
+*/
+
+hr {
+  height: 0; /* 1 */
+  color: inherit; /* 2 */
+  border-top-width: 1px; /* 3 */
+}
+
+/*
+Add the correct text decoration in Chrome, Edge, and Safari.
+*/
+
+abbr:where([title]) {
+  -webkit-text-decoration: underline dotted;
+          text-decoration: underline dotted;
+}
+
+/*
+Remove the default font size and weight for headings.
+*/
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+/*
+Reset links to optimize for opt-in styling instead of opt-out.
+*/
+
+a {
+  color: inherit;
+  text-decoration: inherit;
+}
+
+/*
+Add the correct font weight in Edge and Safari.
+*/
+
+b,
+strong {
+  font-weight: bolder;
+}
+
+/*
+1. Use the user's configured `mono` font-family by default.
+2. Use the user's configured `mono` font-feature-settings by default.
+3. Use the user's configured `mono` font-variation-settings by default.
+4. Correct the odd `em` font sizing in all browsers.
+*/
+
+code,
+kbd,
+samp,
+pre {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; /* 1 */
+  font-feature-settings: normal; /* 2 */
+  font-variation-settings: normal; /* 3 */
+  font-size: 1em; /* 4 */
+}
+
+/*
+Add the correct font size in all browsers.
+*/
+
+small {
+  font-size: 80%;
+}
+
+/*
+Prevent `sub` and `sup` elements from affecting the line height in all browsers.
+*/
+
+sub,
+sup {
+  font-size: 75%;
+  line-height: 0;
+  position: relative;
+  vertical-align: baseline;
+}
+
+sub {
+  bottom: -0.25em;
+}
+
+sup {
+  top: -0.5em;
+}
+
+/*
+1. Remove text indentation from table contents in Chrome and Safari. (https://bugs.chromium.org/p/chromium/issues/detail?id=999088, https://bugs.webkit.org/show_bug.cgi?id=201297)
+2. Correct table border color inheritance in all Chrome and Safari. (https://bugs.chromium.org/p/chromium/issues/detail?id=935729, https://bugs.webkit.org/show_bug.cgi?id=195016)
+3. Remove gaps between table borders by default.
+*/
+
+table {
+  text-indent: 0; /* 1 */
+  border-color: inherit; /* 2 */
+  border-collapse: collapse; /* 3 */
+}
+
+/*
+1. Change the font styles in all browsers.
+2. Remove the margin in Firefox and Safari.
+3. Remove default padding in all browsers.
+*/
+
+button,
+input,
+optgroup,
+select,
+textarea {
+  font-family: inherit; /* 1 */
+  font-feature-settings: inherit; /* 1 */
+  font-variation-settings: inherit; /* 1 */
+  font-size: 100%; /* 1 */
+  font-weight: inherit; /* 1 */
+  line-height: inherit; /* 1 */
+  letter-spacing: inherit; /* 1 */
+  color: inherit; /* 1 */
+  margin: 0; /* 2 */
+  padding: 0; /* 3 */
+}
+
+/*
+Remove the inheritance of text transform in Edge and Firefox.
+*/
+
+button,
+select {
+  text-transform: none;
+}
+
+/*
+1. Correct the inability to style clickable types in iOS and Safari.
+2. Remove default button styles.
+*/
+
+button,
+input:where([type='button']),
+input:where([type='reset']),
+input:where([type='submit']) {
+  -webkit-appearance: button; /* 1 */
+  background-color: transparent; /* 2 */
+  background-image: none; /* 2 */
+}
+
+/*
+Use the modern Firefox focus style for all focusable elements.
+*/
+
+:-moz-focusring {
+  outline: auto;
+}
+
+/*
+Remove the additional `:invalid` styles in Firefox. (https://github.com/mozilla/gecko-dev/blob/2f9eacd9d3d995c937b4251a5557d95d494c9be1/layout/style/res/forms.css#L728-L737)
+*/
+
+:-moz-ui-invalid {
+  box-shadow: none;
+}
+
+/*
+Add the correct vertical alignment in Chrome and Firefox.
+*/
+
+progress {
+  vertical-align: baseline;
+}
+
+/*
+Correct the cursor style of increment and decrement buttons in Safari.
+*/
+
+::-webkit-inner-spin-button,
+::-webkit-outer-spin-button {
+  height: auto;
+}
+
+/*
+1. Correct the odd appearance in Chrome and Safari.
+2. Correct the outline style in Safari.
+*/
+
+[type='search'] {
+  -webkit-appearance: textfield; /* 1 */
+  outline-offset: -2px; /* 2 */
+}
+
+/*
+Remove the inner padding in Chrome and Safari on macOS.
+*/
+
+::-webkit-search-decoration {
+  -webkit-appearance: none;
+}
+
+/*
+1. Correct the inability to style clickable types in iOS and Safari.
+2. Change font properties to `inherit` in Safari.
+*/
+
+::-webkit-file-upload-button {
+  -webkit-appearance: button; /* 1 */
+  font: inherit; /* 2 */
+}
+
+/*
+Add the correct display in Chrome and Safari.
+*/
+
+summary {
+  display: list-item;
+}
+
+/*
+Removes the default spacing and border for appropriate elements.
+*/
+
+blockquote,
+dl,
+dd,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+hr,
+figure,
+p,
+pre {
+  margin: 0;
+}
+
+fieldset {
+  margin: 0;
+  padding: 0;
+}
+
+legend {
+  padding: 0;
+}
+
+ol,
+ul,
+menu {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/*
+Reset default styling for dialogs.
+*/
+dialog {
+  padding: 0;
+}
+
+/*
+Prevent resizing textareas horizontally by default.
+*/
+
+textarea {
+  resize: vertical;
+}
+
+/*
+1. Reset the default placeholder opacity in Firefox. (https://github.com/tailwindlabs/tailwindcss/issues/3300)
+2. Set the default placeholder color to the user's configured gray 400 color.
+*/
+
+input::-moz-placeholder, textarea::-moz-placeholder {
+  opacity: 1; /* 1 */
+  color: #9ca3af; /* 2 */
+}
+
+input::placeholder,
+textarea::placeholder {
+  opacity: 1; /* 1 */
+  color: #9ca3af; /* 2 */
+}
+
+/*
+Set the default cursor for buttons.
+*/
+
+button,
+[role="button"] {
+  cursor: pointer;
+}
+
+/*
+Make sure disabled buttons don't get the pointer cursor.
+*/
+:disabled {
+  cursor: default;
+}
+
+/*
+1. Make replaced elements `display: block` by default. (https://github.com/mozdevs/cssremedy/issues/14)
+2. Add `vertical-align: middle` to align replaced elements more sensibly by default. (https://github.com/jensimmons/cssremedy/issues/14#issuecomment-634934210)
+   This can trigger a poorly considered lint error in some tools but is included by design.
+*/
+
+img,
+svg,
+video,
+canvas,
+audio,
+iframe,
+embed,
+object {
+  display: block; /* 1 */
+  vertical-align: middle; /* 2 */
+}
+
+/*
+Constrain images and videos to the parent width and preserve their intrinsic aspect ratio. (https://github.com/mozdevs/cssremedy/issues/14)
+*/
+
+img,
+video {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Make elements with the HTML hidden attribute stay hidden by default */
+[hidden]:where(:not([hidden="until-found"])) {
+  display: none;
+}
+.\!container {
+  width: 100% !important;
+}
+.container {
+  width: 100%;
+}
+@media (min-width: 640px) {
+
+  .\!container {
+    max-width: 640px !important;
+  }
+
+  .container {
+    max-width: 640px;
+  }
+}
+@media (min-width: 768px) {
+
+  .\!container {
+    max-width: 768px !important;
+  }
+
+  .container {
+    max-width: 768px;
+  }
+}
+@media (min-width: 1024px) {
+
+  .\!container {
+    max-width: 1024px !important;
+  }
+
+  .container {
+    max-width: 1024px;
+  }
+}
+@media (min-width: 1280px) {
+
+  .\!container {
+    max-width: 1280px !important;
+  }
+
+  .container {
+    max-width: 1280px;
+  }
+}
+@media (min-width: 1536px) {
+
+  .\!container {
+    max-width: 1536px !important;
+  }
+
+  .container {
+    max-width: 1536px;
+  }
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+.visible {
+  visibility: visible;
+}
+.static {
+  position: static;
+}
+.fixed {
+  position: fixed;
+}
+.absolute {
+  position: absolute;
+}
+.relative {
+  position: relative;
+}
+.sticky {
+  position: sticky;
+}
+.bottom-0 {
+  bottom: 0px;
+}
+.bottom-6 {
+  bottom: 1.5rem;
+}
+.left-0 {
+  left: 0px;
+}
+.right-0 {
+  right: 0px;
+}
+.right-6 {
+  right: 1.5rem;
+}
+.top-0 {
+  top: 0px;
+}
+.isolate {
+  isolation: isolate;
+}
+.z-40 {
+  z-index: 40;
+}
+.z-50 {
+  z-index: 50;
+}
+.mx-auto {
+  margin-left: auto;
+  margin-right: auto;
+}
+.my-12 {
+  margin-top: 3rem;
+  margin-bottom: 3rem;
+}
+.my-6 {
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+.my-8 {
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+}
+.mb-12 {
+  margin-bottom: 3rem;
+}
+.mb-2 {
+  margin-bottom: 0.5rem;
+}
+.mb-3 {
+  margin-bottom: 0.75rem;
+}
+.mb-4 {
+  margin-bottom: 1rem;
+}
+.mb-6 {
+  margin-bottom: 1.5rem;
+}
+.mb-8 {
+  margin-bottom: 2rem;
+}
+.ml-0 {
+  margin-left: 0px;
+}
+.ml-6 {
+  margin-left: 1.5rem;
+}
+.mt-1 {
+  margin-top: 0.25rem;
+}
+.mt-2 {
+  margin-top: 0.5rem;
+}
+.mt-3 {
+  margin-top: 0.75rem;
+}
+.mt-4 {
+  margin-top: 1rem;
+}
+.mt-6 {
+  margin-top: 1.5rem;
+}
+.mt-8 {
+  margin-top: 2rem;
+}
+.line-clamp-2 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+.\!block {
+  display: block !important;
+}
+.block {
+  display: block;
+}
+.inline {
+  display: inline;
+}
+.flex {
+  display: flex;
+}
+.inline-flex {
+  display: inline-flex;
+}
+.table {
+  display: table;
+}
+.grid {
+  display: grid;
+}
+.contents {
+  display: contents;
+}
+.hidden {
+  display: none;
+}
+.h-0\.5 {
+  height: 0.125rem;
+}
+.h-11 {
+  height: 2.75rem;
+}
+.h-16 {
+  height: 4rem;
+}
+.h-3\.5 {
+  height: 0.875rem;
+}
+.h-4 {
+  height: 1rem;
+}
+.h-5 {
+  height: 1.25rem;
+}
+.h-auto {
+  height: auto;
+}
+.h-full {
+  height: 100%;
+}
+.min-h-\[70vh\] {
+  min-height: 70vh;
+}
+.min-h-screen {
+  min-height: 100vh;
+}
+.w-0 {
+  width: 0px;
+}
+.w-11 {
+  width: 2.75rem;
+}
+.w-16 {
+  width: 4rem;
+}
+.w-3\.5 {
+  width: 0.875rem;
+}
+.w-4 {
+  width: 1rem;
+}
+.w-5 {
+  width: 1.25rem;
+}
+.w-full {
+  width: 100%;
+}
+.min-w-0 {
+  min-width: 0px;
+}
+.max-w-4xl {
+  max-width: 56rem;
+}
+.max-w-7xl {
+  max-width: 80rem;
+}
+.max-w-\[200px\] {
+  max-width: 200px;
+}
+.max-w-\[45\%\] {
+  max-width: 45%;
+}
+.max-w-full {
+  max-width: 100%;
+}
+.max-w-md {
+  max-width: 28rem;
+}
+.max-w-none {
+  max-width: none;
+}
+.flex-1 {
+  flex: 1 1 0%;
+}
+.flex-shrink {
+  flex-shrink: 1;
+}
+.flex-shrink-0 {
+  flex-shrink: 0;
+}
+.grow {
+  flex-grow: 1;
+}
+.border-collapse {
+  border-collapse: collapse;
+}
+.translate-y-0 {
+  --tw-translate-y: 0px;
+  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+}
+.translate-y-4 {
+  --tw-translate-y: 1rem;
+  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+}
+.transform {
+  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+}
+.select-none {
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+}
+.resize {
+  resize: both;
+}
+.grid-cols-1 {
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+}
+.grid-cols-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.flex-row-reverse {
+  flex-direction: row-reverse;
+}
+.flex-col {
+  flex-direction: column;
+}
+.flex-wrap {
+  flex-wrap: wrap;
+}
+.items-start {
+  align-items: flex-start;
+}
+.items-center {
+  align-items: center;
+}
+.justify-center {
+  justify-content: center;
+}
+.justify-between {
+  justify-content: space-between;
+}
+.gap-1 {
+  gap: 0.25rem;
+}
+.gap-1\.5 {
+  gap: 0.375rem;
+}
+.gap-2 {
+  gap: 0.5rem;
+}
+.gap-3 {
+  gap: 0.75rem;
+}
+.gap-4 {
+  gap: 1rem;
+}
+.gap-8 {
+  gap: 2rem;
+}
+.space-y-2 > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-y-reverse: 0;
+  margin-top: calc(0.5rem * calc(1 - var(--tw-space-y-reverse)));
+  margin-bottom: calc(0.5rem * var(--tw-space-y-reverse));
+}
+.space-y-3 > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-y-reverse: 0;
+  margin-top: calc(0.75rem * calc(1 - var(--tw-space-y-reverse)));
+  margin-bottom: calc(0.75rem * var(--tw-space-y-reverse));
+}
+.space-y-6 > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-y-reverse: 0;
+  margin-top: calc(1.5rem * calc(1 - var(--tw-space-y-reverse)));
+  margin-bottom: calc(1.5rem * var(--tw-space-y-reverse));
+}
+.overflow-hidden {
+  overflow: hidden;
+}
+.scroll-smooth {
+  scroll-behavior: smooth;
+}
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rounded-full {
+  border-radius: 9999px;
+}
+.rounded-lg {
+  border-radius: 0.5rem;
+}
+.rounded-sm {
+  border-radius: 0.125rem;
+}
+.rounded-xl {
+  border-radius: 0.75rem;
+}
+.border {
+  border-width: 1px;
+}
+.border-l-0 {
+  border-left-width: 0px;
+}
+.border-t {
+  border-top-width: 1px;
+}
+.border-yuval-border {
+  border-color: var(--yuval-border);
+}
+.border-yuval-border-secondary {
+  border-color: var(--yuval-border-secondary);
+}
+.bg-black\/10 {
+  background-color: rgb(0 0 0 / 0.1);
+}
+.bg-green-500 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(34 197 94 / var(--tw-bg-opacity, 1));
+}
+.bg-indigo-500 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(99 102 241 / var(--tw-bg-opacity, 1));
+}
+.bg-yuval-accent {
+  background-color: var(--yuval-accent);
+}
+.bg-yuval-bg {
+  background-color: var(--yuval-bg);
+}
+.bg-yuval-bg-secondary {
+  background-color: var(--yuval-bg-secondary);
+}
+.bg-yuval-border {
+  background-color: var(--yuval-border);
+}
+.bg-yuval-surface {
+  background-color: var(--yuval-surface);
+}
+.object-contain {
+  -o-object-fit: contain;
+     object-fit: contain;
+}
+.object-cover {
+  -o-object-fit: cover;
+     object-fit: cover;
+}
+.p-3 {
+  padding: 0.75rem;
+}
+.p-4 {
+  padding: 1rem;
+}
+.px-3 {
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+}
+.px-4 {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+.px-6 {
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+}
+.py-1 {
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
+}
+.py-1\.5 {
+  padding-top: 0.375rem;
+  padding-bottom: 0.375rem;
+}
+.py-12 {
+  padding-top: 3rem;
+  padding-bottom: 3rem;
+}
+.py-16 {
+  padding-top: 4rem;
+  padding-bottom: 4rem;
+}
+.py-2 {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+.py-3 {
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+}
+.py-6 {
+  padding-top: 1.5rem;
+  padding-bottom: 1.5rem;
+}
+.pl-0 {
+  padding-left: 0px;
+}
+.pl-4 {
+  padding-left: 1rem;
+}
+.pr-6 {
+  padding-right: 1.5rem;
+}
+.pt-12 {
+  padding-top: 3rem;
+}
+.text-left {
+  text-align: left;
+}
+.text-center {
+  text-align: center;
+}
+.text-right {
+  text-align: right;
+}
+.font-body {
+  font-family: 'Heebo', system-ui, sans-serif;
+}
+.font-heading {
+  font-family: 'Frank Ruhl Libre', Georgia, serif;
+}
+.text-2xl {
+  font-size: 1.5rem;
+  line-height: 2rem;
+}
+.text-8xl {
+  font-size: 6rem;
+  line-height: 1;
+}
+.text-\[10px\] {
+  font-size: 10px;
+}
+.text-\[11px\] {
+  font-size: 11px;
+}
+.text-base {
+  font-size: 1rem;
+  line-height: 1.5rem;
+}
+.text-lg {
+  font-size: 1.125rem;
+  line-height: 1.75rem;
+}
+.text-sm {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+.text-xl {
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+}
+.text-xs {
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+.font-bold {
+  font-weight: 700;
+}
+.font-medium {
+  font-weight: 500;
+}
+.font-semibold {
+  font-weight: 600;
+}
+.uppercase {
+  text-transform: uppercase;
+}
+.italic {
+  font-style: italic;
+}
+.leading-relaxed {
+  line-height: 1.625;
+}
+.leading-snug {
+  line-height: 1.375;
+}
+.leading-tight {
+  line-height: 1.25;
+}
+.tracking-wide {
+  letter-spacing: 0.025em;
+}
+.text-indigo-500 {
+  --tw-text-opacity: 1;
+  color: rgb(99 102 241 / var(--tw-text-opacity, 1));
+}
+.text-yuval-accent-text {
+  color: var(--yuval-accent-text);
+}
+.text-yuval-text {
+  color: var(--yuval-text);
+}
+.text-yuval-text-muted {
+  color: var(--yuval-text-muted);
+}
+.text-yuval-text-secondary {
+  color: var(--yuval-text-secondary);
+}
+.text-yuval-text-tertiary {
+  color: var(--yuval-text-tertiary);
+}
+.underline {
+  text-decoration-line: underline;
+}
+.antialiased {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+.opacity-0 {
+  opacity: 0;
+}
+.opacity-100 {
+  opacity: 1;
+}
+.shadow-lg {
+  --tw-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --tw-shadow-colored: 0 10px 15px -3px var(--tw-shadow-color), 0 4px 6px -4px var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+}
+.\!outline {
+  outline-style: solid !important;
+}
+.outline {
+  outline-style: solid;
+}
+.ring {
+  --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);
+  --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(3px + var(--tw-ring-offset-width)) var(--tw-ring-color);
+  box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);
+}
+.blur {
+  --tw-blur: blur(8px);
+  filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);
+}
+.drop-shadow {
+  --tw-drop-shadow: drop-shadow(0 1px 2px rgb(0 0 0 / 0.1)) drop-shadow(0 1px 1px rgb(0 0 0 / 0.06));
+  filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);
+}
+.sepia {
+  --tw-sepia: sepia(100%);
+  filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);
+}
+.filter {
+  filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);
+}
+.backdrop-filter {
+  backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);
+}
+.transition {
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+.transition-all {
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+.transition-colors {
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+.transition-transform {
+  transition-property: transform;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+.duration-200 {
+  transition-duration: 200ms;
+}
+.duration-300 {
+  transition-duration: 300ms;
+}
+.duration-500 {
+  transition-duration: 500ms;
+}
+.duration-700 {
+  transition-duration: 700ms;
+}
+.ease-in-out {
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+.hover\:border-yuval-border-secondary:hover {
+  border-color: var(--yuval-border-secondary);
+}
+.hover\:bg-yuval-accent-hover:hover {
+  background-color: var(--yuval-accent-hover);
+}
+.hover\:bg-yuval-bg-secondary:hover {
+  background-color: var(--yuval-bg-secondary);
+}
+.hover\:bg-yuval-surface:hover {
+  background-color: var(--yuval-surface);
+}
+.hover\:text-yuval-text:hover {
+  color: var(--yuval-text);
+}
+.focus\:not-sr-only:focus {
+  position: static;
+  width: auto;
+  height: auto;
+  padding: 0;
+  margin: 0;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+}
+.focus\:absolute:focus {
+  position: absolute;
+}
+.focus\:left-2:focus {
+  left: 0.5rem;
+}
+.focus\:top-2:focus {
+  top: 0.5rem;
+}
+.focus\:z-\[100\]:focus {
+  z-index: 100;
+}
+.focus\:rounded-md:focus {
+  border-radius: 0.375rem;
+}
+.focus\:bg-yuval-accent:focus {
+  background-color: var(--yuval-accent);
+}
+.focus\:px-4:focus {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+.focus\:py-2:focus {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+.focus\:text-sm:focus {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+.focus\:font-medium:focus {
+  font-weight: 500;
+}
+.focus\:text-yuval-accent-text:focus {
+  color: var(--yuval-accent-text);
+}
+.focus\:outline-none:focus {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+.focus\:ring-2:focus {
+  --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);
+  --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color);
+  box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);
+}
+.focus\:ring-yuval-highlight:focus {
+  --tw-ring-color: var(--yuval-highlight);
+}
+.focus\:ring-offset-2:focus {
+  --tw-ring-offset-width: 2px;
+}
+.focus-visible\:outline-none:focus-visible {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+.focus-visible\:ring-1:focus-visible {
+  --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);
+  --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(1px + var(--tw-ring-offset-width)) var(--tw-ring-color);
+  box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);
+}
+.focus-visible\:ring-2:focus-visible {
+  --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);
+  --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color);
+  box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);
+}
+.focus-visible\:ring-yuval-highlight:focus-visible {
+  --tw-ring-color: var(--yuval-highlight);
+}
+.focus-visible\:ring-offset-2:focus-visible {
+  --tw-ring-offset-width: 2px;
+}
+.group:hover .group-hover\:scale-\[1\.02\] {
+  --tw-scale-x: 1.02;
+  --tw-scale-y: 1.02;
+  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+}
+.dark\:text-indigo-400:is(.dark *) {
+  --tw-text-opacity: 1;
+  color: rgb(129 140 248 / var(--tw-text-opacity, 1));
+}
+@media (min-width: 640px) {
+
+  .sm\:my-8 {
+    margin-top: 2rem;
+    margin-bottom: 2rem;
+  }
+
+  .sm\:mb-3 {
+    margin-bottom: 0.75rem;
+  }
+
+  .sm\:mb-4 {
+    margin-bottom: 1rem;
+  }
+
+  .sm\:mb-6 {
+    margin-bottom: 1.5rem;
+  }
+
+  .sm\:mt-10 {
+    margin-top: 2.5rem;
+  }
+
+  .sm\:mt-12 {
+    margin-top: 3rem;
+  }
+
+  .sm\:mt-8 {
+    margin-top: 2rem;
+  }
+
+  .sm\:block {
+    display: block;
+  }
+
+  .sm\:flex {
+    display: flex;
+  }
+
+  .sm\:hidden {
+    display: none;
+  }
+
+  .sm\:max-w-none {
+    max-width: none;
+  }
+
+  .sm\:grid-cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .sm\:flex-row {
+    flex-direction: row;
+  }
+
+  .sm\:flex-row-reverse {
+    flex-direction: row-reverse;
+  }
+
+  .sm\:items-center {
+    align-items: center;
+  }
+
+  .sm\:justify-between {
+    justify-content: space-between;
+  }
+
+  .sm\:gap-4 {
+    gap: 1rem;
+  }
+
+  .sm\:gap-5 {
+    gap: 1.25rem;
+  }
+
+  .sm\:px-4 {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .sm\:px-6 {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+
+  .sm\:py-16 {
+    padding-top: 4rem;
+    padding-bottom: 4rem;
+  }
+
+  .sm\:py-2 {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+
+  .sm\:py-4 {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+  }
+
+  .sm\:py-8 {
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+  }
+
+  .sm\:pl-6 {
+    padding-left: 1.5rem;
+  }
+
+  .sm\:text-2xl {
+    font-size: 1.5rem;
+    line-height: 2rem;
+  }
+
+  .sm\:text-3xl {
+    font-size: 1.875rem;
+    line-height: 2.25rem;
+  }
+
+  .sm\:text-9xl {
+    font-size: 8rem;
+    line-height: 1;
+  }
+
+  .sm\:text-base {
+    font-size: 1rem;
+    line-height: 1.5rem;
+  }
+
+  .sm\:text-lg {
+    font-size: 1.125rem;
+    line-height: 1.75rem;
+  }
+
+  .sm\:text-sm {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+
+  .sm\:text-xl {
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+  }
+
+  .sm\:leading-loose {
+    line-height: 2;
+  }
+}
+@media (min-width: 768px) {
+
+  .md\:col-span-1 {
+    grid-column: span 1 / span 1;
+  }
+
+  .md\:col-span-2 {
+    grid-column: span 2 / span 2;
+  }
+
+  .md\:grid-cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .md\:grid-cols-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+@media (min-width: 1024px) {
+
+  .lg\:grid-cols-5 {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  .lg\:px-8 {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+
+  .lg\:py-20 {
+    padding-top: 5rem;
+    padding-bottom: 5rem;
+  }
+
+  .lg\:py-3 {
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+  }
+
+  .lg\:text-2xl {
+    font-size: 1.5rem;
+    line-height: 2rem;
+  }
+
+  .lg\:text-3xl {
+    font-size: 1.875rem;
+    line-height: 2.25rem;
+  }
+
+  .lg\:text-4xl {
+    font-size: 2.25rem;
+    line-height: 2.5rem;
+  }
+
+  .lg\:text-xl {
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+  }
+}
+@media (min-width: 1280px) {
+
+  .xl\:grid-cols-6 {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+.rtl\:rotate-180:where([dir="rtl"], [dir="rtl"] *) {
+  --tw-rotate: 180deg;
+  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+}
+</style>
+<style data-vite-dev-id="D:/2025 Stu/AI Engineer/AllBooks2026/Claude Code - Book/bookforge/node_modules/astro/components/ClientRouter.astro?astro&#38;type=style&#38;index=0&#38;lang.css">/* Route announcer */
+	.astro-route-announcer {
+		position: absolute;
+		left: 0;
+		top: 0;
+		clip: rect(0 0 0 0);
+		clip-path: inset(50%);
+		overflow: hidden;
+		white-space: nowrap;
+		width: 1px;
+		height: 1px;
+	}</style>
+<style data-vite-dev-id="D:/2025 Stu/AI Engineer/AllBooks2026/Claude Code - Book/bookforge/src/styles/theme.css">/* ═══════════════════════════════════════════════════════════
+   YUVAL THEME — Single Source of Truth
+   All light/dark color definitions live here.
+   Components use CSS variables via Tailwind tokens or var().
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── Page backgrounds ── */
+  --yuval-bg: #f5f0e8;
+  --yuval-bg-secondary: #ede8df;
+  --yuval-surface: #ffffff;               /* cards, header, sidebars */
+  --yuval-header-bg: rgba(255, 255, 255, 0.95);
+  --yuval-reading-bg: #faf7f2;            /* warm paper — easiest on the eyes */
+
+  /* ── Text ── */
+  --yuval-text: #1a1a1a;
+  --yuval-text-secondary: #555555;        /* improved contrast on #f5f0e8 bg */
+  --yuval-text-tertiary: #777777;
+  --yuval-text-muted: #999999;
+
+  /* ── Borders ── */
+  --yuval-border: #f0ede8;
+  --yuval-border-secondary: #e0ddd8;
+
+  /* ── Links ── */
+  --yuval-link: #1a1a1a;
+  --yuval-link-hover: #666666;
+
+  /* ── Buttons & bold accents ── */
+  --yuval-accent: #1a1a1a;
+  --yuval-accent-hover: #666666;
+  --yuval-accent-text: #f5f0e8;           /* text on accent bg */
+
+  /* ── Highlight (progress bar, focus ring, borders) ── */
+  --yuval-highlight: #1a1a1a;
+
+  /* ── Toggle switch ── */
+  --yuval-toggle-track: #e0ddd8;
+  --yuval-moon-icon: #bbbbbb;
+
+  /* ── TOC / Sidebar ── */
+  --yuval-toc-item-border: #f5f3ef;
+  --yuval-toc-number: #cccccc;
+  --yuval-toc-active: #1a1a1a;
+
+  /* ── Chapter meta ── */
+  --yuval-meta-text: #9a8c7c;
+  --yuval-meta-bg: rgba(154, 140, 124, 0.06);
+  --yuval-meta-border: rgba(154, 140, 124, 0.12);
+  --yuval-meta-dot: rgba(154, 140, 124, 0.35);
+
+  /* ── Chapter header ── */
+  --yuval-chapter-title: #3d3229;
+  --yuval-progress-badge: #9a8c7c;
+  --yuval-progress-line: rgba(154, 140, 124, 0.12);
+  --yuval-progress-fill: #9a8c7c;
+
+  /* ── Blockquote ── */
+  --yuval-blockquote-border: #888888;
+}
+
+.dark {
+  /* ── Page backgrounds — true neutral dark, no color cast ── */
+  --yuval-bg: #111111;
+  --yuval-bg-secondary: #191919;
+  --yuval-surface: #1e1e1e;
+  --yuval-header-bg: rgba(17, 17, 17, 0.92);
+  --yuval-reading-bg: #161616;
+
+  /* ── Text ── */
+  --yuval-text: #ededed;
+  --yuval-text-secondary: #b0b0b0;
+  --yuval-text-tertiary: #888888;
+  --yuval-text-muted: #666666;
+
+  /* ── Borders ── */
+  --yuval-border: #272727;
+  --yuval-border-secondary: #333333;
+
+  /* ── Links ── */
+  --yuval-link: #ededed;
+  --yuval-link-hover: #aaaaaa;
+
+  /* ── Buttons & accents — off-white, mirrors light mode logic ── */
+  --yuval-accent: #ededed;
+  --yuval-accent-hover: #cccccc;
+  --yuval-accent-text: #111111;
+
+  /* ── Highlight (focus ring, active TOC) ── */
+  --yuval-highlight: #ededed;
+
+  /* ── Toggle switch ── */
+  --yuval-toggle-track: #333333;
+  --yuval-moon-icon: #888888;
+
+  /* ── TOC / Sidebar ── */
+  --yuval-toc-item-border: #2a2a2a;
+  --yuval-toc-number: #777777;
+  --yuval-toc-active: #ededed;
+
+  /* ── Chapter meta ── */
+  --yuval-meta-text: #888888;
+  --yuval-meta-bg: rgba(255, 255, 255, 0.05);
+  --yuval-meta-border: rgba(255, 255, 255, 0.09);
+  --yuval-meta-dot: rgba(255, 255, 255, 0.2);
+
+  /* ── Chapter header ── */
+  --yuval-chapter-title: #ededed;
+  --yuval-progress-badge: #888888;
+  --yuval-progress-line: rgba(255, 255, 255, 0.06);
+  --yuval-progress-fill: #ededed;
+
+  /* ── Blockquote ── */
+  --yuval-blockquote-border: #444444;
+}
+
+/* ═══════════════════════════════════════════════════════
+   SEPIA THEME — Warm paper-like appearance
+   ═══════════════════════════════════════════════════════ */
+.sepia {
+  /* ── Page backgrounds ── */
+  --yuval-bg: #f4ecd8;
+  --yuval-bg-secondary: #ebe3ce;
+  --yuval-surface: #faf6eb;
+  --yuval-header-bg: rgba(250, 246, 235, 0.95);
+  --yuval-reading-bg: #faf6eb;
+
+  /* ── Text ── */
+  --yuval-text: #3d3227;
+  --yuval-text-secondary: #5c4e3d;
+  --yuval-text-tertiary: #7a6b56;
+  --yuval-text-muted: #9a8b73;
+
+  /* ── Borders ── */
+  --yuval-border: #e8ddc8;
+  --yuval-border-secondary: #d4c5a9;
+
+  /* ── Links ── */
+  --yuval-link: #8b4513;
+  --yuval-link-hover: #a0522d;
+
+  /* ── Buttons & bold accents ── */
+  --yuval-accent: #8b4513;
+  --yuval-accent-hover: #6b3410;
+  --yuval-accent-text: #faf6eb;
+
+  /* ── Highlight ── */
+  --yuval-highlight: #8b4513;
+
+  /* ── Toggle switch ── */
+  --yuval-toggle-track: #d4c5a9;
+  --yuval-moon-icon: #9a8b73;
+
+  /* ── TOC / Sidebar ── */
+  --yuval-toc-item-border: #e8ddc8;
+  --yuval-toc-number: #b0a08a;
+  --yuval-toc-active: #8b4513;
+
+  /* ── Chapter meta ── */
+  --yuval-meta-text: #7a6b56;
+  --yuval-meta-bg: rgba(139, 69, 19, 0.06);
+  --yuval-meta-border: rgba(139, 69, 19, 0.12);
+  --yuval-meta-dot: rgba(139, 69, 19, 0.35);
+
+  /* ── Chapter header ── */
+  --yuval-chapter-title: #3d3227;
+  --yuval-progress-badge: #7a6b56;
+  --yuval-progress-line: rgba(139, 69, 19, 0.12);
+  --yuval-progress-fill: #8b4513;
+
+  /* ── Blockquote ── */
+  --yuval-blockquote-border: #8b4513;
+}
+
+/* ═══════════════════════════════════════════════════════
+   FOCUS MODE — Immersive distraction-free reading
+   ═══════════════════════════════════════════════════════ */
+body.focus-mode .toc-sidebar,
+body.focus-mode .outline-sidebar,
+body.focus-mode header,
+body.focus-mode .reading-progress-bar,
+body.focus-mode .back-to-top-button,
+body.focus-mode .reading-controls {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transition: opacity 0.3s ease !important;
+}
+
+body.focus-mode .reading-article {
+  max-width: 800px !important;
+  margin: 0 auto !important;
+  padding-top: 3rem !important;
+}
+
+body.focus-mode article p,
+body.focus-mode article li {
+  font-size: 1.25rem !important;
+  line-height: 1.9 !important;
+}
+
+body.focus-mode::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.08) 100%);
+  z-index: 9999;
+}
+
+/* ═══════════════════════════════════════════════════════
+   TYPOGRAPHY CONTROLS — CSS Variables
+   ═══════════════════════════════════════════════════════ */
+:root {
+  --reading-font-size: 1.125rem;
+  --reading-line-height: 1.8;
+  --reading-content-width: 720px;
+  --reading-font-family: 'Frank Ruhl Libre', serif;
+}
+
+.reading-article .chapter-content {
+  font-size: var(--reading-font-size);
+  line-height: var(--reading-line-height);
+  max-width: var(--reading-content-width);
+  margin: 0 auto;
+  font-family: var(--reading-font-family);
+}
+
+/* ═══════════════════════════════════════════════════
+   PRINT STYLESHEET
+   ═══════════════════════════════════════════════════ */
+@media print {
+  /* Hide everything UI */
+  header, nav, aside,
+  #toc-sidebar, #mobile-toc, #reading-fab, #fab-toggle,
+  #chapter-nav, .reading-fab, .BackToTop,
+  #tts-fab, #tts-player,
+  #goal-indicator, #stats-fab-btn, #bookmarks-fab,
+  #highlights-fab, #chapter-completion,
+  .focus-toast, #ob-overlay,
+  [id$="-overlay"], [id$="-modal"],
+  .breadcrumbs, #chapter-header .header-progress-line,
+  #progress-badge-he, #progress-badge-en, #progress-badge-es,
+  .reading-time-value { display: none !important; }
+
+  /* Reset dark/sepia for print */
+  html, body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  /* Chapter content — clean black on white */
+  .chapter-content {
+    max-width: 100% !important;
+    font-size: 11pt !important;
+    line-height: 1.7 !important;
+    color: #000 !important;
+    font-family: Georgia, 'Times New Roman', serif !important;
+  }
+
+  /* Headings */
+  .chapter-content h1, .chapter-content h2,
+  .chapter-content h3, .chapter-content h4 {
+    color: #000 !important;
+    page-break-after: avoid;
+    margin-top: 1.2em;
+  }
+
+  /* No orphan paragraphs */
+  .chapter-content p { orphans: 3; widows: 3; }
+
+  /* Highlights — keep background, add print-friendly label */
+  .yuval-hl[data-color="yellow"] { background: #fef9c3 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .yuval-hl[data-color="blue"]   { background: #dbeafe !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .yuval-hl[data-color="green"]  { background: #dcfce7 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .yuval-hl[data-color="pink"]   { background: #fce7f3 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+  /* Links — show URL */
+  a[href^="http"]::after { content: " (" attr(href) ")"; font-size: 9pt; color: #555; }
+
+  /* Page break before new chapters */
+  #chapter-container { page-break-before: auto; }
+
+  /* Header with book + chapter title */
+  #chapter-header { position: static !important; box-shadow: none !important; border-bottom: 1px solid #ccc; margin-bottom: 24pt; }
+
+  @page {
+    margin: 2cm 2.5cm;
+    @bottom-center { content: counter(page); font-size: 9pt; color: #999; }
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   CHAPTER TRANSITIONS — Instant swap, no animation
+   ═══════════════════════════════════════════════════════ */
+.reading-article {
+  min-height: 100vh;
+}
+
+/* ═══════════════════════════════════════════════════════
+   GLOBAL TRANSITIONS & ANIMATIONS
+   ═══════════════════════════════════════════════════════ */
+
+/* Prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Fade-in for main content on page load */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+#main-content {
+  animation: fade-in-up 0.4s ease-out;
+}
+
+/* Interactive elements transition by default */
+a, button {
+  transition-property: color, background-color, border-color, box-shadow, opacity, transform;
+  transition-duration: 200ms;
+  transition-timing-function: ease;
+}
+
+/* Scrollbar styling (Firefox) */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--yuval-border-secondary) transparent;
+}
+
+/* Scrollbar styling (Webkit) */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--yuval-border-secondary);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--yuval-text-muted);
+}
+</style>
+<style data-vite-dev-id="D:/2025 Stu/AI Engineer/AllBooks2026/Claude Code - Book/bookforge/src/components/LanguageSelector.astro?astro&#38;type=style&#38;index=0&#38;lang.css">.language-selector-container[data-astro-cid-ltpqzwiw]{position:relative;display:inline-block}.language-selector-trigger[data-astro-cid-ltpqzwiw]{display:flex;align-items:center;gap:10px;padding:10px 16px;background:linear-gradient(135deg,rgba(201,162,39,0.08) 0%,rgba(232,197,71,0.04) 100%);border:1.5px solid rgba(201,162,39,0.3);border-radius:12px;cursor:pointer;transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1);font-family:var(--font-heading);font-size:14px;font-weight:600;color:var(--yuval-text);letter-spacing:0.02em;position:relative;z-index:100}.language-selector-trigger[data-astro-cid-ltpqzwiw]::before{content:"";position:absolute;inset:0;border-radius:12px;background:linear-gradient(135deg,rgba(232,197,71,0.15) 0%,rgba(201,162,39,0.08) 100%);opacity:0;transition:opacity 0.3s ease;pointer-events:none}.language-selector-trigger[data-astro-cid-ltpqzwiw]:hover::before{opacity:1}.language-selector-trigger[data-astro-cid-ltpqzwiw]:hover{border-color:rgba(201,162,39,0.6);box-shadow:0 4px 12px rgba(201,162,39,0.15),0 0 0 1px rgba(201,162,39,0.2)}.language-selector-trigger[data-astro-cid-ltpqzwiw]:focus-visible{outline:none;border-color:#c9a227;box-shadow:0 0 0 3px rgba(201,162,39,0.2),0 4px 12px rgba(201,162,39,0.15)}.language-selector-trigger[data-astro-cid-ltpqzwiw][aria-expanded=true]{border-color:#c9a227;background:linear-gradient(135deg,rgba(201,162,39,0.12) 0%,rgba(232,197,71,0.08) 100%)}.language-selector-trigger[data-astro-cid-ltpqzwiw][aria-expanded=true] .trigger-icon[data-astro-cid-ltpqzwiw]{transform:rotateZ(180deg)}.trigger-flag[data-astro-cid-ltpqzwiw]{font-size:18px;display:flex;align-items:center;justify-content:center;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.1))}.trigger-label[data-astro-cid-ltpqzwiw]{font-weight:700;letter-spacing:0.03em;min-width:70px}.trigger-icon[data-astro-cid-ltpqzwiw]{width:18px;height:18px;display:flex;align-items:center;justify-content:center;color:rgba(201,162,39,0.8);transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1);flex-shrink:0}.language-selector-panel[data-astro-cid-ltpqzwiw]{position:absolute;top:calc(100% + 8px);left:0;right:auto;min-width:100%;background:var(--yuval-surface);border:1.5px solid var(--yuval-border);border-radius:14px;box-shadow:0 12px 32px rgba(0,0,0,0.12),0 4px 12px rgba(0,0,0,0.08),0 0 0 1px rgba(201,162,39,0.15);opacity:0;visibility:hidden;transform:translateY(-8px) scale(0.95);transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1);pointer-events:none;z-index:99;backdrop-filter:blur(8px);overflow:hidden}.language-selector-container[data-astro-cid-ltpqzwiw][data-rtl=true] .language-selector-panel[data-astro-cid-ltpqzwiw]{left:auto;right:0}.language-selector-trigger[data-astro-cid-ltpqzwiw][aria-expanded=true]+.language-selector-panel[data-astro-cid-ltpqzwiw]{opacity:1;visibility:visible;transform:translateY(0) scale(1);pointer-events:auto}.panel-inner[data-astro-cid-ltpqzwiw]{display:flex;flex-direction:column;gap:0;padding:6px}.language-option[data-astro-cid-ltpqzwiw]{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;padding:12px 14px;background:transparent;border:none;border-radius:10px;cursor:pointer;transition:all 0.2s ease;font-family:var(--font-heading);font-size:13px;color:var(--yuval-text-secondary);text-align:left;position:relative;overflow:hidden}.language-option[data-astro-cid-ltpqzwiw]::before{content:"";position:absolute;inset:0;background:linear-gradient(135deg,rgba(201,162,39,0.1) 0%,rgba(232,197,71,0.05) 100%);opacity:0;transition:opacity 0.2s ease}.language-option[data-astro-cid-ltpqzwiw]:hover::before{opacity:1}.language-option[data-astro-cid-ltpqzwiw]:hover{background:linear-gradient(135deg,rgba(201,162,39,0.08) 0%,rgba(232,197,71,0.04) 100%);color:var(--yuval-text)}.language-option[data-astro-cid-ltpqzwiw]:active{transform:scale(0.98)}.language-option-active[data-astro-cid-ltpqzwiw]{background:linear-gradient(135deg,rgba(201,162,39,0.15) 0%,rgba(232,197,71,0.1) 100%);color:var(--yuval-text);font-weight:700}.option-content[data-astro-cid-ltpqzwiw]{display:flex;align-items:center;gap:11px;flex:1;min-width:0}.option-flag[data-astro-cid-ltpqzwiw]{font-size:20px;flex-shrink:0;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.1))}.option-label-group[data-astro-cid-ltpqzwiw]{display:flex;flex-direction:column;gap:2px}.option-label[data-astro-cid-ltpqzwiw]{font-weight:700;font-size:13px;letter-spacing:0.02em}.option-label-en[data-astro-cid-ltpqzwiw]{font-size:11px;color:var(--yuval-text-tertiary);font-weight:500}.language-option-active[data-astro-cid-ltpqzwiw] .option-label-en[data-astro-cid-ltpqzwiw]{color:var(--yuval-text-secondary)}.option-checkmark[data-astro-cid-ltpqzwiw]{width:20px;height:20px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:linear-gradient(135deg,#e8c547,#c9a227);color:#1a1a1a;flex-shrink:0;animation:checkmark-pop 0.4s cubic-bezier(0.34,1.56,0.64,1)}.option-checkmark[data-astro-cid-ltpqzwiw] svg[data-astro-cid-ltpqzwiw]{width:12px;height:12px}@keyframes checkmark-pop{0%{transform:scale(0) rotate(-45deg);opacity:0}70%{transform:scale(1.15) rotate(0)}100%{transform:scale(1) rotate(0);opacity:1}}.dark .language-selector-trigger[data-astro-cid-ltpqzwiw]{background:linear-gradient(135deg,rgba(139,115,85,0.08) 0%,rgba(212,196,168,0.04) 100%);border-color:rgba(139,115,85,0.3);color:var(--yuval-text)}.dark .language-selector-trigger[data-astro-cid-ltpqzwiw]::before{background:linear-gradient(135deg,rgba(212,196,168,0.12) 0%,rgba(139,115,85,0.08) 100%)}.dark .language-selector-trigger[data-astro-cid-ltpqzwiw]:hover{border-color:rgba(212,196,168,0.6);box-shadow:0 4px 12px rgba(139,115,85,0.2),0 0 0 1px rgba(212,196,168,0.2)}.dark .trigger-icon[data-astro-cid-ltpqzwiw]{color:rgba(212,196,168,0.8)}.dark .language-selector-panel[data-astro-cid-ltpqzwiw]{border-color:rgba(139,115,85,0.3);box-shadow:0 12px 32px rgba(0,0,0,0.3),0 4px 12px rgba(0,0,0,0.2),0 0 0 1px rgba(212,196,168,0.15)}.dark .language-option[data-astro-cid-ltpqzwiw]::before{background:linear-gradient(135deg,rgba(212,196,168,0.1) 0%,rgba(139,115,85,0.05) 100%)}.dark .language-option[data-astro-cid-ltpqzwiw]:hover{background:linear-gradient(135deg,rgba(212,196,168,0.08) 0%,rgba(139,115,85,0.04) 100%)}.dark .language-option-active[data-astro-cid-ltpqzwiw]{background:linear-gradient(135deg,rgba(212,196,168,0.15) 0%,rgba(139,115,85,0.1) 100%)}@media (max-width: 640px){.language-selector-trigger[data-astro-cid-ltpqzwiw]{padding:8px 12px;font-size:13px}.trigger-flag[data-astro-cid-ltpqzwiw]{font-size:16px}.trigger-label[data-astro-cid-ltpqzwiw]{min-width:60px}.trigger-icon[data-astro-cid-ltpqzwiw]{width:16px;height:16px}.language-selector-panel[data-astro-cid-ltpqzwiw]{top:calc(100% + 6px);min-width:200px}.language-option[data-astro-cid-ltpqzwiw]{padding:10px 12px}.option-flag[data-astro-cid-ltpqzwiw]{font-size:18px}.option-label[data-astro-cid-ltpqzwiw]{font-size:12px}.option-label-en[data-astro-cid-ltpqzwiw]{font-size:10px}}</style>
+<style data-vite-dev-id="D:/2025 Stu/AI Engineer/AllBooks2026/Claude Code - Book/bookforge/src/components/ThemeToggle.astro?astro&#38;type=style&#38;index=0&#38;lang.css">.sky-window[data-astro-cid-x3pjskd3]{position:relative;width:64px;height:28px;border-radius:14px;overflow:visible;cursor:pointer;border:none;padding:0;background:transparent;transition:transform 0.3s ease}.sky-window[data-astro-cid-x3pjskd3]:hover{transform:scale(1.05)}.sky-window[data-astro-cid-x3pjskd3]:active{transform:scale(0.98)}.sky-window[data-astro-cid-x3pjskd3]:focus{outline:none}.sky-window[data-astro-cid-x3pjskd3]:focus .window-frame[data-astro-cid-x3pjskd3]{box-shadow:0 0 0 2px var(--yuval-highlight),0 2px 8px rgba(139,105,20,0.3),inset 0 1px 2px rgba(255,255,255,0.5),inset 0 -1px 2px rgba(0,0,0,0.2)}.sky-scene[data-astro-cid-x3pjskd3]{position:absolute;inset:0;overflow:hidden;border-radius:12px;z-index:2}.sky-layer[data-astro-cid-x3pjskd3]{position:absolute;inset:0;transition:opacity 0.6s ease}.sky-day[data-astro-cid-x3pjskd3]{background:linear-gradient(180deg,#4facfe 0%,#87ceeb 40%,#b4e4ff 100%);opacity:0}.sky-night[data-astro-cid-x3pjskd3]{background:#050510;opacity:1;overflow:hidden}.galaxy-layer[data-astro-cid-x3pjskd3]{position:absolute;inset:-50%;width:200%;height:200%}.galaxy-base[data-astro-cid-x3pjskd3]{background:radial-gradient(ellipse at 30% 40%,#1a1035 0%,#0d0d1a 40%,#050510 70%);animation:galaxy-drift 60s linear infinite}.galaxy-nebula[data-astro-cid-x3pjskd3]{background:radial-gradient(ellipse at 20% 30%,rgba(99,66,153,0.4) 0%,transparent 50%),radial-gradient(ellipse at 70% 60%,rgba(45,85,150,0.35) 0%,transparent 45%),radial-gradient(ellipse at 50% 80%,rgba(150,70,120,0.3) 0%,transparent 40%),radial-gradient(ellipse at 80% 20%,rgba(70,100,170,0.25) 0%,transparent 35%);animation:nebula-flow 45s ease-in-out infinite alternate;mix-blend-mode:screen}.galaxy-dust[data-astro-cid-x3pjskd3]{background:radial-gradient(ellipse at 40% 50%,rgba(255,200,150,0.08) 0%,transparent 30%),radial-gradient(ellipse at 60% 30%,rgba(200,180,255,0.06) 0%,transparent 25%);animation:dust-shimmer 30s ease-in-out infinite alternate-reverse;mix-blend-mode:overlay}@keyframes galaxy-drift{0%{transform:translate(0,0) rotate(0deg)}100%{transform:translate(-25%,-25%) rotate(10deg)}}@keyframes nebula-flow{0%{transform:translate(0,0) scale(1);opacity:0.8}50%{transform:translate(-10%,5%) scale(1.1);opacity:1}100%{transform:translate(5%,-10%) scale(1.05);opacity:0.9}}@keyframes dust-shimmer{0%{transform:translate(0,0);opacity:0.5}100%{transform:translate(10%,-5%);opacity:0.8}}.dark .sky-day[data-astro-cid-x3pjskd3]{opacity:1}.dark .sky-night[data-astro-cid-x3pjskd3]{opacity:0}.dark .galaxy-base[data-astro-cid-x3pjskd3],.dark .galaxy-nebula[data-astro-cid-x3pjskd3],.dark .galaxy-dust[data-astro-cid-x3pjskd3]{animation-play-state:paused}.stars[data-astro-cid-x3pjskd3]{position:absolute;inset:0;opacity:1;transition:opacity 0.6s ease 0.2s}.dark .stars[data-astro-cid-x3pjskd3]{opacity:0}.star[data-astro-cid-x3pjskd3]{position:absolute;width:2px;height:2px;background:white;border-radius:50%;animation:twinkle 2s ease-in-out infinite;box-shadow:0 0 3px rgba(255,255,255,0.8),0 0 6px rgba(200,180,255,0.4)}.star-1[data-astro-cid-x3pjskd3]{top:5px;left:8px;animation-delay:0s;box-shadow:0 0 4px rgba(255,200,150,0.9)}.star-2[data-astro-cid-x3pjskd3]{top:8px;left:44px;animation-delay:0.3s;width:1.5px;height:1.5px}.star-3[data-astro-cid-x3pjskd3]{top:15px;left:6px;animation-delay:0.6s;width:1px;height:1px}.star-4[data-astro-cid-x3pjskd3]{top:4px;left:24px;animation-delay:0.9s;width:1.5px;height:1.5px;box-shadow:0 0 4px rgba(180,200,255,0.9)}.star-5[data-astro-cid-x3pjskd3]{top:18px;left:50px;animation-delay:1.2s;width:1px;height:1px}.star-6[data-astro-cid-x3pjskd3]{top:22px;left:14px;animation-delay:0.4s;width:1px;height:1px}.star-7[data-astro-cid-x3pjskd3]{top:10px;left:54px;animation-delay:0.8s;width:1.5px;height:1.5px}.star-8[data-astro-cid-x3pjskd3]{top:3px;left:36px;animation-delay:1.5s;width:1px;height:1px}.star-9[data-astro-cid-x3pjskd3]{top:20px;left:30px;animation-delay:0.2s;width:1.5px;height:1.5px;box-shadow:0 0 4px rgba(255,180,200,0.8)}.star-10[data-astro-cid-x3pjskd3]{top:12px;left:18px;animation-delay:1.1s;width:1px;height:1px}.star-11[data-astro-cid-x3pjskd3]{top:7px;left:56px;animation-delay:0.7s;width:1px;height:1px}.star-12[data-astro-cid-x3pjskd3]{top:24px;left:42px;animation-delay:1.4s;width:1px;height:1px}@keyframes twinkle{0%,100%{opacity:0.4;transform:scale(1);filter:brightness(0.8)}25%{opacity:0.8}50%{opacity:1;transform:scale(1.3);filter:brightness(1.3)}75%{opacity:0.7}}.celestial[data-astro-cid-x3pjskd3]{position:absolute;transition:transform 0.6s cubic-bezier(0.34,1.56,0.64,1)}.sun[data-astro-cid-x3pjskd3]{width:18px;height:18px;top:5px;left:6px;transform:translateY(30px) scale(0.5)}.dark .sun[data-astro-cid-x3pjskd3]{transform:translateY(0) scale(1)}.sun-core[data-astro-cid-x3pjskd3]{position:absolute;width:14px;height:14px;top:2px;left:2px;background:linear-gradient(135deg,#fff9c4 0%,#ffeb3b 50%,#ffc107 100%);border-radius:50%;box-shadow:0 0 8px #ffeb3b}.sun-rays[data-astro-cid-x3pjskd3]{position:absolute;width:18px;height:18px;background:conic-gradient(from 0deg,transparent 0deg,rgba(255,235,59,0.4) 10deg,transparent 20deg,transparent 45deg,rgba(255,235,59,0.4) 55deg,transparent 65deg,transparent 90deg,rgba(255,235,59,0.4) 100deg,transparent 110deg,transparent 135deg,rgba(255,235,59,0.4) 145deg,transparent 155deg,transparent 180deg,rgba(255,235,59,0.4) 190deg,transparent 200deg,transparent 225deg,rgba(255,235,59,0.4) 235deg,transparent 245deg,transparent 270deg,rgba(255,235,59,0.4) 280deg,transparent 290deg,transparent 315deg,rgba(255,235,59,0.4) 325deg,transparent 335deg);border-radius:50%;animation:rotate-rays 20s linear infinite}@keyframes rotate-rays{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}.sun-glow[data-astro-cid-x3pjskd3]{position:absolute;width:22px;height:22px;top:-2px;left:-2px;background:radial-gradient(circle,rgba(255,235,59,0.3) 0%,transparent 70%);border-radius:50%;animation:pulse-glow 3s ease-in-out infinite}@keyframes pulse-glow{0%,100%{transform:scale(1);opacity:0.5}50%{transform:scale(1.1);opacity:0.8}}.moon[data-astro-cid-x3pjskd3]{width:16px;height:16px;top:6px;right:6px;left:auto;transform:translateY(0) scale(1)}.dark .moon[data-astro-cid-x3pjskd3]{transform:translateY(30px) scale(0.5)}.moon-surface[data-astro-cid-x3pjskd3]{position:absolute;width:14px;height:14px;top:1px;left:1px;background:linear-gradient(135deg,#eceff1 0%,#cfd8dc 50%,#b0bec5 100%);border-radius:50%;box-shadow:inset -2px -2px 4px rgba(0,0,0,0.1),0 0 12px rgba(255,255,255,0.3)}.moon-crater[data-astro-cid-x3pjskd3]{position:absolute;background:rgba(176,190,197,0.6);border-radius:50%}.moon-crater-1[data-astro-cid-x3pjskd3]{width:3px;height:3px;top:4px;left:4px}.moon-crater-2[data-astro-cid-x3pjskd3]{width:2px;height:2px;top:8px;left:8px}.moon-crater-3[data-astro-cid-x3pjskd3]{width:2px;height:2px;top:5px;left:10px}.moon-glow[data-astro-cid-x3pjskd3]{position:absolute;width:20px;height:20px;top:-2px;left:-2px;background:radial-gradient(circle,rgba(255,255,255,0.2) 0%,transparent 60%);border-radius:50%}.clouds[data-astro-cid-x3pjskd3]{position:absolute;inset:0;opacity:0;transition:opacity 0.6s ease;overflow:hidden}.dark .clouds[data-astro-cid-x3pjskd3]{opacity:1}.cloud-track[data-astro-cid-x3pjskd3]{position:absolute;width:200%;height:100%;animation:drift-clouds 25s linear infinite}@keyframes drift-clouds{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}.cloud[data-astro-cid-x3pjskd3]{position:absolute;background:rgba(255,255,255,0.85);border-radius:10px}.cloud[data-astro-cid-x3pjskd3]::before,.cloud[data-astro-cid-x3pjskd3]::after{content:"";position:absolute;background:inherit;border-radius:50%}.cloud-a[data-astro-cid-x3pjskd3]{width:14px;height:5px;bottom:8px;left:5px}.cloud-a[data-astro-cid-x3pjskd3]::before{width:7px;height:7px;top:-4px;left:2px}.cloud-a[data-astro-cid-x3pjskd3]::after{width:6px;height:6px;top:-3px;left:7px}.cloud-b[data-astro-cid-x3pjskd3]{width:8px;height:3px;bottom:14px;left:28px;opacity:0.7}.cloud-b[data-astro-cid-x3pjskd3]::before{width:4px;height:4px;top:-2px;left:1px}.cloud-b[data-astro-cid-x3pjskd3]::after{width:3px;height:3px;top:-1px;left:4px}.cloud-c[data-astro-cid-x3pjskd3]{width:11px;height:4px;bottom:5px;left:45px}.cloud-c[data-astro-cid-x3pjskd3]::before{width:8px;height:8px;top:-5px;left:1px}.cloud-c[data-astro-cid-x3pjskd3]::after{width:5px;height:5px;top:-2px;left:5px}.cloud-d[data-astro-cid-x3pjskd3]{width:14px;height:5px;bottom:8px;left:57px}.cloud-d[data-astro-cid-x3pjskd3]::before{width:7px;height:7px;top:-4px;left:2px}.cloud-d[data-astro-cid-x3pjskd3]::after{width:6px;height:6px;top:-3px;left:7px}.cloud-e[data-astro-cid-x3pjskd3]{width:8px;height:3px;bottom:14px;left:80px;opacity:0.7}.cloud-e[data-astro-cid-x3pjskd3]::before{width:4px;height:4px;top:-2px;left:1px}.cloud-e[data-astro-cid-x3pjskd3]::after{width:3px;height:3px;top:-1px;left:4px}.window-frame[data-astro-cid-x3pjskd3]{position:absolute;inset:-2px;border-radius:16px;pointer-events:none;background:linear-gradient(135deg,#7c8ba1 0%,#c4d0e4 15%,#9ba8c2 30%,#4a5568 45%,#6b7db3 55%,#a78bba 70%,#c4b5d8 85%,#8b7ca8 100%);z-index:0;box-shadow:0 2px 12px rgba(107,125,179,0.4),0 0 20px rgba(167,139,186,0.2),inset 0 1px 2px rgba(255,255,255,0.4),inset 0 -1px 2px rgba(0,0,0,0.3);transition:all 0.6s ease}.window-frame[data-astro-cid-x3pjskd3]::before{content:"";position:absolute;inset:2px;border-radius:12px;border:1px solid rgba(196,181,216,0.3);background:transparent}.dark .window-frame[data-astro-cid-x3pjskd3]{background:linear-gradient(135deg,#d4a574 0%,#f4e4bc 15%,#c9a55c 30%,#8b6914 50%,#c9a55c 70%,#f4e4bc 85%,#d4a574 100%);box-shadow:0 2px 8px rgba(139,105,20,0.3),inset 0 1px 2px rgba(255,255,255,0.5),inset 0 -1px 2px rgba(0,0,0,0.2)}.dark .window-frame[data-astro-cid-x3pjskd3]::before{border-color:rgba(255,255,255,0.3)}.dark .sky-window[data-astro-cid-x3pjskd3]:focus .window-frame[data-astro-cid-x3pjskd3]{box-shadow:0 0 0 2px var(--yuval-highlight),0 2px 8px rgba(139,105,20,0.3),inset 0 1px 2px rgba(255,255,255,0.5),inset 0 -1px 2px rgba(0,0,0,0.2)}</style>
+<style data-vite-dev-id="D:/2025 Stu/AI Engineer/AllBooks2026/Claude Code - Book/bookforge/src/components/Header.astro?astro&#38;type=style&#38;index=0&#38;lang.css">.yuval-header[data-astro-cid-3ef6ksr2]{background:linear-gradient(to bottom,#faf8f5,#f5f3f0);box-shadow:0 2px 6px rgba(0,0,0,0.06),0 4px 12px rgba(0,0,0,0.04)}.yuval-header[data-astro-cid-3ef6ksr2]::before{content:"";position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent 0%,rgba(201,169,110,0.5) 20%,rgba(201,169,110,0.5) 80%,transparent 100%);z-index:2}.yuval-header[data-astro-cid-3ef6ksr2]::after{content:"";position:absolute;bottom:-8px;left:10%;right:10%;height:8px;background:linear-gradient(to bottom,rgba(0,0,0,0.06) 0%,rgba(0,0,0,0.02) 50%,transparent 100%);border-radius:50%;pointer-events:none;z-index:1}.dark .yuval-header[data-astro-cid-3ef6ksr2]{background:linear-gradient(to bottom,#1a1a1f,#141418);box-shadow:0 2px 6px rgba(0,0,0,0.15),0 4px 12px rgba(0,0,0,0.1)}.dark .yuval-header[data-astro-cid-3ef6ksr2]::before{background:linear-gradient(90deg,transparent 0%,rgba(139,115,85,0.5) 20%,rgba(139,115,85,0.5) 80%,transparent 100%)}.dark .yuval-header[data-astro-cid-3ef6ksr2]::after{background:linear-gradient(to bottom,rgba(0,0,0,0.12) 0%,rgba(0,0,0,0.04) 50%,transparent 100%)}.header-inner[data-astro-cid-3ef6ksr2]{position:relative;z-index:1}.yuval-logo[data-astro-cid-3ef6ksr2]{display:inline-flex;align-items:baseline;text-decoration:none;padding:8px 14px;border-radius:10px;transition:all 0.3s ease}[dir="rtl"] .yuval-logo[data-astro-cid-3ef6ksr2]{flex-direction:row-reverse}.yuval-logo[data-astro-cid-3ef6ksr2]:hover{background:rgba(139,115,85,0.1)}.dark .yuval-logo[data-astro-cid-3ef6ksr2]:hover{background:rgba(212,196,168,0.1)}.logo-letter[data-astro-cid-3ef6ksr2]{font-family:"Playfair Display","Times New Roman",Georgia,serif;font-size:2rem;font-weight:700;font-style:italic;color:#2c2c34;margin-right:-1px;transition:color 0.3s ease}[dir="rtl"] .logo-letter[data-astro-cid-3ef6ksr2]{margin-right:0;margin-left:-1px}.logo-rest[data-astro-cid-3ef6ksr2]{font-family:"Playfair Display","Times New Roman",Georgia,serif;font-size:1.65rem;font-weight:400;letter-spacing:0.12em;color:#4a4a54;transition:all 0.3s ease}.dark .logo-letter[data-astro-cid-3ef6ksr2]{color:#f0f0f4}.dark .logo-rest[data-astro-cid-3ef6ksr2]{color:#b8b8c0}.yuval-logo[data-astro-cid-3ef6ksr2]:hover .logo-letter[data-astro-cid-3ef6ksr2]{color:#8b7355}.yuval-logo[data-astro-cid-3ef6ksr2]:hover .logo-rest[data-astro-cid-3ef6ksr2]{color:#6b5a48;letter-spacing:0.14em}.dark .yuval-logo[data-astro-cid-3ef6ksr2]:hover .logo-letter[data-astro-cid-3ef6ksr2]{color:#d4c4a8}.dark .yuval-logo[data-astro-cid-3ef6ksr2]:hover .logo-rest[data-astro-cid-3ef6ksr2]{color:#b8a890}.yuval-logo[data-astro-cid-3ef6ksr2]:focus-visible{outline:2px solid #c9a96e;outline-offset:4px}.dark .yuval-logo[data-astro-cid-3ef6ksr2]:focus-visible{outline-color:#8b7355}@media (min-width: 640px){.logo-letter[data-astro-cid-3ef6ksr2]{font-size:2.4rem}.logo-rest[data-astro-cid-3ef6ksr2]{font-size:1.9rem;letter-spacing:0.14em}}.quote-container[data-astro-cid-3ef6ksr2]{flex:1;display:none;justify-content:center;align-items:center;padding:0 24px;max-width:700px;margin:0 auto}@media (min-width: 640px){.quote-container[data-astro-cid-3ef6ksr2]{display:flex}}.quote-text[data-astro-cid-3ef6ksr2]{font-family:"Playfair Display",Georgia,serif;font-size:1.15rem;font-style:italic;font-weight:500;color:#4a3f35;text-align:center;line-height:1.5;opacity:1;transition:opacity 0.5s ease;letter-spacing:0.03em;text-shadow:0 1px 2px rgba(255,255,255,0.5)}.quote-text[data-astro-cid-3ef6ksr2].fade-out{opacity:0}.dark .quote-text[data-astro-cid-3ef6ksr2]{color:#d4c4a8;text-shadow:0 1px 3px rgba(0,0,0,0.4)}@media (min-width: 768px){.quote-text[data-astro-cid-3ef6ksr2]{font-size:1.25rem}}@media (min-width: 1024px){.quote-container[data-astro-cid-3ef6ksr2]{max-width:800px}.quote-text[data-astro-cid-3ef6ksr2]{font-size:1.4rem}}.mobile-quote-bar[data-astro-cid-3ef6ksr2]{position:fixed;bottom:0;left:0;right:0;z-index:40;background:linear-gradient(135deg,rgba(250,248,245,0.98),rgba(245,243,240,0.98));border-top:1px solid rgba(201,169,110,0.3);box-shadow:0 -2px 10px rgba(0,0,0,0.08);overflow:hidden;height:36px;display:flex;align-items:center}@media (min-width: 640px){.mobile-quote-bar[data-astro-cid-3ef6ksr2]{display:none}}.mobile-quote-bar[data-astro-cid-3ef6ksr2]::before,.mobile-quote-bar[data-astro-cid-3ef6ksr2]::after{content:"";position:absolute;top:0;bottom:0;width:40px;z-index:2;pointer-events:none}.mobile-quote-bar[data-astro-cid-3ef6ksr2]::before{left:0;background:linear-gradient(to right,rgba(250,248,245,1) 0%,transparent 100%)}.mobile-quote-bar[data-astro-cid-3ef6ksr2]::after{right:0;background:linear-gradient(to left,rgba(250,248,245,1) 0%,transparent 100%)}.dark .mobile-quote-bar[data-astro-cid-3ef6ksr2]::before{background:linear-gradient(to right,rgba(26,26,31,1) 0%,transparent 100%)}.dark .mobile-quote-bar[data-astro-cid-3ef6ksr2]::after{background:linear-gradient(to left,rgba(26,26,31,1) 0%,transparent 100%)}.dark .mobile-quote-bar[data-astro-cid-3ef6ksr2]{background:linear-gradient(135deg,rgba(26,26,31,0.98),rgba(20,20,24,0.98));border-top-color:rgba(139,115,85,0.3);box-shadow:0 -2px 10px rgba(0,0,0,0.2)}.mobile-quote-track[data-astro-cid-3ef6ksr2]{display:flex;align-items:center;white-space:nowrap;animation:marquee 25s linear infinite;padding-left:100%}[dir="rtl"] .mobile-quote-track[data-astro-cid-3ef6ksr2],.mobile-quote-bar[data-astro-cid-3ef6ksr2].rtl .mobile-quote-track[data-astro-cid-3ef6ksr2]{animation:marquee-rtl 25s linear infinite;padding-left:0;padding-right:100%}@keyframes marquee{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}@keyframes marquee-rtl{0%{transform:translateX(0)}100%{transform:translateX(50%)}}.mobile-quote-text[data-astro-cid-3ef6ksr2]{font-family:"Playfair Display",Georgia,serif;font-size:0.85rem;font-style:italic;font-weight:500;color:#5a4f43;padding:0 8px}.dark .mobile-quote-text[data-astro-cid-3ef6ksr2]{color:#c4b49a}.mobile-quote-separator[data-astro-cid-3ef6ksr2]{color:#c9a96e;font-size:0.7rem;padding:0 16px;opacity:0.7}.dark .mobile-quote-separator[data-astro-cid-3ef6ksr2]{color:#8b7355}.mobile-quote-bar[data-astro-cid-3ef6ksr2]:hover .mobile-quote-track[data-astro-cid-3ef6ksr2],.mobile-quote-bar[data-astro-cid-3ef6ksr2]:active .mobile-quote-track[data-astro-cid-3ef6ksr2]{animation-play-state:paused}</style>
+<style data-vite-dev-id="D:/2025 Stu/AI Engineer/AllBooks2026/Claude Code - Book/bookforge/src/components/ReadingProgress.astro?astro&#38;type=style&#38;index=0&#38;lang.css">.reading-progress-bar[data-astro-cid-mu6cnre2]{position:fixed;top:0;left:0;right:0;z-index:60;height:3px;background:transparent;pointer-events:none}.progress-fill[data-astro-cid-mu6cnre2]{height:100%;width:0%;border-radius:0 2px 2px 0;background:linear-gradient(90deg,#f59e0b,#ef4444,#ec4899,#8b5cf6,#3b82f6,#06b6d4);background-size:300% 100%;animation:shimmer 8s linear infinite;transition:width 0.12s linear;box-shadow:0 0 8px rgba(139,92,246,0.4)}@keyframes shimmer{0%{background-position:0% 50%}100%{background-position:300% 50%}}.dark .progress-fill[data-astro-cid-mu6cnre2]{background:linear-gradient(90deg,#fbbf24,#f87171,#f472b6,#a78bfa,#60a5fa,#22d3ee);background-size:300% 100%;animation:shimmer 8s linear infinite;box-shadow:0 0 12px rgba(167,139,250,0.6)}@media (prefers-reduced-motion: reduce){.progress-fill[data-astro-cid-mu6cnre2]{animation:none}}</style>
+<style data-vite-dev-id="D:/2025 Stu/AI Engineer/AllBooks2026/Claude Code - Book/bookforge/node_modules/astro/components/viewtransitions.css">@keyframes astroFadeInOut {
+	from {
+		opacity: 1;
+	}
+	to {
+		opacity: 0;
+	}
+}
+
+@keyframes astroFadeIn {
+	from {
+		opacity: 0;
+		mix-blend-mode: plus-lighter;
+	}
+	to {
+		opacity: 1;
+		mix-blend-mode: plus-lighter;
+	}
+}
+
+@keyframes astroFadeOut {
+	from {
+		opacity: 1;
+		mix-blend-mode: plus-lighter;
+	}
+	to {
+		opacity: 0;
+		mix-blend-mode: plus-lighter;
+	}
+}
+
+@keyframes astroSlideFromRight {
+	from {
+		transform: translateX(100%);
+	}
+}
+
+@keyframes astroSlideFromLeft {
+	from {
+		transform: translateX(-100%);
+	}
+}
+
+@keyframes astroSlideToRight {
+	to {
+		transform: translateX(100%);
+	}
+}
+
+@keyframes astroSlideToLeft {
+	to {
+		transform: translateX(-100%);
+	}
+}
+
+@media (prefers-reduced-motion) {
+	::view-transition-group(*),
+	::view-transition-old(*),
+	::view-transition-new(*) {
+		animation: none !important;
+	}
+
+	[data-astro-transition-scope] {
+		animation: none !important;
+	}
+}
+</style>
+<style data-vite-dev-id="D:/2025 Stu/AI Engineer/AllBooks2026/Claude Code - Book/bookforge/src/components/Breadcrumbs.astro?astro&#38;type=style&#38;index=0&#38;lang.css">.breadcrumbs-nav[data-astro-cid-ilhxcym7]{max-width:var(--reading-content-width, 720px);margin-left:auto;margin-right:auto}</style><script type="module" src="/@vite/client"></script>
+<script type="module" src="/node_modules/@astrojs/tailwind/base.css"></script>
+<script type="module" src="/node_modules/astro/components/ClientRouter.astro?astro&type=style&index=0&lang.css"></script>
+<script type="module" src="/src/styles/theme.css"></script>
+<script type="module" src="/src/components/LanguageSelector.astro?astro&type=style&index=0&lang.css"></script>
+<script type="module" src="/src/components/ThemeToggle.astro?astro&type=style&index=0&lang.css"></script>
+<script type="module" src="/src/components/Header.astro?astro&type=style&index=0&lang.css"></script>
+<script type="module" src="/src/components/ReadingProgress.astro?astro&type=style&index=0&lang.css"></script>
+<script type="module" src="/node_modules/astro/components/viewtransitions.css"></script>
+<script type="module" src="/src/components/Breadcrumbs.astro?astro&type=style&index=0&lang.css"></script><style>[data-astro-transition-scope="astro-ezk52eus-1"] { view-transition-name: astro-ezk52eus-1; }@layer astro { ::view-transition-old(astro-ezk52eus-1) { animation: none; opacity: 0; mix-blend-mode: normal; }::view-transition-new(astro-ezk52eus-1) { animation: none; mix-blend-mode: normal; }::view-transition-group(astro-ezk52eus-1) { animation: none } }[data-astro-transition-fallback="old"] [data-astro-transition-scope="astro-ezk52eus-1"],
+			[data-astro-transition-fallback="old"][data-astro-transition-scope="astro-ezk52eus-1"] { animation: none; mix-blend-mode: normal; }[data-astro-transition-fallback="new"] [data-astro-transition-scope="astro-ezk52eus-1"],
+			[data-astro-transition-fallback="new"][data-astro-transition-scope="astro-ezk52eus-1"] { animation: none; mix-blend-mode: normal; }</style></head> <body class="bg-yuval-bg text-yuval-text font-body antialiased transition-colors duration-300">  <header id="site-header" class="yuval-header sticky top-0 z-50 w-full" data-astro-cid-3ef6ksr2> <a href="#main-content" id="skip-to-content-link" class="sr-only focus:not-sr-only focus:absolute focus:z-[100] focus:top-2 focus:left-2 focus:px-4 focus:py-2 focus:bg-yuval-accent focus:text-yuval-accent-text focus:rounded-md focus:text-sm focus:font-medium" data-astro-cid-3ef6ksr2> <span data-i18n="header.skipToContent" data-astro-cid-3ef6ksr2>Skip to content</span> </a> <div class="header-inner flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8 flex-row-reverse" data-astro-cid-3ef6ksr2> <a href="/" id="site-logo-link" class="yuval-logo" aria-label="Yuval" data-astro-cid-3ef6ksr2> <span class="logo-letter" data-astro-cid-3ef6ksr2>Y</span><span class="logo-rest" data-astro-cid-3ef6ksr2>uval</span> </a> <div class="quote-container hidden sm:block" data-astro-cid-3ef6ksr2> <p class="quote-text" id="header-quote" data-astro-cid-3ef6ksr2></p> </div> <div class="flex items-center gap-3 flex-row-reverse" data-astro-cid-3ef6ksr2> <button id="theme-toggle" type="button" role="switch" aria-checked="false" aria-label="Toggle dark mode" dir="ltr" class="sky-window" data-astro-cid-x3pjskd3> <!-- Sky background layers --> <div class="sky-scene" data-astro-cid-x3pjskd3> <!-- Day sky --> <div class="sky-layer sky-day" data-astro-cid-x3pjskd3></div> <!-- Night sky --> <div class="sky-layer sky-night" data-astro-cid-x3pjskd3> <div class="galaxy-layer galaxy-base" data-astro-cid-x3pjskd3></div> <div class="galaxy-layer galaxy-nebula" data-astro-cid-x3pjskd3></div> <div class="galaxy-layer galaxy-dust" data-astro-cid-x3pjskd3></div> </div> <!-- Stars (night only) - galaxy field --> <div class="stars" data-astro-cid-x3pjskd3> <span class="star star-1" data-astro-cid-x3pjskd3></span> <span class="star star-2" data-astro-cid-x3pjskd3></span> <span class="star star-3" data-astro-cid-x3pjskd3></span> <span class="star star-4" data-astro-cid-x3pjskd3></span> <span class="star star-5" data-astro-cid-x3pjskd3></span> <span class="star star-6" data-astro-cid-x3pjskd3></span> <span class="star star-7" data-astro-cid-x3pjskd3></span> <span class="star star-8" data-astro-cid-x3pjskd3></span> <span class="star star-9" data-astro-cid-x3pjskd3></span> <span class="star star-10" data-astro-cid-x3pjskd3></span> <span class="star star-11" data-astro-cid-x3pjskd3></span> <span class="star star-12" data-astro-cid-x3pjskd3></span> </div> <!-- Sun --> <div class="celestial sun" data-astro-cid-x3pjskd3> <div class="sun-core" data-astro-cid-x3pjskd3></div> <div class="sun-rays" data-astro-cid-x3pjskd3></div> <div class="sun-glow" data-astro-cid-x3pjskd3></div> </div> <!-- Moon --> <div class="celestial moon" data-astro-cid-x3pjskd3> <div class="moon-surface" data-astro-cid-x3pjskd3></div> <div class="moon-crater moon-crater-1" data-astro-cid-x3pjskd3></div> <div class="moon-crater moon-crater-2" data-astro-cid-x3pjskd3></div> <div class="moon-crater moon-crater-3" data-astro-cid-x3pjskd3></div> <div class="moon-glow" data-astro-cid-x3pjskd3></div> </div> <!-- Clouds - continuous drift --> <div class="clouds" data-astro-cid-x3pjskd3> <div class="cloud-track" data-astro-cid-x3pjskd3> <div class="cloud cloud-a" data-astro-cid-x3pjskd3></div> <div class="cloud cloud-b" data-astro-cid-x3pjskd3></div> <div class="cloud cloud-c" data-astro-cid-x3pjskd3></div> <div class="cloud cloud-d" data-astro-cid-x3pjskd3></div> <div class="cloud cloud-e" data-astro-cid-x3pjskd3></div> </div> </div> </div> <!-- Glass frame overlay --> <div class="window-frame" data-astro-cid-x3pjskd3></div> </button>  <script type="module" src="/src/components/ThemeToggle.astro?astro&type=script&index=0&lang.ts"></script> <div class="language-selector-container" data-current="he" data-rtl="true" data-astro-cid-ltpqzwiw> <!-- Trigger Button --> <button class="language-selector-trigger" aria-haspopup="listbox" aria-expanded="false" aria-label="Change language. Current: Hebrew" data-astro-cid-ltpqzwiw> <span class="trigger-flag" data-astro-cid-ltpqzwiw>🇮🇱</span> <span class="trigger-label" data-astro-cid-ltpqzwiw>עברית</span> <span class="trigger-icon" aria-hidden="true" data-astro-cid-ltpqzwiw> <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" data-astro-cid-ltpqzwiw> <path d="M6 9l6 6 6-6" data-astro-cid-ltpqzwiw></path> </svg> </span> </button> <!-- Dropdown Panel --> <div class="language-selector-panel" role="listbox" aria-label="Available languages" data-astro-cid-ltpqzwiw> <div class="panel-inner" data-astro-cid-ltpqzwiw> <button type="button" class="language-option language-option-active" data-language="he" data-dir="rtl" role="option" aria-selected="true" aria-label="Hebrew" data-astro-cid-ltpqzwiw> <span class="option-content" data-astro-cid-ltpqzwiw> <span class="option-flag" data-astro-cid-ltpqzwiw>🇮🇱</span> <span class="option-label-group" data-astro-cid-ltpqzwiw> <span class="option-label" data-astro-cid-ltpqzwiw>עברית</span> <span class="option-label-en" data-astro-cid-ltpqzwiw>Hebrew</span> </span> </span> <span class="option-checkmark" aria-hidden="true" data-astro-cid-ltpqzwiw> <svg viewBox="0 0 24 24" fill="currentColor" data-astro-cid-ltpqzwiw> <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" data-astro-cid-ltpqzwiw></path> </svg> </span> </button><button type="button" class="language-option" data-language="en" data-dir="ltr" role="option" aria-selected="false" aria-label="English" data-astro-cid-ltpqzwiw> <span class="option-content" data-astro-cid-ltpqzwiw> <span class="option-flag" data-astro-cid-ltpqzwiw>🇬🇧</span> <span class="option-label-group" data-astro-cid-ltpqzwiw> <span class="option-label" data-astro-cid-ltpqzwiw>English</span> <span class="option-label-en" data-astro-cid-ltpqzwiw>English</span> </span> </span>  </button><button type="button" class="language-option" data-language="es" data-dir="ltr" role="option" aria-selected="false" aria-label="Spanish" data-astro-cid-ltpqzwiw> <span class="option-content" data-astro-cid-ltpqzwiw> <span class="option-flag" data-astro-cid-ltpqzwiw>🇪🇸</span> <span class="option-label-group" data-astro-cid-ltpqzwiw> <span class="option-label" data-astro-cid-ltpqzwiw>Español</span> <span class="option-label-en" data-astro-cid-ltpqzwiw>Spanish</span> </span> </span>  </button> </div> </div> </div>  <script type="module" src="/src/components/LanguageSelector.astro?astro&type=script&index=0&lang.ts"></script> </div> </div> </header> <div class="mobile-quote-bar sm:hidden" id="mobile-quote-bar" data-astro-cid-3ef6ksr2> <div class="mobile-quote-track" data-astro-cid-3ef6ksr2> <span class="mobile-quote-text" id="mobile-quote" data-astro-cid-3ef6ksr2></span> <span class="mobile-quote-separator" data-astro-cid-3ef6ksr2>✦</span> <span class="mobile-quote-text" id="mobile-quote-duplicate" data-astro-cid-3ef6ksr2></span> <span class="mobile-quote-separator" data-astro-cid-3ef6ksr2>✦</span> </div> </div>  <script type="module" src="/src/components/Header.astro?astro&type=script&index=0&lang.ts"></script> <!-- Sidebars outside main - not affected by View Transitions -->  <main id="main-content" class="w-full" data-astro-transition-scope="astro-ezk52eus-1">  <div class="min-h-screen bg-yuval-bg py-12 sm:py-16 lg:py-20 px-4 sm:px-6 lg:px-8"> <div class="max-w-4xl mx-auto"> <nav aria-label="Breadcrumb" class="text-[11px] font-body text-yuval-text-tertiary breadcrumbs-nav mb-8" data-astro-cid-ilhxcym7> <ol class="flex flex-wrap items-center gap-1.5" data-astro-cid-ilhxcym7> <li class="flex items-center gap-1.5" data-astro-cid-ilhxcym7>  <a href="/" class="hover:text-yuval-text transition-colors duration-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-yuval-highlight rounded-sm" data-astro-cid-ilhxcym7> ספרים </a> </li><li class="flex items-center gap-1.5" data-astro-cid-ilhxcym7> <svg class="w-3.5 h-3.5 text-yuval-text-muted rtl:rotate-180 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" data-astro-cid-ilhxcym7> <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" data-astro-cid-ilhxcym7></path> </svg> <span class="text-yuval-text font-medium truncate max-w-[200px] sm:max-w-none" aria-current="page" data-astro-cid-ilhxcym7> מבוא להנדסת AI </span> </li> </ol> </nav>  <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12 items-start"> <div class="md:col-span-1"> <img src="/ai-engineering-intro/assets/cover.png" alt="מבוא להנדסת AI" loading="lazy" decoding="async" class="w-full rounded-lg shadow-lg bg-yuval-bg-secondary object-contain"> <div class="mt-3 text-sm text-yuval-text-secondary text-right"> <p> <span>מורה:</span>  ערן סלע <br> <span>סוכם וערך על ידי:</span>  תומר קדם </p> </div> </div> <div class="md:col-span-2 text-right"> <h1 class="font-heading font-bold text-xl sm:text-3xl lg:text-4xl leading-tight mb-3 sm:mb-4 text-yuval-text"> מבוא להנדסת AI </h1> <p class="text-sm sm:text-base text-yuval-text-tertiary leading-relaxed mb-3"> המדריך המלא למקצוע החדש </p> <p class="text-base sm:text-lg text-yuval-text-secondary leading-relaxed mb-4 sm:mb-6"> למד את יסודות הנדסת AI: מודלי שפה גדולים, RAG, סוכנים חכמים, הנדסת הקשר ואתגרי האימוץ בארגונים. המדריך המעשי למהנדס AI המתחיל. </p> <div class="space-y-2 mb-6"> <p class="text-sm text-yuval-text-tertiary"> 41 פרקים </p> <p class="text-sm text-yuval-text-tertiary"> 11485 מילים </p> </div> </div> </div> <div class="border-t border-yuval-border pt-12"> <h2 class="font-heading font-bold text-2xl mb-6 text-yuval-text"> פרקים </h2> <div class="space-y-3"> <a href="/read/ai-engineering-intro/1" class="chapter-link chapter-link-1 block p-4 rounded-lg border border-yuval-border hover:bg-yuval-bg-secondary hover:border-yuval-border-secondary transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yuval-highlight relative overflow-hidden" data-chapter-id="1" data-book-slug="ai-engineering-intro"> <div class="chapter-progress-bar absolute bottom-0 left-0 right-0 h-0.5 bg-yuval-border"> <div class="chapter-progress-fill h-full bg-green-500 w-0 transition-all duration-700" style="border-radius: 0 2px 2px 0"></div> </div> <div class="flex items-center justify-between gap-4 flex-row-reverse"> <div class="text-right flex-1 min-w-0"> <div class="flex items-center gap-2"> <span class="chapter-status-icon text-base hidden" aria-hidden="true"></span> <h3 class="font-heading font-semibold text-base sm:text-lg text-yuval-text line-clamp-2"> Verint כמקרה בוחן: האתגר שמאחורי המספרים </h3> </div> <p class="text-sm text-yuval-text-tertiary mt-1"> 0 סעיפים • 236 מילים </p> </div> <svg class="w-5 h-5 text-yuval-text-tertiary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"> <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path> </svg> </div> </a><a href="/read/ai-engineering-intro/2" class="chapter-link chapter-link-2 block p-4 rounded-lg border border-yuval-border hover:bg-yuval-bg-secondary hover:border-yuval-border-secondary transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yuval-highlight relative overflow-hidden" data-chapter-id="2" data-book-slug="ai-engineering-intro"> <div class="chapter-progress-bar absolute bottom-0 left-0 right-0 h-0.5 bg-yuval-border"> <div class="chapter-progress-fill h-full bg-green-500 w-0 transition-all duration-700" style="border-radius: 0 2px 2px 0"></div> </div> <div class="flex items-center justify-between gap-4 flex-row-reverse"> <div class="text-right flex-1 min-w-0"> <div class="flex items-center gap-2"> <span class="chapter-status-icon text-base hidden" aria-hidden="true"></span> <h3 class="font-heading font-semibold text-base sm:text-lg text-yuval-text line-clamp-2"> ניתוח נתוני מוקד שירות </h3> </div> <p class="text-sm text-yuval-text-tertiary mt-1"> 0 סעיפים • 281 מילים </p> </div> <svg class="w-5 h-5 text-yuval-text-tertiary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"> <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path> </svg> </div> </a><a href="/read/ai-engineering-intro/3" class="chapter-link chapter-link-3 block p-4 rounded-lg border border-yuval-border hover:bg-yuval-bg-secondary hover:border-yuval-border-secondary transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yuval-highlight relative overflow-hidden" data-chapter-id="3" data-book-slug="ai-engineering-intro"> <div class="chapter-progress-bar absolute bottom-0 left-0 right-0 h-0.5 bg-yuval-border"> <div class="chapter-progress-fill h-full bg-green-500 w-0 transition-all duration-700" style="border-radius: 0 2px 2px 0"></div> </div> <div class="flex items-center justify-between gap-4 flex-row-reverse"> <div class="text-right flex-1 min-w-0"> <div class="flex items-center gap-2"> <span class="chapter-status-icon text-base hidden" aria-hidden="true"></span> <h3 class="font-heading font-semibold text-base sm:text-lg text-yuval-text line-clamp-2"> דוגמאות למאפייני ML (או פיצ&#39;רים של ML) </h3> </div> <p class="text-sm text-yuval-text-tertiary mt-1"> 0 סעיפים • 352 מילים </p> </div> <svg class="w-5 h-5 text-yuval-text-tertiary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"> <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path> </svg> </div> </a><a href="/read/ai-engineering-intro/4" class="chapter-link chapter-link-4 block p-4 rounded-lg border border-yuval-border hover:bg-yuval-bg-secondary hover:border-yuval-border-secondary transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yuval-highlight relative overflow-hidden" data-chapter-id="4" data-book-slug="ai-engineering-intro"> <div class="chapter-progress-bar absolute bottom-0 left-0 right-0 h-0.5 bg-yuval-border"> <div class="chapter-progress-fill h-full bg-green-500 w-0 transition-all duration-700" style="border-radius: 0 2px 2px 0"></div> </div> <div class="flex items-center justify-between gap-4 flex-row-reverse"> <div class="text-right flex-1 min-w-0"> <div class="flex items-center gap-2"> <span class="chapter-status-icon text-base hidden" aria-hidden="true"></span> <h3 class="font-heading font-semibold text-base sm:text-lg text-yuval-text line-clamp-2"> תרחישי שימוש נפוצים </h3> </div> <p class="text-sm text-yuval-text-tertiary mt-1"> 0 סעיפים • 272 מילים </p> </div> <svg class="w-5 h-5 text-yuval-text-tertiary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"> <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path> </svg> </div> </a><a href="/read/ai-engineering-intro/5" class="chapter-link chapter-link-5 block p-4 rounded-lg border border-yuval-border hover:bg-yuval-bg-secondary hover:border-yuval-border-secondary transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yuval-highlight relative overflow-hidden" data-chapter-id="5" data-book-slug="ai-engineering-intro"> <div class="chapter-progress-bar absolute bottom-0 left-0 right-0 h-0.5 bg-yuval-border"> <div class="chapter-progress-fill h-full bg-green-500 w-0 transition-all duration-700" style="border-radius: 0 2px 2px 0"></div> </div> <div class="flex items-center justify-between gap-4 flex-row-reverse"> <div class="text-right flex-1 min-w-0"> <div class="flex items-center gap-2"> <span class="chapter-status-icon text-base hidden" aria-hidden="true"></span> <h3 class="font-heading font-semibold text-base sm:text-lg text-yuval-text line-clamp-2"> דוגמה לממשק חדש פיצ&#39;ר חדש של - Verint AI Insights (תובנות בינה מלאכותית) </h3> </div> <p class="text-sm text-yuval-text-tertiary mt-1"> 0 סעיפים • 387 מילים </p> </div> <svg class="w-5 h-5 text-yuval-text-tertiary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"> <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path> </svg> </div> </a><a href="/read/ai-engineering-intro/6" class="chapter-link chapter-link-6 block p-4 rounded-lg border border-yuval-border hover:bg-yuval-bg-secondary hover:border-yuval-border-secondary transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yuval-highlight relative overflow-hidden" data-chapter-id="6" data-book-slug="ai-engineering-intro"> <div class="chapter-progress-bar absolute bottom-0 left-0 right-0 h-0.5 bg-yuval-border"> <div class="chapter-progress-fill h-full bg-green-500 w-0 transition-all duration-700" style="border-radius: 0 2px 2px 0"></div> </div> <div class="flex items-center justify-between gap-4 flex-row-reverse"> <div class="text-right flex-1 min-w-0"> <div class="flex items-center gap-2"> <span class="chapter-status-icon text-base hidden" aria-hidden="true"></span> <h3 class="font-heading font-semibold text-base sm:text-lg text-yuval-text line-clamp-2"> רשימת נושאי הקורס </h3> </div> <p class="text-sm text-yuval-text-tertiary mt-1"> 0 סעיפים • 904 מילים </p> </div> <svg class="w-5 h-5 text-yuval-text-tertiary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"> <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path> </svg> </div> </a><a href="/read/ai-engineering-intro/7" class="chapter-link chapter-link-7 block p-4 rounded-lg border border-yuval-border hover:bg-yuval-bg-secondary hover:border-yuval-border-secondary transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yuval-highlight relative overflow-hidden" data-chapter-id="7" data-book-slug="ai-engineering-intro"> <div class="chapter-progress-bar absolute bottom-0 left-0 right-0 h-0.5 bg-yuval-border"> <div class="chapter-progress-fill h-full bg-green-500 w-0 transition-all duration-700" style="border-radius: 0 2px 2px 0"></div> </div> <div class="flex items-center justify-between gap-4 flex-row-reverse"> <div class="text-right flex-1 min-w-0"> <div class="flex items-center gap-2"> <span class="chapter-status-icon text-base hidden" aria-hidden="true"></span> <h3 class="font-heading font-semibold text-base sm:text-lg text-yuval-text line-clamp-2"> מבנה הקורס, דרישות וכלים </h3> </div> <p class="text-sm text-yuval-text-tertiary mt-1"> 0 סעיפים • 570 מילים </p> </div> <svg class="w-5 h-5 text-yuval-text-tertiary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"> <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path> </svg> </div> </a><a href="/read/ai-engineering-intro/8" class="chapter-link chapter-link-8 block p-4 rounded-lg border border-yuval-border hover:bg-yuval-bg-secondary hover:border-yuval-border-secondary transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yuval-highlight relative overflow-hidden" data-chapter-id="8" data-book-slug="ai-engineering-intro"> <div class="chapter-progress-bar absolute bottom-0 left-0 right-0 h-0.5 bg-yuval-border"> <div class="chapter-progress-fill h-full bg-green-500 w-0 transition-all duration-700" style="border-radius: 0 2px 2px 0"></div> </div> <div class="flex items-center justify-between gap-4 flex-row-reverse"> <div class="text-right flex-1 min-w-0"> <div class="flex items-center gap-2"> <span class="chapter-status-icon text-base hidden" aria-hidden="true"></span> <h3 class="font-heading font-semibold text-base sm:text-lg text-yuval-text line-clamp-2"> האם בינה מלאכותית היא רק הייפ? </h3> </div> <p class="text-sm text-yuval-text-tertiary mt-1"> 0 סעיפים • 144 מילים </p> </div> <svg class="w-5 h-5 text-yuval-text-tertiary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"> <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path> </svg> </div> </a><a href="/read/ai-engineering-intro/9" class="chapter-link chapter-link-9 block p-4 rounded-lg border border-yuval-border hover:bg-yuval-bg-secondary hover:border-yuval-border-secondary transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yuval-highlight relative overflow-hidden" data-chapter-id="9" data-book-slug="ai-engineering-intro"> <div class="chapter-progress-bar absolute bottom-0 left-0 right-0 h-0.5 bg-yuval-border"> <div class="chapter-progress-fill h-full bg-green-500 w-0 transition-all duration-700" style="border-radius: 0 2px 2px 0"></div> </div> <div class="flex items-center justify-between gap-4 flex-row-reverse"> <div class="text-right flex-1 min-w-0"> <div class="flex items-center gap-2"> <span class="chapter-status-icon text-base hidden" aria-hidden="true"></span> <h3 class="font-heading font-semibold text-base sm:text-lg text-yuval-text line-clamp-2"> מה זה AI Engineering? (ההגדרה של המקצוע החדש) </h3> </div> <p class="text-sm text-yuval-text-tertiary mt-1"> 0 סעיפים • 171 מילים </p> </div> <svg class="w-5 h-5 text-yuval-text-tertiary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"> <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path> </svg> </div> </a><a href="/read/ai-engineering-intro/10" class="chapter-link chapter-link-10 block p-4 rounded-lg border border-yuval-border hover:bg-yuval-bg-secondary hover:border-yuval-border-secondary transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yuval-highlight relative overflow-hidden" data-chapter-id="10" data-book-slug="ai-engineering-intro"> <div class="chapter-progress-bar absolute bottom-0 left-0 right-0 h-0.5 bg-yuval-border"> <div class="chapter-progress-fill h-full bg-green-500 w-0 transition-all duration-700" style="border-radius: 0 2px 2px 0"></div> </div> <div class="flex items-center justify-between gap-4 flex-row-reverse"> <div class="text-right flex-1 min-w-0"> <div class="flex items-center gap-2"> <span class="chapter-status-icon text-base hidden" aria-hidden="true"></span> <h3 class="font-heading font-semibold text-base sm:text-lg text-yuval-text line-clamp-2"> ארגז הכלים של מהנדס ה-AI </h3> </div> <p class="text-sm text-yuval-text-tertiary mt-1"> 0 סעיפים • 241 מילים </p> </div> <svg class="w-5 h-5 text-yuval-text-tertiary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"> <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path> </svg> </div> </a><a href="/read/ai-engineering-intro/11" class="chapter-link chapter-link-11 block p-4 rounded-lg border border-yuval-border hover:bg-yuval-bg-secondary hover:border-yuval-border-secondary transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yuval-highlight relative overflow-hidden" data-chapter-id="11" data-book-slug="ai-engineering-intro"> <div class="chapter-progress-bar absolute bottom-0 left-0 right-0 h-0.5 bg-yuval-border"> <div class="chapter-progress-fill h-full bg-green-500 w-0 transition-all duration-700" style="border-radius: 0 2px 2px 0"></div> </div> <div class="flex items-center justify-between gap-4 flex-row-reverse"> <div class="text-right flex-1 min-w-0"> <div class="flex items-center gap-2"> <span class="chapter-status-icon text-base hidden" aria-hidden="true"></span> <h3 class="font-heading font-semibold text-base sm:text-lg text-yuval-text line-clamp-2"> מיומנויות מהנדס AI חלק ב&#39; </h3> </div> <p class="text-sm text-yuval-text-tertiary mt-1"> 0 סעיפים • 251 מילים </p> </div> <svg class="w-5 h-5 text-yuval-text-tertiary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"> <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path> </svg> </div> </a><a href="/read/ai-engineering-intro/12" class="chapter-link chapter-link-12 block p-4 rounded-lg border border-yuval-border hover:bg-yuval-bg-secondary hover:border-yuval-border-secondary transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yuval-highlight relative overflow-hidden" data-chapter-id="12" data-book-slug="ai-engineering-intro"> <div class="chapter-progress-bar absolute bottom-0 left-0 right-0 h-0.5 bg-yuval-border"> <div class="chapter-progress-fill h-full bg-green-500 w-0 transition-all duration-700" style="border-radius: 0 2px 2px 0"></div> </div> <div class="flex items-center justify-between gap-4 flex-row-reverse"> <div class="text-right flex-1 min-w-0"> <div class="flex items-center gap-2"> <span class="chapter-status-icon text-base hidden" aria-hidden="true"></span> <h3 class="font-heading font-semibold text-base sm:text-lg text-yuval-text line-clamp-2"> מהי בינה מלאכותית (AI)? הגדרת היסוד </h3> </div> <p class="text-sm text-yuval-text-tertiary mt-1"> 0 סעיפים • 84 מילים </p> </div> <svg class="w-5 h-5 text-yuval-text-tertiary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"> <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path> </svg> </div> </a><a href="/read/ai-engineering-intro/13" class="chapter-link chapter-link-13 block p-4 rounded-lg border border-yuval-border hover:bg-yuval-bg-secondary hover:border-yuval-border-secondary transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yuval-highlight relative overflow-hidden" data-chapter-id="13" data-book-slug="ai-engineering-intro"> <div class="chapter-progress-bar absolute bottom-0 left-0 right-0 h-0.5 bg-yuval-border"> <div class="chapter-progress-fill h-full bg-green-500 w-0 transition-all duration-700" style="border-radius: 0 2px 2px 0"></div> </div> <div class="flex items-center justify-between gap-4 flex-row-reverse"> <div class="text-right flex-1 min-w-0"> <div class="flex items-center gap-2"> <span class="chapter-status-icon text-base hidden" aria-hidden="true"></span> <h3 class="font-heading font-semibold text-base sm:text-lg text-yuval-text line-clamp-2"> למידת מכונה (Machine Learning) </h3> </div> <p class="text-sm text-yuval-text-tertiary mt-1"> 0 סעיפים • 278 מילים </p> </div> <svg class="w-5 h-5 text-yuval-text-tertiary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"> <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path> </svg> </div> </a><a href="/read/ai-engineering-intro/14" class="chapter-link chapter-link-14 block p-4 rounded-lg border border-yuval-border hover:bg-yuval-bg-secondary hover:border-yuval-border-secondary transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yuval-highlight relative overflow-hidden" data-chapter-id="14" data-book-slug="ai-engineering-intro"> <div class="chapter-progress-bar absolute bottom-0 left-0 right-0 h-0.5 bg-yuval-border"> <div class="chapter-progress-fill h-full bg-green-500 w-0 transition-all duration-700" style="border-radius: 0 2px 2px 0"></div> </div> <div class="flex items-center justify-between gap-4 flex-row-reverse"> <div class="text-right flex-1 min-w-0"> <div class="flex items-center gap-2"> <span class="chapter-status-icon text-base hidden" aria-hidden="true"></span> <h3 class="font-heading font-semibold text-base sm:text-lg text-yuval-text line-clamp-2"> מה זה Generative AI? (מעבר להגדרה המילונית) </h3> </div> <p class="text-sm text-yuval-text-tertiary mt-1"> 0 סעיפים • 57 מילים </p> </div> <svg class="w-5 h-5 text-yuval-text-tertiary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"> <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path> </svg> </div> </a><a href="/read/ai-engineering-intro/15" class="chapter-link chapter-link-15 block p-4 rounded-lg border border-yuval-border hover:bg-yuval-bg-secondary hover:border-yuval-border-secondary transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yuval-highlight relative overflow-hidden" data-chapter-id="15" data-book-slug="ai-engineering-intro"> <div class="chapter-progress-bar absolute bottom-0 left-0 right-0 h-0.5 bg-yuval-border"> <div class="chapter-progress-fill h-full bg-green-500 w-0 transition-all duration-700" style="border-radius: 0 2px 2px 0"></div> </div> <div class="flex items-center justify-between gap-4 flex-row-reverse"> <div class="text-right flex-1 min-w-0"> <div class="flex items-center gap-2"> <span class="chapter-status-icon text-base hidden" aria-hidden="true"></span> <h3 class="font-heading font-semibold text-base sm:text-lg text-yuval-text line-clamp-2"> מה הופך את מהפכת ה-AI לשונה? (The AI Revolution) </h3> </div> <p class="text-sm text-yuval-text-tertiary mt-1"> 0 סעיפים • 187 מילים </p> </div> <svg class="w-5 h-5 text-yuval-text-tertiary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"> <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path> </svg> </div> </a><a href="/read/ai-engineering-intro/16" class="chapter-link chapter-link-16 block p-4 rounded-lg border border-yuval-border hover:bg-yuval-bg-secondary hover:border-yuval-border-secondary transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yuval-highlight relative overflow-hidden" data-chapter-id="16" data-book-slug="ai-engineering-intro"> <div class="chapter-progress-bar absolute bottom-0 left-0 right-0 h-0.5 bg-yuval-border"> <div class="chapter-progress-fill h-full bg-green-500 w-0 transition-all duration-700" style="border-radius: 0 2px 2px 0"></div> </div> <div class="flex items-center justify-between gap-4 flex-row-reverse"> <div class="text-right flex-1 min-w-0"> <div class="flex items-center gap-2"> <span class="chapter-status-icon text-base hidden" aria-hidden="true"></span> <h3 class="font-heading font-semibold text-base sm:text-lg text-yuval-text line-clamp-2"> מפת ההתפתחות של AI: מהיסטוריה להנדסה </h3> </div> <p class="text-sm text-yuval-text-tertiary mt-1"> 0 סעיפים • 446 מילים </p> </div> <svg class="w-5 h-5 text-yuval-text-tertiary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"> <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path> </svg> </div> </a><a href="/read/ai-engineering-intro/17" class="chapter-link chapter-link-17 block p-4 rounded-lg border border-yuval-border hover:bg-yuval-bg-secondary hover:border-yuval-border-secondary transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yuval-highlight relative overflow-hidden" data-chapter-id="17" data-book-slug="ai-engineering-intro"> <div class="chapter-progress-bar absolute bottom-0 left-0 right-0 h-0.5 bg-yuval-border"> <div class="chapter-progress-fill h-full bg-green-500 w-0 transition-all duration-700" style="border-radius: 0 2px 2px 0"></div> </div> <div class="flex items-center justify-between gap-4 flex-row-reverse"> <div class="text-right flex-1 min-w-0"> <div class="flex items-center gap-2"> <span class="chapter-status-icon text-base hidden" aria-hidden="true"></span> <h3 class="font-heading font-semibold text-base sm:text-lg text-yuval-text line-clamp-2"> בינה מלאכותית יוצרת היא רק השלמה אוטומטית משודרגת (?) </h3> </div> <p class="text-sm text-yuval-text-tertiary mt-1"> 0 סעיפים • 236 מילים </p> </div> <svg class="w-5 h-5 text-yuval-text-tertiary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"> <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path> </svg> </div> </a><a href="/read/ai-engineering-intro/18" class="chapter-link chapter-link-18 block p-4 rounded-lg border border-yuval-border hover:bg-yuval-bg-secondary hover:border-yuval-border-secondary transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yuval-highlight relative overflow-hidden" data-chapter-id="18" data-book-slug="ai-engineering-intro"> <div class="chapter-progress-bar absolute bottom-0 left-0 right-0 h-0.5 bg-yuval-border"> <div class="chapter-progress-fill h-full bg-green-500 w-0 transition-all duration-700" style="border-radius: 0 2px 2px 0"></div> </div> <div class="flex items-center justify-between gap-4 flex-row-reverse"> <div class="text-right flex-1 min-w-0"> <div class="flex items-center gap-2"> <span class="chapter-status-icon text-base hidden" aria-hidden="true"></span> <h3 class="font-heading font-semibold text-base sm:text-lg text-yuval-text line-clamp-2"> LLM = Large Language Model </h3> </div> <p class="text-sm text-yuval-text-tertiary mt-1"> 0 סעיפים • 208 מילים </p> </div> <svg class="w-5 h-5 text-yuval-text-tertiary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"> <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path> </svg> </div> </a><a href="/read/ai-engineering-intro/19" class="chapter-link chapter-link-19 block p-4 rounded-lg border border-yuval-border hover:bg-yuval-bg-secondary hover:border-yuval-border-secondary transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yuval-highlight relative overflow-hidden" data-chapter-id="19" data-book-slug="ai-engineering-intro"> <div class="chapter-progress-bar absolute bottom-0 left-0 right-0 h-0.5 bg-yuval-border"> <div class="chapter-progress-fill h-full bg-green-500 w-0 transition-all duration-700" style="border-radius: 0 2px 2px 0"></div> </div> <div class="flex items-center justify-between gap-4 flex-row-reverse"> <div class="text-right flex-1 min-w-0"> <div class="flex items-center gap-2"> <span class="chapter-status-icon text-base hidden" aria-hidden="true"></span> <h3 class="font-heading font-semibold text-base sm:text-lg text-yuval-text line-clamp-2"> LLM Tokens: היחידות היסודיות של השפה (והמכניקה שמאחוריהן) </h3> </div> <p class="text-sm text-yuval-text-tertiary mt-1"> 0 סעיפים • 226 מילים </p> </div> <svg class="w-5 h-5 text-yuval-text-tertiary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"> <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path> </svg> </div> </a><a href="/read/ai-engineering-intro/20" class="chapter-link chapter-link-20 block p-4 rounded-lg border border-yuval-border hover:bg-yuval-bg-secondary hover:border-yuval-border-secondary transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yuval-highlight relative overflow-hidden" data-chapter-id="20" data-book-slug="ai-engineering-intro"> <div class="chapter-progress-bar absolute bottom-0 left-0 right-0 h-0.5 bg-yuval-border"> <div class="chapter-progress-fill h-full bg-green-500 w-0 transition-all duration-700" style="border-radius: 0 2px 2px 0"></div> </div> <div class="flex items-center justify-between gap-4 flex-row-reverse"> <div class="text-right flex-1 min-w-0"> <div class="flex items-center gap-2"> <span class="chapter-status-icon text-base hidden" aria-hidden="true"></span> <h3 class="font-heading font-semibold text-base sm:text-lg text-yuval-text line-clamp-2"> LLM: ה&quot;קופסה השחורה&quot; של הפרמטרים </h3> </div> <p class="text-sm text-yuval-text-tertiary mt-1"> 0 סעיפים • 152 מילים </p> </div> <svg class="w-5 h-5 text-yuval-text-tertiary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"> <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path> </svg> </div> </a><a href="/read/ai-engineering-intro/21" class="chapter-link chapter-link-21 block p-4 rounded-lg border border-yuval-border hover:bg-yuval-bg-secondary hover:border-yuval-border-secondary transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yuval-highlight relative overflow-hidden" data-chapter-id="21" data-book-slug="ai-engineering-intro"> <div class="chapter-progress-bar absolute bottom-0 left-0 right-0 h-0.5 bg-yuval-border"> <div class="chapter-progress-fill h-full bg-green-500 w-0 transition-all duration-700" style="border-radius: 0 2px 2px 0"></div> </div> <div class="flex items-center justify-between gap-4 flex-row-reverse"> <div class="text-right flex-1 min-w-0"> <div class="flex items-center gap-2"> <span class="chapter-status-icon text-base hidden" aria-hidden="true"></span> <h3 class="font-heading font-semibold text-base sm:text-lg text-yuval-text line-clamp-2"> The Inference Pipeline: איך נוצרת תשובה? </h3> </div> <p class="text-sm text-yuval-text-tertiary mt-1"> 0 סעיפים • 429 מילים </p> </div> <svg class="w-5 h-5 text-yuval-text-tertiary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"> <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path> </svg> </div> </a><a href="/read/ai-engineering-intro/22" class="chapter-link chapter-link-22 block p-4 rounded-lg border border-yuval-border hover:bg-yuval-bg-secondary hover:border-yuval-border-secondary transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yuval-highlight relative overflow-hidden" data-chapter-id="22" data-book-slug="ai-engineering-intro"> <div class="chapter-progress-bar absolute bottom-0 left-0 right-0 h-0.5 bg-yuval-border"> <div class="chapter-progress-fill h-full bg-green-500 w-0 transition-all duration-700" style="border-radius: 0 2px 2px 0"></div> </div> <div class="flex items-center justify-between gap-4 flex-row-reverse"> <div class="text-right flex-1 min-w-0"> <div class="flex items-center gap-2"> <span class="chapter-status-icon text-base hidden" aria-hidden="true"></span> <h3 class="font-heading font-semibold text-base sm:text-lg text-yuval-text line-clamp-2"> מודלי שפה גדולים הם כמו השלמה אוטומטית עם דוקטורט בכל תחום </h3> </div> <p class="text-sm text-yuval-text-tertiary mt-1"> 0 סעיפים • 235 מילים </p> </div> <svg class="w-5 h-5 text-yuval-text-tertiary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"> <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path> </svg> </div> </a><a href="/read/ai-engineering-intro/23" class="chapter-link chapter-link-23 block p-4 rounded-lg border border-yuval-border hover:bg-yuval-bg-secondary hover:border-yuval-border-secondary transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yuval-highlight relative overflow-hidden" data-chapter-id="23" data-book-slug="ai-engineering-intro"> <div class="chapter-progress-bar absolute bottom-0 left-0 right-0 h-0.5 bg-yuval-border"> <div class="chapter-progress-fill h-full bg-green-500 w-0 transition-all duration-700" style="border-radius: 0 2px 2px 0"></div> </div> <div class="flex items-center justify-between gap-4 flex-row-reverse"> <div class="text-right flex-1 min-w-0"> <div class="flex items-center gap-2"> <span class="chapter-status-icon text-base hidden" aria-hidden="true"></span> <h3 class="font-heading font-semibold text-base sm:text-lg text-yuval-text line-clamp-2"> בינה מלאכותית - 1,000 דוקטורים אצלך בכיס. </h3> </div> <p class="text-sm text-yuval-text-tertiary mt-1"> 0 סעיפים • 113 מילים </p> </div> <svg class="w-5 h-5 text-yuval-text-tertiary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"> <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path> </svg> </div> </a><a href="/read/ai-engineering-intro/24" class="chapter-link chapter-link-24 block p-4 rounded-lg border border-yuval-border hover:bg-yuval-bg-secondary hover:border-yuval-border-secondary transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yuval-highlight relative overflow-hidden" data-chapter-id="24" data-book-slug="ai-engineering-intro"> <div class="chapter-progress-bar absolute bottom-0 left-0 right-0 h-0.5 bg-yuval-border"> <div class="chapter-progress-fill h-full bg-green-500 w-0 transition-all duration-700" style="border-radius: 0 2px 2px 0"></div> </div> <div class="flex items-center justify-between gap-4 flex-row-reverse"> <div class="text-right flex-1 min-w-0"> <div class="flex items-center gap-2"> <span class="chapter-status-icon text-base hidden" aria-hidden="true"></span> <h3 class="font-heading font-semibold text-base sm:text-lg text-yuval-text line-clamp-2"> מגבלות ה-LLM: מעבר לרהיטות השפתית </h3> </div> <p class="text-sm text-yuval-text-tertiary mt-1"> 0 סעיפים • 394 מילים </p> </div> <svg class="w-5 h-5 text-yuval-text-tertiary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"> <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path> </svg> </div> </a><a href="/read/ai-engineering-intro/25" class="chapter-link chapter-link-25 block p-4 rounded-lg border border-yuval-border hover:bg-yuval-bg-secondary hover:border-yuval-border-secondary transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yuval-highlight relative overflow-hidden" data-chapter-id="25" data-book-slug="ai-engineering-intro"> <div class="chapter-progress-bar absolute bottom-0 left-0 right-0 h-0.5 bg-yuval-border"> <div class="chapter-progress-fill h-full bg-green-500 w-0 transition-all duration-700" style="border-radius: 0 2px 2px 0"></div> </div> <div class="flex items-center justify-between gap-4 flex-row-reverse"> <div class="text-right flex-1 min-w-0"> <div class="flex items-center gap-2"> <span class="chapter-status-icon text-base hidden" aria-hidden="true"></span> <h3 class="font-heading font-semibold text-base sm:text-lg text-yuval-text line-clamp-2"> LLM לפעמים הוזים (Hallucinate): </h3> </div> <p class="text-sm text-yuval-text-tertiary mt-1"> 0 סעיפים • 190 מילים </p> </div> <svg class="w-5 h-5 text-yuval-text-tertiary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"> <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path> </svg> </div> </a><a href="/read/ai-engineering-intro/26" class="chapter-link chapter-link-26 block p-4 rounded-lg border border-yuval-border hover:bg-yuval-bg-secondary hover:border-yuval-border-secondary transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yuval-highlight relative overflow-hidden" data-chapter-id="26" data-book-slug="ai-engineering-intro"> <div class="chapter-progress-bar absolute bottom-0 left-0 right-0 h-0.5 bg-yuval-border"> <div class="chapter-progress-fill h-full bg-green-500 w-0 transition-all duration-700" style="border-radius: 0 2px 2px 0"></div> </div> <div class="flex items-center justify-between gap-4 flex-row-reverse"> <div class="text-right flex-1 min-w-0"> <div class="flex items-center gap-2"> <span class="chapter-status-icon text-base hidden" aria-hidden="true"></span> <h3 class="font-heading font-semibold text-base sm:text-lg text-yuval-text line-clamp-2"> LLMs מוגבלים לנתונים עליהם התאמנו: אפקט &quot;ממנטו&quot; </h3> </div> <p class="text-sm text-yuval-text-tertiary mt-1"> 0 סעיפים • 273 מילים </p> </div> <svg class="w-5 h-5 text-yuval-text-tertiary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"> <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path> </svg> </div> </a><a href="/read/ai-engineering-intro/27" class="chapter-link chapter-link-27 block p-4 rounded-lg border border-yuval-border hover:bg-yuval-bg-secondary hover:border-yuval-border-secondary transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yuval-highlight relative overflow-hidden" data-chapter-id="27" data-book-slug="ai-engineering-intro"> <div class="chapter-progress-bar absolute bottom-0 left-0 right-0 h-0.5 bg-yuval-border"> <div class="chapter-progress-fill h-full bg-green-500 w-0 transition-all duration-700" style="border-radius: 0 2px 2px 0"></div> </div> <div class="flex items-center justify-between gap-4 flex-row-reverse"> <div class="text-right flex-1 min-w-0"> <div class="flex items-center gap-2"> <span class="chapter-status-icon text-base hidden" aria-hidden="true"></span> <h3 class="font-heading font-semibold text-base sm:text-lg text-yuval-text line-clamp-2"> LLMs מנותקים מהעולם: המומחה בבידוד </h3> </div> <p class="text-sm text-yuval-text-tertiary mt-1"> 0 סעיפים • 263 מילים </p> </div> <svg class="w-5 h-5 text-yuval-text-tertiary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"> <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path> </svg> </div> </a><a href="/read/ai-engineering-intro/28" class="chapter-link chapter-link-28 block p-4 rounded-lg border border-yuval-border hover:bg-yuval-bg-secondary hover:border-yuval-border-secondary transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yuval-highlight relative overflow-hidden" data-chapter-id="28" data-book-slug="ai-engineering-intro"> <div class="chapter-progress-bar absolute bottom-0 left-0 right-0 h-0.5 bg-yuval-border"> <div class="chapter-progress-fill h-full bg-green-500 w-0 transition-all duration-700" style="border-radius: 0 2px 2px 0"></div> </div> <div class="flex items-center justify-between gap-4 flex-row-reverse"> <div class="text-right flex-1 min-w-0"> <div class="flex items-center gap-2"> <span class="chapter-status-icon text-base hidden" aria-hidden="true"></span> <h3 class="font-heading font-semibold text-base sm:text-lg text-yuval-text line-clamp-2"> הטיה במודלי שפה זה לא באג, אלא מציאות סטטיסטית </h3> </div> <p class="text-sm text-yuval-text-tertiary mt-1"> 0 סעיפים • 299 מילים </p> </div> <svg class="w-5 h-5 text-yuval-text-tertiary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"> <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path> </svg> </div> </a><a href="/read/ai-engineering-intro/29" class="chapter-link chapter-link-29 block p-4 rounded-lg border border-yuval-border hover:bg-yuval-bg-secondary hover:border-yuval-border-secondary transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yuval-highlight relative overflow-hidden" data-chapter-id="29" data-book-slug="ai-engineering-intro"> <div class="chapter-progress-bar absolute bottom-0 left-0 right-0 h-0.5 bg-yuval-border"> <div class="chapter-progress-fill h-full bg-green-500 w-0 transition-all duration-700" style="border-radius: 0 2px 2px 0"></div> </div> <div class="flex items-center justify-between gap-4 flex-row-reverse"> <div class="text-right flex-1 min-w-0"> <div class="flex items-center gap-2"> <span class="chapter-status-icon text-base hidden" aria-hidden="true"></span> <h3 class="font-heading font-semibold text-base sm:text-lg text-yuval-text line-clamp-2"> הגדרת זרימת העבודה (The Flow) </h3> </div> <p class="text-sm text-yuval-text-tertiary mt-1"> 0 סעיפים • 244 מילים </p> </div> <svg class="w-5 h-5 text-yuval-text-tertiary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"> <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path> </svg> </div> </a><a href="/read/ai-engineering-intro/30" class="chapter-link chapter-link-30 block p-4 rounded-lg border border-yuval-border hover:bg-yuval-bg-secondary hover:border-yuval-border-secondary transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yuval-highlight relative overflow-hidden" data-chapter-id="30" data-book-slug="ai-engineering-intro"> <div class="chapter-progress-bar absolute bottom-0 left-0 right-0 h-0.5 bg-yuval-border"> <div class="chapter-progress-fill h-full bg-green-500 w-0 transition-all duration-700" style="border-radius: 0 2px 2px 0"></div> </div> <div class="flex items-center justify-between gap-4 flex-row-reverse"> <div class="text-right flex-1 min-w-0"> <div class="flex items-center gap-2"> <span class="chapter-status-icon text-base hidden" aria-hidden="true"></span> <h3 class="font-heading font-semibold text-base sm:text-lg text-yuval-text line-clamp-2"> מבנה חלון ההקשר המפורט (Context Window Structure) </h3> </div> <p class="text-sm text-yuval-text-tertiary mt-1"> 0 סעיפים • 241 מילים </p> </div> <svg class="w-5 h-5 text-yuval-text-tertiary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"> <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path> </svg> </div> </a><a href="/read/ai-engineering-intro/31" class="chapter-link chapter-link-31 block p-4 rounded-lg border border-yuval-border hover:bg-yuval-bg-secondary hover:border-yuval-border-secondary transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yuval-highlight relative overflow-hidden" data-chapter-id="31" data-book-slug="ai-engineering-intro"> <div class="chapter-progress-bar absolute bottom-0 left-0 right-0 h-0.5 bg-yuval-border"> <div class="chapter-progress-fill h-full bg-green-500 w-0 transition-all duration-700" style="border-radius: 0 2px 2px 0"></div> </div> <div class="flex items-center justify-between gap-4 flex-row-reverse"> <div class="text-right flex-1 min-w-0"> <div class="flex items-center gap-2"> <span class="chapter-status-icon text-base hidden" aria-hidden="true"></span> <h3 class="font-heading font-semibold text-base sm:text-lg text-yuval-text line-clamp-2"> הגדרת הדיסציפלינה הנדסת הקשר (Context Engineering) </h3> </div> <p class="text-sm text-yuval-text-tertiary mt-1"> 0 סעיפים • 251 מילים </p> </div> <svg class="w-5 h-5 text-yuval-text-tertiary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"> <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path> </svg> </div> </a><a href="/read/ai-engineering-intro/32" class="chapter-link chapter-link-32 block p-4 rounded-lg border border-yuval-border hover:bg-yuval-bg-secondary hover:border-yuval-border-secondary transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yuval-highlight relative overflow-hidden" data-chapter-id="32" data-book-slug="ai-engineering-intro"> <div class="chapter-progress-bar absolute bottom-0 left-0 right-0 h-0.5 bg-yuval-border"> <div class="chapter-progress-fill h-full bg-green-500 w-0 transition-all duration-700" style="border-radius: 0 2px 2px 0"></div> </div> <div class="flex items-center justify-between gap-4 flex-row-reverse"> <div class="text-right flex-1 min-w-0"> <div class="flex items-center gap-2"> <span class="chapter-status-icon text-base hidden" aria-hidden="true"></span> <h3 class="font-heading font-semibold text-base sm:text-lg text-yuval-text line-clamp-2"> משוואת איכות התוצאה </h3> </div> <p class="text-sm text-yuval-text-tertiary mt-1"> 0 סעיפים • 228 מילים </p> </div> <svg class="w-5 h-5 text-yuval-text-tertiary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"> <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path> </svg> </div> </a><a href="/read/ai-engineering-intro/33" class="chapter-link chapter-link-33 block p-4 rounded-lg border border-yuval-border hover:bg-yuval-bg-secondary hover:border-yuval-border-secondary transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yuval-highlight relative overflow-hidden" data-chapter-id="33" data-book-slug="ai-engineering-intro"> <div class="chapter-progress-bar absolute bottom-0 left-0 right-0 h-0.5 bg-yuval-border"> <div class="chapter-progress-fill h-full bg-green-500 w-0 transition-all duration-700" style="border-radius: 0 2px 2px 0"></div> </div> <div class="flex items-center justify-between gap-4 flex-row-reverse"> <div class="text-right flex-1 min-w-0"> <div class="flex items-center gap-2"> <span class="chapter-status-icon text-base hidden" aria-hidden="true"></span> <h3 class="font-heading font-semibold text-base sm:text-lg text-yuval-text line-clamp-2"> RAG (Retrieval-Augmented Generation) </h3> </div> <p class="text-sm text-yuval-text-tertiary mt-1"> 0 סעיפים • 241 מילים </p> </div> <svg class="w-5 h-5 text-yuval-text-tertiary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"> <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path> </svg> </div> </a><a href="/read/ai-engineering-intro/34" class="chapter-link chapter-link-34 block p-4 rounded-lg border border-yuval-border hover:bg-yuval-bg-secondary hover:border-yuval-border-secondary transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yuval-highlight relative overflow-hidden" data-chapter-id="34" data-book-slug="ai-engineering-intro"> <div class="chapter-progress-bar absolute bottom-0 left-0 right-0 h-0.5 bg-yuval-border"> <div class="chapter-progress-fill h-full bg-green-500 w-0 transition-all duration-700" style="border-radius: 0 2px 2px 0"></div> </div> <div class="flex items-center justify-between gap-4 flex-row-reverse"> <div class="text-right flex-1 min-w-0"> <div class="flex items-center gap-2"> <span class="chapter-status-icon text-base hidden" aria-hidden="true"></span> <h3 class="font-heading font-semibold text-base sm:text-lg text-yuval-text line-clamp-2"> ארכיטקטורת RAG </h3> </div> <p class="text-sm text-yuval-text-tertiary mt-1"> 0 סעיפים • 308 מילים </p> </div> <svg class="w-5 h-5 text-yuval-text-tertiary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"> <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path> </svg> </div> </a><a href="/read/ai-engineering-intro/35" class="chapter-link chapter-link-35 block p-4 rounded-lg border border-yuval-border hover:bg-yuval-bg-secondary hover:border-yuval-border-secondary transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yuval-highlight relative overflow-hidden" data-chapter-id="35" data-book-slug="ai-engineering-intro"> <div class="chapter-progress-bar absolute bottom-0 left-0 right-0 h-0.5 bg-yuval-border"> <div class="chapter-progress-fill h-full bg-green-500 w-0 transition-all duration-700" style="border-radius: 0 2px 2px 0"></div> </div> <div class="flex items-center justify-between gap-4 flex-row-reverse"> <div class="text-right flex-1 min-w-0"> <div class="flex items-center gap-2"> <span class="chapter-status-icon text-base hidden" aria-hidden="true"></span> <h3 class="font-heading font-semibold text-base sm:text-lg text-yuval-text line-clamp-2"> סוכני בינה מלאכותית (AI Agents) </h3> </div> <p class="text-sm text-yuval-text-tertiary mt-1"> 0 סעיפים • 294 מילים </p> </div> <svg class="w-5 h-5 text-yuval-text-tertiary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"> <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path> </svg> </div> </a><a href="/read/ai-engineering-intro/36" class="chapter-link chapter-link-36 block p-4 rounded-lg border border-yuval-border hover:bg-yuval-bg-secondary hover:border-yuval-border-secondary transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yuval-highlight relative overflow-hidden" data-chapter-id="36" data-book-slug="ai-engineering-intro"> <div class="chapter-progress-bar absolute bottom-0 left-0 right-0 h-0.5 bg-yuval-border"> <div class="chapter-progress-fill h-full bg-green-500 w-0 transition-all duration-700" style="border-radius: 0 2px 2px 0"></div> </div> <div class="flex items-center justify-between gap-4 flex-row-reverse"> <div class="text-right flex-1 min-w-0"> <div class="flex items-center gap-2"> <span class="chapter-status-icon text-base hidden" aria-hidden="true"></span> <h3 class="font-heading font-semibold text-base sm:text-lg text-yuval-text line-clamp-2"> תכונות מפתח של סוכני בינה מלאכותית </h3> </div> <p class="text-sm text-yuval-text-tertiary mt-1"> 0 סעיפים • 349 מילים </p> </div> <svg class="w-5 h-5 text-yuval-text-tertiary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"> <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path> </svg> </div> </a><a href="/read/ai-engineering-intro/37" class="chapter-link chapter-link-37 block p-4 rounded-lg border border-yuval-border hover:bg-yuval-bg-secondary hover:border-yuval-border-secondary transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yuval-highlight relative overflow-hidden" data-chapter-id="37" data-book-slug="ai-engineering-intro"> <div class="chapter-progress-bar absolute bottom-0 left-0 right-0 h-0.5 bg-yuval-border"> <div class="chapter-progress-fill h-full bg-green-500 w-0 transition-all duration-700" style="border-radius: 0 2px 2px 0"></div> </div> <div class="flex items-center justify-between gap-4 flex-row-reverse"> <div class="text-right flex-1 min-w-0"> <div class="flex items-center gap-2"> <span class="chapter-status-icon text-base hidden" aria-hidden="true"></span> <h3 class="font-heading font-semibold text-base sm:text-lg text-yuval-text line-clamp-2"> מבנה זרימת העבודה של הסוכן (Agentic Workflow) </h3> </div> <p class="text-sm text-yuval-text-tertiary mt-1"> 0 סעיפים • 248 מילים </p> </div> <svg class="w-5 h-5 text-yuval-text-tertiary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"> <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path> </svg> </div> </a><a href="/read/ai-engineering-intro/38" class="chapter-link chapter-link-38 block p-4 rounded-lg border border-yuval-border hover:bg-yuval-bg-secondary hover:border-yuval-border-secondary transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yuval-highlight relative overflow-hidden" data-chapter-id="38" data-book-slug="ai-engineering-intro"> <div class="chapter-progress-bar absolute bottom-0 left-0 right-0 h-0.5 bg-yuval-border"> <div class="chapter-progress-fill h-full bg-green-500 w-0 transition-all duration-700" style="border-radius: 0 2px 2px 0"></div> </div> <div class="flex items-center justify-between gap-4 flex-row-reverse"> <div class="text-right flex-1 min-w-0"> <div class="flex items-center gap-2"> <span class="chapter-status-icon text-base hidden" aria-hidden="true"></span> <h3 class="font-heading font-semibold text-base sm:text-lg text-yuval-text line-clamp-2"> תוכנה מסורתית מול יישומי AI </h3> </div> <p class="text-sm text-yuval-text-tertiary mt-1"> 0 סעיפים • 323 מילים </p> </div> <svg class="w-5 h-5 text-yuval-text-tertiary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"> <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path> </svg> </div> </a><a href="/read/ai-engineering-intro/39" class="chapter-link chapter-link-39 block p-4 rounded-lg border border-yuval-border hover:bg-yuval-bg-secondary hover:border-yuval-border-secondary transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yuval-highlight relative overflow-hidden" data-chapter-id="39" data-book-slug="ai-engineering-intro"> <div class="chapter-progress-bar absolute bottom-0 left-0 right-0 h-0.5 bg-yuval-border"> <div class="chapter-progress-fill h-full bg-green-500 w-0 transition-all duration-700" style="border-radius: 0 2px 2px 0"></div> </div> <div class="flex items-center justify-between gap-4 flex-row-reverse"> <div class="text-right flex-1 min-w-0"> <div class="flex items-center gap-2"> <span class="chapter-status-icon text-base hidden" aria-hidden="true"></span> <h3 class="font-heading font-semibold text-base sm:text-lg text-yuval-text line-clamp-2"> תחומי האימוץ של סוכני AI בארגונים (2026) </h3> </div> <p class="text-sm text-yuval-text-tertiary mt-1"> 0 סעיפים • 301 מילים </p> </div> <svg class="w-5 h-5 text-yuval-text-tertiary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"> <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path> </svg> </div> </a><a href="/read/ai-engineering-intro/40" class="chapter-link chapter-link-40 block p-4 rounded-lg border border-yuval-border hover:bg-yuval-bg-secondary hover:border-yuval-border-secondary transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yuval-highlight relative overflow-hidden" data-chapter-id="40" data-book-slug="ai-engineering-intro"> <div class="chapter-progress-bar absolute bottom-0 left-0 right-0 h-0.5 bg-yuval-border"> <div class="chapter-progress-fill h-full bg-green-500 w-0 transition-all duration-700" style="border-radius: 0 2px 2px 0"></div> </div> <div class="flex items-center justify-between gap-4 flex-row-reverse"> <div class="text-right flex-1 min-w-0"> <div class="flex items-center gap-2"> <span class="chapter-status-icon text-base hidden" aria-hidden="true"></span> <h3 class="font-heading font-semibold text-base sm:text-lg text-yuval-text line-clamp-2"> אתגרי האימוץ של בינה מלאכותית בארגון </h3> </div> <p class="text-sm text-yuval-text-tertiary mt-1"> 0 סעיפים • 284 מילים </p> </div> <svg class="w-5 h-5 text-yuval-text-tertiary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"> <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path> </svg> </div> </a><a href="/read/ai-engineering-intro/41" class="chapter-link chapter-link-41 block p-4 rounded-lg border border-yuval-border hover:bg-yuval-bg-secondary hover:border-yuval-border-secondary transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yuval-highlight relative overflow-hidden" data-chapter-id="41" data-book-slug="ai-engineering-intro"> <div class="chapter-progress-bar absolute bottom-0 left-0 right-0 h-0.5 bg-yuval-border"> <div class="chapter-progress-fill h-full bg-green-500 w-0 transition-all duration-700" style="border-radius: 0 2px 2px 0"></div> </div> <div class="flex items-center justify-between gap-4 flex-row-reverse"> <div class="text-right flex-1 min-w-0"> <div class="flex items-center gap-2"> <span class="chapter-status-icon text-base hidden" aria-hidden="true"></span> <h3 class="font-heading font-semibold text-base sm:text-lg text-yuval-text line-clamp-2"> עתיד ה-AI מכאן לאן </h3> </div> <p class="text-sm text-yuval-text-tertiary mt-1"> 0 סעיפים • 294 מילים </p> </div> <svg class="w-5 h-5 text-yuval-text-tertiary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"> <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path> </svg> </div> </a> </div> </div> </div> </div>  </main> <button id="back-to-top" type="button" class="fixed bottom-6 right-6 z-40 hidden items-center justify-center w-11 h-11 rounded-full bg-yuval-accent text-yuval-accent-text shadow-lg hover:bg-yuval-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yuval-highlight focus-visible:ring-offset-2 transition-all duration-300 opacity-0 translate-y-4" aria-label="Back to top" data-threshold="300"> <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"> <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path> </svg> </button> <script type="module" src="/src/components/BackToTop.astro?astro&type=script&index=0&lang.ts"></script> <script type="module">
+      import {
+        getLanguageFromStorage,
+        isValidLanguage,
+        applyLanguageToPage,
+        getLanguageDirection,
+      } from '../utils/language';
+
+      function applyStoredLanguage() {
+        const storedLang = getLanguageFromStorage();
+        if (isValidLanguage(storedLang)) {
+          document.documentElement.lang = storedLang;
+          document.documentElement.dir = getLanguageDirection(storedLang);
+          applyLanguageToPage(storedLang);
+        }
+      }
+
+      applyStoredLanguage();
+      document.addEventListener('astro:after-swap', applyStoredLanguage);
+
+      window.addEventListener('language-changed', (e: Event) => {
+        const customEvent = e as CustomEvent<{ language: string }>;
+        const lang = customEvent.detail?.language;
+        if (!lang) return;
+
+        document.documentElement.lang = lang;
+        document.documentElement.dir = getLanguageDirection(lang);
+        applyLanguageToPage(lang);
+      });
+    </script> </body> </html> <script type="module" src="/src/pages/books/[slug].astro?astro&type=script&index=0&lang.ts"></script>

@@ -1,0 +1,186 @@
+/**
+ * Wisdom quotes for the header.
+ * Used in Header.astro for rotating motivational quotes.
+ */
+
+export const quotesEN = [
+{ text: "Reading is to the mind what exercise is to the body", author: "Joseph Addison" },
+{ text: "Reading is thinking with someone else's mind", author: "Arthur Schopenhauer" },
+{ text: "Reading without reflection is like eating without digesting", author: "Edmund Burke" },
+{ text: "There is no ship as fast as a book", author: "Emily Dickinson" },
+{ text: "Books are a uniquely portable magic", author: "Stephen King" },
+{ text: "A reader lives a thousand lives before he dies", author: "George R R Martin" },
+{ text: "Read to live", author: "Gustave Flaubert" },
+{ text: "There is no friend as loyal as a book", author: "Ernest Hemingway" },
+{ text: "A room without books is like a body without a soul", author: "Cicero" },
+{ text: "Reading makes a full man", author: "Francis Bacon" },
+
+{ text: "If you want to move faster, start reading before you start acting", author: "Original" },
+{ text: "Every book you open is a chance to not remain the same person", author: "Original" },
+{ text: "Those who read daily do not look for shortcuts, they build a path", author: "Original" },
+{ text: "Do not wait for motivation to read, start and it will follow", author: "Original" },
+{ text: "Reading is a small action that creates a massive change over time", author: "Original" },
+{ text: "If you are not reading, someone else is, and they are getting ahead", author: "Original" },
+{ text: "Books give you a quiet advantage in a noisy world", author: "Original" },
+{ text: "Those who invest time in reading invest in their future without noticing", author: "Original" },
+{ text: "Reading is a simple habit that few maintain, which is why it is so powerful", author: "Original" },
+{ text: "Every page you read sharpens the way you think", author: "Original" },
+
+{ text: "The world is a book, and those who do not travel read only one page", author: "Augustine of Hippo" },
+{ text: "The reading of all good books is like a conversation with the finest minds of past centuries", author: "Rene Descartes" },
+{ text: "A person who will not read has no advantage over one who cannot read", author: "Mark Twain" },
+{ text: "The more that you read, the more things you will know", author: "Dr Seuss" },
+{ text: "Learning never exhausts the mind", author: "Leonardo da Vinci" },
+
+{ text: "Reading is the most accessible way to become smarter starting today", author: "Original" },
+{ text: "A good book does not just give knowledge, it changes how you think", author: "Original" },
+{ text: "Those who do not read repeat the same thoughts again and again", author: "Original" },
+{ text: "The book you postpone today might be your breakthrough tomorrow", author: "Original" },
+{ text: "Reading creates depth in a world that rewards speed", author: "Original" },
+{ text: "Do not underestimate ten minutes of reading a day, it compounds into real change", author: "Original" },
+{ text: "Those who read do not wait for opportunities, they create them", author: "Original" },
+{ text: "Books let you learn without paying the full price of mistakes", author: "Original" },
+{ text: "Reading is training for a mind that wants to stay sharp", author: "Original" },
+{ text: "If you want a real advantage, read while others scroll", author: "Original" },
+
+{ text: "Who is wise? One who learns from every person", author: "Ben Zoma" },
+{ text: "The shy will not learn", author: "Hillel the Elder" },
+{ text: "If you have labored and found, believe it", author: "Talmud" },
+{ text: "He who learns but does not think is lost", author: "Confucius" },
+{ text: "A journey of a thousand miles begins with a single step", author: "Lao Tzu" },
+
+{ text: "Reading turns curiosity into knowledge", author: "Original" },
+{ text: "Every book is a conversation with someone who lived before you", author: "Original" },
+{ text: "Those who read are not afraid to think differently", author: "Original" },
+{ text: "Reading is where change begins quietly", author: "Original" },
+{ text: "Books give you words for what you could not yet express", author: "Original" },
+{ text: "If you want to grow, make reading part of your routine", author: "Original" },
+{ text: "Reading is an investment that works in any place and any time", author: "Original" },
+{ text: "Those who read understand the world around them faster", author: "Original" },
+{ text: "A good book can change your day, the right book can change your life", author: "Original" },
+{ text: "Reading is the quietest way to move forward without anyone noticing", author: "Original" }
+];
+
+export const quotesES = [
+{ text: "Leer es a la mente lo que el ejercicio es al cuerpo", author: "Joseph Addison" },
+{ text: "Leer es pensar con la mente de otro", author: "Arthur Schopenhauer" },
+{ text: "Leer sin reflexionar es como comer sin digerir", author: "Edmund Burke" },
+{ text: "No hay nave más rápida que un libro", author: "Emily Dickinson" },
+{ text: "Los libros son una magia portátil única", author: "Stephen King" },
+{ text: "Un lector vive mil vidas antes de morir", author: "George R R Martin" },
+{ text: "Lee para vivir", author: "Gustave Flaubert" },
+{ text: "No hay amigo más leal que un libro", author: "Ernest Hemingway" },
+{ text: "Una habitación sin libros es como un cuerpo sin alma", author: "Cicerón" },
+{ text: "La lectura forma al hombre completo", author: "Francis Bacon" },
+
+{ text: "Si quieres avanzar más rápido, empieza a leer antes de actuar", author: "Original" },
+{ text: "Cada libro que abres es una oportunidad de no seguir siendo el mismo", author: "Original" },
+{ text: "Quien lee cada día no busca atajos, construye un camino", author: "Original" },
+{ text: "No esperes tener ganas de leer, empieza y las ganas llegarán", author: "Original" },
+{ text: "Leer es una acción pequeña que genera un cambio enorme con el tiempo", author: "Original" },
+{ text: "Si tú no lees, alguien más sí lo hará y avanzará delante de ti", author: "Original" },
+{ text: "Los libros te dan una ventaja silenciosa en un mundo ruidoso", author: "Original" },
+{ text: "Quien dedica tiempo a leer invierte en su futuro sin darse cuenta", author: "Original" },
+{ text: "Leer es un hábito simple que pocos mantienen, por eso es tan poderoso", author: "Original" },
+{ text: "Cada página que lees afina tu forma de pensar", author: "Original" },
+
+{ text: "El mundo es un libro, y quienes no viajan leen solo una página", author: "Agustín de Hipona" },
+{ text: "La lectura de todos los buenos libros es como conversar con las mejores mentes del pasado", author: "René Descartes" },
+{ text: "Quien no lee buenos libros no tiene ventaja sobre quien no sabe leer", author: "Mark Twain" },
+{ text: "Cuanto más lees, más sabes", author: "Dr Seuss" },
+{ text: "Aprender nunca agota la mente", author: "Leonardo da Vinci" },
+
+{ text: "Leer es la forma más accesible de ser más inteligente desde hoy", author: "Original" },
+{ text: "Un buen libro no solo te da conocimiento, cambia tu manera de pensar", author: "Original" },
+{ text: "Quien no lee repite las mismas ideas una y otra vez", author: "Original" },
+{ text: "El libro que pospones hoy puede ser tu avance mañana", author: "Original" },
+{ text: "La lectura crea profundidad en un mundo que premia la rapidez", author: "Original" },
+{ text: "No subestimes diez minutos de lectura al día, se convierten en un cambio real", author: "Original" },
+{ text: "Quien lee no espera oportunidades, las crea", author: "Original" },
+{ text: "Los libros te permiten aprender sin pagar el precio de cada error", author: "Original" },
+{ text: "Leer es un entrenamiento para una mente que quiere ser más aguda", author: "Original" },
+{ text: "Si quieres una ventaja real, lee mientras otros solo deslizan la pantalla", author: "Original" },
+
+{ text: "¿Quién es sabio? El que aprende de todos", author: "Ben Zoma" },
+{ text: "El tímido no aprende", author: "Hillel el Anciano" },
+{ text: "Si te esfuerzas y encuentras, cree en ello", author: "Talmud" },
+{ text: "Quien aprende pero no piensa está perdido", author: "Confucio" },
+{ text: "Un viaje de mil millas comienza con un solo paso", author: "Lao Tse" },
+
+{ text: "Leer es convertir la curiosidad en conocimiento", author: "Original" },
+{ text: "Cada libro es una conversación con alguien que vivió antes que tú", author: "Original" },
+{ text: "Quien lee no teme pensar diferente", author: "Original" },
+{ text: "La lectura es el lugar donde el cambio comienza en silencio", author: "Original" },
+{ text: "Los libros te dan palabras para lo que aún no sabías expresar", author: "Original" },
+{ text: "Si quieres crecer, convierte la lectura en parte de tu rutina", author: "Original" },
+{ text: "Leer es una inversión que no depende del tiempo ni del lugar", author: "Original" },
+{ text: "Quien lee entiende más rápido el mundo que lo rodea", author: "Original" },
+{ text: "Un buen libro puede cambiar tu día, el libro correcto puede cambiar tu vida", author: "Original" },
+{ text: "Leer es la forma más silenciosa de avanzar sin que nadie lo note", author: "Original" }
+];
+
+export const quotesHE = [
+{ text: "קריאה היא למוח מה שפעילות גופנית היא לגוף", author: "ג'וזף אדיסון" },
+{ text: "לקרוא זה לחשוב עם מוח אחר", author: "ארתור שופנהאואר" },
+{ text: "קריאה בלי הרהור היא כמו אכילה בלי עיכול", author: "אדמונד ברק" },
+{ text: "אין ספינה מהירה יותר מספר", author: "אמילי דיקינסון" },
+{ text: "ספרים הם קסם נייד ייחודי", author: "סטיבן קינג" },
+{ text: "הקורא חי אלף חיים לפני מותו", author: "ג'ורג' ר ר מרטין" },
+{ text: "קרא כדי לחיות", author: "גוסטב פלובר" },
+{ text: "אין חבר נאמן כמו ספר", author: "ארנסט המינגוויי" },
+{ text: "חדר בלי ספרים הוא כמו גוף בלי נשמה", author: "קיקרו" },
+{ text: "קריאה עושה אדם שלם", author: "פרנסיס בייקון" },
+
+{ text: "אם אתה רוצה להתקדם מהר יותר, תתחיל לקרוא לפני שאתה מתחיל לפעול", author: "מקורי" },
+{ text: "כל ספר שאתה פותח הוא הזדמנות לא להישאר אותו אדם", author: "מקורי" },
+{ text: "מי שקורא כל יום לא מחפש קיצור דרך, הוא בונה דרך", author: "מקורי" },
+{ text: "אל תחכה לחשק לקרוא, תתחיל והחשק יגיע", author: "מקורי" },
+{ text: "קריאה היא פעולה קטנה שמייצרת שינוי גדול לאורך זמן", author: "מקורי" },
+{ text: "אם אתה לא קורא, מישהו אחר כן והוא יתקדם לפניך", author: "מקורי" },
+{ text: "ספרים נותנים לך יתרון שקט בעולם רועש", author: "מקורי" },
+{ text: "מי שמקדיש זמן לקריאה משקיע בעתיד שלו בלי לשים לב", author: "מקורי" },
+{ text: "קריאה היא הרגל פשוט שמעטים מתמידים בו ולכן הוא כל כך חזק", author: "מקורי" },
+{ text: "כל עמוד שאתה קורא מקרב אותך לחשיבה חדה יותר", author: "מקורי" },
+
+{ text: "העולם הוא ספר, ומי שלא נוסע קורא רק עמוד אחד", author: "אוגוסטינוס" },
+{ text: "קריאת כל הספרים הטובים היא כמו שיחה עם המוחות הגדולים של העבר", author: "רנה דקארט" },
+{ text: "מי שאינו קורא ספרים טובים אינו עדיף על מי שאינו יודע לקרוא", author: "מרק טוויין" },
+{ text: "ככל שאתה קורא יותר כך אתה יודע יותר", author: "דוקטור סוס" },
+{ text: "למידה לעולם אינה מתישה את המוח", author: "לאונרדו דה וינצ'י" },
+
+{ text: "קריאה היא הדרך הכי זמינה להיות חכם יותר כבר היום", author: "מקורי" },
+{ text: "ספר טוב לא רק נותן ידע, הוא משנה כיוון מחשבה", author: "מקורי" },
+{ text: "מי שלא קורא נשאר עם אותן מחשבות שוב ושוב", author: "מקורי" },
+{ text: "הספר שאתה דוחה היום יכול להיות הפריצה שלך מחר", author: "מקורי" },
+{ text: "קריאה יוצרת עומק בעולם שמתגמל מהירות", author: "מקורי" },
+{ text: "אל תזלזל בעשר דקות קריאה ביום, הן מצטברות לשינוי אמיתי", author: "מקורי" },
+{ text: "מי שקורא לא מחכה להזדמנות, הוא יוצר אותה", author: "מקורי" },
+{ text: "ספרים הם דרך ללמוד בלי לשלם את המחיר של טעויות", author: "מקורי" },
+{ text: "קריאה היא אימון למוח שרוצה להיות חד יותר", author: "מקורי" },
+{ text: "אם אתה רוצה יתרון אמיתי, תתחיל לקרוא כשאחרים גוללים", author: "מקורי" },
+
+{ text: "איזהו חכם הלומד מכל אדם", author: "בן זומא" },
+{ text: "לא הביישן למד", author: "הלל הזקן" },
+{ text: "יגעת ומצאת תאמין", author: "תלמוד בבלי" },
+{ text: "מי שלומד אך אינו חושב אבוד", author: "קונפוציוס" },
+{ text: "מסע של אלף מייל מתחיל בצעד אחד", author: "לאו דזה" },
+
+{ text: "קריאה היא הדרך להפוך סקרנות לידע", author: "מקורי" },
+{ text: "כל ספר הוא שיחה עם מישהו שחי לפניך", author: "מקורי" },
+{ text: "מי שקורא לא מפחד לחשוב אחרת", author: "מקורי" },
+{ text: "קריאה היא המקום שבו שינוי מתחיל בשקט", author: "מקורי" },
+{ text: "ספרים נותנים לך מילים למה שלא ידעת להסביר", author: "מקורי" },
+{ text: "אם אתה רוצה לגדול, תכניס קריאה לשגרה שלך", author: "מקורי" },
+{ text: "קריאה היא השקעה שלא תלויה בזמן או במקום", author: "מקורי" },
+{ text: "מי שקורא מבין מהר יותר את העולם סביבו", author: "מקורי" },
+{ text: "ספר טוב יכול לשנות לך יום, ספר נכון יכול לשנות חיים", author: "מקורי" },
+{ text: "קריאה היא הדרך הפשוטה ביותר להתקדם בלי שאף אחד ישים לב", author: "מקורי" }
+];
+
+
+
+export const QUOTES_BY_LANGUAGE = {
+  he: quotesHE,
+  en: quotesEN,
+  es: quotesES,
+};

@@ -1,5 +1,6 @@
 ---
 import type { Language } from '../types/index';
+import { SOURCE_LANGUAGE } from '../utils/language';
 
 interface Props {
   scrollPercentage?: number;
@@ -7,7 +8,7 @@ interface Props {
   class?: string;
 }
 
-const { scrollPercentage = 0, language = 'en', class: className } = Astro.props;
+const { scrollPercentage = 0, language = SOURCE_LANGUAGE, class: className } = Astro.props;
 
 const ariaLabel =
   language === 'he' ? `התקדמות קריאה: ${Math.round(scrollPercentage)}%` : `Reading progress: ${Math.round(scrollPercentage)}%`;

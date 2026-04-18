@@ -1,6 +1,6 @@
 ---
 import type { Language, Chapter } from '../types/index';
-import { LANGUAGES } from '../utils/language';
+import { SOURCE_LANGUAGE, getLanguageDirection } from '../utils/language';
 
 interface Props {
   chapters: Chapter[];
@@ -9,21 +9,32 @@ interface Props {
   language?: Language;
 }
 
-const { chapters, currentChapterId, bookSlug, language = LANGUAGES.EN } = Astro.props;
-const isRtl = language === LANGUAGES.HE;
+const { chapters, currentChapterId, bookSlug, language = SOURCE_LANGUAGE } = Astro.props;
+const isRtl = getLanguageDirection(language) === 'rtl';
+
+function getChapterTitle(chapter: Chapter, lang: Language): string {
+  return chapter.titles?.[lang] || chapter.titles?.[SOURCE_LANGUAGE] || '';
+}
+
+function serializeTitles(chapter: Chapter): string {
+  return JSON.stringify(chapter.titles || {});
+}
 ---
 
 <div class="sidebars-container" transition:persist="sidebars">
-  <!-- Mobile TOC toggle button -->
+  <!-- Mobile TOC toggle button (kept in DOM for FAB delegation; never visible) -->
   <button
     id="mobile-toc-toggle"
     class="mobile-toc-btn"
-    aria-label={language === LANGUAGES.HE ? 'פתח ניווט' : 'Open navigation'}
     aria-expanded="false"
+    aria-hidden="true"
+    tabindex="-1"
+    hidden
   >
+    <span class="sr-only" data-i18n="sidebar.openNavigation">Open navigation</span>
     <span class="mobile-toc-btn-glow"></span>
     <span class="mobile-toc-btn-ring"></span>
-    <svg class="mobile-toc-icon w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg class="mobile-toc-icon w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
     </svg>
   </button>
@@ -71,8 +82,11 @@ const isRtl = language === LANGUAGES.HE;
                   {String(chapter.id).padStart(2, '0')}
                 </span>
                 <span class="toc-chapter-title">
-                  <span data-he={chapter.title_he} data-en={chapter.title_en} data-es={chapter.title_es || chapter.title_en}>
-                    {language === LANGUAGES.HE ? chapter.title_he : language === 'es' ? (chapter.title_es || chapter.title_en) : chapter.title_en}
+                  <span
+                    class="toc-chapter-title-text"
+                    data-titles={serializeTitles(chapter)}
+                  >
+                    {getChapterTitle(chapter, language)}
                   </span>
                 </span>
               </a>
@@ -83,7 +97,7 @@ const isRtl = language === LANGUAGES.HE;
     </div>
   </div>
 
-  <!-- Right Sidebar: Table of Contents (כל הפרקים) -->
+  <!-- Right Sidebar: Table of Contents -->
   <aside
     class:list={[
       'toc-sidebar',
@@ -92,7 +106,6 @@ const isRtl = language === LANGUAGES.HE;
     ]}
     id="toc-sidebar"
     data-rtl={isRtl}
-    aria-label={language === LANGUAGES.HE ? 'תוכן עניינים' : language === 'es' ? 'Tabla de Contenidos' : 'Table of Contents'}
   >
     <h3 class="toc-title">
       <span data-i18n="sidebar.chapters">Chapters</span>
@@ -120,12 +133,11 @@ const isRtl = language === LANGUAGES.HE;
                 {String(chapter.id).padStart(2, '0')}
               </span>
               <span class="toc-chapter-title">
-                <span data-he={chapter.title_he} data-en={chapter.title_en} data-es={chapter.title_es || chapter.title_en}>
-                  {language === LANGUAGES.HE
-                    ? chapter.title_he
-                    : language === 'es'
-                      ? (chapter.title_es || chapter.title_en)
-                      : chapter.title_en}
+                <span
+                  class="toc-chapter-title-text"
+                  data-titles={serializeTitles(chapter)}
+                >
+                  {getChapterTitle(chapter, language)}
                 </span>
               </span>
             </a>
@@ -135,7 +147,7 @@ const isRtl = language === LANGUAGES.HE;
     </nav>
   </aside>
 
-  <!-- Left Sidebar: Chapter Outline (headings של הפרק) -->
+  <!-- Left Sidebar: Chapter Outline -->
   <aside
     class:list={[
       'outline-sidebar',
@@ -144,7 +156,6 @@ const isRtl = language === LANGUAGES.HE;
     ]}
     id="outline-sidebar"
     data-rtl={isRtl}
-    aria-label={language === LANGUAGES.HE ? 'מתוכן הפרק' : language === 'es' ? 'Esquema del Capítulo' : 'Chapter Outline'}
   >
     <h3 class="outline-title">
       <span data-i18n="sidebar.inChapter">In This Chapter</span>
@@ -158,12 +169,24 @@ const isRtl = language === LANGUAGES.HE;
 </div>
 
 <style>
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
   .sidebars-container {
     position: relative;
     width: 100%;
   }
 
-  /* TOC Sidebar — LEFT in English, RIGHT in Hebrew */
+  /* TOC Sidebar - LEFT in English, RIGHT in Hebrew */
   .toc-sidebar {
     position: fixed;
     top: 68px;
@@ -227,10 +250,15 @@ const isRtl = language === LANGUAGES.HE;
     margin-bottom: 0;
     border-radius: 12px;
     overflow: hidden;
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    transition:
+      background 200ms var(--ease-standard),
+      border-color 200ms var(--ease-standard),
+      color 200ms var(--ease-standard),
+      transform 200ms var(--ease-standard),
+      box-shadow 200ms var(--ease-standard);
     background: linear-gradient(145deg, #ffffff, #f8f8f8);
     border: 1px solid rgba(0, 0, 0, 0.08);
-    box-shadow: 
+    box-shadow:
       0 2px 4px rgba(0, 0, 0, 0.04),
       0 1px 2px rgba(0, 0, 0, 0.02);
     cursor: pointer;
@@ -239,7 +267,7 @@ const isRtl = language === LANGUAGES.HE;
   :global(.dark) .toc-item {
     background: linear-gradient(145deg, rgba(60, 60, 65, 0.8), rgba(45, 45, 50, 0.9));
     border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 
+    box-shadow:
       0 2px 4px rgba(0, 0, 0, 0.2),
       0 1px 2px rgba(0, 0, 0, 0.1);
   }
@@ -248,7 +276,7 @@ const isRtl = language === LANGUAGES.HE;
     background: linear-gradient(145deg, #fffdf5, #faf6e8);
     border-color: rgba(201, 162, 39, 0.35);
     transform: translateX(-2px) translateY(-1px);
-    box-shadow: 
+    box-shadow:
       0 8px 20px rgba(201, 162, 39, 0.15),
       0 4px 8px rgba(0, 0, 0, 0.06);
   }
@@ -256,7 +284,7 @@ const isRtl = language === LANGUAGES.HE;
   :global(.dark) .toc-item:hover {
     background: linear-gradient(145deg, rgba(80, 75, 65, 0.9), rgba(60, 55, 50, 0.95));
     border-color: rgba(139, 115, 85, 0.45);
-    box-shadow: 
+    box-shadow:
       0 8px 20px rgba(139, 115, 85, 0.2),
       0 4px 8px rgba(0, 0, 0, 0.15);
   }
@@ -265,27 +293,26 @@ const isRtl = language === LANGUAGES.HE;
     transform: translateX(2px) translateY(-1px);
   }
 
-  /* Click/pressed state */
   .toc-item:active {
     transform: translateY(0) scale(0.98);
-    box-shadow: 
+    box-shadow:
       0 2px 4px rgba(201, 162, 39, 0.1),
       inset 0 1px 3px rgba(0, 0, 0, 0.05);
-    transition: all 0.1s ease;
+    transition: transform 80ms var(--ease-accelerated);
   }
 
   :global(.dark) .toc-item:active {
-    box-shadow: 
+    box-shadow:
       0 2px 4px rgba(139, 115, 85, 0.15),
       inset 0 1px 3px rgba(0, 0, 0, 0.15);
   }
 
   .toc-item-active {
-    background: linear-gradient(135deg, 
+    background: linear-gradient(135deg,
       rgba(201, 162, 39, 0.12) 0%,
       rgba(201, 162, 39, 0.06) 100%
     );
-    box-shadow: 
+    box-shadow:
       0 2px 12px rgba(201, 162, 39, 0.15),
       inset 0 0 0 1px rgba(201, 162, 39, 0.25);
   }
@@ -307,7 +334,6 @@ const isRtl = language === LANGUAGES.HE;
     border-radius: 3px 0 0 3px;
   }
 
-  /* Reading indicator dot for active chapter */
   .toc-item-active::after {
     content: '';
     position: absolute;
@@ -318,7 +344,7 @@ const isRtl = language === LANGUAGES.HE;
     height: 8px;
     background: #c9a227;
     border-radius: 50%;
-    animation: reading-pulse 2s ease-in-out infinite;
+    animation: reading-pulse 2s var(--ease-standard) infinite;
     box-shadow: 0 0 8px rgba(201, 162, 39, 0.6);
   }
 
@@ -328,12 +354,12 @@ const isRtl = language === LANGUAGES.HE;
   }
 
   @keyframes reading-pulse {
-    0%, 100% { 
-      opacity: 1; 
+    0%, 100% {
+      opacity: 1;
       transform: translateY(-50%) scale(1);
     }
-    50% { 
-      opacity: 0.6; 
+    50% {
+      opacity: 0.6;
       transform: translateY(-50%) scale(0.85);
     }
   }
@@ -341,7 +367,7 @@ const isRtl = language === LANGUAGES.HE;
   :global(.dark) .toc-item-active {
     background: linear-gradient(145deg, rgba(90, 80, 65, 0.95), rgba(70, 60, 50, 0.98));
     border: 2px solid #8b7355;
-    box-shadow: 
+    box-shadow:
       0 4px 16px rgba(139, 115, 85, 0.3),
       0 2px 6px rgba(139, 115, 85, 0.2);
   }
@@ -362,7 +388,7 @@ const isRtl = language === LANGUAGES.HE;
     padding: 14px 16px;
     color: var(--yuval-text-secondary);
     text-decoration: none;
-    transition: all 0.2s ease;
+    transition: all 200ms var(--ease-standard);
     border-radius: 10px;
   }
 
@@ -377,7 +403,7 @@ const isRtl = language === LANGUAGES.HE;
   .toc-link-active {
     color: var(--yuval-text);
     font-weight: 600;
-    padding-right: 28px; /* Space for reading dot */
+    padding-right: 28px;
   }
 
   .toc-sidebar-rtl .toc-link-active {
@@ -397,15 +423,20 @@ const isRtl = language === LANGUAGES.HE;
     font-size: 12px;
     font-weight: 700;
     flex-shrink: 0;
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 
+    transition:
+      background 200ms var(--ease-standard),
+      border-color 200ms var(--ease-standard),
+      color 200ms var(--ease-standard),
+      transform 200ms var(--ease-standard),
+      box-shadow 200ms var(--ease-standard);
+    box-shadow:
       inset 0 1px 2px rgba(255, 255, 255, 0.8),
       0 1px 3px rgba(0, 0, 0, 0.08);
   }
 
   :global(.dark) .toc-number {
     background: linear-gradient(145deg, rgba(80, 80, 85, 0.9), rgba(60, 60, 65, 0.95));
-    box-shadow: 
+    box-shadow:
       inset 0 1px 2px rgba(255, 255, 255, 0.05),
       0 1px 3px rgba(0, 0, 0, 0.2);
   }
@@ -426,14 +457,14 @@ const isRtl = language === LANGUAGES.HE;
     background: linear-gradient(145deg, #c9a227, #ddb52f);
     color: #fff;
     transform: scale(1.1);
-    box-shadow: 
+    box-shadow:
       0 0 0 3px rgba(201, 162, 39, 0.2),
       0 3px 10px rgba(201, 162, 39, 0.4);
   }
 
   :global(.dark) .toc-item-active .toc-number {
     background: linear-gradient(145deg, #8b7355, #9d8463);
-    box-shadow: 
+    box-shadow:
       0 0 0 3px rgba(139, 115, 85, 0.25),
       0 3px 10px rgba(139, 115, 85, 0.45);
   }
@@ -453,7 +484,6 @@ const isRtl = language === LANGUAGES.HE;
     font-weight: 600;
   }
 
-  /* Completed chapter styling */
   .toc-item-completed .toc-number {
     background: linear-gradient(135deg, #22c55e, #16a34a);
     color: #fff;
@@ -465,7 +495,6 @@ const isRtl = language === LANGUAGES.HE;
     box-shadow: 0 2px 6px rgba(74, 222, 128, 0.35);
   }
 
-  /* Completed chapter checkmark */
   .toc-item-completed .toc-link {
     display: flex;
     align-items: center;
@@ -491,7 +520,6 @@ const isRtl = language === LANGUAGES.HE;
     color: #4ade80;
   }
 
-  /* Progress bar under chapter */
   .toc-progress-bar {
     position: absolute;
     bottom: 0;
@@ -508,14 +536,13 @@ const isRtl = language === LANGUAGES.HE;
     height: 100%;
     background: linear-gradient(to right, #c9a227, #e8c547);
     border-radius: 1px;
-    transition: width 0.3s ease;
+    transition: width 300ms var(--ease-standard);
   }
 
   :global(.dark) .toc-progress-fill {
     background: linear-gradient(to right, #8b7355, #a8956d);
   }
 
-  /* Outline Sidebar — RIGHT in English, LEFT in Hebrew */
   .outline-sidebar {
     position: fixed;
     top: 68px;
@@ -594,11 +621,16 @@ const isRtl = language === LANGUAGES.HE;
     margin-bottom: 0;
     border-bottom: none;
     border-radius: 12px;
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    transition:
+      background 200ms var(--ease-standard),
+      border-color 200ms var(--ease-standard),
+      color 200ms var(--ease-standard),
+      transform 200ms var(--ease-standard),
+      box-shadow 200ms var(--ease-standard);
     position: relative;
     background: linear-gradient(145deg, #fefefe, #f3f3f3) !important;
     border: 1.5px solid rgba(0, 0, 0, 0.12) !important;
-    box-shadow: 
+    box-shadow:
       0 3px 8px rgba(0, 0, 0, 0.08),
       0 1px 3px rgba(0, 0, 0, 0.05),
       inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
@@ -608,7 +640,7 @@ const isRtl = language === LANGUAGES.HE;
   :global(.dark) .outline-list li {
     background: linear-gradient(145deg, rgba(70, 70, 75, 0.95), rgba(50, 50, 55, 0.98)) !important;
     border: 1.5px solid rgba(255, 255, 255, 0.12) !important;
-    box-shadow: 
+    box-shadow:
       0 3px 8px rgba(0, 0, 0, 0.25),
       0 1px 3px rgba(0, 0, 0, 0.15),
       inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
@@ -618,7 +650,7 @@ const isRtl = language === LANGUAGES.HE;
     background: linear-gradient(145deg, #fffbf0, #f8f2e0) !important;
     border-color: rgba(201, 162, 39, 0.5) !important;
     transform: translateY(-3px) scale(1.02);
-    box-shadow: 
+    box-shadow:
       0 10px 25px rgba(201, 162, 39, 0.2),
       0 6px 12px rgba(0, 0, 0, 0.08),
       inset 0 1px 0 rgba(255, 255, 255, 1) !important;
@@ -627,31 +659,29 @@ const isRtl = language === LANGUAGES.HE;
   :global(.dark) .outline-list li:hover {
     background: linear-gradient(145deg, rgba(80, 75, 65, 0.9), rgba(60, 55, 50, 0.95));
     border-color: rgba(139, 115, 85, 0.45);
-    box-shadow: 
+    box-shadow:
       0 8px 20px rgba(139, 115, 85, 0.2),
       0 4px 8px rgba(0, 0, 0, 0.15);
   }
 
-  /* Click/pressed state */
   .outline-list li:active {
     transform: translateY(0) scale(0.98);
-    box-shadow: 
+    box-shadow:
       0 2px 4px rgba(201, 162, 39, 0.1),
       inset 0 1px 3px rgba(0, 0, 0, 0.05);
-    transition: all 0.1s ease;
+    transition: transform 80ms var(--ease-accelerated);
   }
 
   :global(.dark) .outline-list li:active {
-    box-shadow: 
+    box-shadow:
       0 2px 4px rgba(139, 115, 85, 0.15),
       inset 0 1px 3px rgba(0, 0, 0, 0.15);
   }
 
-  /* Active section indicator (current reading position) */
   .outline-list li.active {
     background: linear-gradient(145deg, #fdf8e8, #f9f0d8);
     border: 2px solid #c9a227;
-    box-shadow: 
+    box-shadow:
       0 4px 16px rgba(201, 162, 39, 0.25),
       0 2px 6px rgba(201, 162, 39, 0.15),
       inset 0 0 0 1px rgba(201, 162, 39, 0.1);
@@ -660,7 +690,7 @@ const isRtl = language === LANGUAGES.HE;
   :global(.dark) .outline-list li.active {
     background: linear-gradient(145deg, rgba(90, 80, 65, 0.95), rgba(70, 60, 50, 0.98));
     border: 2px solid #8b7355;
-    box-shadow: 
+    box-shadow:
       0 4px 16px rgba(139, 115, 85, 0.3),
       0 2px 6px rgba(139, 115, 85, 0.2),
       inset 0 0 0 1px rgba(139, 115, 85, 0.15);
@@ -676,7 +706,7 @@ const isRtl = language === LANGUAGES.HE;
     font-size: 13.5px;
     font-weight: 480;
     word-break: break-word;
-    transition: all 0.2s ease;
+    transition: all 200ms var(--ease-standard);
     line-height: 1.55;
   }
 
@@ -697,7 +727,12 @@ const isRtl = language === LANGUAGES.HE;
     background: linear-gradient(145deg, #e0e0e0, #c8c8c8);
     border-radius: 4px;
     flex-shrink: 0;
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    transition:
+      background 200ms var(--ease-standard),
+      border-color 200ms var(--ease-standard),
+      color 200ms var(--ease-standard),
+      transform 200ms var(--ease-standard),
+      box-shadow 200ms var(--ease-standard);
     box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
   }
 
@@ -724,10 +759,10 @@ const isRtl = language === LANGUAGES.HE;
     height: 12px;
     margin-top: 3px;
     border-radius: 50%;
-    box-shadow: 
+    box-shadow:
       0 0 0 3px rgba(201, 162, 39, 0.2),
       0 2px 8px rgba(201, 162, 39, 0.4);
-    animation: pulse-dot 2s ease-in-out infinite;
+    animation: pulse-dot 2s var(--ease-standard) infinite;
   }
 
   @keyframes pulse-dot {
@@ -737,12 +772,11 @@ const isRtl = language === LANGUAGES.HE;
 
   :global(.dark) .outline-list li.active a::before {
     background: linear-gradient(145deg, #8b7355, #9d8463);
-    box-shadow: 
+    box-shadow:
       0 0 0 3px rgba(139, 115, 85, 0.25),
       0 2px 8px rgba(139, 115, 85, 0.5);
   }
 
-  /* Indentation for nested headings (h3) */
   .outline-list li[data-level="h3"] {
     margin-inline-start: 20px;
     background: linear-gradient(145deg, #fafafa, #f4f4f4);
@@ -768,17 +802,15 @@ const isRtl = language === LANGUAGES.HE;
     border-radius: 2px;
   }
 
-  /* ── Smooth transition for immersive mode ── */
   .toc-sidebar {
-    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1),
-                opacity 0.35s ease;
+    transition: transform 350ms var(--ease-standard),
+                opacity 350ms var(--ease-standard);
   }
   .outline-sidebar {
-    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1),
-                opacity 0.35s ease;
+    transition: transform 350ms var(--ease-standard),
+                opacity 350ms var(--ease-standard);
   }
 
-  /* ── Immersive mode: sidebars slide off screen ── */
   :global(body.reading-immersive) .toc-sidebar:not(.toc-sidebar-rtl) {
     transform: translateX(-100%);
     pointer-events: none;
@@ -796,7 +828,6 @@ const isRtl = language === LANGUAGES.HE;
     pointer-events: none;
   }
 
-  /* ── Peek on hover at screen edges ── */
   :global(body.reading-immersive) .toc-sidebar:not(.toc-sidebar-rtl):hover,
   :global(body.reading-immersive) .toc-sidebar-rtl:hover,
   :global(body.reading-immersive) .outline-sidebar:not(.outline-sidebar-rtl):hover,
@@ -806,7 +837,6 @@ const isRtl = language === LANGUAGES.HE;
     opacity: 1;
   }
 
-  /* ── Edge peek trigger zones ── */
   .toc-sidebar::before,
   .outline-sidebar::before {
     content: '';
@@ -821,7 +851,6 @@ const isRtl = language === LANGUAGES.HE;
   .outline-sidebar:not(.outline-sidebar-rtl)::before { left: -16px; }
   .outline-sidebar-rtl::before { right: -16px; }
 
-  /* Scrollbar styling */
   .toc-sidebar::-webkit-scrollbar,
   .outline-sidebar::-webkit-scrollbar {
     width: 4px;
@@ -843,7 +872,6 @@ const isRtl = language === LANGUAGES.HE;
     background: #c8c4bc;
   }
 
-  /* Mobile: hide sidebars on small screens */
   @media (max-width: 1023px) {
     .toc-sidebar,
     .outline-sidebar {
@@ -851,7 +879,6 @@ const isRtl = language === LANGUAGES.HE;
     }
   }
 
-  /* Mobile drawer (combined outline+chapters) */
   .mobile-drawer {
     display: none;
     position: fixed;
@@ -870,7 +897,7 @@ const isRtl = language === LANGUAGES.HE;
 
   .mobile-drawer.open {
     display: flex;
-    animation: slideUp 0.25s ease-out;
+    animation: slideUp 250ms var(--ease-emphasized);
   }
 
   .mobile-drawer-tabs {
@@ -927,7 +954,7 @@ const isRtl = language === LANGUAGES.HE;
       0 4px 15px rgba(99, 102, 241, 0.4),
       0 8px 30px rgba(139, 92, 246, 0.25),
       inset 0 1px 0 rgba(255, 255, 255, 0.2);
-    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s;
+    transition: transform 300ms var(--ease-emphasized), box-shadow 300ms var(--ease-standard);
     overflow: visible;
   }
 
@@ -962,7 +989,7 @@ const isRtl = language === LANGUAGES.HE;
     inset: -8px;
     border-radius: 50%;
     border: 2px solid rgba(139, 92, 246, 0.3);
-    animation: btnRingPulse 2.5s ease-in-out infinite;
+    animation: btnRingPulse 2.5s var(--ease-standard) infinite;
     pointer-events: none;
   }
 
@@ -981,11 +1008,8 @@ const isRtl = language === LANGUAGES.HE;
     50% { transform: scale(1.15); opacity: 0; }
   }
 
-  @media (max-width: 1023px) {
-    .mobile-toc-btn {
-      display: flex;
-    }
-  }
+  /* mobile-toc-btn is intentionally never displayed — the unified FAB's
+     Navigation sub-item delegates to this element's click handler. */
 
   :global(.dark) .mobile-toc-btn {
     background: linear-gradient(135deg, #7c3aed, #6366f1, #818cf8);
@@ -1019,7 +1043,6 @@ const isRtl = language === LANGUAGES.HE;
     to { transform: translateY(0); }
   }
 
-  /* Adjust main content when sidebars visible */
   :global(.reading-page-with-sidebars) {
     margin-left: 260px;
     margin-right: 260px;
@@ -1032,35 +1055,38 @@ const isRtl = language === LANGUAGES.HE;
 </style>
 
 <script>
-  /**
-   * Get the current active language from URL or localStorage
-   */
-  function getCurrentLang(): string {
-    const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get('lang') || localStorage.getItem('yuval_language') || 'en';
+  function getCurrentLang() {
+    return localStorage.getItem('yuval_language') || 'he';
   }
 
-  /**
-   * Get the current chapter ID from the URL
-   */
-  function getCurrentChapterId(): number | null {
+  function getCurrentChapterId() {
     const match = window.location.pathname.match(/\/read\/[^/]+\/(\d+)/);
     return match ? parseInt(match[1], 10) : null;
   }
 
-  /**
-   * Update the active chapter highlighting in TOC based on current URL.
-   * Called after navigation when using transition:persist.
-   */
+  function getSourceLanguage() {
+    return 'he';
+  }
+
+  function getTitleFromDataset(el, lang) {
+    const raw = el.dataset.titles || '{}';
+
+    try {
+      const titles = JSON.parse(raw);
+      return titles?.[lang] || titles?.[getSourceLanguage()] || '';
+    } catch {
+      return '';
+    }
+  }
+
   function updateActiveChapter() {
     const currentId = getCurrentChapterId();
     if (currentId === null) return;
 
-    // Update desktop TOC
     document.querySelectorAll('.toc-item').forEach(item => {
-      const chapterId = parseInt((item as HTMLElement).dataset.chapterId || '0', 10);
+      const chapterId = parseInt(item.dataset.chapterId || '0', 10);
       const link = item.querySelector('.toc-link');
-      
+
       if (chapterId === currentId) {
         item.classList.add('toc-item-active');
         link?.classList.add('toc-link-active');
@@ -1072,12 +1098,11 @@ const isRtl = language === LANGUAGES.HE;
       }
     });
 
-    // Update mobile TOC
     document.querySelectorAll('.mobile-toc-link').forEach(link => {
       const href = link.getAttribute('href') || '';
       const match = href.match(/\/read\/[^/]+\/(\d+)/);
       const chapterId = match ? parseInt(match[1], 10) : 0;
-      
+
       const item = link.closest('.toc-item');
       if (chapterId === currentId) {
         item?.classList.add('toc-item-active');
@@ -1089,18 +1114,17 @@ const isRtl = language === LANGUAGES.HE;
     });
   }
 
-  /**
-   * Load chapter content via fetch without full page navigation.
-   * INSTANT swap - no animation, no scroll visible.
-   */
-  async function loadChapterContent(url: string): Promise<void> {
+  async function loadChapterContent(url) {
     const container = document.getElementById('chapter-container');
     const header = document.getElementById('chapter-header');
+    const topStrip = document.getElementById('chapter-top-strip');
 
-    if (!container) { window.location.href = url; return; }
+    if (!container) {
+      window.location.href = url;
+      return;
+    }
 
-    // Fade out only the content — sidebars and header stay put
-    container.style.transition = 'opacity 0.1s ease';
+    container.style.transition = 'opacity 100ms var(--ease-standard)';
     container.style.opacity = '0';
 
     try {
@@ -1112,32 +1136,32 @@ const isRtl = language === LANGUAGES.HE;
 
       const newContainer = doc.getElementById('chapter-container');
       const newHeader = doc.getElementById('chapter-header');
+      const newTopStrip = doc.getElementById('chapter-top-strip');
 
-      // Scroll to top while content is transparent
       window.scrollTo({ top: 0, behavior: 'instant' });
 
-      // Swap content
       if (newContainer) {
         container.innerHTML = newContainer.innerHTML;
         container.dataset.chapterId = newContainer.dataset.chapterId || '';
         container.dataset.book = newContainer.dataset.book || '';
       }
+
       if (newHeader && header) {
         header.innerHTML = newHeader.innerHTML;
       }
 
-      // Apply language, update URL and TOC
+      if (newTopStrip && topStrip) {
+        topStrip.innerHTML = newTopStrip.innerHTML;
+      }
+
       applyLanguageVisibility(getCurrentLang());
       history.pushState({}, '', url);
       updateActiveChapter();
       buildChapterOutline();
 
-      // Notify other scripts that new chapter content is in the DOM
       window.dispatchEvent(new CustomEvent('chapter-content-swapped'));
 
-      // Fade content back in
       container.style.opacity = '1';
-
     } catch (error) {
       console.error('Error loading chapter:', error);
       container.style.opacity = '1';
@@ -1145,12 +1169,9 @@ const isRtl = language === LANGUAGES.HE;
     }
   }
 
-  /**
-   * Apply language visibility to content divs
-   */
-  function applyLanguageVisibility(lang: string) {
+  function applyLanguageVisibility(lang) {
     document.querySelectorAll('[data-lang]').forEach(el => {
-      const elLang = (el as HTMLElement).dataset.lang;
+      const elLang = el.dataset.lang;
       if (elLang === lang) {
         el.classList.remove('hidden');
         el.classList.add('visible');
@@ -1161,71 +1182,45 @@ const isRtl = language === LANGUAGES.HE;
     });
   }
 
-  // Expose for keyboard navigation and other modules
-  (window as any).yuvalLoadChapter = loadChapterContent;
+  window.yuvalLoadChapter = loadChapterContent;
 
-  /**
-   * TOC navigation — uses fetch to load content without page navigation.
-   */
   function initTocNavigation() {
-    // Must target the desktop sidebar specifically — there are multiple .toc-list
-    // elements in the DOM (mobile drawer + desktop sidebar) and querySelector
-    // returns the first one (mobile), leaving desktop links without a handler.
     const tocSidebar = document.getElementById('toc-sidebar');
     if (!tocSidebar || tocSidebar.dataset.navInit === 'true') return;
     tocSidebar.dataset.navInit = 'true';
 
     tocSidebar.addEventListener('click', async (e) => {
-      const target = (e.target as HTMLElement).closest('a.toc-link') as HTMLAnchorElement | null;
+      const target = e.target.closest('a.toc-link');
       if (!target) return;
 
       e.preventDefault();
 
-      // No ?lang= needed - language determined by toggle position
       const url = target.getAttribute('href')?.split('?')[0] || '';
-
       await loadChapterContent(url);
     });
   }
 
-  // Handle browser back/forward buttons
   window.addEventListener('popstate', async () => {
     await loadChapterContent(window.location.href);
   });
 
-  /**
-   * Update sidebar text based on current language
-   */
-  function updateSidebarText(lang: string) {
-    // data-i18n elements (sidebar titles) are handled by applyLanguageToPage().
-    // Only dynamic content (chapter titles from MD) needs manual update here.
-    document.querySelectorAll('.toc-chapter-title span[data-he]').forEach((span) => {
-      const heText = span.getAttribute('data-he');
-      const enText = span.getAttribute('data-en');
-      const esText = span.getAttribute('data-es');
-      if (lang === 'he') {
-        span.textContent = heText;
-      } else if (lang === 'es') {
-        span.textContent = esText || enText;
-      } else {
-        span.textContent = enText;
-      }
+  function updateSidebarText(lang) {
+    document.querySelectorAll('.toc-chapter-title-text[data-titles]').forEach((span) => {
+      span.textContent = getTitleFromDataset(span, lang);
     });
   }
 
-  /**
-   * Build chapter outline from h2/h3 headings
-   * Searches for headings in the chapter content divs
-   */
+  function getVisibleContentDiv() {
+    return document.querySelector('.chapter-content.visible') || document.querySelector('.chapter-content');
+  }
+
   function buildChapterOutline() {
     const outline = document.getElementById('chapter-outline');
     if (!outline) return;
 
-    // Clear existing outline and style the ul
     const ul = outline.querySelector('ul');
     if (ul) {
       ul.innerHTML = '';
-      // Apply styles to ul (scoped CSS doesn't work for dynamic content)
       ul.style.cssText = `
         list-style: none;
         padding: 0;
@@ -1236,31 +1231,16 @@ const isRtl = language === LANGUAGES.HE;
       `;
     }
 
-    // Find the chapter container
-    const container = document.getElementById('chapter-container');
-    if (!container) return;
-
-    // Find visible content div by data-lang attribute
-    const heDiv = container.querySelector('[data-lang="he"]');
-    const enDiv = container.querySelector('[data-lang="en"]');
-
-    let contentDiv = null;
-    if (heDiv && window.getComputedStyle(heDiv).display !== 'none') {
-      contentDiv = heDiv;
-    } else if (enDiv && window.getComputedStyle(enDiv).display !== 'none') {
-      contentDiv = enDiv;
-    }
-
+    const contentDiv = getVisibleContentDiv();
     if (!contentDiv) return;
 
-    // Get all h2 and h3 elements from the content
     const headings = Array.from(contentDiv.querySelectorAll('h2, h3'));
 
     if (headings.length === 0) {
-      // If no headings found, show message
       const li = document.createElement('li');
       li.style.color = '#cccccc';
       li.style.fontSize = '12px';
+      li.setAttribute('data-i18n', 'sidebar.noSectionsFound');
       li.textContent = 'No sections found';
       if (ul) ul.appendChild(li);
       return;
@@ -1269,63 +1249,58 @@ const isRtl = language === LANGUAGES.HE;
     headings.forEach((heading, index) => {
       const level = heading.tagName.toLowerCase();
       const text = heading.textContent?.trim() || `Section ${index + 1}`;
-      const id = `section-${index}`;
+      const id = heading.id || `section-${index}`;
 
-      // Add id to heading
       heading.id = id;
 
-      // Create outline item with inline styles (scoped CSS doesn't apply to dynamic elements)
       const li = document.createElement('li');
       li.setAttribute('data-level', level);
-      
-      // Card-like styling for li
+
       const isDark = document.documentElement.classList.contains('dark');
       li.style.cssText = `
         margin-bottom: 0;
         border-radius: 12px;
-        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        transition: all 250ms var(--ease-standard);
         position: relative;
-        background: ${isDark 
-          ? 'linear-gradient(145deg, rgba(70, 70, 75, 0.95), rgba(50, 50, 55, 0.98))' 
+        background: ${isDark
+          ? 'linear-gradient(145deg, rgba(70, 70, 75, 0.95), rgba(50, 50, 55, 0.98))'
           : 'linear-gradient(145deg, #fefefe, #f3f3f3)'};
         border: 1.5px solid ${isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.12)'};
-        box-shadow: ${isDark 
-          ? '0 3px 8px rgba(0, 0, 0, 0.25), 0 1px 3px rgba(0, 0, 0, 0.15)' 
+        box-shadow: ${isDark
+          ? '0 3px 8px rgba(0, 0, 0, 0.25), 0 1px 3px rgba(0, 0, 0, 0.15)'
           : '0 3px 8px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05)'};
         cursor: pointer;
         ${level === 'h3' ? 'margin-inline-start: 20px;' : ''}
       `;
 
-      // Add hover effects
       li.addEventListener('mouseenter', () => {
         const dark = document.documentElement.classList.contains('dark');
-        li.style.background = dark 
-          ? 'linear-gradient(145deg, rgba(90, 85, 75, 0.95), rgba(70, 65, 60, 0.98))' 
+        li.style.background = dark
+          ? 'linear-gradient(145deg, rgba(90, 85, 75, 0.95), rgba(70, 65, 60, 0.98))'
           : 'linear-gradient(145deg, #fffbf0, #f8f2e0)';
         li.style.borderColor = dark ? 'rgba(139, 115, 85, 0.5)' : 'rgba(201, 162, 39, 0.5)';
         li.style.transform = 'translateY(-3px) scale(1.02)';
-        li.style.boxShadow = dark 
-          ? '0 10px 25px rgba(139, 115, 85, 0.25), 0 6px 12px rgba(0, 0, 0, 0.12)' 
+        li.style.boxShadow = dark
+          ? '0 10px 25px rgba(139, 115, 85, 0.25), 0 6px 12px rgba(0, 0, 0, 0.12)'
           : '0 10px 25px rgba(201, 162, 39, 0.2), 0 6px 12px rgba(0, 0, 0, 0.08)';
       });
 
       li.addEventListener('mouseleave', () => {
         const dark = document.documentElement.classList.contains('dark');
-        const isH3 = level === 'h3';
-        li.style.background = dark 
-          ? 'linear-gradient(145deg, rgba(70, 70, 75, 0.95), rgba(50, 50, 55, 0.98))' 
+        li.style.background = dark
+          ? 'linear-gradient(145deg, rgba(70, 70, 75, 0.95), rgba(50, 50, 55, 0.98))'
           : 'linear-gradient(145deg, #fefefe, #f3f3f3)';
         li.style.borderColor = dark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.12)';
         li.style.transform = 'translateY(0) scale(1)';
-        li.style.boxShadow = dark 
-          ? '0 3px 8px rgba(0, 0, 0, 0.25), 0 1px 3px rgba(0, 0, 0, 0.15)' 
+        li.style.boxShadow = dark
+          ? '0 3px 8px rgba(0, 0, 0, 0.25), 0 1px 3px rgba(0, 0, 0, 0.15)'
           : '0 3px 8px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05)';
       });
 
-      // Active/click effect
       li.addEventListener('mousedown', () => {
         li.style.transform = 'translateY(0) scale(0.98)';
       });
+
       li.addEventListener('mouseup', () => {
         li.style.transform = 'translateY(-3px) scale(1.02)';
       });
@@ -1333,8 +1308,7 @@ const isRtl = language === LANGUAGES.HE;
       const link = document.createElement('a');
       link.href = `#${id}`;
       link.textContent = text;
-      
-      // Styled link
+
       link.style.cssText = `
         display: flex;
         align-items: flex-start;
@@ -1345,10 +1319,10 @@ const isRtl = language === LANGUAGES.HE;
         font-size: ${level === 'h3' ? '12.5px' : '13.5px'};
         font-weight: 480;
         word-break: break-word;
-        transition: all 0.2s ease;
+        transition: all 200ms var(--ease-standard);
         line-height: 1.55;
       `;
-      
+
       link.addEventListener('click', (e) => {
         e.preventDefault();
         const target = document.getElementById(id);
@@ -1362,32 +1336,27 @@ const isRtl = language === LANGUAGES.HE;
     });
   }
 
-  /**
-   * Update outline items styling when theme changes (day/night)
-   */
   function updateOutlineTheme() {
     const isDark = document.documentElement.classList.contains('dark');
     const ul = document.getElementById('chapter-outline');
     if (!ul) return;
 
-    ul.querySelectorAll<HTMLLIElement>('li[data-level]').forEach(li => {
-      const level = li.getAttribute('data-level') || 'h2';
-      li.style.background = isDark 
-        ? 'linear-gradient(145deg, rgba(70, 70, 75, 0.95), rgba(50, 50, 55, 0.98))' 
+    ul.querySelectorAll('li[data-level]').forEach(li => {
+      li.style.background = isDark
+        ? 'linear-gradient(145deg, rgba(70, 70, 75, 0.95), rgba(50, 50, 55, 0.98))'
         : 'linear-gradient(145deg, #fefefe, #f3f3f3)';
       li.style.borderColor = isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.12)';
-      li.style.boxShadow = isDark 
-        ? '0 3px 8px rgba(0, 0, 0, 0.25), 0 1px 3px rgba(0, 0, 0, 0.15)' 
+      li.style.boxShadow = isDark
+        ? '0 3px 8px rgba(0, 0, 0, 0.25), 0 1px 3px rgba(0, 0, 0, 0.15)'
         : '0 3px 8px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05)';
 
       const link = li.querySelector('a');
       if (link) {
-        (link as HTMLElement).style.color = isDark ? 'rgba(255, 255, 255, 0.75)' : 'rgba(0, 0, 0, 0.7)';
+        link.style.color = isDark ? 'rgba(255, 255, 255, 0.75)' : 'rgba(0, 0, 0, 0.7)';
       }
     });
   }
 
-  // Listen for theme changes using MutationObserver
   const themeObserver = new MutationObserver((mutations) => {
     mutations.forEach((mutation) => {
       if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
@@ -1401,20 +1370,11 @@ const isRtl = language === LANGUAGES.HE;
     attributeFilter: ['class']
   });
 
-  /**
-   * TOC links no longer need ?lang= - language is determined by toggle position
-   */
-  function updateTocLinks(lang: string) {
-    // Links are now clean URLs without ?lang= parameter
-    // Language is determined solely by the toggle position in localStorage
+  function updateTocLinks() {
+    // clean URLs only
   }
 
-  /**
-   * Swap sidebar positions based on language:
-   *  EN: TOC left, Outline right
-   *  HE: TOC right, Outline left
-   */
-  function updateSidebarPositions(lang: string) {
+  function updateSidebarPositions(lang) {
     const toc = document.getElementById('toc-sidebar');
     const outline = document.getElementById('outline-sidebar');
     if (!toc || !outline) return;
@@ -1428,37 +1388,22 @@ const isRtl = language === LANGUAGES.HE;
     }
   }
 
-  /**
-   * Initialize sidebars on page load and when language changes
-   */
-  function initializeSidebars(lang?: string) {
-    // Language determined only from localStorage (toggle position)
+  function initializeSidebars(lang) {
     if (!lang) {
-      lang = localStorage.getItem('yuval_language') || 'en';
+      lang = localStorage.getItem('yuval_language') || 'he';
     }
 
-    // Update text
     updateSidebarText(lang);
-
-    // Update TOC link hrefs
-    updateTocLinks(lang);
-
-    // Swap sidebar positions
+    updateTocLinks();
     updateSidebarPositions(lang);
-
-    // Initialize click navigation
     initTocNavigation();
-
-    // Update active chapter highlighting (for transition:persist)
     updateActiveChapter();
 
-    // Wait for content to render, then build outline
     setTimeout(() => {
       buildChapterOutline();
     }, 150);
   }
 
-  // Initial load
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
       initializeSidebars();
@@ -1467,39 +1412,33 @@ const isRtl = language === LANGUAGES.HE;
     initializeSidebars();
   }
 
-  // ── TOC progress indicators ────────────────────────────────────────────────
-  function updateTocProgress(currentChapterPct?: number) {
+  function updateTocProgress(currentChapterPct) {
     const bookEl = document.getElementById('chapter-container');
     const book = bookEl?.dataset.book || '';
     const currentChapterId = bookEl?.dataset.chapterId || '';
     if (!book) return;
 
-    // Get completed chapters list
-    let completedChapters: string[] = [];
+    let completedChapters = [];
     try {
       completedChapters = JSON.parse(localStorage.getItem(`yuval_ch_complete_${book}`) || '[]');
-    } catch { /* ignore */ }
+    } catch {}
 
-    document.querySelectorAll<HTMLElement>('#toc-sidebar li[data-chapter-id]').forEach(li => {
+    document.querySelectorAll('#toc-sidebar li[data-chapter-id]').forEach(li => {
       const chId = li.dataset.chapterId;
       if (!chId) return;
 
-      // Remove old indicator
       li.querySelector('.toc-progress-bar-wrap')?.remove();
 
       let pct = 0;
       let done = false;
 
-      // Check if chapter is completed
       if (completedChapters.includes(chId) || completedChapters.includes(String(chId))) {
         pct = 100;
         done = true;
       } else if (chId === currentChapterId && currentChapterPct !== undefined) {
-        // Use real-time percentage for current chapter
         pct = currentChapterPct;
         done = pct >= 100;
       } else {
-        // Find saved progress percentage for this chapter
         for (let i = 0; i < localStorage.length; i++) {
           const k = localStorage.key(i);
           if (!k?.includes(`_${book}_ch${chId}`)) continue;
@@ -1508,17 +1447,15 @@ const isRtl = language === LANGUAGES.HE;
             if (d.percentage !== undefined && d.percentage > pct) {
               pct = d.percentage;
             } else if (d.scrollPosition && d.scrollPosition > 50) {
-              // Fallback: estimate from scroll position (assume ~2500px page height)
               const estimated = Math.min(95, Math.round((d.scrollPosition / 2500) * 100));
               if (estimated > pct) pct = estimated;
             }
-          } catch { /* skip */ }
+          } catch {}
         }
       }
 
-      if (pct < 3) return; // Don't show bar for minimal progress
+      if (pct < 3) return;
 
-      // Thin progress bar under the chapter title link
       const bar = document.createElement('div');
       bar.className = 'toc-progress-bar-wrap';
       bar.style.cssText = `
@@ -1527,26 +1464,24 @@ const isRtl = language === LANGUAGES.HE;
         background:var(--yuval-border,#e5e7eb);
         overflow:hidden;
       `;
+
       const fill = document.createElement('div');
       fill.style.cssText = `
         height:100%; width:${pct}%; border-radius:99px;
         background:${done ? '#22c55e' : '#6366f1'};
-        transition:width 0.6s ease;
+        transition:width 600ms var(--ease-standard);
       `;
-      bar.appendChild(fill);
 
-      // li needs relative positioning
+      bar.appendChild(fill);
       li.style.position = 'relative';
       li.appendChild(bar);
     });
   }
 
-  // Call on init and after chapter swaps
   setTimeout(updateTocProgress, 200);
   window.addEventListener('chapter-content-swapped', () => setTimeout(updateTocProgress, 400));
-  
-  // Update current chapter progress in real-time on scroll
-  let scrollTimeout: ReturnType<typeof setTimeout>;
+
+  let scrollTimeout;
   window.addEventListener('scroll', () => {
     clearTimeout(scrollTimeout);
     scrollTimeout = setTimeout(() => {
@@ -1564,33 +1499,27 @@ const isRtl = language === LANGUAGES.HE;
       updateTocProgress(pct);
     }, 100);
   }, { passive: true });
-  
-  // Update when chapter is completed
+
   window.addEventListener('chapter-completed', () => {
     setTimeout(() => updateTocProgress(100), 100);
   });
 
-  // Update when language changes
-  window.addEventListener('language-changed', (e: any) => {
-    const lang = e.detail?.language || 'en';
+  window.addEventListener('language-changed', (e) => {
+    const lang = e.detail?.language || 'he';
     updateSidebarText(lang);
-    updateTocLinks(lang);
+    updateTocLinks();
     updateSidebarPositions(lang);
     setTimeout(() => {
       buildChapterOutline();
     }, 150);
   });
 
-  // Also update on Astro navigation
   document.addEventListener('astro:after-swap', () => {
     initializeSidebars();
     drawerInitialized = false;
     initMobileToc();
   });
 
-  /**
-   * Build outline for mobile drawer from visible chapter headings
-   */
   function buildMobileOutline() {
     const mobileOutline = document.getElementById('mobile-chapter-outline');
     if (!mobileOutline) return;
@@ -1598,14 +1527,7 @@ const isRtl = language === LANGUAGES.HE;
     if (!ul) return;
     ul.innerHTML = '';
 
-    const container = document.getElementById('chapter-container');
-    if (!container) return;
-
-    const heDiv = container.querySelector('[data-lang="he"]');
-    const enDiv = container.querySelector('[data-lang="en"]');
-    let contentDiv: Element | null = null;
-    if (heDiv && window.getComputedStyle(heDiv).display !== 'none') contentDiv = heDiv;
-    else if (enDiv && window.getComputedStyle(enDiv).display !== 'none') contentDiv = enDiv;
+    const contentDiv = getVisibleContentDiv();
     if (!contentDiv) return;
 
     const headings = Array.from(contentDiv.querySelectorAll('h2, h3'));
@@ -1613,8 +1535,8 @@ const isRtl = language === LANGUAGES.HE;
       const li = document.createElement('li');
       li.style.color = '#ccc';
       li.style.fontSize = '12px';
-      const lang = getCurrentLang();
-      li.textContent = lang === 'he' ? 'לא נמצאו סעיפים' : lang === 'es' ? 'No se encontraron secciones' : 'No sections found';
+      li.setAttribute('data-i18n', 'sidebar.noSectionsFound');
+      li.textContent = 'No sections found';
       ul.appendChild(li);
       return;
     }
@@ -1627,6 +1549,7 @@ const isRtl = language === LANGUAGES.HE;
 
       const li = document.createElement('li');
       li.setAttribute('data-level', level);
+
       const link = document.createElement('a');
       link.href = `#${id}`;
       link.textContent = text;
@@ -1636,14 +1559,12 @@ const isRtl = language === LANGUAGES.HE;
         const target = document.getElementById(id);
         if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
       });
+
       li.appendChild(link);
       ul.appendChild(li);
     });
   }
 
-  /**
-   * Mobile drawer with tabs: outline + chapters
-   */
   let drawerInitialized = false;
 
   function closeDrawer() {
@@ -1668,73 +1589,64 @@ const isRtl = language === LANGUAGES.HE;
 
     function openDrawer() {
       buildMobileOutline();
-      drawer!.classList.add('open');
-      overlay!.classList.add('active');
-      btn!.setAttribute('aria-expanded', 'true');
+      drawer.classList.add('open');
+      overlay.classList.add('active');
+      btn.setAttribute('aria-expanded', 'true');
       document.body.style.overflow = 'hidden';
     }
 
     btn.addEventListener('click', () => {
-      const isOpen = drawer!.classList.contains('open');
+      const isOpen = drawer.classList.contains('open');
       isOpen ? closeDrawer() : openDrawer();
     });
 
     overlay.addEventListener('click', closeDrawer);
 
-    // Tab switching
     drawer.querySelectorAll('.mobile-tab').forEach(tab => {
       tab.addEventListener('click', () => {
-        const target = (tab as HTMLElement).dataset.tab;
-        drawer!.querySelectorAll('.mobile-tab').forEach(t => t.classList.remove('active'));
-        drawer!.querySelectorAll('.mobile-panel').forEach(p => p.classList.remove('active'));
+        const target = tab.dataset.tab;
+        drawer.querySelectorAll('.mobile-tab').forEach(t => t.classList.remove('active'));
+        drawer.querySelectorAll('.mobile-panel').forEach(p => p.classList.remove('active'));
         tab.classList.add('active');
+
         const panel = target === 'outline'
           ? document.getElementById('mobile-outline-panel')
           : document.getElementById('mobile-chapters-panel');
+
         panel?.classList.add('active');
       });
     });
 
-    // Handle chapter link clicks with fetch-based loading
     drawer.querySelectorAll('a.mobile-toc-link').forEach(link => {
       link.addEventListener('click', async (e) => {
         e.preventDefault();
         closeDrawer();
-        
-        // No ?lang= needed - language determined by toggle position
-        const url = (link as HTMLAnchorElement).getAttribute('href')?.split('?')[0] || '';
 
+        const url = link.getAttribute('href')?.split('?')[0] || '';
         await loadChapterContent(url);
       });
     });
   }
 
-  // Init mobile TOC on load
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initMobileToc);
   } else {
     initMobileToc();
   }
 
-  // Update mobile drawer on language change
   window.addEventListener('language-changed', () => {
-    // Links no longer need ?lang= - language is determined by toggle position
     const drawer = document.getElementById('mobile-drawer');
     if (drawer && drawer.classList.contains('open')) buildMobileOutline();
   });
 
-  /**
-   * Immersive reading mode — hide chrome when scrolling down, restore on scroll up.
-   * Only active on reading pages (where this component is loaded).
-   */
   (function initImmersiveMode() {
-    const SCROLL_DOWN_THRESHOLD = 80;  // px scrolled before activating
-    const SCROLL_UP_SNAP = 30;         // px scrolled up before restoring
+    const SCROLL_DOWN_THRESHOLD = 80;
+    const SCROLL_UP_SNAP = 30;
     let lastScrollY = 0;
     let ticking = false;
     let immersiveActive = false;
 
-    function setImmersive(active: boolean) {
+    function setImmersive(active) {
       if (active === immersiveActive) return;
       immersiveActive = active;
       document.body.classList.toggle('reading-immersive', active);
@@ -1747,13 +1659,10 @@ const isRtl = language === LANGUAGES.HE;
         const currentY = window.scrollY;
 
         if (currentY < SCROLL_DOWN_THRESHOLD) {
-          // Near top — always show everything
           setImmersive(false);
         } else if (currentY > lastScrollY + 5) {
-          // Scrolling down
           setImmersive(true);
         } else if (lastScrollY - currentY > SCROLL_UP_SNAP) {
-          // Scrolled up enough
           setImmersive(false);
         }
 
@@ -1763,8 +1672,6 @@ const isRtl = language === LANGUAGES.HE;
     }
 
     window.addEventListener('scroll', onScroll, { passive: true });
-
-    // Reset on chapter navigation
     window.addEventListener('popstate', () => setImmersive(false));
   })();
 </script>

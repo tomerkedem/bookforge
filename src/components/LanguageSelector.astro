@@ -1,0 +1,653 @@
+---
+import type { Language } from '../types/index';
+import { SUPPORTED_LANGUAGES, SOURCE_LANGUAGE, getLanguageDirection } from '../utils/language';
+
+interface Props {
+  languages: Language[];
+  current?: Language;
+  class?: string;
+}
+
+const { languages, current = SOURCE_LANGUAGE, class: className } = Astro.props;
+
+// If no languages provided or empty array, show all supported languages
+// Otherwise filter to only selected languages, maintain order from SUPPORTED_LANGUAGES
+const availableLangs = (!languages || languages.length === 0)
+  ? SUPPORTED_LANGUAGES
+  : SUPPORTED_LANGUAGES.filter(l => languages.includes(l.code as Language));
+
+// Get metadata for available languages
+const langOptions = availableLangs.map(meta => ({
+  code: meta.code as Language,
+  label: meta.label,
+  labelEn: meta.labelEn,
+  dir: meta.dir,
+  flag: getFlagEmoji(meta.code),
+}));
+
+function getFlagEmoji(code: string): string {
+  const flags: Record<string, string> = {
+    he: '🇮🇱',
+    en: '🇬🇧',
+    es: '🇪🇸',
+  };
+  return flags[code] || '🌐';
+}
+
+const currentLang = langOptions.find(l => l.code === current) || langOptions[0];
+const isRtl = getLanguageDirection(currentLang.code) === 'rtl';
+
+---
+
+<div
+  class:list={['language-selector-container', className]}
+  data-current={current}
+  data-rtl={isRtl}
+>
+  <!-- Trigger Button -->
+  <button
+    type="button"
+    class="language-selector-trigger"
+    aria-haspopup="listbox"
+    aria-expanded="false"
+    aria-label={`Change language. Current: ${currentLang.labelEn}`}
+  >
+    <span class="trigger-flag">{currentLang.flag}</span>
+    <span class="trigger-label">{currentLang.label}</span>
+    <span class="trigger-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M6 9l6 6 6-6" />
+      </svg>
+    </span>
+  </button>
+
+  <!-- Dropdown Panel -->
+  <div class="language-selector-panel" role="listbox" aria-label="Available languages">
+    <div class="panel-inner">
+      {langOptions.map((option) => (
+        <button
+          type="button"
+          class:list={[
+            'language-option',
+            option.code === current && 'language-option-active',
+          ]}
+          data-language={option.code}
+          data-dir={option.dir}
+          role="option"
+          aria-selected={option.code === current}
+          aria-label={option.labelEn}
+        >
+          <span class="option-content">
+            <span class="option-flag">{option.flag}</span>
+            <span class="option-label-group">
+              <span class="option-label">{option.label}</span>
+              <span class="option-label-en">{option.labelEn}</span>
+            </span>
+          </span>
+
+          {option.code === current && (
+            <span class="option-checkmark" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" />
+              </svg>
+            </span>
+          )}
+        </button>
+      ))}
+    </div>
+  </div>
+</div>
+
+<style>
+  .language-selector-container {
+    position: relative;
+    display: inline-block;
+  }
+
+  /* ─────────────────────────────────────────────────────────────────── */
+  /* TRIGGER BUTTON                                                      */
+  /* ─────────────────────────────────────────────────────────────────── */
+
+  .language-selector-trigger {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    background: linear-gradient(135deg,
+      rgba(201, 162, 39, 0.08) 0%,
+      rgba(232, 197, 71, 0.04) 100%
+    );
+    border: 1.5px solid rgba(201, 162, 39, 0.3);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s var(--ease-emphasized);
+    font-family: var(--font-heading);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--yuval-text);
+    letter-spacing: 0.02em;
+    position: relative;
+    z-index: 100;
+  }
+
+  .language-selector-trigger::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 12px;
+    background: linear-gradient(135deg,
+      rgba(232, 197, 71, 0.15) 0%,
+      rgba(201, 162, 39, 0.08) 100%
+    );
+    opacity: 0;
+    transition: opacity 300ms var(--ease-standard);
+    pointer-events: none;
+  }
+
+  .language-selector-trigger:hover::before {
+    opacity: 1;
+  }
+
+  .language-selector-trigger:hover {
+    border-color: rgba(201, 162, 39, 0.6);
+    box-shadow:
+      0 4px 12px rgba(201, 162, 39, 0.15),
+      0 0 0 1px rgba(201, 162, 39, 0.2);
+  }
+
+  .language-selector-trigger:focus-visible {
+    outline: none;
+    border-color: #c9a227;
+    box-shadow:
+      0 0 0 3px rgba(201, 162, 39, 0.2),
+      0 4px 12px rgba(201, 162, 39, 0.15);
+  }
+
+  .language-selector-trigger[aria-expanded="true"] {
+    border-color: #c9a227;
+    background: linear-gradient(135deg,
+      rgba(201, 162, 39, 0.12) 0%,
+      rgba(232, 197, 71, 0.08) 100%
+    );
+  }
+
+  .language-selector-trigger[aria-expanded="true"] .trigger-icon {
+    transform: rotateZ(180deg);
+  }
+
+  .trigger-flag {
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+  }
+
+  .trigger-label {
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    min-width: 70px;
+  }
+
+  .trigger-icon {
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(201, 162, 39, 0.8);
+    transition: transform 0.3s var(--ease-emphasized);
+    flex-shrink: 0;
+  }
+
+  /* ─────────────────────────────────────────────────────────────────── */
+  /* DROPDOWN PANEL                                                      */
+  /* ─────────────────────────────────────────────────────────────────── */
+
+  .language-selector-panel {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    right: auto;
+    min-width: 100%;
+    background: var(--yuval-surface);
+    border: 1.5px solid var(--yuval-border);
+    border-radius: 14px;
+    box-shadow:
+      0 12px 32px rgba(0, 0, 0, 0.12),
+      0 4px 12px rgba(0, 0, 0, 0.08),
+      0 0 0 1px rgba(201, 162, 39, 0.15);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-8px) scale(0.95);
+    transition: all 0.3s var(--ease-emphasized);
+    pointer-events: none;
+    z-index: 99;
+    backdrop-filter: blur(8px);
+    overflow: hidden;
+  }
+
+  .language-selector-container[data-rtl="true"] .language-selector-panel {
+    left: auto;
+    right: 0;
+  }
+
+  .language-selector-trigger[aria-expanded="true"] + .language-selector-panel {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+  }
+
+  .panel-inner {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    padding: 6px;
+  }
+
+  /* ─────────────────────────────────────────────────────────────────── */
+  /* LANGUAGE OPTIONS                                                    */
+  /* ─────────────────────────────────────────────────────────────────── */
+
+  .language-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    width: 100%;
+    padding: 12px 14px;
+    background: transparent;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 200ms var(--ease-standard);
+    font-family: var(--font-heading);
+    font-size: 13px;
+    color: var(--yuval-text-secondary);
+    text-align: left;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .language-option::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg,
+      rgba(201, 162, 39, 0.1) 0%,
+      rgba(232, 197, 71, 0.05) 100%
+    );
+    opacity: 0;
+    transition: opacity 200ms var(--ease-standard);
+  }
+
+  .language-option:hover::before {
+    opacity: 1;
+  }
+
+  .language-option:hover {
+    background: linear-gradient(135deg,
+      rgba(201, 162, 39, 0.08) 0%,
+      rgba(232, 197, 71, 0.04) 100%
+    );
+    color: var(--yuval-text);
+  }
+
+  .language-option:active {
+    transform: scale(0.98);
+  }
+
+  .language-option-active {
+    background: linear-gradient(135deg,
+      rgba(201, 162, 39, 0.15) 0%,
+      rgba(232, 197, 71, 0.1) 100%
+    );
+    color: var(--yuval-text);
+    font-weight: 700;
+  }
+
+  .option-content {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .option-flag {
+    font-size: 20px;
+    flex-shrink: 0;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+  }
+
+  .option-label-group {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .option-label {
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.02em;
+  }
+
+  .option-label-en {
+    font-size: 11px;
+    color: var(--yuval-text-tertiary);
+    font-weight: 500;
+  }
+
+  .language-option-active .option-label-en {
+    color: var(--yuval-text-secondary);
+  }
+
+  .option-checkmark {
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #e8c547, #c9a227);
+    color: #1a1a1a;
+    flex-shrink: 0;
+    animation: checkmark-pop 0.4s var(--ease-emphasized);
+  }
+
+  .option-checkmark svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  @keyframes checkmark-pop {
+    0% {
+      transform: scale(0) rotate(-45deg);
+      opacity: 0;
+    }
+    70% {
+      transform: scale(1.15) rotate(0);
+    }
+    100% {
+      transform: scale(1) rotate(0);
+      opacity: 1;
+    }
+  }
+
+  /* ─────────────────────────────────────────────────────────────────── */
+  /* DARK MODE                                                           */
+  /* ─────────────────────────────────────────────────────────────────── */
+
+  :global(.dark) .language-selector-trigger {
+    background: linear-gradient(135deg,
+      rgba(139, 115, 85, 0.08) 0%,
+      rgba(212, 196, 168, 0.04) 100%
+    );
+    border-color: rgba(139, 115, 85, 0.3);
+    color: var(--yuval-text);
+  }
+
+  :global(.dark) .language-selector-trigger::before {
+    background: linear-gradient(135deg,
+      rgba(212, 196, 168, 0.12) 0%,
+      rgba(139, 115, 85, 0.08) 100%
+    );
+  }
+
+  :global(.dark) .language-selector-trigger:hover {
+    border-color: rgba(212, 196, 168, 0.6);
+    box-shadow:
+      0 4px 12px rgba(139, 115, 85, 0.2),
+      0 0 0 1px rgba(212, 196, 168, 0.2);
+  }
+
+  :global(.dark) .trigger-icon {
+    color: rgba(212, 196, 168, 0.8);
+  }
+
+  :global(.dark) .language-selector-panel {
+    border-color: rgba(139, 115, 85, 0.3);
+    box-shadow:
+      0 12px 32px rgba(0, 0, 0, 0.3),
+      0 4px 12px rgba(0, 0, 0, 0.2),
+      0 0 0 1px rgba(212, 196, 168, 0.15);
+  }
+
+  :global(.dark) .language-option::before {
+    background: linear-gradient(135deg,
+      rgba(212, 196, 168, 0.1) 0%,
+      rgba(139, 115, 85, 0.05) 100%
+    );
+  }
+
+  :global(.dark) .language-option:hover {
+    background: linear-gradient(135deg,
+      rgba(212, 196, 168, 0.08) 0%,
+      rgba(139, 115, 85, 0.04) 100%
+    );
+  }
+
+  :global(.dark) .language-option-active {
+    background: linear-gradient(135deg,
+      rgba(212, 196, 168, 0.15) 0%,
+      rgba(139, 115, 85, 0.1) 100%
+    );
+  }
+
+  /* ─────────────────────────────────────────────────────────────────── */
+  /* RESPONSIVE                                                          */
+  /* ─────────────────────────────────────────────────────────────────── */
+
+  @media (max-width: 640px) {
+    .language-selector-trigger {
+      padding: 8px 12px;
+      font-size: 13px;
+    }
+
+    .trigger-flag {
+      font-size: 16px;
+    }
+
+    .trigger-label {
+      min-width: 60px;
+    }
+
+    .trigger-icon {
+      width: 16px;
+      height: 16px;
+    }
+
+    .language-selector-panel {
+      top: calc(100% + 6px);
+      min-width: 200px;
+    }
+
+    .language-option {
+      padding: 10px 12px;
+    }
+
+    .option-flag {
+      font-size: 18px;
+    }
+
+    .option-label {
+      font-size: 12px;
+    }
+
+    .option-label-en {
+      font-size: 10px;
+    }
+  }
+</style>
+
+<script>
+  function createCheckmark() {
+    const checkmark = document.createElement('span');
+    checkmark.className = 'option-checkmark';
+    checkmark.setAttribute('aria-hidden', 'true');
+    checkmark.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"></path></svg>';
+    return checkmark;
+  }
+
+  function syncSelectorState(container, lang) {
+    const trigger = container.querySelector('.language-selector-trigger');
+    const triggerFlag = container.querySelector('.trigger-flag');
+    const triggerLabel = container.querySelector('.trigger-label');
+    const options = container.querySelectorAll('.language-option');
+    const activeOption = container.querySelector(`.language-option[data-language="${lang}"]`);
+
+    if (!trigger || !triggerFlag || !triggerLabel || !activeOption) return;
+
+    const optionFlag = activeOption.querySelector('.option-flag');
+    const optionLabel = activeOption.querySelector('.option-label');
+    const optionDir = activeOption.getAttribute('data-dir') || 'ltr';
+
+    triggerFlag.textContent = optionFlag?.textContent || '🌐';
+    triggerLabel.textContent = optionLabel?.textContent || lang;
+    trigger.setAttribute('aria-label', `Change language. Current: ${activeOption.getAttribute('aria-label') || lang}`);
+    container.setAttribute('data-current', lang);
+    container.setAttribute('data-rtl', String(optionDir === 'rtl'));
+
+    options.forEach((option) => {
+      const isActive = option.getAttribute('data-language') === lang;
+      option.classList.toggle('language-option-active', isActive);
+      option.setAttribute('aria-selected', String(isActive));
+
+      const existingCheckmark = option.querySelector('.option-checkmark');
+      if (isActive && !existingCheckmark) {
+        option.appendChild(createCheckmark());
+      } else if (!isActive && existingCheckmark) {
+        existingCheckmark.remove();
+      }
+    });
+  }
+
+  function initLanguageSelector() {
+    const containers = document.querySelectorAll<HTMLElement>('.language-selector-container');
+
+    containers.forEach(container => {
+      if (container.dataset.initialized === 'true') {
+        return;
+      }
+
+      const trigger = container.querySelector<HTMLButtonElement>('.language-selector-trigger');
+      const panel = container.querySelector<HTMLElement>('.language-selector-panel');
+      const options = container.querySelectorAll<HTMLButtonElement>('.language-option');
+
+      if (!trigger || !panel || options.length === 0) return;
+
+      container.dataset.initialized = 'true';
+      syncSelectorState(container, document.documentElement.lang || container.dataset.current || 'he');
+
+      const togglePanel = () => {
+        const isExpanded = trigger.getAttribute('aria-expanded') === 'true';
+        trigger.setAttribute('aria-expanded', String(!isExpanded));
+      };
+
+      const closePanel = () => {
+        trigger.setAttribute('aria-expanded', 'false');
+      };
+
+      const selectOption = (option: HTMLButtonElement) => {
+        const lang = option.dataset.language;
+        if (!lang) return;
+
+        localStorage.setItem('yuval_language', lang);
+        closePanel();
+
+        // Chapter page pre-renders all languages and supports client-side toggle.
+        // Other pages (home, book) render a single language server-side, so we
+        // must reload with ?lang=xx to re-render the whole page.
+        const supportsClientSwitch = !!document.getElementById('chapter-container');
+
+        if (supportsClientSwitch) {
+          window.dispatchEvent(
+            new CustomEvent('language-selector-change', {
+              detail: { language: lang },
+              bubbles: true,
+            })
+          );
+        } else {
+          const url = new URL(window.location.href);
+          url.searchParams.set('lang', lang);
+          window.location.href = url.toString();
+        }
+      };
+
+      // Click trigger to toggle
+      trigger.addEventListener('click', togglePanel);
+
+      // Click options to select
+      options.forEach(option => {
+        option.addEventListener('click', () => selectOption(option));
+      });
+
+      // Close on outside click
+      document.addEventListener('click', (e: Event) => {
+        if (!container.contains(e.target as Node)) {
+          closePanel();
+        }
+      });
+
+      // Keyboard navigation
+      trigger.addEventListener('keydown', (e: KeyboardEvent) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          togglePanel();
+        }
+      });
+
+      panel.addEventListener('keydown', (e: KeyboardEvent) => {
+        const focused = document.activeElement as HTMLButtonElement;
+        const focusedIndex = Array.from(options).indexOf(focused);
+
+        if (e.key === 'ArrowDown' && focusedIndex < options.length - 1) {
+          e.preventDefault();
+          options[focusedIndex + 1].focus();
+        } else if (e.key === 'ArrowUp' && focusedIndex > 0) {
+          e.preventDefault();
+          options[focusedIndex - 1].focus();
+        } else if (e.key === 'Enter') {
+          e.preventDefault();
+          selectOption(focused);
+        } else if (e.key === 'Escape') {
+          closePanel();
+          trigger.focus();
+        }
+      });
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initLanguageSelector);
+  } else {
+    initLanguageSelector();
+  }
+
+  document.addEventListener('astro:after-swap', initLanguageSelector);
+
+  // Reinit on language change to update current language display
+  document.addEventListener('astro:page-load', () => {
+    initLanguageSelector();
+  });
+
+  // Listen to language changes from other instances
+  window.addEventListener('language-changed', (e: Event) => {
+    const lang = (e as CustomEvent<{ language: string }>).detail?.language;
+    if (!lang) return;
+
+    document.querySelectorAll('.language-selector-container').forEach((container) => {
+      syncSelectorState(container as HTMLElement, lang);
+    });
+  });
+
+  window.addEventListener('language-ui-sync', (e: Event) => {
+    const lang = (e as CustomEvent<{ language: string }>).detail?.language;
+    if (!lang) return;
+
+    document.querySelectorAll('.language-selector-container').forEach((container) => {
+      syncSelectorState(container as HTMLElement, lang);
+    });
+  });
+</script>

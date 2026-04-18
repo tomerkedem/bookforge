@@ -2,21 +2,25 @@
 import type { Language } from '../types/index';
 import BaseLayout from './BaseLayout.astro';
 import ReadingControls from '../components/ReadingControls.astro';
-import { LANGUAGES } from '../utils/language';
+import { SOURCE_LANGUAGE, getLanguageDirection } from '../utils/language';
 
 interface Props {
   title: string;
   language?: Language;
+  availableLanguages?: Language[];
   class?: string;
 }
 
-const { title, language = LANGUAGES.EN, class: className } = Astro.props;
-const isRtl = language === LANGUAGES.HE;
+const { title, language = SOURCE_LANGUAGE, availableLanguages, class: className } = Astro.props;
+const isRtl = getLanguageDirection(language) === 'rtl';
+const COPY_SUCCESS_MESSAGE = 'Code copied!';
 ---
 
 <BaseLayout
   title={title}
   language={language}
+  availableLanguages={availableLanguages}
+  allowClientLanguageOverride={true}
   showHeader={true}
   showProgress={true}
   showLanguageToggle={true}
@@ -30,13 +34,14 @@ const isRtl = language === LANGUAGES.HE;
       'px-4',
       'sm:px-6',
       'lg:px-8',
-      'py-1',
-      'sm:py-2',
-      'lg:py-3',
+      'pt-0',
+      'pb-4',
+      'sm:pb-6',
+      'lg:pb-8',
       isRtl && 'text-right',
       className,
     ]}
-    style="background-color: var(--yuval-reading-bg); padding-bottom: 2rem;"
+    style="background-color: var(--yuval-reading-bg);"
   >
     <!-- Chapter content -->
     <div
@@ -202,6 +207,11 @@ const isRtl = language === LANGUAGES.HE;
 
       :global(article img) {
         @apply max-w-full h-auto rounded-lg my-8 mx-auto block;
+        background-color: #fff;
+        image-rendering: -webkit-optimize-contrast;
+        image-rendering: crisp-edges;
+        backface-visibility: hidden;
+        transform: translateZ(0);
       }
 
       /* Code block copy button */
@@ -225,7 +235,7 @@ const isRtl = language === LANGUAGES.HE;
         color: #8b949e;
         cursor: pointer;
         opacity: 0;
-        transition: opacity 0.2s ease, color 0.15s ease, background 0.15s ease;
+        transition: opacity 200ms var(--ease-standard), color 150ms var(--ease-standard), background 150ms var(--ease-standard);
       }
 
       :global(article pre:hover .code-copy-btn),
@@ -395,33 +405,161 @@ const isRtl = language === LANGUAGES.HE;
         color: #484f58; margin-bottom: 8px;
       }
 
+      /* ── Premium data-grid tables: visible grid + gold header ── */
+      :global(article .table-wrapper),
       :global(article table) {
-        @apply w-full border-collapse my-6;
+        @apply my-6;
       }
 
-      :global(article td,
-      article th) {
-        @apply border border-yuval-border px-4 py-2 text-left;
+      :global(article table) {
+        width: 100%;
+        display: block;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        max-width: 100%;
+        border-collapse: collapse;
+        border: 1px solid color-mix(in srgb, var(--gold-500) 28%, var(--yuval-border-secondary));
+        border-radius: 3px;
+        font-size: 0.95rem;
+        line-height: 1.55;
+        box-shadow:
+          0 1px 0 var(--gold-tint-18) inset,
+          0 10px 24px rgba(15, 23, 42, 0.05);
       }
 
-      :global(article th) {
-        @apply bg-yuval-bg-secondary font-semibold;
+      @media (min-width: 768px) {
+        :global(article table) {
+          display: table;
+          overflow: hidden;
+          overflow-x: visible;
+        }
       }
 
-      /* RTL table styling for Hebrew content */
+      /* Every cell gets a visible grid border */
+      :global(article th),
+      :global(article td) {
+        border: 1px solid color-mix(in srgb, var(--gold-500) 16%, var(--yuval-border-secondary));
+        padding: 0.7rem 1rem;
+        text-align: start;
+        vertical-align: top;
+      }
+
+      /* Header row — refined gold tone, stronger hierarchy */
+      :global(article thead th) {
+        background:
+          linear-gradient(180deg,
+            color-mix(in srgb, var(--gold-500) 14%, var(--yuval-bg)) 0%,
+            color-mix(in srgb, var(--gold-500) 8%, var(--yuval-bg)) 100%);
+        color: var(--yuval-chapter-title);
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        font-size: 0.95rem;
+        text-transform: uppercase;
+        padding: 1rem 1.1rem;
+        border-color: var(--gold-tint-35);
+        border-bottom: 2px solid color-mix(in srgb, var(--gold-600) 85%, var(--gold-500));
+        box-shadow: inset 0 1px 0 color-mix(in srgb, var(--gold-300) 28%, transparent);
+        position: relative;
+      }
+
+      /* Vertical dividers inside header — keep gold, slightly stronger */
+      :global(article thead th + th) {
+        border-inline-start: 1px solid var(--gold-tint-35);
+      }
+
+      /* Row-header cells (th inside tbody) — slightly emphasised */
+      :global(article tbody th) {
+        background: color-mix(in srgb, var(--gold-500) 6%, var(--yuval-bg));
+        font-weight: 700;
+        color: var(--yuval-chapter-title);
+      }
+
+      /* Subtle zebra for scanning, kept under the grid */
+      :global(article tbody tr:nth-child(even) td) {
+        background: color-mix(in srgb, var(--yuval-bg-secondary, var(--yuval-bg)) 55%, transparent);
+      }
+
+      :global(article tbody tr:hover td) {
+        background: color-mix(in srgb, var(--gold-500) 7%, var(--yuval-bg));
+      }
+
+      /* RTL */
       :global(article [dir="rtl"] table) {
         direction: rtl;
       }
 
-      :global(article [dir="rtl"] td,
-      article [dir="rtl"] th) {
-        @apply text-right;
+      /* Mobile: same grid, tighter cells, sticky first column */
+      @media (max-width: 767px) {
+        :global(article th),
+        :global(article td) {
+          white-space: nowrap;
+          padding: 0.6rem 0.8rem;
+          font-size: 0.88rem;
+        }
+
+        :global(article thead th) {
+          font-size: 0.82rem;
+          padding: 0.8rem 0.85rem;
+          letter-spacing: 0.03em;
+        }
+
+        :global(article th:first-child),
+        :global(article td:first-child) {
+          position: sticky;
+          inset-inline-start: 0;
+          background: var(--yuval-bg);
+          z-index: 1;
+          box-shadow: 1px 0 0 var(--gold-tint-25);
+        }
+
+        :global(article [dir="rtl"] th:first-child),
+        :global(article [dir="rtl"] td:first-child) {
+          box-shadow: -1px 0 0 var(--gold-tint-25);
+        }
+
+        :global(article thead th:first-child) {
+          background:
+            linear-gradient(180deg,
+              color-mix(in srgb, var(--gold-500) 18%, var(--yuval-bg)) 0%,
+              color-mix(in srgb, var(--gold-500) 10%, var(--yuval-bg)) 100%);
+        }
+      }
+
+      /* Prevent long content from causing page overflow */
+      :global(.chapter-content) {
+        overflow-wrap: anywhere;
+      }
+      :global(.chapter-content > *) {
+        max-width: 100%;
       }
 
       /* Reading article fills space between sidebars */
       .reading-article {
         margin-left: 0;
         margin-right: 0;
+      }
+
+      /* Force content text to follow the container's direction.
+         Uses high-specificity selector + !important to defeat any inherited
+         text-align: center from legacy Word-ingest wrappers. */
+      :global([data-lang][dir="ltr"] .chapter-content),
+      :global([data-lang][dir="ltr"] .chapter-content *) {
+        text-align: start !important;
+        direction: ltr;
+      }
+      :global([data-lang][dir="rtl"] .chapter-content),
+      :global([data-lang][dir="rtl"] .chapter-content *) {
+        text-align: start !important;
+        direction: rtl;
+      }
+      /* Preserve intentional center/right in code, tables, figures */
+      :global([data-lang] .chapter-content pre),
+      :global([data-lang] .chapter-content code),
+      :global([data-lang] .chapter-content figure),
+      :global([data-lang] .chapter-content table),
+      :global([data-lang] .chapter-content .code-runner-wrapper),
+      :global([data-lang] .chapter-content .code-block-wrapper) {
+        text-align: initial !important;
       }
 
       @media (min-width: 1024px) {
@@ -438,6 +576,7 @@ const isRtl = language === LANGUAGES.HE;
           margin-right: 0;
         }
       }
+
 
       /* Zen mode: large centered text, no distractions */
       :global(body.reading-zen) .reading-article {
@@ -576,7 +715,11 @@ const isRtl = language === LANGUAGES.HE;
         font-family: inherit;
         border-radius: 6px;
         cursor: pointer;
-        transition: all 0.15s ease;
+        transition:
+          background 150ms cubic-bezier(0.2, 0, 0, 1),
+          color 150ms cubic-bezier(0.2, 0, 0, 1),
+          transform 150ms cubic-bezier(0.2, 0, 0, 1),
+          filter 150ms cubic-bezier(0.2, 0, 0, 1);
       }
 
       :global(.code-runner-wrapper .tool-btn:hover),
@@ -721,7 +864,7 @@ const isRtl = language === LANGUAGES.HE;
       /* Output Panel */
       :global(.code-runner-wrapper .output-panel) {
         border-top: 1px solid var(--cr-border-color);
-        animation: cr-slideUp 0.2s ease;
+        animation: cr-slideUp 200ms var(--ease-standard);
       }
 
       @keyframes cr-slideUp {
@@ -827,7 +970,7 @@ const isRtl = language === LANGUAGES.HE;
   <!-- Reading Controls (Focus, Typography, Theme) -->
   <ReadingControls />
 
-  <script>
+  <script type="module">
     // Inject copy buttons into all code blocks
     function addCopyButtons() {
       document.querySelectorAll('article pre').forEach((pre) => {
@@ -863,7 +1006,7 @@ const isRtl = language === LANGUAGES.HE;
 
     // Lazy-load content images
     function lazyLoadImages() {
-      document.querySelectorAll<HTMLImageElement>('article img').forEach((img) => {
+      document.querySelectorAll('article img').forEach((img) => {
         if (!img.hasAttribute('loading')) {
           img.loading = 'lazy';
           img.decoding = 'async';
@@ -874,12 +1017,12 @@ const isRtl = language === LANGUAGES.HE;
     // ── Markdown Preview tabs ──────────────────────────────────────
 
     /** Escape HTML special chars */
-    function esc(s: string): string {
+    function esc(s) {
       return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     }
 
     /** Inline formatting: bold, italic, code, links */
-    function inline(s: string): string {
+    function inline(s) {
       return s
         .replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>')
         .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
@@ -889,7 +1032,7 @@ const isRtl = language === LANGUAGES.HE;
     }
 
     /** Render YAML frontmatter as a styled block */
-    function renderFrontmatter(lines: string[]): string {
+    function renderFrontmatter(lines) {
       const rows = lines.map(line => {
         const m = line.match(/^(\s*-?\s*)([^:]+):(.*)/);
         if (!m) return `<div>${esc(line)}</div>`;
@@ -900,7 +1043,7 @@ const isRtl = language === LANGUAGES.HE;
     }
 
     /** Minimal Markdown → HTML renderer */
-    function renderMarkdown(raw: string): string {
+    function renderMarkdown(raw) {
       const lines = raw.split('\n');
       let html = '';
       let i = 0;
@@ -914,7 +1057,7 @@ const isRtl = language === LANGUAGES.HE;
         }
       }
 
-      let inUl = false, inOl = false, inPre = false, preLines: string[] = [];
+      let inUl = false, inOl = false, inPre = false, preLines = [];
 
       for (; i < lines.length; i++) {
         const raw_line = lines[i];
@@ -999,7 +1142,7 @@ const isRtl = language === LANGUAGES.HE;
     }
 
     /** Detect if text is predominantly Hebrew/RTL */
-    function detectDir(text: string): 'rtl' | 'ltr' {
+    function detectDir(text) {
       const hebrewChars = (text.match(/[\u0590-\u05FF\uFB1D-\uFB4F]/g) || []).length;
       const latinChars  = (text.match(/[a-zA-Z]/g) || []).length;
       return hebrewChars > latinChars ? 'rtl' : 'ltr';
@@ -1007,7 +1150,7 @@ const isRtl = language === LANGUAGES.HE;
 
     /** Add Source/Preview tabs to markdown code blocks */
     function addMarkdownPreview() {
-      document.querySelectorAll<HTMLElement>('article pre[data-lang="markdown"], article pre[data-lang="md"]').forEach(pre => {
+      document.querySelectorAll('article pre[data-lang="markdown"], article pre[data-lang="md"]').forEach((pre) => {
         if (pre.dataset.hasPreview) return;
         const code = pre.querySelector('code');
         if (!code) return;
@@ -1034,7 +1177,7 @@ const isRtl = language === LANGUAGES.HE;
 
         // Tab switching
         tabBar.addEventListener('click', (e) => {
-          const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('.md-tab');
+          const btn = e.target.closest('.md-tab');
           if (!btn) return;
           const tab = btn.dataset.tab;
 
@@ -1059,40 +1202,42 @@ const isRtl = language === LANGUAGES.HE;
       addCopyButtons();
       lazyLoadImages();
       addMarkdownPreview();
-      initCodeRunners();  // Initialize Python code runners
-      initCodeBlocks();   // Initialize static code blocks
+
+      if (document.querySelector('.code-runner-wrapper')) {
+        initCodeRunners();
+      }
+
+      if (document.querySelector('.code-block-wrapper')) {
+        initCodeBlocks();
+      }
     }
 
     // ═══════════════════════════════════════════════════════════════════════
     // Pyodide Python Execution
     // ═══════════════════════════════════════════════════════════════════════
 
-    interface PyodideInterface {
-      runPython: (code: string) => any;
-      loadPackage: (packages: string[]) => Promise<void>;
-      globals: { get: (name: string) => any };
-    }
+    
 
-    let pyodide: PyodideInterface | null = null;
+    let pyodide = null;
     let pyodideLoading = false;
     let pyodideReady = false;
     
     const PYODIDE_CDN = 'https://cdn.jsdelivr.net/pyodide/v0.25.0/full/';
     
-    async function loadPyodide(): Promise<PyodideInterface> {
+    async function loadPyodide() {
       if (pyodide) return pyodide;
       if (pyodideLoading) {
         while (!pyodideReady) {
           await new Promise(r => setTimeout(r, 100));
         }
-        return pyodide!;
+        return pyodide;
       }
       
       pyodideLoading = true;
       
       try {
-        if (!(window as any).loadPyodide) {
-          await new Promise<void>((resolve, reject) => {
+        if (!window.loadPyodide) {
+          await new Promise((resolve, reject) => {
             const script = document.createElement('script');
             script.src = PYODIDE_CDN + 'pyodide.js';
             script.onload = () => resolve();
@@ -1101,7 +1246,7 @@ const isRtl = language === LANGUAGES.HE;
           });
         }
         
-        pyodide = await (window as any).loadPyodide({
+        pyodide = await window.loadPyodide({
           indexURL: PYODIDE_CDN
         });
         
@@ -1137,7 +1282,7 @@ _output_capture = OutputCapture()
       }
     }
     
-    async function runPythonCode(code: string): Promise<{ output: string; error: string | null; time: number }> {
+    async function runPythonCode(code) {
       const startTime = performance.now();
       const py = await loadPyodide();
       
@@ -1158,7 +1303,7 @@ _output_capture = OutputCapture()
           error: stderr || null,
           time: endTime - startTime
         };
-      } catch (error: any) {
+      } catch (error) {
         const endTime = performance.now();
         return {
           output: '',
@@ -1169,17 +1314,17 @@ _output_capture = OutputCapture()
     }
 
     function initCodeRunners() {
-      document.querySelectorAll<HTMLElement>('.code-runner-wrapper').forEach(wrapper => {
+      document.querySelectorAll('.code-runner-wrapper').forEach((wrapper) => {
         if (wrapper.dataset.initialized) return;
         wrapper.dataset.initialized = 'true';
         
-        const runBtn = wrapper.querySelector<HTMLButtonElement>('.btn-run');
-        const copyBtn = wrapper.querySelector<HTMLButtonElement>('.btn-copy');
-        const codeEl = wrapper.querySelector<HTMLElement>('.code-display code');
-        const outputPanel = wrapper.querySelector<HTMLElement>('.output-panel');
-        const outputText = wrapper.querySelector<HTMLElement>('.output-text');
-        const statusEl = wrapper.querySelector<HTMLElement>('.run-status');
-        const clearBtn = wrapper.querySelector<HTMLButtonElement>('.btn-clear-output');
+        const runBtn = wrapper.querySelector('.btn-run');
+        const copyBtn = wrapper.querySelector('.btn-copy');
+        const codeEl = wrapper.querySelector('.code-display code');
+        const outputPanel = wrapper.querySelector('.output-panel');
+        const outputText = wrapper.querySelector('.output-text');
+        const statusEl = wrapper.querySelector('.run-status');
+        const clearBtn = wrapper.querySelector('.btn-clear-output');
         
         // Get code from data attribute
         const code = wrapper.dataset.code ? decodeURIComponent(wrapper.dataset.code) : '';
@@ -1208,7 +1353,7 @@ _output_capture = OutputCapture()
               statusEl.textContent = `הסתיים ב-${Math.round(result.time)}ms`;
               statusEl.className = 'status-item run-status success';
             }
-          } catch (error: any) {
+          } catch (error) {
             outputText.innerHTML = `<span class="error">${escapeHtml(error.message || 'שגיאה לא ידועה')}</span>`;
             statusEl.textContent = 'שגיאה בטעינת Pyodide';
             statusEl.className = 'status-item run-status error';
@@ -1223,7 +1368,7 @@ _output_capture = OutputCapture()
           if (!code) return;
           try {
             await navigator.clipboard.writeText(code);
-            showCopyFeedback(wrapper, 'הקוד הועתק!');
+            showCopyFeedback(COPY_SUCCESS_MESSAGE);
           } catch {
             // Fallback - select code text
             if (codeEl) {
@@ -1248,12 +1393,12 @@ _output_capture = OutputCapture()
     }
 
     function initCodeBlocks() {
-      document.querySelectorAll<HTMLElement>('.code-block-wrapper').forEach(wrapper => {
+      document.querySelectorAll('.code-block-wrapper').forEach((wrapper) => {
         if (wrapper.dataset.initialized) return;
         wrapper.dataset.initialized = 'true';
         
-        const copyBtn = wrapper.querySelector<HTMLButtonElement>('.btn-copy');
-        const codeEl = wrapper.querySelector<HTMLElement>('pre code');
+        const copyBtn = wrapper.querySelector('.btn-copy');
+        const codeEl = wrapper.querySelector('pre code');
         
         copyBtn?.addEventListener('click', async () => {
           const codeData = copyBtn.dataset.code;
@@ -1261,7 +1406,7 @@ _output_capture = OutputCapture()
           
           try {
             await navigator.clipboard.writeText(text);
-            showCopyFeedback(wrapper, 'הקוד הועתק!');
+            showCopyFeedback(COPY_SUCCESS_MESSAGE);
           } catch {
             // Fallback
             if (codeEl) {
@@ -1277,13 +1422,13 @@ _output_capture = OutputCapture()
       });
     }
 
-    function escapeHtml(text: string): string {
+    function escapeHtml(text) {
       const div = document.createElement('div');
       div.textContent = text;
       return div.innerHTML;
     }
 
-    function showCopyFeedback(parent: HTMLElement, message: string) {
+    function showCopyFeedback(message) {
       const feedback = document.createElement('div');
       feedback.style.cssText = `
         position: fixed;
@@ -1297,7 +1442,7 @@ _output_capture = OutputCapture()
         font-size: 0.875rem;
         font-weight: 600;
         z-index: 10000;
-        animation: fadeInOut 1.5s ease forwards;
+        animation: fadeInOut 1500ms var(--ease-standard) forwards;
       `;
       feedback.textContent = message;
       document.body.appendChild(feedback);

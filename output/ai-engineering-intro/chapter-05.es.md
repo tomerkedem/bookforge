@@ -1,4 +1,4 @@
-# Ejemplo de Nueva Interfaz de Características - Verint AI Insights (Insights de Inteligencia Artificial)
+# Ejemplo de Nueva Interfaz de Características - Verint AI Insights
 
 Permiten al cliente tomar un subconjunto de llamadas, pueden ser unos cientos de llamadas que representan algún tema comercial y quieren entender insights relacionados con él.
 

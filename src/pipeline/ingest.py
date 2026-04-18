@@ -347,11 +347,26 @@ def _apply_format(fmt: str, text: str) -> str:
     elif fmt == "italic":
         return f"*{text}*"
     elif fmt == "code":
-        # Use backticks for code blocks with language detection
-        if '\n' in text or len(text) > 60:
-            # Multi-line or long code - use fenced code block
-            lang = _detect_code_language(text)
-            return f"```{lang}\n{text}\n```"
+        """
+        Important rule:
+        Do NOT invent fenced code blocks here.
+
+        If the Word document did not explicitly contain a code fence marker,
+        we must not create ```...``` in the Markdown output.
+
+        Therefore:
+        - short inline code stays wrapped with single backticks
+        - long or multiline monospace text is returned as-is
+        and will only become a fenced block later if the document
+        explicitly contains a supported opening marker such as:
+            python```
+            ```python
+        """
+        if '\n' in text:
+            # Preserve multiline code-like content exactly as-is.
+            # Do not wrap with fenced code block automatically.
+            return text
+
         return f"`{text}`"
     elif fmt == "underline":
         return f"<u>{text}</u>"
@@ -473,6 +488,45 @@ def _get_paragraph_spacing(para) -> bool:
     except Exception:
         return False
 
+def _get_paragraph_indent_level(para) -> int:
+    """
+    Estimate paragraph indent level from Word paragraph properties.
+
+    Priority:
+    1. If paragraph is a numbered/bulleted list, use ilvl directly.
+    2. Otherwise, try to infer indent from left indentation.
+
+    Returns:
+        integer indent level, 0 for top-level
+    """
+    try:
+        p_pr = para._element.find(f'{W_NS}pPr')
+        if p_pr is None:
+            return 0
+
+        # First preference: list indentation level (ilvl)
+        num_pr = p_pr.find(f'{W_NS}numPr')
+        if num_pr is not None:
+            ilvl_elem = num_pr.find(f'{W_NS}ilvl')
+            if ilvl_elem is not None:
+                return int(ilvl_elem.get(f'{W_NS}val', '0'))
+
+        # Fallback: infer from left indentation in twips
+        ind = p_pr.find(f'{W_NS}ind')
+        if ind is not None:
+            left = ind.get(f'{W_NS}left') or ind.get(f'{W_NS}start')
+            if left:
+                left_twips = int(left)
+
+                # Rough mapping:
+                # ~360-720 twips ≈ one indent step
+                # We keep it conservative
+                return max(0, left_twips // 720)
+
+    except Exception:
+        pass
+
+    return 0
 
 def _get_paragraph_alignment(para) -> str:
     """
@@ -612,11 +666,14 @@ def _ingest_docx(path: Path) -> dict:
             if alignment and alignment != 'right':  # Not default RTL alignment
                 text = _apply_alignment_wrapper(text, alignment)
             
+            indent_level = _get_paragraph_indent_level(para)
+
             paragraphs.append({
                 "text": text,
                 "style": para.style.name,
                 "doc_para_index": doc_idx,
-                "alignment": alignment
+                "alignment": alignment,
+                "indent_level": indent_level
             })
             
             doc_idx += 1

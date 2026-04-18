@@ -288,7 +288,7 @@ const lineCount = code.split('\n').length;
     font-family: inherit;
     border-radius: 6px;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: all 150ms var(--ease-standard);
   }
 
   .tool-btn:hover {
@@ -389,7 +389,7 @@ const lineCount = code.split('\n').length;
   .add-code-panel {
     background: var(--bg-secondary);
     border-top: 1px solid var(--border-color);
-    animation: slideDown 0.2s ease;
+    animation: slideDown 200ms var(--ease-emphasized);
   }
 
   @keyframes slideDown {
@@ -458,7 +458,7 @@ const lineCount = code.split('\n').length;
     font-family: inherit;
     border-radius: 6px;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: all 150ms var(--ease-standard);
   }
 
   .panel-actions button:hover {
@@ -503,7 +503,7 @@ const lineCount = code.split('\n').length;
   /* Output Panel */
   .output-panel {
     border-top: 1px solid var(--border-color);
-    animation: slideUp 0.2s ease;
+    animation: slideUp 200ms var(--ease-emphasized);
   }
 
   @keyframes slideUp {
@@ -533,7 +533,7 @@ const lineCount = code.split('\n').length;
     font-size: 0.75rem;
     font-family: inherit;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: all 150ms var(--ease-standard);
   }
 
   .output-tab:hover {
@@ -604,7 +604,7 @@ const lineCount = code.split('\n').length;
     font-size: 0.875rem;
     font-weight: 600;
     z-index: 10000;
-    animation: fadeInOut 1.5s ease forwards;
+    animation: fadeInOut 1500ms var(--ease-standard) forwards;
   }
 
   @keyframes fadeInOut {

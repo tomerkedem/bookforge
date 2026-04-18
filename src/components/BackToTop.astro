@@ -18,14 +18,24 @@ const { threshold = 300 } = Astro.props;
   </svg>
 </button>
 
+<style>
+  /* Desktop-only: the unified mobile FAB + chapter-title tap gesture
+     replace this button below 1024px. */
+  @media (max-width: 1023px) {
+    #back-to-top { display: none !important; }
+  }
+</style>
+
 <script>
-  const btn = document.getElementById('back-to-top') as HTMLButtonElement;
+  const btn = document.getElementById('back-to-top') as HTMLButtonElement | null;
   if (btn) {
     const threshold = parseInt(btn.dataset.threshold || '300', 10);
+    const desktopMq = window.matchMedia('(min-width: 1024px)');
     let ticking = false;
+    let scrollAttached = false;
 
     function onScroll() {
-      if (ticking) return;
+      if (ticking || !btn) return;
       ticking = true;
       requestAnimationFrame(() => {
         const show = window.scrollY > threshold;
@@ -39,7 +49,22 @@ const { threshold = 300 } = Astro.props;
       });
     }
 
-    window.addEventListener('scroll', onScroll, { passive: true });
+    function attach() {
+      if (scrollAttached) return;
+      scrollAttached = true;
+      window.addEventListener('scroll', onScroll, { passive: true });
+    }
+
+    function detach() {
+      if (!scrollAttached) return;
+      scrollAttached = false;
+      window.removeEventListener('scroll', onScroll);
+    }
+
+    if (desktopMq.matches) attach();
+    desktopMq.addEventListener('change', (e) => {
+      if (e.matches) attach(); else detach();
+    });
 
     btn.addEventListener('click', () => {
       window.scrollTo({ top: 0, behavior: 'smooth' });

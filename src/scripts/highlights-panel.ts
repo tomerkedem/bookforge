@@ -1,75 +1,32 @@
-/**
- * Highlights Panel — shows all highlights for the current book
- * grouped by chapter, with jump-to and Markdown export.
- */
+import { t, getI18nDirection } from '../i18n';
+import {
+  getLang,
+  getCurrentBook,
+  getCurrentChapter,
+  getContentRoot,
+  resolveChapterTitleByTitles,
+  waitForContentReady,
+} from './reading-location';
 
-type LangKey = 'he' | 'en' | 'es';
+// ── Language ────────────────────────────────────────────────────────────────
 
-function getLang(): LangKey {
-  return (new URLSearchParams(window.location.search).get('lang')
-    || localStorage.getItem('yuval_language')
-    || 'en') as LangKey;
+function tr(key: string, params?: Record<string, string | number>): string {
+  return t(key, getLang(), params);
 }
 
-// ── i18n ─────────────────────────────────────────────────────────────────────
+function getDir(): 'rtl' | 'ltr' {
+  return getI18nDirection(getLang());
+}
 
-const i18n: Record<LangKey, {
-  title: string;
-  empty: string;
-  emptyHint: string;
-  exportMd: string;
-  exportPdf: string;
-  close: string;
-  chapterLabel: (n: number) => string;
-  colorLabels: Record<string, string>;
-  addNote: string;
-  notePlaceholder: string;
-  dir: 'rtl' | 'ltr';
-}> = {
-  he: {
-    title: 'ההדגשות שלי',
-    empty: 'אין הדגשות עדיין',
-    emptyHint: 'סמן טקסט בזמן קריאה כדי לשמור תובנות',
-    exportMd: 'Markdown',
-    exportPdf: 'PDF',
-    close: 'סגור',
-    chapterLabel: (n) => `פרק ${n}`,
-    colorLabels: { yellow: 'תובנה', blue: 'שאלה', green: 'פעולה', pink: 'ציטוט' },
-    addNote: 'הוסף הערה...',
-    notePlaceholder: 'כתוב הערה על ההדגשה הזו...',
-    dir: 'rtl',
-  },
-  es: {
-    title: 'Mis resaltados',
-    empty: 'Aún no hay resaltados',
-    emptyHint: 'Selecciona texto mientras lees para guardar ideas',
-    exportMd: 'Markdown',
-    exportPdf: 'PDF',
-    close: 'Cerrar',
-    chapterLabel: (n) => `Capítulo ${n}`,
-    colorLabels: { yellow: 'Insight', blue: 'Pregunta', green: 'Acción', pink: 'Cita' },
-    addNote: 'Añadir nota...',
-    notePlaceholder: 'Escribe una nota sobre este resaltado...',
-    dir: 'ltr',
-  },
-  en: {
-    title: 'My Highlights',
-    empty: 'No highlights yet',
-    emptyHint: 'Select text while reading to save insights',
-    exportMd: 'Markdown',
-    exportPdf: 'PDF',
-    close: 'Close',
-    chapterLabel: (n) => `Chapter ${n}`,
-    colorLabels: { yellow: 'Insight', blue: 'Question', green: 'Action', pink: 'Quote' },
-    addNote: 'Add a note...',
-    notePlaceholder: 'Write a note about this highlight...',
-    dir: 'ltr',
-  },
-};
+// ── Highlight types ─────────────────────────────────────────────────────────
 
-function tr() { return i18n[getLang()]; }
+type HighlightColor = 'yellow' | 'blue' | 'green' | 'pink';
 
-// ── Types ─────────────────────────────────────────────────────────────────────
+function isHighlightColor(v: string): v is HighlightColor {
+  return v === 'yellow' || v === 'blue' || v === 'green' || v === 'pink';
+}
+
+// ── Types ───────────────────────────────────────────────────────────────────
 
 interface HighlightData {
   id: string;
@@ -77,6 +34,8 @@ interface HighlightData {
   color: string;
   timestamp: number;
   note?: string;
+  anchor?: string;
+  sectionHeading?: string;
 }
 
 interface ChapterHighlights {
@@ -84,539 +43,306 @@ interface ChapterHighlights {
   highlights: HighlightData[];
 }
 
-// ── Storage helpers ───────────────────────────────────────────────────────────
+const PENDING_HL_KEY = 'yuval_pending_highlight';
 
-const COLOR_EMOJI: Record<string, string> = {
-  yellow: '💡', blue: '❓', green: '✅', pink: '💬',
-};
-const COLOR_BG: Record<string, string> = {
-  yellow: '#fef9c3', blue: '#dbeafe', green: '#dcfce7', pink: '#fce7f3',
-};
-const COLOR_DARK_BG: Record<string, string> = {
-  yellow: 'rgba(234,179,8,0.18)', blue: 'rgba(59,130,246,0.18)',
-  green: 'rgba(34,197,94,0.18)',  pink: 'rgba(236,72,153,0.18)',
-};
-const COLOR_TEXT: Record<string, string> = {
-  yellow: '#713f12', blue: '#1e3a8a', green: '#14532d', pink: '#831843',
-};
-const COLOR_DARK_TEXT: Record<string, string> = {
-  yellow: '#fde68a', blue: '#93c5fd', green: '#86efac', pink: '#f9a8d4',
+declare global {
+  interface Window {
+    yuvalLoadChapter?: (url: string) => Promise<void> | void;
+  }
+}
+
+// ── Colors ──────────────────────────────────────────────────────────────────
+
+const COLOR_EMOJI: Record<HighlightColor, string> = {
+  yellow: '💡',
+  blue: '❓',
+  green: '✅',
+  pink: '💬',
 };
 
-function getCurrentBook(): string {
-  return document.getElementById('chapter-container')?.dataset.book || '';
+const COLOR_BG: Record<HighlightColor, string> = {
+  yellow: '#fef9c3',
+  blue: '#dbeafe',
+  green: '#dcfce7',
+  pink: '#fce7f3',
+};
+
+const COLOR_DARK_BG: Record<HighlightColor, string> = {
+  yellow: 'rgba(234,179,8,0.18)',
+  blue: 'rgba(59,130,246,0.18)',
+  green: 'rgba(34,197,94,0.18)',
+  pink: 'rgba(236,72,153,0.18)',
+};
+
+const COLOR_TEXT: Record<HighlightColor, string> = {
+  yellow: '#713f12',
+  blue: '#1e3a8a',
+  green: '#14532d',
+  pink: '#831843',
+};
+
+const COLOR_DARK_TEXT: Record<HighlightColor, string> = {
+  yellow: '#fde68a',
+  blue: '#93c5fd',
+  green: '#86efac',
+  pink: '#f9a8d4',
+};
+
+// ── Helpers ─────────────────────────────────────────────────────────────────
+
+function escapeRegex(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function showHlToast(msg: string): void {
+  const el = document.createElement('div');
+  el.className = 'bm-toast';
+  el.textContent = msg;
+  document.body.appendChild(el);
+  requestAnimationFrame(() => el.classList.add('visible'));
+  setTimeout(() => {
+    el.classList.remove('visible');
+    setTimeout(() => el.remove(), 300);
+  }, 1800);
+}
+
+function countHighlights(): number {
+  return getAllHighlights().reduce((sum, c) => sum + c.highlights.length, 0);
+}
+
+function updateBadge(): void {
+  const badge = document.getElementById('highlights-fab-badge');
+  if (!badge) return;
+  const total = countHighlights();
+  badge.textContent = String(total);
+  badge.style.display = total > 0 ? '' : 'none';
 }
 
 function getAllHighlights(): ChapterHighlights[] {
   const book = getCurrentBook();
   if (!book) return [];
+
   const lang = getLang();
-  const prefix = `yuval_hl_${book}_ch`;
+  // Legacy keys have no _lang suffix; new keys end with _<lang>.
+  const pattern = new RegExp(`^yuval_hl_${escapeRegex(book)}_ch([^_]+)(?:_(.+))?$`);
   const result: ChapterHighlights[] = [];
 
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
-    if (!key?.startsWith(prefix)) continue;
-    // key format: yuval_hl_{book}_ch{chapterId}_{lang}
-    const rest = key.slice(prefix.length); // e.g. "3_en"
-    const [chStr, hlLang] = rest.split('_');
-    if (hlLang !== lang) continue;
-    const chapterId = parseInt(chStr, 10);
+    if (!key) continue;
+    const m = key.match(pattern);
+    if (!m) continue;
+
+    const keyLang = m[2];
+    // If key is language-scoped, show only highlights for current language.
+    if (keyLang && keyLang !== lang) continue;
+
+    const chapterId = parseInt(m[1], 10);
     if (isNaN(chapterId)) continue;
 
     try {
       const list: HighlightData[] = JSON.parse(localStorage.getItem(key) || '[]');
       if (list.length) result.push({ chapterId, highlights: list });
-    } catch { /* skip */ }
+    } catch {}
   }
 
   return result.sort((a, b) => a.chapterId - b.chapterId);
 }
 
-function saveNote(chapterId: number, hlId: string, note: string): void {
+// ── Chapter label ───────────────────────────────────────────────────────────
+
+function formatHighlightChapterLabel(chapterId: number): string {
+  if (!chapterId) return tr('bookmarks.chapterUnknown');
+
+  const sameBook = !!getCurrentBook();
+  const title = resolveChapterTitleByTitles(undefined, chapterId, sameBook);
+  const numberLabel = tr('highlights.chapter', { n: chapterId });
+  return title ? `${numberLabel} · ${title}` : numberLabel;
+}
+
+// ── Navigation ──────────────────────────────────────────────────────────────
+
+function scrollToHighlightTarget(hl: HighlightData): boolean {
+  const root = getContentRoot() || document;
+
+  const byId = root.querySelector<HTMLElement>(`[data-hl-id="${CSS.escape(hl.id)}"]`);
+  if (byId) {
+    byId.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    byId.classList.add('hl-pulse');
+    setTimeout(() => byId.classList.remove('hl-pulse'), 1600);
+    return true;
+  }
+
+  if (hl.anchor) {
+    const byAnchor = root.querySelector<HTMLElement>(`[data-bm-anchor="${CSS.escape(hl.anchor)}"]`);
+    if (byAnchor) {
+      byAnchor.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      byAnchor.classList.add('hl-pulse');
+      setTimeout(() => byAnchor.classList.remove('hl-pulse'), 1600);
+      showHlToast(tr('bookmarks.approximate'));
+      return true;
+    }
+  }
+
+  const firstHead = (root as Document | HTMLElement)
+    .querySelector<HTMLElement>('#chapter-container h2, #chapter-container h3');
+  if (firstHead) {
+    firstHead.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    showHlToast(tr('bookmarks.approximate'));
+    return true;
+  }
+
+  showHlToast(tr('bookmarks.approximate'));
+  return false;
+}
+
+async function navigateToHighlight(hl: HighlightData, chapterId: number): Promise<void> {
   const book = getCurrentBook();
-  const lang = getLang();
-  const key = `yuval_hl_${book}_ch${chapterId}_${lang}`;
+  if (!chapterId) {
+    showHlToast(tr('bookmarks.chapterUnknown'));
+    return;
+  }
+
+  const sameChapter = chapterId === getCurrentChapter();
+
+  if (!sameChapter) {
+    const url = `/read/${book}/${chapterId}`;
+    if (typeof window.yuvalLoadChapter === 'function') {
+      await window.yuvalLoadChapter(url);
+    } else {
+      try {
+        sessionStorage.setItem(PENDING_HL_KEY, JSON.stringify({ id: hl.id, anchor: hl.anchor, chapterId, book }));
+      } catch {}
+      window.location.href = url;
+      return;
+    }
+  }
+
+  await waitForContentReady();
+  scrollToHighlightTarget(hl);
+  closePanel();
+}
+
+function consumePendingHighlight(): void {
+  let raw: string | null = null;
   try {
-    const list: HighlightData[] = JSON.parse(localStorage.getItem(key) || '[]');
-    const idx = list.findIndex(h => h.id === hlId);
-    if (idx !== -1) {
-      if (note.trim()) {
-        list[idx].note = note.trim();
-      } else {
-        delete list[idx].note;
-      }
-      localStorage.setItem(key, JSON.stringify(list));
-    }
-  } catch { /* skip */ }
-}
+    raw = sessionStorage.getItem(PENDING_HL_KEY);
+    if (raw) sessionStorage.removeItem(PENDING_HL_KEY);
+  } catch {
+    return;
+  }
+  if (!raw) return;
 
-// ── CSS ───────────────────────────────────────────────────────────────────────
+  let pending: { id: string; anchor?: string; chapterId: number; book: string };
+  try {
+    pending = JSON.parse(raw);
+  } catch {
+    return;
+  }
+  if (!pending || pending.book !== getCurrentBook() || pending.chapterId !== getCurrentChapter()) return;
 
-function injectStyles(): void {
-  if (document.getElementById('hl-panel-styles')) return;
-  const s = document.createElement('style');
-  s.id = 'hl-panel-styles';
-  s.textContent = `
-    /* ── Trigger button in FAB ── */
-    #hl-panel-fab-btn {
-      position: fixed;
-      bottom: 154px;
-      right: 20px;
-      z-index: 9980;
-      width: 44px; height: 44px;
-      border-radius: 50%;
-      background: var(--yuval-surface, #fff);
-      border: 1px solid var(--yuval-border, #e5e7eb);
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-      color: var(--yuval-text-secondary, #555);
-      cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 18px;
-      transition: transform 0.2s, box-shadow 0.2s, background 0.15s;
-    }
-    #hl-panel-fab-btn:hover {
-      transform: scale(1.08);
-      box-shadow: 0 4px 16px rgba(0,0,0,0.14);
-      background: var(--yuval-bg-secondary, #f3f4f6);
-    }
-    #hl-panel-fab-btn .hl-fab-badge {
-      position: absolute;
-      top: -4px; right: -4px;
-      background: #6366f1;
-      color: #fff;
-      font-size: 10px; font-weight: 700;
-      border-radius: 100px;
-      padding: 1px 5px;
-      min-width: 18px;
-      text-align: center;
-      line-height: 16px;
-    }
-    :is(.dark) #hl-panel-fab-btn {
-      background: #2a2a2a;
-      border-color: rgba(255,255,255,0.1);
-    }
-
-    /* ── Overlay ── */
-    #hl-panel-overlay {
-      position: fixed; inset: 0; z-index: 9995;
-      background: rgba(0,0,0,0.45);
-      backdrop-filter: blur(4px);
-      opacity: 0;
-      transition: opacity 0.25s ease;
-      pointer-events: none;
-    }
-    #hl-panel-overlay.open {
-      opacity: 1;
-      pointer-events: auto;
-    }
-
-    /* ── Drawer ── */
-    #hl-panel {
-      position: fixed;
-      top: 0; bottom: 0; right: 0;
-      width: min(400px, 90vw);
-      z-index: 9996;
-      background: var(--yuval-surface, #fff);
-      border-left: 1px solid var(--yuval-border, #e5e7eb);
-      box-shadow: -8px 0 40px rgba(0,0,0,0.12);
-      display: flex; flex-direction: column;
-      transform: translateX(100%);
-      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    #hl-panel.open { transform: translateX(0); }
-    :is(.dark) #hl-panel {
-      background: #1e1e1e;
-      border-color: rgba(255,255,255,0.08);
-      box-shadow: -8px 0 40px rgba(0,0,0,0.4);
-    }
-
-    /* RTL: panel slides from left */
-    [dir="rtl"] #hl-panel {
-      right: auto; left: 0;
-      border-left: none;
-      border-right: 1px solid var(--yuval-border, #e5e7eb);
-      transform: translateX(-100%);
-    }
-    [dir="rtl"] #hl-panel.open { transform: translateX(0); }
-    [dir="rtl"] #hl-panel-fab-btn { right: auto; left: 20px; }
-
-    /* ── Panel header ── */
-    #hl-panel-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 18px 20px;
-      border-bottom: 1px solid var(--yuval-border, #e5e7eb);
-      flex-shrink: 0;
-    }
-    :is(.dark) #hl-panel-header { border-color: rgba(255,255,255,0.08); }
-
-    #hl-panel-title {
-      font-size: 15px;
-      font-weight: 700;
-      color: var(--yuval-text, #111);
-    }
-    :is(.dark) #hl-panel-title { color: #eee; }
-
-    .hl-panel-header-actions {
-      display: flex; gap: 8px; align-items: center;
-    }
-
-    #hl-export-btn {
-      display: flex; align-items: center; gap: 5px;
-      padding: 5px 12px;
-      background: var(--yuval-bg-secondary, #f3f4f6);
-      border: 1px solid var(--yuval-border, #e5e7eb);
-      border-radius: 8px;
-      font-size: 12px; font-weight: 600;
-      color: var(--yuval-text-secondary, #555);
-      cursor: pointer;
-      transition: background 0.12s;
-    }
-    #hl-export-btn:hover { background: var(--yuval-border, #e5e7eb); }
-    :is(.dark) #hl-export-btn {
-      background: rgba(255,255,255,0.07);
-      border-color: rgba(255,255,255,0.1);
-      color: #bbb;
-    }
-
-    #hl-panel-close {
-      width: 30px; height: 30px;
-      display: flex; align-items: center; justify-content: center;
-      background: none; border: none; border-radius: 8px;
-      font-size: 16px; color: var(--yuval-text-muted, #9ca3af);
-      cursor: pointer;
-      transition: background 0.12s;
-    }
-    #hl-panel-close:hover { background: var(--yuval-bg-secondary, #f3f4f6); }
-
-    /* ── Panel body ── */
-    #hl-panel-body {
-      flex: 1;
-      overflow-y: auto;
-      padding: 16px;
-    }
-
-    /* ── Empty state ── */
-    .hl-panel-empty {
-      display: flex; flex-direction: column; align-items: center;
-      justify-content: center; gap: 8px;
-      height: 100%;
-      text-align: center;
-      padding: 32px;
-    }
-    .hl-panel-empty-icon { font-size: 36px; opacity: 0.4; }
-    .hl-panel-empty-text {
-      font-size: 14px; font-weight: 600;
-      color: var(--yuval-text-secondary, #555);
-    }
-    .hl-panel-empty-hint {
-      font-size: 12px;
-      color: var(--yuval-text-muted, #9ca3af);
-      line-height: 1.5;
-    }
-
-    /* ── Chapter group ── */
-    .hl-chapter-group { margin-bottom: 20px; }
-    .hl-chapter-label {
-      font-size: 11px; font-weight: 700;
-      letter-spacing: 0.08em; text-transform: uppercase;
-      color: var(--yuval-text-muted, #9ca3af);
-      margin-bottom: 8px;
-      padding: 0 2px;
-    }
-
-    /* ── Highlight item ── */
-    .hl-item {
-      display: flex; align-items: flex-start; gap: 10px;
-      padding: 10px 12px;
-      border-radius: 10px;
-      margin-bottom: 6px;
-      cursor: pointer;
-      transition: filter 0.15s, transform 0.15s;
-      text-decoration: none;
-    }
-    .hl-item:hover { filter: brightness(0.96); transform: translateX(2px); }
-    [dir="rtl"] .hl-item:hover { transform: translateX(-2px); }
-
-    .hl-item-emoji { font-size: 15px; flex-shrink: 0; margin-top: 1px; }
-    .hl-item-body { flex: 1; min-width: 0; }
-    .hl-item-text {
-      font-size: 13px; line-height: 1.6;
-      overflow: hidden;
-      display: -webkit-box;
-      -webkit-line-clamp: 3;
-      -webkit-box-orient: vertical;
-      word-break: break-word;
-    }
-    .hl-item-meta {
-      font-size: 11px;
-      margin-top: 4px;
-      opacity: 0.6;
-    }
-
-    /* ── Note area ── */
-    .hl-item-note-area {
-      margin-top: 7px;
-      padding-top: 7px;
-      border-top: 1px dashed rgba(0,0,0,0.12);
-    }
-    :is(.dark) .hl-item-note-area { border-top-color: rgba(255,255,255,0.1); }
-
-    .hl-note-text {
-      display: block;
-      font-size: 12px;
-      line-height: 1.5;
-      color: inherit;
-      opacity: 0.8;
-      cursor: text;
-      padding: 2px 4px;
-      border-radius: 4px;
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
-    .hl-note-text:hover { background: rgba(0,0,0,0.05); }
-    :is(.dark) .hl-note-text:hover { background: rgba(255,255,255,0.07); }
-
-    .hl-note-empty {
-      display: block;
-      font-size: 11.5px;
-      color: inherit;
-      opacity: 0.38;
-      cursor: text;
-      padding: 2px 4px;
-      border-radius: 4px;
-      font-style: italic;
-    }
-    .hl-note-empty:hover { opacity: 0.55; background: rgba(0,0,0,0.04); }
-    :is(.dark) .hl-note-empty:hover { background: rgba(255,255,255,0.06); }
-
-    .hl-note-textarea {
-      width: 100%;
-      min-height: 56px;
-      font-size: 12px;
-      line-height: 1.5;
-      padding: 5px 6px;
-      border-radius: 6px;
-      border: 1px solid rgba(0,0,0,0.18);
-      background: rgba(255,255,255,0.5);
-      color: inherit;
-      resize: vertical;
-      font-family: inherit;
-      outline: none;
-      box-sizing: border-box;
-    }
-    :is(.dark) .hl-note-textarea {
-      border-color: rgba(255,255,255,0.15);
-      background: rgba(0,0,0,0.25);
-      color: #e0e0e0;
-    }
-    .hl-note-textarea:focus {
-      border-color: #6366f1;
-      box-shadow: 0 0 0 2px rgba(99,102,241,0.18);
-    }
-    .hl-note-hint {
-      font-size: 10px;
-      opacity: 0.45;
-      margin-top: 3px;
-      display: block;
-    }
-  `;
-  document.head.appendChild(s);
-}
-
-// ── Build panel DOM ───────────────────────────────────────────────────────────
-
-function buildPanel(): void {
-  if (document.getElementById('hl-panel')) return;
-
-  // FAB button
-  const fabBtn = document.createElement('button');
-  fabBtn.id = 'hl-panel-fab-btn';
-  fabBtn.type = 'button';
-  fabBtn.setAttribute('aria-label', 'My Highlights');
-  fabBtn.innerHTML = `<span>💡</span><span class="hl-fab-badge" id="hl-fab-badge" style="display:none"></span>`;
-  document.body.appendChild(fabBtn);
-
-  // Overlay
-  const overlay = document.createElement('div');
-  overlay.id = 'hl-panel-overlay';
-  document.body.appendChild(overlay);
-
-  // Panel
-  const panel = document.createElement('div');
-  panel.id = 'hl-panel';
-  panel.setAttribute('role', 'dialog');
-  panel.setAttribute('aria-modal', 'true');
-  document.body.appendChild(panel);
-
-  fabBtn.addEventListener('click', openPanel);
-  overlay.addEventListener('click', closePanel);
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && panel.classList.contains('open')) closePanel();
+  waitForContentReady().then(() => {
+    scrollToHighlightTarget({
+      id: pending.id,
+      text: '',
+      color: 'yellow',
+      timestamp: 0,
+      anchor: pending.anchor,
+    });
   });
 }
 
-// ── Render content ────────────────────────────────────────────────────────────
-
-function openNoteEditor(
-  noteArea: HTMLElement,
-  chapterId: number,
-  hl: HighlightData,
-  textColor: string,
-): void {
-  if (noteArea.querySelector('.hl-note-textarea')) return; // already open
-
-  const labels = tr();
-  const current = hl.note || '';
-
-  noteArea.innerHTML = `
-    <textarea class="hl-note-textarea" placeholder="${labels.notePlaceholder}"
-      style="color:${textColor}">${current}</textarea>
-    <span class="hl-note-hint" style="color:${textColor}">
-      ${labels.dir === 'rtl' ? 'Ctrl+Enter לשמירה' : 'Ctrl+Enter to save'}
-    </span>
-  `;
-
-  const ta = noteArea.querySelector<HTMLTextAreaElement>('.hl-note-textarea')!;
-  ta.focus();
-  ta.selectionStart = ta.selectionEnd = ta.value.length;
-
-  const commit = () => {
-    const newNote = ta.value;
-    saveNote(chapterId, hl.id, newNote);
-    hl.note = newNote.trim() || undefined;
-
-    const noteHtml = hl.note
-      ? `<span class="hl-note-text">${hl.note.replace(/</g, '&lt;')}</span>`
-      : `<span class="hl-note-empty">${labels.addNote}</span>`;
-    noteArea.innerHTML = noteHtml;
-
-    // Re-attach click handler
-    noteArea.addEventListener('click', (e) => {
-      e.stopPropagation();
-      openNoteEditor(noteArea, chapterId, hl, textColor);
-    }, { once: true });
-  };
-
-  ta.addEventListener('blur', commit);
-  ta.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-      e.preventDefault();
-      ta.removeEventListener('blur', commit);
-      commit();
-    }
-    if (e.key === 'Escape') {
-      ta.removeEventListener('blur', commit);
-      const noteHtml = hl.note
-        ? `<span class="hl-note-text">${hl.note.replace(/</g, '&lt;')}</span>`
-        : `<span class="hl-note-empty">${labels.addNote}</span>`;
-      noteArea.innerHTML = noteHtml;
-      noteArea.addEventListener('click', (ev) => {
-        ev.stopPropagation();
-        openNoteEditor(noteArea, chapterId, hl, textColor);
-      }, { once: true });
-    }
-  });
-}
+// ── Panel ───────────────────────────────────────────────────────────────────
 
 function renderPanel(): void {
   const panel = document.getElementById('hl-panel');
   if (!panel) return;
 
-  const labels = tr();
   const isDark = document.documentElement.classList.contains('dark');
-  const allChapters = getAllHighlights();
-  const totalCount = allChapters.reduce((s, c) => s + c.highlights.length, 0);
+  const chapters = getAllHighlights();
 
-  panel.setAttribute('dir', labels.dir);
+  panel.setAttribute('dir', getDir());
+
   panel.innerHTML = `
     <div id="hl-panel-header">
-      <span id="hl-panel-title">${labels.title}</span>
-      <div class="hl-panel-header-actions">
-        ${totalCount > 0 ? `
-          <button id="hl-export-btn" type="button">⬇ ${labels.exportMd}</button>
-          <button id="hl-export-pdf-btn" type="button">⬇ ${labels.exportPdf}</button>
-        ` : ''}
-        <button id="hl-panel-close" type="button" aria-label="${labels.close}">✕</button>
-      </div>
+      <span>${tr('highlights.title')}</span>
+      <button id="hl-panel-close">✕</button>
     </div>
     <div id="hl-panel-body"></div>
   `;
 
   document.getElementById('hl-panel-close')?.addEventListener('click', closePanel);
-  document.getElementById('hl-export-btn')?.addEventListener('click', exportMarkdown);
-  document.getElementById('hl-export-pdf-btn')?.addEventListener('click', exportPdf);
 
   const body = document.getElementById('hl-panel-body')!;
 
-  if (!allChapters.length) {
+  if (!chapters.length) {
     body.innerHTML = `
       <div class="hl-panel-empty">
-        <div style="display:flex;gap:6px;margin-bottom:12px">
-          <span style="width:28px;height:28px;border-radius:50%;background:#fef9c3;border:2px solid #fde68a;display:flex;align-items:center;justify-content:center;font-size:14px">💡</span>
-          <span style="width:28px;height:28px;border-radius:50%;background:#dbeafe;border:2px solid #bfdbfe;display:flex;align-items:center;justify-content:center;font-size:14px">❓</span>
-          <span style="width:28px;height:28px;border-radius:50%;background:#dcfce7;border:2px solid #bbf7d0;display:flex;align-items:center;justify-content:center;font-size:14px">✅</span>
-          <span style="width:28px;height:28px;border-radius:50%;background:#fce7f3;border:2px solid #fbcfe8;display:flex;align-items:center;justify-content:center;font-size:14px">💬</span>
-        </div>
-        <span class="hl-panel-empty-text">${labels.empty}</span>
-        <span class="hl-panel-empty-hint">${labels.emptyHint}</span>
-        <div style="margin-top:14px;padding:10px 14px;background:var(--yuval-bg-secondary,#f9f9f9);border-radius:10px;border:1px dashed var(--yuval-border,#e5e7eb);font-size:11px;color:var(--yuval-text-muted,#999);line-height:1.6;text-align:${labels.dir === 'rtl' ? 'right' : 'left'}">
-          ${labels.dir === 'rtl'
-            ? '1. בחר טקסט בעכבר או אצבע<br>2. בחר צבע מהסרגל שמופיע<br>3. ההדגשות יישמרו כאן'
-            : '1. Select any text while reading<br>2. Pick a color from the toolbar<br>3. Your highlights appear here'}
-        </div>
+        <svg class="empty-illustration" viewBox="0 0 120 120" aria-hidden="true">
+          <defs>
+            <linearGradient id="hl-empty-grad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#fef08a"/>
+              <stop offset="100%" stop-color="#fbbf24"/>
+            </linearGradient>
+          </defs>
+          <rect x="22" y="40" width="76" height="48" rx="4" fill="url(#hl-empty-grad)" opacity="0.55"/>
+          <path d="M30 52 H86 M30 62 H78 M30 72 H82" stroke="#92400e" stroke-width="2" stroke-linecap="round" opacity="0.55"/>
+          <g transform="translate(70 22) rotate(25)">
+            <rect x="0" y="0" width="10" height="48" rx="2" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+            <path d="M0 44 L10 44 L5 54 Z" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+            <rect x="0" y="0" width="10" height="10" fill="#fbbf24"/>
+          </g>
+        </svg>
+        <div class="empty-title">${tr('empty.highlights.title')}</div>
+        <div class="empty-body">${tr('empty.highlights.body')}</div>
+        <div class="empty-cta">${tr('empty.highlights.cta')}</div>
       </div>
     `;
     return;
   }
 
-  allChapters.forEach(({ chapterId, highlights }) => {
+  chapters.forEach(({ chapterId, highlights }) => {
     const group = document.createElement('div');
-    group.className = 'hl-chapter-group';
-
-    const chLabel = document.createElement('div');
-    chLabel.className = 'hl-chapter-label';
-    chLabel.textContent = labels.chapterLabel(chapterId);
-    group.appendChild(chLabel);
+    const chapterLabel = formatHighlightChapterLabel(chapterId);
+    group.innerHTML = `<div class="hl-chapter-label">${escapeHtml(chapterLabel)}</div>`;
 
     highlights.forEach(hl => {
-      const bg   = isDark ? COLOR_DARK_BG[hl.color] : COLOR_BG[hl.color];
-      const text = isDark ? COLOR_DARK_TEXT[hl.color] : COLOR_TEXT[hl.color];
-      const emoji = COLOR_EMOJI[hl.color];
-      const colorLabel = labels.colorLabels[hl.color] || '';
+      const color: HighlightColor = isHighlightColor(hl.color) ? hl.color : 'yellow';
+
+      const bg = isDark ? COLOR_DARK_BG[color] : COLOR_BG[color];
+      const text = isDark ? COLOR_DARK_TEXT[color] : COLOR_TEXT[color];
+      const emoji = COLOR_EMOJI[color];
 
       const item = document.createElement('div');
       item.className = 'hl-item';
       item.style.background = bg;
-      item.setAttribute('data-hl-panel-id', hl.id);
-      item.setAttribute('data-hl-chapter', String(chapterId));
+      item.style.cursor = 'pointer';
+      item.setAttribute('role', 'button');
+      item.tabIndex = 0;
 
-      const noteHtml = hl.note
-        ? `<span class="hl-note-text">${hl.note.replace(/</g, '&lt;')}</span>`
-        : `<span class="hl-note-empty">${labels.addNote}</span>`;
+      const meta = hl.sectionHeading
+        ? `${chapterLabel} › ${hl.sectionHeading}`
+        : chapterLabel;
 
       item.innerHTML = `
-        <span class="hl-item-emoji" style="cursor:pointer" title="Go to highlight">${emoji}</span>
-        <div class="hl-item-body">
-          <div class="hl-item-text" style="color:${text};cursor:pointer">${hl.text}</div>
-          <div class="hl-item-meta" style="color:${text}">${colorLabel}</div>
-          <div class="hl-item-note-area">
-            ${noteHtml}
-          </div>
+        <span>${emoji}</span>
+        <div>
+          <div style="color:${text}">${escapeHtml(hl.text)}</div>
+          <div class="hl-item-meta">${escapeHtml(meta)}</div>
         </div>
       `;
 
-      // Click on text/emoji → jump to highlight
-      item.querySelector('.hl-item-emoji')!.addEventListener('click', () => jumpToHighlight(chapterId, hl));
-      (item.querySelector('.hl-item-text') as HTMLElement).addEventListener('click', () => jumpToHighlight(chapterId, hl));
-
-      // Click on note area → open inline editor
-      const noteArea = item.querySelector('.hl-item-note-area') as HTMLElement;
-      noteArea.addEventListener('click', (e) => {
-        e.stopPropagation();
-        openNoteEditor(noteArea, chapterId, hl, text);
+      const go = () => { navigateToHighlight(hl, chapterId); };
+      item.addEventListener('click', go);
+      item.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          go();
+        }
       });
 
       group.appendChild(item);
@@ -626,195 +352,75 @@ function renderPanel(): void {
   });
 }
 
-// ── Jump to highlight ─────────────────────────────────────────────────────────
-
-async function jumpToHighlight(chapterId: number, hl: HighlightData): Promise<void> {
-  const container = document.getElementById('chapter-container');
-  const currentChapter = parseInt(container?.dataset.chapterId || '0', 10);
-  const book = getCurrentBook();
-  // No ?lang= needed - toggle position is the single source of truth
-  const url = `/read/${book}/${chapterId}`;
-
-  closePanel();
-
-  const navigate = async () => {
-    // Find the mark element in the DOM
-    const mark = Array.from(document.querySelectorAll<HTMLElement>('[data-hl-id]'))
-      .find(el => el.dataset.hlId === hl.id);
-
-    if (mark) {
-      mark.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      // Flash highlight
-      mark.style.outline = '3px solid #6366f1';
-      mark.style.outlineOffset = '2px';
-      setTimeout(() => { mark.style.outline = ''; mark.style.outlineOffset = ''; }, 1800);
-    } else {
-      // Find by text content
-      const allMarks = document.querySelectorAll<HTMLElement>('.yuval-hl');
-      const match = Array.from(allMarks).find(m => m.textContent === hl.text);
-      if (match) {
-        match.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        match.style.outline = '3px solid #6366f1';
-        setTimeout(() => { match.style.outline = ''; }, 1800);
-      }
-    }
-  };
-
-  if (currentChapter === chapterId) {
-    await navigate();
-    return;
-  }
-
-  // Navigate to different chapter
-  const loadFn = (window as any).yuvalLoadChapter as ((url: string) => Promise<void>) | undefined;
-  if (loadFn) {
-    await loadFn(url);
-    setTimeout(navigate, 500);
-  } else {
-    window.location.href = url;
-  }
-}
-
-// ── Export Markdown ───────────────────────────────────────────────────────────
-
-function exportMarkdown(): void {
-  const labels = tr();
-  const allChapters = getAllHighlights();
-  const book = getCurrentBook();
-
-  let md = `# ${labels.title} — ${book}\n\n`;
-  md += `*${new Date().toLocaleDateString()}*\n\n`;
-
-  allChapters.forEach(({ chapterId, highlights }) => {
-    md += `## ${labels.chapterLabel(chapterId)}\n\n`;
-    highlights.forEach(hl => {
-      const emoji = COLOR_EMOJI[hl.color];
-      const colorLabel = labels.colorLabels[hl.color];
-      md += `${emoji} **${colorLabel}**\n> ${hl.text}\n`;
-      if (hl.note) md += `\n*${hl.note}*\n`;
-      md += '\n';
-    });
-  });
-
-  const blob = new Blob([md], { type: 'text/markdown' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `highlights-${book}-${Date.now()}.md`;
-  a.click();
-  URL.revokeObjectURL(a.href);
-}
-
-function exportPdf(): void {
-  const labels = tr();
-  const allChapters = getAllHighlights();
-  const book = getCurrentBook();
-  const isRtl = labels.dir === 'rtl';
-
-  const COLOR_HEX: Record<string, string> = {
-    yellow: '#fef9c3', blue: '#dbeafe', green: '#dcfce7', pink: '#fce7f3',
-  };
-  const COLOR_BORDER: Record<string, string> = {
-    yellow: '#f59e0b', blue: '#3b82f6', green: '#22c55e', pink: '#ec4899',
-  };
-
-  let html = `
-    <!DOCTYPE html><html dir="${labels.dir}"><head>
-    <meta charset="utf-8">
-    <title>${labels.title} — ${book}</title>
-    <style>
-      * { box-sizing: border-box; margin: 0; padding: 0; }
-      body {
-        font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-        color: #1a1a1a; background: #fff;
-        padding: 40px 48px;
-        direction: ${labels.dir};
-      }
-      h1 { font-size: 24px; font-weight: 800; margin-bottom: 4px; }
-      .meta { font-size: 13px; color: #888; margin-bottom: 32px; }
-      h2 { font-size: 14px; font-weight: 700; letter-spacing: 0.06em;
-           text-transform: uppercase; color: #999; margin: 28px 0 12px;
-           padding-bottom: 6px; border-bottom: 1px solid #e5e7eb; }
-      .hl {
-        padding: 12px 16px;
-        border-radius: 8px;
-        margin-bottom: 10px;
-        break-inside: avoid;
-      }
-      .hl-text { font-size: 15px; line-height: 1.6; font-weight: 500; }
-      .hl-meta { font-size: 11px; margin-top: 4px; opacity: 0.6; }
-      .hl-note { font-size: 13px; font-style: italic; margin-top: 8px;
-                 padding-top: 8px; border-top: 1px dashed rgba(0,0,0,0.15); }
-      .footer { margin-top: 40px; padding-top: 16px; border-top: 1px solid #e5e7eb;
-                font-size: 11px; color: #bbb; text-align: center; }
-      @media print {
-        body { padding: 24px 32px; }
-        .no-print { display: none; }
-      }
-    </style>
-    </head><body>
-    <h1>📚 ${labels.title}</h1>
-    <p class="meta">${book} · ${new Date().toLocaleDateString()}</p>
-  `;
-
-  allChapters.forEach(({ chapterId, highlights }) => {
-    html += `<h2>${labels.chapterLabel(chapterId)}</h2>`;
-    highlights.forEach(hl => {
-      const bg = COLOR_HEX[hl.color] || '#f9f9f9';
-      const border = COLOR_BORDER[hl.color] || '#ccc';
-      const emoji = COLOR_EMOJI[hl.color];
-      const colorLabel = labels.colorLabels[hl.color] || '';
-      html += `
-        <div class="hl" style="background:${bg}; border-${isRtl ? 'right' : 'left'}:4px solid ${border}">
-          <div class="hl-text">${hl.text.replace(/</g, '&lt;')}</div>
-          <div class="hl-meta">${emoji} ${colorLabel}</div>
-          ${hl.note ? `<div class="hl-note">${hl.note.replace(/</g, '&lt;')}</div>` : ''}
-        </div>
-      `;
-    });
-  });
-
-  html += `<div class="footer">Yuval Reading Platform</div></body></html>`;
-
-  const win = window.open('', '_blank');
-  if (!win) return;
-  win.document.write(html);
-  win.document.close();
-  win.focus();
-  setTimeout(() => win.print(), 400);
-}
-
-// ── Open / Close ──────────────────────────────────────────────────────────────
+// ── Open / Close ────────────────────────────────────────────────────────────
 
 function openPanel(): void {
   renderPanel();
-  document.getElementById('hl-panel-overlay')?.classList.add('open');
+  document.getElementById('hl-overlay')?.classList.add('open');
   document.getElementById('hl-panel')?.classList.add('open');
-  document.body.style.overflow = 'hidden';
 }
 
 function closePanel(): void {
-  document.getElementById('hl-panel-overlay')?.classList.remove('open');
+  document.getElementById('hl-overlay')?.classList.remove('open');
   document.getElementById('hl-panel')?.classList.remove('open');
-  document.body.style.overflow = '';
 }
 
-// ── Export ────────────────────────────────────────────────────────────────────
+// ── Init ────────────────────────────────────────────────────────────────────
 
-function updateBadge(): void {
-  const badge = document.getElementById('hl-fab-badge');
-  if (!badge) return;
-  const total = getAllHighlights().reduce((s, c) => s + c.highlights.length, 0);
-  badge.textContent = String(total);
-  badge.style.display = total > 0 ? '' : 'none';
+function applyLabels(btn: HTMLButtonElement): void {
+  btn.setAttribute('aria-label', tr('aria.highlights'));
+  btn.title = tr('aria.highlights');
 }
 
 export function initHighlightsPanel(): void {
-  injectStyles();
-  buildPanel();
+  if (document.getElementById('highlights-fab')) return;
 
-  // Update badge immediately on load
+  const btn = document.createElement('button');
+  btn.id = 'highlights-fab';
+  btn.type = 'button';
+  btn.textContent = '💡';
+  applyLabels(btn);
+  btn.onclick = openPanel;
+
+  const badge = document.createElement('span');
+  badge.id = 'highlights-fab-badge';
+  badge.className = 'yuval-fab-badge';
+  badge.style.display = 'none';
+  btn.appendChild(badge);
+
+  document.body.appendChild(btn);
+
+  const overlay = document.createElement('div');
+  overlay.id = 'hl-overlay';
+  overlay.addEventListener('click', closePanel);
+  document.body.appendChild(overlay);
+
+  const panel = document.createElement('div');
+  panel.id = 'hl-panel';
+  document.body.appendChild(panel);
+
   updateBadge();
 
-  // Re-update after chapter navigation
-  window.addEventListener('chapter-content-swapped', updateBadge);
+  const onChange = () => {
+    updateBadge();
+    if (panel.classList.contains('open')) renderPanel();
+  };
+
+  window.addEventListener('yuval-highlights-changed', onChange);
+  window.addEventListener('storage', (e) => {
+    if (e.key && e.key.startsWith('yuval_hl_')) onChange();
+  });
+
+  window.addEventListener('language-changed', () => {
+    applyLabels(btn);
+    updateBadge();
+    if (panel.classList.contains('open')) renderPanel();
+  });
+
+  window.addEventListener('chapter-content-swapped', () => {
+    updateBadge();
+    consumePendingHighlight();
+  });
+
+  consumePendingHighlight();
 }

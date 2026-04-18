@@ -51,10 +51,44 @@
       </button>
     </div>
 
+    <!-- Navigation (mobile only) -->
+    <div class="fab-item fab-item-mobile-only">
+      <span class="fab-label" data-i18n="fab.navigation">Navigation</span>
+      <button id="fab-nav-btn" class="fab-sub-btn" aria-label="Open navigation" title="Navigation">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </button>
+    </div>
+
+    <!-- Highlights (mobile only) -->
+    <div class="fab-item fab-item-mobile-only">
+      <span class="fab-label" data-i18n="fab.highlights">Highlights</span>
+      <button id="fab-highlights-btn" class="fab-sub-btn" aria-label="Open highlights" title="Highlights">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75"
+            d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+        </svg>
+      </button>
+    </div>
+
+    <!-- Read aloud (mobile only) -->
+    <div class="fab-item fab-item-mobile-only">
+      <span class="fab-label" data-i18n="tts.panelTitle">Read aloud</span>
+      <button id="fab-tts-btn" class="fab-sub-btn" aria-label="Read aloud" title="Read aloud">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75"
+            d="M11 5 6 9H2v6h4l5 4V5z" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75"
+            d="M15.54 8.46a5 5 0 0 1 0 7.07M19.07 4.93a10 10 0 0 1 0 14.14" />
+        </svg>
+      </button>
+    </div>
+
   </div><!-- /fab-actions -->
 
   <!-- Main FAB toggle -->
-  <button id="fab-toggle" class="fab-main" aria-expanded="false" aria-label="Reading controls">
+  <button id="fab-toggle" class="fab-main" aria-expanded="false" aria-label="Reading controls" title="Reading controls" data-i18n-title="fab.reading">
     <!-- Sliders icon (closed state) -->
     <svg class="fab-icon-closed w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75"
@@ -162,7 +196,7 @@
     align-items: center;
     gap: 10px;
     opacity: 1;
-    transition: opacity 0.3s ease;
+    transition: opacity 300ms var(--ease-standard);
   }
 
   .reading-fab.scrolling {
@@ -197,11 +231,11 @@
   }
 
   [dir="rtl"] .fab-label {
-    transform: translateX(-8px);
+    transform: translate(-8px, -50%);
   }
 
   [dir="rtl"] .fab-item:hover .fab-label {
-    transform: translateX(0);
+    transform: translate(0, -50%);
   }
 
   /* Main FAB button */
@@ -217,15 +251,16 @@
     justify-content: center;
     cursor: pointer;
     box-shadow: 0 4px 16px rgba(0,0,0,0.14), 0 1px 4px rgba(0,0,0,0.08);
-    transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1),
-                box-shadow 0.2s ease,
-                background 0.2s ease;
+    transition:
+      transform 200ms var(--ease-standard),
+      box-shadow 200ms var(--ease-standard),
+      background 200ms var(--ease-standard);
     position: relative;
     z-index: 2;
   }
 
   .fab-main:hover {
-    transform: scale(1.08);
+    transform: translateY(-2px) scale(1.04);
     box-shadow: 0 8px 24px rgba(0,0,0,0.18), 0 2px 6px rgba(0,0,0,0.1);
     background: var(--yuval-bg-secondary);
     color: var(--yuval-text);
@@ -260,7 +295,7 @@
     opacity: 0;
     pointer-events: none;
     transform: translateY(12px) scale(0.9);
-    transition: opacity 0.2s ease, transform 0.25s cubic-bezier(0.34,1.56,0.64,1);
+    transition: opacity 200ms var(--ease-standard), transform 250ms var(--ease-emphasized);
   }
 
   .fab-actions.open {
@@ -271,12 +306,18 @@
 
   /* Each sub-action row */
   .fab-item {
+    position: relative;
     display: flex;
     align-items: center;
-    gap: 10px;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
   }
 
   .fab-label {
+    position: absolute;
+    top: 50%;
+    inset-inline-end: calc(100% + 10px);
     font-size: 0.75rem;
     font-weight: 500;
     color: var(--yuval-text-secondary);
@@ -287,14 +328,14 @@
     white-space: nowrap;
     box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     opacity: 0;
-    transform: translateX(8px);
-    transition: opacity 0.15s ease, transform 0.15s ease;
+    transform: translate(8px, -50%);
+    transition: opacity 150ms var(--ease-standard), transform 150ms var(--ease-standard);
     pointer-events: none;
   }
 
   .fab-item:hover .fab-label {
     opacity: 1;
-    transform: translateX(0);
+    transform: translate(0, -50%);
   }
 
   /* Sub buttons */
@@ -310,7 +351,7 @@
     justify-content: center;
     cursor: pointer;
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease;
+    transition: background 150ms var(--ease-standard), color 150ms var(--ease-standard), transform 150ms var(--ease-standard);
   }
 
   .fab-sub-btn:hover {
@@ -329,6 +370,13 @@
   .fab-actions.open .fab-item:nth-child(1) { transition-delay: 0ms; }
   .fab-actions.open .fab-item:nth-child(2) { transition-delay: 40ms; }
   .fab-actions.open .fab-item:nth-child(3) { transition-delay: 80ms; }
+  .fab-actions.open .fab-item:nth-child(4) { transition-delay: 120ms; }
+  .fab-actions.open .fab-item:nth-child(5) { transition-delay: 160ms; }
+
+  /* Mobile-only sub-items (Navigation): hidden on desktop */
+  @media (min-width: 1024px) {
+    .fab-item-mobile-only { display: none; }
+  }
 
   /* ══════════════════════════════════════
      TYPOGRAPHY PANEL
@@ -351,7 +399,7 @@
     pointer-events: none;
     transform: translateY(8px) scale(0.97);
     transform-origin: bottom right;
-    transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.34,1.56,0.64,1);
+    transition: opacity 200ms var(--ease-standard), transform 320ms var(--ease-emphasized);
   }
 
   @media (min-width: 1024px) {
@@ -589,7 +637,7 @@
     background: rgba(0,0,0,0.4);
     z-index: 55;
     opacity: 0;
-    transition: opacity 0.2s ease;
+    transition: opacity 200ms var(--ease-standard);
   }
 
   .panel-backdrop.open {
@@ -617,7 +665,7 @@
     gap: 8px;
     font-size: 13px;
     z-index: 9999;
-    animation: slideDown 0.25s ease;
+    animation: slideDown 250ms var(--ease-emphasized);
   }
 
   .focus-toast.hidden { display: none; }
@@ -754,6 +802,26 @@
 
     $('typography-btn')?.addEventListener('click', () => {
       toggleTypoPanel();
+    });
+
+    /* Navigation (mobile-only): delegate to the hidden drawer toggle */
+    $('fab-nav-btn')?.addEventListener('click', () => {
+      toggleFab(false);
+      $('mobile-toc-toggle')?.click();
+    });
+
+    /* Highlights (mobile-only): delegate to the hidden highlights FAB */
+    $('fab-highlights-btn')?.addEventListener('click', () => {
+      toggleFab(false);
+      $('highlights-fab')?.click();
+    });
+
+    /* Read aloud (mobile-only): open the TTS panel via global hook */
+    $('fab-tts-btn')?.addEventListener('click', () => {
+      toggleFab(false);
+      const open = (window as unknown as { __ttsOpenPanel?: () => void }).__ttsOpenPanel;
+      if (typeof open === 'function') open();
+      else (window as unknown as { __ttsToggle?: () => void }).__ttsToggle?.();
     });
 
     /* Close panel */

@@ -2,11 +2,55 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Breadcrumbs from '../../components/Breadcrumbs.astro';
 import type { Language, Chapter } from '../../types/index';
-import { LANGUAGES } from '../../utils/language';
-import { discoverAllBooks, type BookCredits } from '../../utils/book-discovery';
+import { SOURCE_LANGUAGE, getLanguageDirection, isValidLanguage } from '../../utils/language';
+import { discoverAllBooks } from '../../utils/book-discovery';
+import { t } from '../../i18n';
 
 interface Props {
   language?: Language;
+}
+
+type LocalizedMap = Record<string, string | undefined>;
+
+function getLocalizedText(
+  value: LocalizedMap | undefined,
+  lang: string,
+  fallback = SOURCE_LANGUAGE
+): string {
+  if (!value) return '';
+  return value[lang] ?? value[fallback] ?? Object.values(value).find(Boolean) ?? '';
+}
+
+function getCreditText(
+  value: string | Record<string, string> | undefined,
+  lang: string,
+  fallback = SOURCE_LANGUAGE
+): string {
+  if (!value) return '';
+  if (typeof value === 'string') return value;
+  return value[lang] ?? value[fallback] ?? Object.values(value).find(Boolean) ?? '';
+}
+
+function creditDataAttr(value: string | Record<string, string> | undefined): string {
+  if (!value) return '';
+  if (typeof value === 'string') return JSON.stringify({ [SOURCE_LANGUAGE]: value });
+  return JSON.stringify(value);
+}
+
+function formatChapterCount(count: number, lang: string): string {
+  if (count === 1) return t('book.chapterOne', lang);
+  return t('book.chapters', lang, { n: count.toString() });
+}
+
+function formatWordCount(count: number, lang: string): string {
+  return t('book.words', lang, { n: count.toString() });
+}
+
+function getChapterMetaText(chapter: Chapter, lang: string): string {
+  const sections = chapter.sections ?? 0;
+  const wordCount = chapter.word_count ?? 0;
+  const sectionLabel = sections === 1 ? t('book.sectionOne', lang) : t('book.sections', lang, { n: sections.toString() });
+  return `${sectionLabel} • ${formatWordCount(wordCount, lang)}`;
 }
 
 export async function getStaticPaths() {
@@ -17,80 +61,99 @@ export async function getStaticPaths() {
   }));
 }
 
-const { language: propLanguage = LANGUAGES.EN } = Astro.props;
+const { language: propLanguage } = Astro.props;
 const { slug } = Astro.params;
 
-// Read language from URL param, falling back to props/default
-const urlLang = Astro.url.searchParams.get('lang');
-const language = (urlLang === 'he' || urlLang === 'es') ? urlLang : propLanguage;
-
-// In SSR mode, look up the book dynamically
 const books = discoverAllBooks();
 const bookData = books.find(b => b.slug === slug);
-const isRtl = language === LANGUAGES.HE;
 
-// Guard against undefined bookData (404 case)
 if (!bookData) {
   return Astro.redirect('/404');
 }
 
+// Get available languages - prefer bookData.languages, fallback to titles keys
+const availableLanguages = (
+  (Array.isArray(bookData.languages) && bookData.languages.length > 0)
+    ? bookData.languages
+    : Object.keys(bookData.titles || {})
+) as Language[];
+
+// Ensure we have at least the source language
+if (!availableLanguages.includes(SOURCE_LANGUAGE)) {
+  availableLanguages.unshift(SOURCE_LANGUAGE);
+}
+
+const urlLang = Astro.url.searchParams.get('lang')?.trim().toLowerCase();
+
+const requestedLanguage =
+  (urlLang && availableLanguages.includes(urlLang) && isValidLanguage(urlLang))
+    ? urlLang
+    : (propLanguage && availableLanguages.includes(propLanguage) ? propLanguage : undefined);
+
+const language = (requestedLanguage ?? (availableLanguages.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : availableLanguages[0] ?? SOURCE_LANGUAGE)) as Language;
+const isRtl = getLanguageDirection(language) === 'rtl';
+
 const book = {
   slug: bookData.slug,
-  title_he: bookData.title_he,
-  title_en: bookData.title_en,
-  title_es: bookData.title_es || bookData.title_en,
-  description_he: bookData.description_he,
-  description_en: bookData.description_en,
-  description_es: bookData.description_es || bookData.description_en,
+  titles: bookData.titles ?? {},
+  subtitles: bookData.subtitles ?? {},
+  descriptions: bookData.descriptions ?? {},
   coverImage: bookData.coverImage,
   dominantColor: bookData.dominantColor,
-  chapters: bookData.chapters,
+  chapters: bookData.chapters ?? [],
   credits: bookData.credits,
+  languages: availableLanguages,
 };
 
-const title = language === 'es' ? book.title_es : (language === LANGUAGES.HE ? book.title_he : book.title_en);
-const description = language === 'es' ? book.description_es : (language === LANGUAGES.HE ? book.description_he : book.description_en);
+
+const title = getLocalizedText(book.titles, language);
+const description = getLocalizedText(book.descriptions, language);
+const totalWords = book.chapters.reduce((sum: number, ch: Chapter) => sum + (ch.word_count ?? 0), 0);
 ---
 
 <BaseLayout
   title={title}
   description={description}
   language={language}
+  availableLanguages={book.languages}
 >
   <div
     class:list={[
       'min-h-screen',
       'bg-yuval-bg',
-      'py-12',
-      'sm:py-16',
-      'lg:py-20',
+      'pt-4',
+      'sm:pt-6',
+      'lg:pt-8',
+      'pb-12',
+      'sm:pb-16',
+      'lg:pb-20',
       'px-4',
       'sm:px-6',
       'lg:px-8',
     ]}
   >
     <div class="max-w-4xl mx-auto">
-      <!-- Breadcrumbs -->
       <Breadcrumbs
+        language={language}
         items={[
-          { label_he: 'ספרים', label_en: 'Books', label_es: 'Libros', href: '/' },
-          { label_he: book.title_he, label_en: book.title_en, label_es: book.title_es },
+          { key: 'breadcrumb.books', href: '/' },
+          { label: book.titles },
         ]}
-        class="mb-8"
+        class="mb-4 sm:mb-5"
       />
 
-      <!-- Book Header -->
       <div
         class:list={[
           'grid',
           'grid-cols-1',
           'md:grid-cols-3',
-          'gap-8',
-          'mb-12',
+          'gap-6',
+          'sm:gap-8',
+          'mb-8',
+          'sm:mb-10',
           'items-start',
         ]}
       >
-        <!-- Cover Image -->
         <div class="md:col-span-1">
           <img
             src={book.coverImage}
@@ -99,88 +162,72 @@ const description = language === 'es' ? book.description_es : (language === LANG
             decoding="async"
             class="w-full rounded-lg shadow-lg bg-yuval-bg-secondary object-contain"
           />
-          {/* Credits under cover */}
+
           {book.credits && (
             <div class:list={[
               'mt-3',
               'text-sm',
               'text-yuval-text-secondary',
+              'space-y-1.5',
               isRtl && 'text-right',
             ]}>
               {book.credits.type === 'lecture_summary' ? (
-                <p>
-                  <span data-he="מרצה:" data-en="Lecturer:" data-es="Profesor:">{language === 'he' ? 'מרצה:' : language === 'es' ? 'Profesor:' : 'Lecturer:'}</span>
-                  {' '}{book.credits.lecturer}
-                  <br />
-                  <span data-he="סוכם ונערך על ידי:" data-en="Summarized and edited by:" data-es="Resumido y editado por:">{language === 'he' ? 'סוכם ונערך על ידי:' : language === 'es' ? 'Resumido y editado por:' : 'Summarized and edited by:'}</span>
-                  {' '}{book.credits.editor}
-                </p>
+                <div class="space-y-1.5">
+                  <p>
+                    <span class="font-medium text-yuval-text">{t('book.lecturer', language)}:</span>{' '}
+                    <span data-credit-localized={creditDataAttr(book.credits.lecturer)}>{getCreditText(book.credits.lecturer, language)}</span>
+                  </p>
+                  <p>
+                    <span class="font-medium text-yuval-text">{t('book.editedBy', language)}:</span>{' '}
+                    <span data-credit-localized={creditDataAttr(book.credits.editor)}>{getCreditText(book.credits.editor, language)}</span>
+                  </p>
+                </div>
               ) : (
                 <p>
-                  <span data-he="מאת:" data-en="By:" data-es="Por:">{language === 'he' ? 'מאת:' : language === 'es' ? 'Por:' : 'By:'}</span>
-                  {' '}{book.credits.author}
+                  <span>{t('book.by', language)}</span> {' '}<span data-credit-localized={creditDataAttr(book.credits.author)}>{getCreditText(book.credits.author, language)}</span>
                 </p>
               )}
             </div>
           )}
         </div>
 
-        <!-- Book Info -->
         <div class:list={['md:col-span-2', isRtl && 'text-right']}>
-          <h1
-            class="font-heading font-bold text-xl sm:text-3xl lg:text-4xl leading-tight mb-3 sm:mb-4 text-yuval-text"
-            data-he={book.title_he}
-            data-en={book.title_en}
-            data-es={book.title_es}
-          >
-            {book.title_en}
+          <h1 class="font-heading font-bold text-xl sm:text-3xl lg:text-4xl leading-tight mb-3 sm:mb-4 text-yuval-text">
+            {title}
           </h1>
 
-          <p class="text-base sm:text-lg text-yuval-text-secondary leading-relaxed mb-4 sm:mb-6"
-            data-he={book.description_he}
-            data-en={book.description_en}
-            data-es={book.description_es}
-          >
-            {book.description_en}
+          {getLocalizedText(book.subtitles, language) && (
+            <p class="text-sm sm:text-base text-yuval-text-tertiary leading-relaxed mb-3">
+              {getLocalizedText(book.subtitles, language)}
+            </p>
+          )}
+
+          <p class="text-base sm:text-lg text-yuval-text-secondary leading-relaxed mb-4 sm:mb-6">
+            {description}
           </p>
 
           <div class="space-y-2 mb-6">
-            <p class="text-sm text-yuval-text-tertiary"
-              data-he={`${book.chapters.length} פרקים`}
-              data-en={`${book.chapters.length} chapters`}
-              data-es={`${book.chapters.length} capítulos`}
-            >
-              {book.chapters.length} chapters
+            <p class="text-sm text-yuval-text-tertiary">
+              {formatChapterCount(book.chapters.length, language)}
             </p>
-            <p class="text-sm text-yuval-text-tertiary"
-              data-he={`${book.chapters.reduce((sum: number, ch: Chapter) => sum + ch.word_count, 0)} מילים`}
-              data-en={`${book.chapters.reduce((sum: number, ch: Chapter) => sum + ch.word_count, 0)} words`}
-              data-es={`${book.chapters.reduce((sum: number, ch: Chapter) => sum + ch.word_count, 0)} palabras`}
-            >
-              {book.chapters.reduce((sum: number, ch: Chapter) => sum + ch.word_count, 0)} words
+
+            <p class="text-sm text-yuval-text-tertiary">
+              {formatWordCount(totalWords, language)}
             </p>
           </div>
         </div>
       </div>
 
-      <!-- Chapters List -->
-      <div class="border-t border-yuval-border pt-12">
-        <h2
-          class="font-heading font-bold text-2xl mb-6 text-yuval-text"
-          data-he="פרקים"
-          data-en="Chapters"
-          data-es="Capítulos"
-        >
-          Chapters
+      <div class="border-t border-yuval-border pt-8 sm:pt-10">
+        <h2 class="font-heading font-bold text-2xl mb-6 text-yuval-text">
+          {t('sidebar.chapters', language)}
         </h2>
 
         <div class="space-y-3">
           {
             book.chapters.map((chapter: Chapter) => {
-              const chapterTitle =
-                language === LANGUAGES.HE
-                  ? chapter.title_he
-                  : chapter.title_en;
+              const chapterTitle = getLocalizedText(chapter.titles, language);
+
               return (
                 <a
                   href={`/read/${slug}/${chapter.id}`}
@@ -206,10 +253,11 @@ const description = language === 'es' ? book.description_es : (language === LANG
                   data-chapter-id={chapter.id}
                   data-book-slug={slug}
                 >
-                  {/* Progress bar at bottom of card — filled by JS */}
                   <div class="chapter-progress-bar absolute bottom-0 left-0 right-0 h-0.5 bg-yuval-border">
-                    <div class="chapter-progress-fill h-full bg-green-500 w-0 transition-all duration-700"
-                      style="border-radius: 0 2px 2px 0"></div>
+                    <div
+                      class="chapter-progress-fill h-full bg-green-500 w-0 transition-all duration-700"
+                      style="border-radius: 0 2px 2px 0"
+                    ></div>
                   </div>
 
                   <div
@@ -224,23 +272,16 @@ const description = language === 'es' ? book.description_es : (language === LANG
                     <div class:list={[isRtl && 'text-right', 'flex-1', 'min-w-0']}>
                       <div class="flex items-center gap-2">
                         <span class="chapter-status-icon text-base hidden" aria-hidden="true"></span>
-                        <h3
-                          class="font-heading font-semibold text-base sm:text-lg text-yuval-text line-clamp-2"
-                          data-he={chapter.title_he}
-                          data-en={chapter.title_en}
-                          data-es={chapter.title_es || chapter.title_en}
-                        >
-                          {chapter.title_en}
+                        <h3 class="font-heading font-semibold text-base sm:text-lg text-yuval-text line-clamp-2">
+                          {chapterTitle}
                         </h3>
                       </div>
-                      <p class="text-sm text-yuval-text-tertiary mt-1"
-                        data-he={`${chapter.sections > 1 ? `${chapter.sections} סעיפים` : 'סעיף אחד'} • ${chapter.word_count} מילים`}
-                        data-en={`${chapter.sections > 1 ? `${chapter.sections} sections` : '1 section'} • ${chapter.word_count} words`}
-                        data-es={`${chapter.sections > 1 ? `${chapter.sections} secciones` : '1 sección'} • ${chapter.word_count} palabras`}
-                      >
-                        {chapter.sections > 1 ? `${chapter.sections} sections` : '1 section'} • {chapter.word_count} words
+
+                      <p class="text-sm text-yuval-text-tertiary mt-1">
+                        {getChapterMetaText(chapter, language)}
                       </p>
                     </div>
+
                     <svg
                       class="w-5 h-5 text-yuval-text-tertiary flex-shrink-0"
                       fill="none"
@@ -266,6 +307,46 @@ const description = language === 'es' ? book.description_es : (language === LANG
 </BaseLayout>
 
 <script>
+  import { t, resolveLanguage } from '../../i18n';
+  import { SOURCE_LANGUAGE } from '../../utils/language';
+
+  function updatePageContent(lang: string) {
+    // Update chapter titles dynamically
+    document.querySelectorAll<HTMLElement>('[data-chapter-title]').forEach(el => {
+      const titleData = el.dataset.chapterTitle;
+      if (titleData) {
+        try {
+          const titles = JSON.parse(titleData);
+          el.textContent = titles[lang] || titles['he'] || Object.values(titles)[0] || '';
+        } catch (e) {
+          // Silently fail for invalid title data
+        }
+      }
+    });
+
+    // Update all i18n strings
+    document.querySelectorAll<HTMLElement>('[data-i18n]').forEach(el => {
+      const key = el.dataset.i18n;
+      if (key) {
+        const translatedText = t(key, lang);
+        if (translatedText && translatedText !== key) {
+          el.textContent = translatedText;
+        }
+      }
+    });
+
+    // Update localized credits (lecturer, editor, author names)
+    document.querySelectorAll<HTMLElement>('[data-credit-localized]').forEach(el => {
+      const raw = el.dataset.creditLocalized;
+      if (!raw) return;
+      try {
+        const map = JSON.parse(raw) as Record<string, string>;
+        const value = map[lang] ?? map[SOURCE_LANGUAGE] ?? Object.values(map).find(Boolean) ?? '';
+        if (value) el.textContent = value;
+      } catch { /* skip malformed */ }
+    });
+  }
+
   function updateChapterLinks() {
     // Links no longer need ?lang= - language is determined by toggle position
   }
@@ -273,37 +354,44 @@ const description = language === 'es' ? book.description_es : (language === LANG
   function updateChapterProgress() {
     document.querySelectorAll<HTMLAnchorElement>('.chapter-link[data-chapter-id][data-book-slug]').forEach(link => {
       const chapterId = link.dataset.chapterId;
-      const bookSlug  = link.dataset.bookSlug;
+      const bookSlug = link.dataset.bookSlug;
       if (!chapterId || !bookSlug) return;
 
-      const key = `yuval_reading_progress_${bookSlug}_ch${chapterId}`;
-      const altKey = `yuval_reading_progress_${bookSlug}_ch${chapterId}`;
-
       let scrollY = 0;
-      // Try both key formats
+
       for (let i = 0; i < localStorage.length; i++) {
         const k = localStorage.key(i);
         if (k && k.includes(`_${bookSlug}_ch${chapterId}`)) {
           try {
             const d = JSON.parse(localStorage.getItem(k) || '{}');
             if (d.scrollPosition > scrollY) scrollY = d.scrollPosition;
-          } catch { /* skip */ }
+          } catch {}
         }
       }
 
-      const fill   = link.querySelector<HTMLElement>('.chapter-progress-fill');
-      const icon   = link.querySelector<HTMLElement>('.chapter-status-icon');
+      const fill = link.querySelector<HTMLElement>('.chapter-progress-fill');
+      const icon = link.querySelector<HTMLElement>('.chapter-status-icon');
 
       if (scrollY > 200) {
-        // Estimate percentage: scrollY / (estimated page height ~3000px)
         const estPct = Math.min(95, Math.round((scrollY / 3000) * 100));
-        if (fill) { fill.style.width = `${estPct}%`; }
-        if (icon) { icon.textContent = estPct >= 85 ? '✅' : '📖'; icon.classList.remove('hidden'); }
+        if (fill) {
+          fill.style.width = `${estPct}%`;
+        }
+        if (icon) {
+          icon.textContent = estPct >= 85 ? '✅' : '📖';
+          icon.classList.remove('hidden');
+        }
       }
     });
   }
 
   updateChapterLinks();
   updateChapterProgress();
-  window.addEventListener('language-changed', updateChapterLinks);
+
+  window.addEventListener('language-changed', (e: Event) => {
+    const lang = (e as CustomEvent<{ language: string }>).detail?.language || SOURCE_LANGUAGE;
+    updatePageContent(lang);
+    updateChapterLinks();
+    updateChapterProgress();
+  });
 </script>

@@ -1,16 +1,29 @@
 ---
 import type { Language } from '../types/index';
-import LanguageToggle from './LanguageToggle.astro';
+import LanguageSelector from './LanguageSelector.astro';
 import ThemeToggle from './ThemeToggle.astro';
+import { SOURCE_LANGUAGE, SUPPORTED_LANGUAGES, getLanguageDirection, getLanguageMeta } from '../utils/language';
 
 interface Props {
   language?: Language;
+  availableLanguages?: Language[];
   showLanguageToggle?: boolean;
   class?: string;
 }
 
-const { language = 'en', showLanguageToggle = true, class: className } =
-  Astro.props;
+const {
+  language = SOURCE_LANGUAGE,
+  availableLanguages,
+  showLanguageToggle = true,
+  class: className
+} = Astro.props;
+
+// Always ensure we have languages - fall back to all supported languages
+const effectiveLanguages = (availableLanguages && availableLanguages.length > 0)
+  ? availableLanguages
+  : SUPPORTED_LANGUAGES.map(l => l.code as Language);
+
+const isRtl = getLanguageDirection(language) === 'rtl';
 ---
 
 <header
@@ -24,13 +37,14 @@ const { language = 'en', showLanguageToggle = true, class: className } =
     className,
   ]}
 >
-  <!-- Skip to content link for keyboard users -->
   <a
     href="#main-content"
+    id="skip-to-content-link"
     class="sr-only focus:not-sr-only focus:absolute focus:z-[100] focus:top-2 focus:left-2 focus:px-4 focus:py-2 focus:bg-yuval-accent focus:text-yuval-accent-text focus:rounded-md focus:text-sm focus:font-medium"
   >
-    {language === 'he' ? 'דלג לתוכן' : 'Skip to content'}
+    <span data-i18n="header.skipToContent">Skip to content</span>
   </a>
+
   <div
     class:list={[
       'header-inner',
@@ -41,56 +55,54 @@ const { language = 'en', showLanguageToggle = true, class: className } =
       'px-4',
       'sm:px-6',
       'lg:px-8',
-      language === 'he' && 'flex-row-reverse',
+      isRtl && 'flex-row-reverse',
     ]}
   >
-    <!-- Logo / Brand -->
     <a
       href="/"
+      id="site-logo-link"
       class="yuval-logo"
-      data-he="Yuval"
-      data-en="Yuval"
-      aria-label={language === 'he' ? 'Yuval — עמוד הבית' : 'Yuval — Home'}
+      aria-label="Yuval"
     >
       <span class="logo-letter">Y</span><span class="logo-rest">uval</span>
     </a>
 
-    <!-- Motivational Quote - Desktop -->
     <div class="quote-container hidden sm:block">
       <p class="quote-text" id="header-quote"></p>
+      <cite class="quote-author" id="header-quote-author"></cite>
     </div>
 
-    <!-- Controls: Theme + Language -->
-    <div class:list={['flex', 'items-center', 'gap-3', language === 'he' && 'flex-row-reverse']}>
+    <div class:list={['flex', 'items-center', 'gap-3', isRtl && 'flex-row-reverse']}>
       <ThemeToggle />
-      {showLanguageToggle && <LanguageToggle currentLanguage={language} />}
+      {showLanguageToggle && (
+        <LanguageSelector
+          languages={effectiveLanguages}
+          current={language}
+        />
+      )}
     </div>
   </div>
 </header>
 
-<!-- Mobile Quote Bar - Floating at bottom -->
 <div class="mobile-quote-bar sm:hidden" id="mobile-quote-bar">
   <div class="mobile-quote-track">
     <span class="mobile-quote-text" id="mobile-quote"></span>
+    <span class="mobile-quote-author-inline" id="mobile-quote-author"></span>
     <span class="mobile-quote-separator">✦</span>
     <span class="mobile-quote-text" id="mobile-quote-duplicate"></span>
+    <span class="mobile-quote-author-inline" id="mobile-quote-author-duplicate"></span>
     <span class="mobile-quote-separator">✦</span>
   </div>
 </div>
 
 <style>
-  /* ═══════════════════════════════════════════════════════════════════
-     HEADER - Light Mode (warm cream) with subtle 3D shelf effect
-     ═══════════════════════════════════════════════════════════════════ */
   .yuval-header {
     background: linear-gradient(to bottom, #faf8f5, #f5f3f0);
-    /* Soft floating shadow */
-    box-shadow: 
+    box-shadow:
       0 2px 6px rgba(0, 0, 0, 0.06),
       0 4px 12px rgba(0, 0, 0, 0.04);
   }
 
-  /* Subtle gold bottom line - refined accent */
   .yuval-header::before {
     content: '';
     position: absolute;
@@ -108,7 +120,6 @@ const { language = 'en', showLanguageToggle = true, class: className } =
     z-index: 2;
   }
 
-  /* Soft underside shadow - subtle depth */
   .yuval-header::after {
     content: '';
     position: absolute;
@@ -127,12 +138,9 @@ const { language = 'en', showLanguageToggle = true, class: className } =
     z-index: 1;
   }
 
-  /* ═══════════════════════════════════════════════════════════════════
-     HEADER - Dark Mode (deep charcoal) with subtle 3D shelf effect
-     ═══════════════════════════════════════════════════════════════════ */
   :global(.dark) .yuval-header {
     background: linear-gradient(to bottom, #1a1a1f, #141418);
-    box-shadow: 
+    box-shadow:
       0 2px 6px rgba(0, 0, 0, 0.15),
       0 4px 12px rgba(0, 0, 0, 0.1);
   }
@@ -161,16 +169,17 @@ const { language = 'en', showLanguageToggle = true, class: className } =
     z-index: 1;
   }
 
-  /* ═══════════════════════════════════════════════════════════════════
-     LOGO - Elegant typography
-     ═══════════════════════════════════════════════════════════════════ */
   .yuval-logo {
     display: inline-flex;
     align-items: baseline;
     text-decoration: none;
     padding: 8px 14px;
     border-radius: 10px;
-    transition: all 0.3s ease;
+    transition: all 300ms var(--ease-standard);
+  }
+
+  :global([dir="rtl"]) .yuval-logo {
+    flex-direction: row-reverse;
   }
 
   .yuval-logo:hover {
@@ -188,7 +197,12 @@ const { language = 'en', showLanguageToggle = true, class: className } =
     font-style: italic;
     color: #2c2c34;
     margin-right: -1px;
-    transition: color 0.3s ease;
+    transition: color 300ms var(--ease-standard);
+  }
+
+  :global([dir="rtl"]) .logo-letter {
+    margin-right: 0;
+    margin-left: -1px;
   }
 
   .logo-rest {
@@ -197,7 +211,7 @@ const { language = 'en', showLanguageToggle = true, class: className } =
     font-weight: 400;
     letter-spacing: 0.12em;
     color: #4a4a54;
-    transition: all 0.3s ease;
+    transition: all 300ms var(--ease-standard);
   }
 
   :global(.dark) .logo-letter {
@@ -208,7 +222,6 @@ const { language = 'en', showLanguageToggle = true, class: className } =
     color: #b8b8c0;
   }
 
-  /* Hover - warm gold tones */
   .yuval-logo:hover .logo-letter {
     color: #8b7355;
   }
@@ -245,22 +258,62 @@ const { language = 'en', showLanguageToggle = true, class: className } =
     }
   }
 
-  /* ═══════════════════════════════════════════════════════════════════
-     MOTIVATIONAL QUOTE
-     ═══════════════════════════════════════════════════════════════════ */
   .quote-container {
     flex: 1;
-    display: none; /* Hidden on mobile by default */
+    display: none;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
     padding: 0 24px;
     max-width: 700px;
     margin: 0 auto;
+    gap: 2px;
   }
 
   @media (min-width: 640px) {
     .quote-container {
-      display: flex; /* Show on sm+ screens */
+      display: flex;
+    }
+  }
+
+  .quote-author {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 0.78rem;
+    font-style: normal;
+    font-weight: 500;
+    color: #8b7355;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    opacity: 0.85;
+    transition: opacity 500ms var(--ease-standard);
+    text-align: center;
+  }
+
+  .quote-author:empty {
+    display: none;
+  }
+
+  .quote-author.fade-out {
+    opacity: 0;
+  }
+
+  .quote-author::before {
+    content: '— ';
+  }
+
+  :global(.dark) .quote-author {
+    color: #c9a96e;
+  }
+
+  @media (min-width: 768px) {
+    .quote-author {
+      font-size: 0.82rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .quote-author {
+      font-size: 0.88rem;
     }
   }
 
@@ -273,7 +326,7 @@ const { language = 'en', showLanguageToggle = true, class: className } =
     text-align: center;
     line-height: 1.5;
     opacity: 1;
-    transition: opacity 0.5s ease;
+    transition: opacity 500ms var(--ease-standard);
     letter-spacing: 0.03em;
     text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5);
   }
@@ -302,9 +355,6 @@ const { language = 'en', showLanguageToggle = true, class: className } =
     }
   }
 
-  /* ═══════════════════════════════════════════════════════════════════
-     MOBILE QUOTE BAR - Marquee style at bottom
-     ═══════════════════════════════════════════════════════════════════ */
   .mobile-quote-bar {
     position: fixed;
     bottom: 0;
@@ -316,17 +366,16 @@ const { language = 'en', showLanguageToggle = true, class: className } =
     box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.08);
     overflow: hidden;
     height: 36px;
-    display: flex; /* Show on mobile by default */
+    display: flex;
     align-items: center;
   }
 
   @media (min-width: 640px) {
     .mobile-quote-bar {
-      display: none; /* Hide on sm+ screens */
+      display: none;
     }
   }
 
-  /* Edge fade gradients */
   .mobile-quote-bar::before,
   .mobile-quote-bar::after {
     content: '';
@@ -370,7 +419,6 @@ const { language = 'en', showLanguageToggle = true, class: className } =
     padding-left: 100%;
   }
 
-  /* RTL support - reverse animation direction */
   :global([dir="rtl"]) .mobile-quote-track,
   .mobile-quote-bar.rtl .mobile-quote-track {
     animation: marquee-rtl 25s linear infinite;
@@ -420,7 +468,30 @@ const { language = 'en', showLanguageToggle = true, class: className } =
     color: #8b7355;
   }
 
-  /* Pause animation on touch/hover */
+  .mobile-quote-author-inline {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 0.68rem;
+    font-style: normal;
+    font-weight: 500;
+    color: #8b7355;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 0 4px;
+    opacity: 0.85;
+  }
+
+  .mobile-quote-author-inline:empty {
+    display: none;
+  }
+
+  .mobile-quote-author-inline::before {
+    content: '— ';
+  }
+
+  :global(.dark) .mobile-quote-author-inline {
+    color: #c9a96e;
+  }
+
   .mobile-quote-bar:hover .mobile-quote-track,
   .mobile-quote-bar:active .mobile-quote-track {
     animation-play-state: paused;
@@ -428,676 +499,133 @@ const { language = 'en', showLanguageToggle = true, class: className } =
 </style>
 
 <script>
-  // 200+ Motivational quotes about knowledge and wisdom
-  const quotesEN = [
-    "Knowledge is power.",
-    "The only true wisdom is knowing you know nothing.",
-    "An investment in knowledge pays the best interest.",
-    "The mind is not a vessel to be filled, but a fire to be kindled.",
-    "Education is the most powerful weapon to change the world.",
-    "The more you know, the more you realize you don't know.",
-    "Wisdom begins in wonder.",
-    "Knowledge speaks, but wisdom listens.",
-    "The beautiful thing about learning is that no one can take it away from you.",
-    "Live as if you were to die tomorrow. Learn as if you were to live forever.",
-    "A reader lives a thousand lives before he dies.",
-    "Those who read today, lead tomorrow.",
-    "Books are a uniquely portable magic.",
-    "Reading is dreaming with open eyes.",
-    "Today a reader, tomorrow a leader.",
-    "The more you read, the more you know.",
-    "Reading feeds the soul.",
-    "Books: the quietest and most constant of friends.",
-    "A book is a dream you hold in your hands.",
-    "Reading is to the mind what exercise is to the body.",
-    "Never stop learning, because life never stops teaching.",
-    "The capacity to learn is a gift; the ability to learn is a skill.",
-    "Learning is a treasure that follows its owner everywhere.",
-    "The expert in anything was once a beginner.",
-    "Every accomplishment starts with the decision to try.",
-    "The only way to do great work is to love what you learn.",
-    "Education is not preparation for life; education is life itself.",
-    "The roots of education are bitter, but the fruit is sweet.",
-    "Learning never exhausts the mind.",
-    "Tell me and I forget. Teach me and I remember. Involve me and I learn.",
-    "Growth is the only evidence of life.",
-    "The journey of a thousand miles begins with a single step.",
-    "Success is not final, failure is not fatal: it is the courage to continue.",
-    "The only limit to our realization of tomorrow is our doubts of today.",
-    "Believe you can and you're halfway there.",
-    "The future belongs to those who believe in the beauty of their dreams.",
-    "It does not matter how slowly you go as long as you do not stop.",
-    "The secret of getting ahead is getting started.",
-    "What lies behind us and what lies before us are tiny matters.",
-    "The best time to plant a tree was 20 years ago. The second best time is now.",
-    "Curiosity is the wick in the candle of learning.",
-    "The important thing is not to stop questioning.",
-    "I have no special talents. I am only passionately curious.",
-    "The desire to know is natural to good men.",
-    "Wonder is the beginning of wisdom.",
-    "Stay hungry, stay foolish.",
-    "The mind that opens to a new idea never returns to its original size.",
-    "Discovery consists of seeing what everybody has seen and thinking what nobody has thought.",
-    "The greatest enemy of knowledge is not ignorance, it is the illusion of knowledge.",
-    "In the middle of difficulty lies opportunity.",
-    "A room without books is like a body without a soul.",
-    "So many books, so little time.",
-    "Books are mirrors: you only see in them what you already have inside you.",
-    "The only thing you absolutely have to know is the location of the library.",
-    "There is no friend as loyal as a book.",
-    "A book must be the axe for the frozen sea within us.",
-    "Books are the training weights of the mind.",
-    "I cannot live without books.",
-    "Books are the plane, and the train, and the road.",
-    "A great book should leave you with many experiences.",
-    "The mind is everything. What you think you become.",
-    "Think before you speak. Read before you think.",
-    "Great minds discuss ideas; average minds discuss events.",
-    "The unexamined life is not worth living.",
-    "We are what we repeatedly do. Excellence is not an act, but a habit.",
-    "Change your thoughts and you change your world.",
-    "The only thing standing between you and your goal is the story you keep telling yourself.",
-    "Your mind is a garden, your thoughts are the seeds.",
-    "The brain is wider than the sky.",
-    "A mind that is stretched by a new experience can never go back to its old dimensions.",
-    "Success is walking from failure to failure with no loss of enthusiasm.",
-    "The dictionary is the only place where success comes before work.",
-    "Success is not the key to happiness. Happiness is the key to success.",
-    "The way to get started is to quit talking and begin doing.",
-    "Don't watch the clock; do what it does. Keep going.",
-    "Success usually comes to those who are too busy to be looking for it.",
-    "The successful warrior is the average man, with laser-like focus.",
-    "Opportunities don't happen. You create them.",
-    "It is never too late to be what you might have been.",
-    "The harder you work for something, the greater you'll feel when you achieve it.",
-    "Fall seven times, stand up eight.",
-    "The only impossible journey is the one you never begin.",
-    "Perseverance is not a long race; it is many short races one after the other.",
-    "Our greatest glory is not in never falling, but in rising every time we fall.",
-    "Strength does not come from winning. Your struggles develop your strengths.",
-    "The difference between a stumbling block and a stepping stone is how you use it.",
-    "It always seems impossible until it's done.",
-    "A river cuts through rock not because of its power but because of its persistence.",
-    "Patience and perseverance have a magical effect.",
-    "Great works are performed not by strength but by perseverance.",
-    "Be the change you wish to see in the world.",
-    "The best way to predict the future is to create it.",
-    "What you get by achieving your goals is not as important as what you become.",
-    "Dream big and dare to fail.",
-    "Your limitation—it's only your imagination.",
-    "Push yourself, because no one else is going to do it for you.",
-    "Great things never come from comfort zones.",
-    "Dream it. Wish it. Do it.",
-    "Wake up with determination. Go to bed with satisfaction.",
-    "Do something today that your future self will thank you for.",
-    "The pen is mightier than the sword.",
-    "Knowledge is the eye of desire and can become the pilot of the soul.",
-    "Real knowledge is to know the extent of one's ignorance.",
-    "The beginning of wisdom is the definition of terms.",
-    "By three methods we may learn wisdom.",
-    "An ounce of practice is worth more than tons of preaching.",
-    "He who learns but does not think is lost.",
-    "The greatest wealth is to live content with little.",
-    "Know thyself.",
-    "In a world of change, the learners shall inherit the earth.",
-    "Information is not knowledge. Knowledge is not wisdom.",
-    "The illiterate of the 21st century will not be those who cannot read and write.",
-    "Learning is not attained by chance, it must be sought for with ardor.",
-    "Intelligence plus character—that is the goal of true education.",
-    "The purpose of learning is growth, and our minds can grow continuously.",
-    "Education is not filling a pail, but lighting a fire.",
-    "The mind is not a vessel to fill but a fire to ignite.",
-    "Learning is the only thing the mind never exhausts, never fears, and never regrets.",
-    "Read not to contradict and confute, but to weigh and consider.",
-    "A wise man learns more from his enemies than a fool from his friends.",
-    "The only source of knowledge is experience.",
-    "Imagination is more important than knowledge.",
-    "Logic will get you from A to B. Imagination will take you everywhere.",
-    "Anyone who stops learning is old, whether at twenty or eighty.",
-    "The best teachers are those who show you where to look but don't tell you what to see.",
-    "Education is the passport to the future.",
-    "The more I read, the more I acquire, the more certain I am that I know nothing.",
-    "One child, one teacher, one book, one pen can change the world.",
-    "We don't see things as they are; we see them as we are.",
-    "Knowing yourself is the beginning of all wisdom.",
-    "To teach is to learn twice.",
-    "The greatest teacher is experience.",
-    "Wisdom is not a product of schooling but of the lifelong attempt to acquire it.",
-    "The fool doth think he is wise, but the wise man knows himself to be a fool.",
-    "It is the mark of an educated mind to be able to entertain a thought without accepting it.",
-    "The reading of all good books is like a conversation with the finest minds.",
-    "What we learn with pleasure we never forget.",
-    "The power of imagination makes us infinite.",
-    "You don't have to be great to start, but you have to start to be great.",
-    "Education is the key to unlock the golden door of freedom.",
-    "The future depends on what you do today.",
-    "You are never too old to set another goal or to dream a new dream.",
-    "The only person you are destined to become is the person you decide to be.",
-    "The man who does not read has no advantage over the man who cannot read.",
-    "Your education is a dress rehearsal for a life that is yours to lead.",
-    "The world is a book, and those who do not travel read only one page.",
-    "Knowledge has to be improved, challenged, and increased constantly, or it vanishes.",
-    "When you know better, you do better.",
-    "Education breeds confidence. Confidence breeds hope. Hope breeds peace.",
-    "The wisest mind has something yet to learn.",
-    "Reading without reflecting is like eating without digesting.",
-    "Study the past if you would define the future.",
-    "The wise learn many things from their enemies.",
-    "There is no wealth like knowledge, and no poverty like ignorance.",
-    "Self-education is, I firmly believe, the only kind of education there is.",
-    "The cure for boredom is curiosity. There is no cure for curiosity.",
-    "Intelligence is the ability to adapt to change.",
-    "Learning to ignore things is one of the great paths to inner peace.",
-    "The art of being wise is knowing what to overlook.",
-    "A single conversation with a wise man is worth a month's study of books.",
-    "The greatest discovery of any generation is that human beings can alter their lives.",
-    "Be curious, not judgmental.",
-    "Those who know, do. Those who understand, teach.",
-    "The essence of knowledge is, having it, to apply it.",
-    "A journey of a thousand miles must begin with a single step.",
-    "The only true failure is not trying at all.",
-    "Wisdom is the reward for surviving our own stupidity.",
-    "Books are the legacies that genius leaves to mankind.",
-    "The ink of the scholar is more sacred than the blood of the martyr.",
-    "Reading makes a full man, conference a ready man, writing an exact man.",
-    "A day without learning is a day wasted.",
-    "The greatest teacher failure is.",
-    "In learning you will teach, and in teaching you will learn.",
-    "Tell me what you read and I'll tell you who you are.",
-    "A book is a gift you can open again and again.",
-    "Reading without purpose is sauntering not exercise.",
-    "Books give a soul to the universe, wings to the mind, flight to the imagination.",
-    "The learned man knows he is still a student.",
-    "Knowledge will forever govern ignorance.",
-    "True wisdom comes to each of us when we realize how little we understand.",
-    "Education is not received. It is achieved.",
-    "The more you learn, the more places you'll go.",
-    "One hour of reading is worth more than a library of knowledge unread.",
-    "Literacy is a bridge from misery to hope.",
-    "Books are the mirrors of the soul.",
-    "Knowledge rests not upon truth alone, but upon error also.",
-    "The love of learning, the sequestered nooks, and all the sweet serenity of books.",
-    "Real education should educate us out of self into something far finer.",
-    "Education's purpose is to replace an empty mind with an open one.",
-    "Some books should be tasted, others devoured, but only a few should be chewed.",
-    "To read without writing is half-knowledge.",
-    "A man's mind, stretched by new ideas, may never return to its original dimensions.",
-    "Books are a refuge, a sort of cloistral refuge, from the vulgarities of the actual world.",
-    "A library is not a luxury but one of the necessities of life.",
-    "Knowledge comes, but wisdom lingers.",
-    "Teaching is the highest form of understanding.",
-    "Books are the bees which carry the quickening pollen from one to another mind.",
-    "To acquire knowledge, one must study; but to acquire wisdom, one must observe.",
-    "The man who reads nothing at all is better educated than the man who reads only newspapers.",
-    "A truly good book teaches me better than to read it.",
-  ];
+  import { QUOTES_BY_LANGUAGE } from '../i18n/quotes';
+  import { SOURCE_LANGUAGE } from '../utils/language';
 
-  const quotesHE = [
-    "ידע הוא כוח.",
-    "החוכמה האמיתית היא לדעת שאינך יודע.",
-    "השקעה בידע מניבה את הריבית הטובה ביותר.",
-    "המוח אינו כלי למילוי, אלא אש להצתה.",
-    "חינוך הוא הנשק החזק ביותר לשינוי העולם.",
-    "ככל שיודעים יותר, מבינים כמה לא יודעים.",
-    "החוכמה מתחילה בתמיהה.",
-    "הידע מדבר, אך החוכמה מקשיבה.",
-    "היופי בלמידה הוא שאף אחד לא יכול לקחת אותה ממך.",
-    "חיה כאילו תמות מחר. למד כאילו תחיה לנצח.",
-    "קורא חי אלף חיים לפני שהוא מת.",
-    "מי שקורא היום, מוביל מחר.",
-    "ספרים הם קסם נייד ייחודי.",
-    "קריאה היא חלימה בעיניים פקוחות.",
-    "היום קורא, מחר מנהיג.",
-    "ככל שקוראים יותר, יודעים יותר.",
-    "קריאה מזינה את הנשמה.",
-    "ספרים: החברים השקטים והנאמנים ביותר.",
-    "ספר הוא חלום שאתה מחזיק בידיים.",
-    "קריאה היא למוח מה שפעילות גופנית היא לגוף.",
-    "לעולם אל תפסיק ללמוד, כי החיים לעולם לא מפסיקים ללמד.",
-    "היכולת ללמוד היא מתנה; הכישרון ללמוד הוא מיומנות.",
-    "למידה היא אוצר שמלווה את בעליו לכל מקום.",
-    "המומחה בכל תחום היה פעם מתחיל.",
-    "כל הישג מתחיל בהחלטה לנסות.",
-    "הדרך היחידה לעשות עבודה נהדרת היא לאהוב את מה שלומדים.",
-    "חינוך אינו הכנה לחיים; חינוך הוא החיים עצמם.",
-    "שורשי החינוך מרים, אך הפרי מתוק.",
-    "למידה לעולם לא מתישה את המוח.",
-    "ספר לי ואשכח. למד אותי ואזכור. שתף אותי ואלמד.",
-    "צמיחה היא הראיה היחידה לחיים.",
-    "מסע של אלף מילין מתחיל בצעד אחד.",
-    "הצלחה אינה סופית, כישלון אינו קטלני: האומץ להמשיך הוא מה שקובע.",
-    "הגבול היחיד להגשמה שלנו הוא הספקות של היום.",
-    "האמן שאתה יכול ואתה כבר בחצי הדרך.",
-    "העתיד שייך לאלה שמאמינים ביופי של חלומותיהם.",
-    "לא משנה כמה לאט אתה הולך, כל עוד אתה לא עוצר.",
-    "הסוד להתקדם הוא להתחיל.",
-    "מה שמאחורינו ומה שלפנינו הם דברים זניחים.",
-    "הזמן הטוב ביותר לשתול עץ היה לפני 20 שנה. הזמן השני הטוב ביותר הוא עכשיו.",
-    "סקרנות היא הפתילה בנר הלמידה.",
-    "הדבר החשוב הוא לא להפסיק לשאול שאלות.",
-    "אין לי כישרונות מיוחדים. אני רק סקרן בלהט.",
-    "הרצון לדעת הוא טבעי לאנשים טובים.",
-    "תמיהה היא תחילת החוכמה.",
-    "הישאר רעב, הישאר טיפש.",
-    "מוח שנפתח לרעיון חדש לעולם לא חוזר לגודלו המקורי.",
-    "גילוי הוא לראות מה שכולם ראו ולחשוב מה שאף אחד לא חשב.",
-    "האויב הגדול ביותר של הידע אינו בורות, אלא אשליית הידע.",
-    "בתוך הקושי מסתתרת הזדמנות.",
-    "חדר בלי ספרים הוא כמו גוף בלי נשמה.",
-    "כל כך הרבה ספרים, כל כך מעט זמן.",
-    "ספרים הם מראות: אתה רואה בהם רק מה שכבר יש בתוכך.",
-    "הדבר היחיד שחייבים לדעת הוא היכן נמצאת הספרייה.",
-    "אין חבר נאמן כמו ספר.",
-    "ספר חייב להיות הגרזן לים הקפוא בתוכנו.",
-    "ספרים הם משקולות האימון של המוח.",
-    "אני לא יכול לחיות בלי ספרים.",
-    "ספרים הם המטוס, הרכבת והדרך.",
-    "ספר נהדר צריך להשאיר אותך עם חוויות רבות.",
-    "המוח הוא הכל. מה שאתה חושב, אתה הופך להיות.",
-    "חשוב לפני שאתה מדבר. קרא לפני שאתה חושב.",
-    "מוחות גדולים דנים ברעיונות; מוחות בינוניים דנים באירועים.",
-    "חיים ללא בחינה אינם שווים לחיותם.",
-    "אנחנו מה שאנחנו עושים שוב ושוב. מצוינות אינה מעשה, אלא הרגל.",
-    "שנה את מחשבותיך ותשנה את עולמך.",
-    "הדבר היחיד שעומד בינך לבין המטרה שלך הוא הסיפור שאתה מספר לעצמך.",
-    "המוח שלך הוא גינה, מחשבותיך הם הזרעים.",
-    "המוח רחב יותר מהשמיים.",
-    "מוח שהתרחב בחוויה חדשה לעולם לא חוזר לממדיו הישנים.",
-    "הצלחה היא ללכת מכישלון לכישלון בלי לאבד התלהבות.",
-    "המקום היחיד שבו הצלחה באה לפני עבודה הוא במילון.",
-    "הצלחה אינה המפתח לאושר. אושר הוא המפתח להצלחה.",
-    "הדרך להתחיל היא להפסיק לדבר ולהתחיל לעשות.",
-    "אל תסתכל על השעון; עשה מה שהוא עושה. המשך.",
-    "הצלחה מגיעה בדרך כלל לאלה שעסוקים מכדי לחפש אותה.",
-    "הלוחם המנצח הוא האדם הממוצע עם מיקוד לייזר.",
-    "הזדמנויות לא קורות. אתה יוצר אותן.",
-    "לעולם לא מאוחר מדי להיות מה שיכולת להיות.",
-    "ככל שעובדים קשה יותר למשהו, כך מרגישים טוב יותר כשמשיגים אותו.",
-    "נפול שבע פעמים, קום שמונה.",
-    "המסע הבלתי אפשרי היחיד הוא זה שלעולם לא התחלת.",
-    "התמדה אינה מרוץ ארוך; היא הרבה מרוצים קצרים בזה אחר זה.",
-    "התהילה הגדולה שלנו אינה בכך שלעולם לא נופלים, אלא בקימה בכל פעם.",
-    "כוח לא מגיע מניצחון. המאבקים שלך מפתחים את החוזקות שלך.",
-    "ההבדל בין אבן נגף לאבן דריכה הוא איך משתמשים בה.",
-    "תמיד נראה בלתי אפשרי עד שזה נעשה.",
-    "נהר חוצה סלע לא בגלל כוחו אלא בגלל התמדתו.",
-    "סבלנות והתמדה יש להן אפקט קסום.",
-    "מעשים גדולים מבוצעים לא בכוח אלא בהתמדה.",
-    "היה השינוי שאתה רוצה לראות בעולם.",
-    "הדרך הטובה ביותר לחזות את העתיד היא ליצור אותו.",
-    "מה שאתה מקבל מהשגת המטרות שלך אינו חשוב כמו מה שאתה הופך להיות.",
-    "חלום בגדול והעז להיכשל.",
-    "המגבלה שלך - היא רק הדמיון שלך.",
-    "דחוף את עצמך, כי אף אחד אחר לא יעשה את זה בשבילך.",
-    "דברים גדולים לעולם לא מגיעים מאזורי נוחות.",
-    "חלום את זה. רצה את זה. עשה את זה.",
-    "התעורר עם נחישות. לך לישון עם סיפוק.",
-    "עשה היום משהו שהעצמי העתידי שלך יודה לך עליו.",
-    "העט חזק מהחרב.",
-    "ידע הוא עין התשוקה ויכול להפוך לטייס הנשמה.",
-    "ידע אמיתי הוא להכיר את גבולות הבורות שלך.",
-    "תחילת החוכמה היא הגדרת המונחים.",
-    "בשלוש דרכים אנו למדים חוכמה.",
-    "אונקיית תרגול שווה יותר מטונות של הטפה.",
-    "מי שלומד אך אינו חושב - אבוד.",
-    "העושר הגדול ביותר הוא לחיות במסתפק במועט.",
-    "דע את עצמך.",
-    "בעולם של שינוי, הלומדים יירשו את הארץ.",
-    "מידע אינו ידע. ידע אינו חוכמה.",
-    "אנאלפביתים של המאה ה-21 לא יהיו אלה שלא יודעים לקרוא ולכתוב.",
-    "למידה אינה מושגת במקרה, חייבים לחפש אותה בלהט.",
-    "אינטליגנציה פלוס אופי - זו מטרת החינוך האמיתי.",
-    "מטרת הלמידה היא צמיחה, והמוח שלנו יכול לצמוח ללא הפסקה.",
-    "חינוך אינו מילוי דלי, אלא הצתת אש.",
-    "המוח אינו כלי למלא אלא אש להדליק.",
-    "למידה היא הדבר היחיד שהמוח לעולם לא מתיש, לעולם לא מפחד, ולעולם לא מתחרט.",
-    "קרא לא כדי לסתור ולהפריך, אלא כדי לשקול ולהתבונן.",
-    "חכם לומד יותר מאויביו מאשר טיפש מחבריו.",
-    "המקור היחיד לידע הוא הניסיון.",
-    "דמיון חשוב יותר מידע.",
-    "היגיון יביא אותך מא' לב'. דמיון יקח אותך לכל מקום.",
-    "כל מי שמפסיק ללמוד זקן, בין אם בן עשרים או שמונים.",
-    "המורים הטובים ביותר מראים לך לאן להסתכל אבל לא אומרים לך מה לראות.",
-    "חינוך הוא הדרכון לעתיד.",
-    "ככל שאני קורא יותר, כך אני רוכש יותר, וכך אני בטוח יותר שאיני יודע דבר.",
-    "ילד אחד, מורה אחד, ספר אחד, עט אחד יכולים לשנות את העולם.",
-    "אנחנו לא רואים דברים כפי שהם; אנחנו רואים אותם כפי שאנחנו.",
-    "להכיר את עצמך היא תחילת כל חוכמה.",
-    "ללמד זה ללמוד פעמיים.",
-    "המורה הגדול ביותר הוא הניסיון.",
-    "חוכמה אינה תוצר של לימודים אלא של הניסיון לכל החיים לרכוש אותה.",
-    "הטיפש חושב שהוא חכם, אך החכם יודע שהוא טיפש.",
-    "סימן למוח משכיל הוא היכולת להחזיק במחשבה בלי לקבל אותה.",
-    "קריאת כל הספרים הטובים היא כמו שיחה עם המוחות הנפלאים של העבר.",
-    "מה שלומדים בהנאה לעולם לא שוכחים.",
-    "כוח הדמיון הופך אותנו לאינסופיים.",
-    "לא צריך להיות גדול כדי להתחיל, אבל צריך להתחיל כדי להיות גדול.",
-    "חינוך הוא המפתח לפתוח את שער הזהב של החירות.",
-    "העתיד תלוי במה שאתה עושה היום.",
-    "לעולם אין אתה זקן מכדי להציב מטרה חדשה או לחלום חלום חדש.",
-    "האדם היחיד שאתה מיועד להיות הוא האדם שאתה מחליט להיות.",
-    "לאדם שלא קורא אין יתרון על אדם שלא יודע לקרוא.",
-    "החינוך שלך הוא חזרה גנרלית לחיים שהם שלך להוביל.",
-    "העולם הוא ספר, ואלה שלא נוסעים קוראים רק עמוד אחד.",
-    "ידע חייב להשתפר, להיות מאותגר ולגדול כל הזמן, אחרת הוא נעלם.",
-    "כשיודעים טוב יותר, עושים טוב יותר.",
-    "חינוך מוליד ביטחון. ביטחון מוליד תקווה. תקווה מולידה שלום.",
-    "למוח החכם ביותר יש עדיין מה ללמוד.",
-    "קריאה בלי הרהור היא כמו אכילה בלי עיכול.",
-    "למד את העבר אם תרצה להגדיר את העתיד.",
-    "החכם לומד דברים רבים מאויביו.",
-    "אין עושר כמו ידע, ואין עוני כמו בורות.",
-    "חינוך עצמי הוא, אני מאמין בתוקף, הסוג היחיד של חינוך שקיים.",
-    "התרופה לשעמום היא סקרנות. אין תרופה לסקרנות.",
-    "אינטליגנציה היא היכולת להסתגל לשינוי.",
-    "ללמוד להתעלם מדברים היא אחת הדרכים הגדולות לשלום פנימי.",
-    "אמנות החוכמה היא לדעת מה להתעלם ממנו.",
-    "שיחה אחת עם אדם חכם שווה חודש של לימוד ספרים.",
-    "הגילוי הגדול ביותר של כל דור הוא שבני אדם יכולים לשנות את חייהם.",
-    "היה סקרן, לא שיפוטי.",
-    "מי שיודע, עושה. מי שמבין, מלמד.",
-    "מהות הידע היא, כשיש לך אותו, ליישם אותו.",
-    "מסע של אלף מילין מתחיל בצעד אחד בודד.",
-    "הכישלון האמיתי היחיד הוא לא לנסות בכלל.",
-    "חוכמה היא הפרס על הישרדות הטיפשות שלנו.",
-    "ספרים הם המורשת שהגאונות משאירה לאנושות.",
-    "דיו החכם קדוש יותר מדם הקדוש.",
-    "קריאה עושה אדם מלא, שיחה אדם מוכן, כתיבה אדם מדויק.",
-    "יום בלי למידה הוא יום מבוזבז.",
-    "המורה הגדול ביותר, הכישלון הוא.",
-    "בלמידה תלמד, ובהוראה תלמד.",
-    "ספר לי מה אתה קורא ואגיד לך מי אתה.",
-    "ספר הוא מתנה שאפשר לפתוח שוב ושוב.",
-    "קריאה ללא מטרה היא שוטטות לא תרגיל.",
-    "ספרים נותנים נשמה ליקום, כנפיים למוח, מעוף לדמיון.",
-    "האדם הלמדן יודע שהוא עדיין תלמיד.",
-    "ידע ישלוט תמיד על בורות.",
-    "חוכמה אמיתית מגיעה כשמבינים כמה מעט אנחנו מבינים.",
-    "חינוך לא מתקבל. הוא מושג.",
-    "ככל שתלמד יותר, כך תגיע ליותר מקומות.",
-    "שעה של קריאה שווה יותר מספרייה של ידע שלא נקרא.",
-    "אוריינות היא גשר מייסורים לתקווה.",
-    "ספרים הם מראות הנשמה.",
-    "ידע נשען לא רק על אמת, אלא גם על טעות.",
-    "אהבת הלמידה, הפינות המסתתרות, וכל השלווה המתוקה של ספרים.",
-    "חינוך אמיתי צריך לחנך אותנו מחוץ לעצמנו למשהו הרבה יותר טוב.",
-    "מטרת החינוך היא להחליף מוח ריק במוח פתוח.",
-    "יש ספרים שצריך לטעום, אחרים לבלוע, ורק מעטים ללעוס.",
-    "לקרוא בלי לכתוב זה חצי ידע.",
-    "מוח אדם, מותח על ידי רעיונות חדשים, לעולם לא יחזור לממדיו המקוריים.",
-    "ספרים הם מקלט, מעין מנזר, מגסותו של העולם האמיתי.",
-    "ספרייה אינה מותרות אלא אחד מצרכי החיים.",
-    "ידע בא, אך חוכמה נשארת.",
-    "הוראה היא הצורה הגבוהה ביותר של הבנה.",
-    "ספרים הם הדבורים הנושאות את אבקת ההפריה ממוח למוח.",
-    "כדי לרכוש ידע, צריך ללמוד; אך כדי לרכוש חוכמה, צריך להתבונן.",
-    "מי שלא קורא בכלל משכיל יותר ממי שקורא רק עיתונים.",
-    "ספר באמת טוב מלמד אותי יותר טוב מאשר לקרוא אותו.",
-  ];
+  function getCurrentLanguage() {
+    return localStorage.getItem('yuval_language') || SOURCE_LANGUAGE;
+  }
 
-  const quotesES = [
-    "El conocimiento es poder.",
-    "La única sabiduría verdadera es saber que no sabes nada.",
-    "Una inversión en conocimiento paga el mejor interés.",
-    "La mente no es un recipiente para llenar, sino un fuego para encender.",
-    "La educación es el arma más poderosa para cambiar el mundo.",
-    "Cuanto más sabes, más te das cuenta de que no sabes.",
-    "La sabiduría comienza con el asombro.",
-    "El conocimiento habla, pero la sabiduría escucha.",
-    "Lo hermoso del aprendizaje es que nadie te lo puede quitar.",
-    "Vive como si fueras a morir mañana. Aprende como si fueras a vivir para siempre.",
-    "Un lector vive mil vidas antes de morir.",
-    "Quien lee hoy, lidera mañana.",
-    "Los libros son una magia portátil única.",
-    "Leer es soñar con los ojos abiertos.",
-    "Hoy lector, mañana líder.",
-    "Cuanto más lees, más sabes.",
-    "La lectura alimenta el alma.",
-    "Los libros: los amigos más silenciosos y constantes.",
-    "Un libro es un sueño que sostienes en tus manos.",
-    "La lectura es para la mente lo que el ejercicio es para el cuerpo.",
-    "Nunca dejes de aprender, porque la vida nunca deja de enseñar.",
-    "La capacidad de aprender es un regalo; la habilidad de aprender es una destreza.",
-    "El aprendizaje es un tesoro que sigue a su dueño a todas partes.",
-    "El experto en cualquier cosa fue una vez un principiante.",
-    "Todo logro comienza con la decisión de intentarlo.",
-    "La única forma de hacer un gran trabajo es amar lo que aprendes.",
-    "La educación no es preparación para la vida; la educación es la vida misma.",
-    "Las raíces de la educación son amargas, pero el fruto es dulce.",
-    "El aprendizaje nunca agota la mente.",
-    "Dime y lo olvido. Enséñame y lo recuerdo. Involúcrame y aprendo.",
-    "El crecimiento es la única evidencia de vida.",
-    "Un viaje de mil millas comienza con un solo paso.",
-    "El éxito no es definitivo, el fracaso no es fatal: es el coraje de continuar.",
-    "El único límite para nuestra realización del mañana son nuestras dudas de hoy.",
-    "Cree que puedes y ya estás a mitad de camino.",
-    "El futuro pertenece a quienes creen en la belleza de sus sueños.",
-    "No importa cuán lento vayas, siempre y cuando no te detengas.",
-    "El secreto de avanzar es comenzar.",
-    "Lo que está detrás y lo que está delante de nosotros son asuntos menores.",
-    "El mejor momento para plantar un árbol fue hace 20 años. El segundo mejor momento es ahora.",
-    "La curiosidad es la mecha en la vela del aprendizaje.",
-    "Lo importante es no dejar de cuestionar.",
-    "No tengo talentos especiales. Solo soy apasionadamente curioso.",
-    "El deseo de saber es natural en los hombres buenos.",
-    "El asombro es el comienzo de la sabiduría.",
-    "Mantente hambriento, mantente alocado.",
-    "La mente que se abre a una nueva idea nunca vuelve a su tamaño original.",
-    "El descubrimiento consiste en ver lo que todos han visto y pensar lo que nadie ha pensado.",
-    "El mayor enemigo del conocimiento no es la ignorancia, es la ilusión del conocimiento.",
-    "En medio de la dificultad yace la oportunidad.",
-    "Una habitación sin libros es como un cuerpo sin alma.",
-    "Tantos libros, tan poco tiempo.",
-    "Los libros son espejos: solo ves en ellos lo que ya tienes dentro.",
-    "Lo único que absolutamente debes saber es dónde está la biblioteca.",
-    "No hay amigo tan leal como un libro.",
-    "Un libro debe ser el hacha para el mar congelado dentro de nosotros.",
-    "Los libros son las pesas de entrenamiento de la mente.",
-    "No puedo vivir sin libros.",
-    "Los libros son el avión, el tren y el camino.",
-    "Un gran libro debe dejarte con muchas experiencias.",
-    "La mente lo es todo. Lo que piensas, te conviertes.",
-    "Piensa antes de hablar. Lee antes de pensar.",
-    "Las grandes mentes discuten ideas; las mentes promedio discuten eventos.",
-    "Una vida sin examinar no vale la pena vivirla.",
-    "Somos lo que hacemos repetidamente. La excelencia no es un acto, sino un hábito.",
-    "Cambia tus pensamientos y cambiarás tu mundo.",
-    "Lo único que está entre tú y tu meta es la historia que te sigues contando.",
-    "Tu mente es un jardín, tus pensamientos son las semillas.",
-    "El cerebro es más ancho que el cielo.",
-    "Una mente estirada por una nueva experiencia nunca puede volver a sus viejas dimensiones.",
-    "El éxito es caminar de fracaso en fracaso sin perder el entusiasmo.",
-    "El diccionario es el único lugar donde el éxito viene antes que el trabajo.",
-    "El éxito no es la clave de la felicidad. La felicidad es la clave del éxito.",
-    "La forma de empezar es dejar de hablar y comenzar a hacer.",
-    "No mires el reloj; haz lo que él hace. Sigue adelante.",
-    "El éxito generalmente llega a quienes están demasiado ocupados para buscarlo.",
-    "El guerrero exitoso es el hombre promedio con enfoque láser.",
-    "Las oportunidades no suceden. Tú las creas.",
-    "Nunca es demasiado tarde para ser lo que podrías haber sido.",
-    "Cuanto más duro trabajas por algo, más grande será la sensación cuando lo logres.",
-    "Cae siete veces, levántate ocho.",
-    "El único viaje imposible es el que nunca comienzas.",
-    "La perseverancia no es una carrera larga; son muchas carreras cortas una tras otra.",
-    "Nuestra mayor gloria no está en no caer nunca, sino en levantarnos cada vez que caemos.",
-    "La fuerza no viene de ganar. Tus luchas desarrollan tus fortalezas.",
-    "La diferencia entre un obstáculo y un escalón es cómo lo usas.",
-    "Siempre parece imposible hasta que se hace.",
-    "Un río corta la roca no por su poder sino por su persistencia.",
-    "La paciencia y la perseverancia tienen un efecto mágico.",
-    "Las grandes obras no se realizan por la fuerza sino por la perseverancia.",
-    "Sé el cambio que deseas ver en el mundo.",
-    "La mejor manera de predecir el futuro es crearlo.",
-    "Lo que obtienes al alcanzar tus metas no es tan importante como en lo que te conviertes.",
-    "Sueña en grande y atrévete a fallar.",
-    "Tu limitación es solo tu imaginación.",
-    "Empújate a ti mismo, porque nadie más lo hará por ti.",
-    "Las grandes cosas nunca vienen de las zonas de confort.",
-    "Sueñalo. Desealo. Hazlo.",
-    "Despierta con determinación. Ve a dormir con satisfacción.",
-    "Haz algo hoy por lo que tu yo futuro te agradecerá.",
-    "La pluma es más poderosa que la espada.",
-    "El conocimiento es el ojo del deseo y puede convertirse en el piloto del alma.",
-    "El verdadero conocimiento es conocer el alcance de la propia ignorancia.",
-    "El comienzo de la sabiduría es la definición de términos.",
-    "Por tres métodos podemos aprender sabiduría.",
-    "Una onza de práctica vale más que toneladas de predicación.",
-    "El que aprende pero no piensa está perdido.",
-    "La mayor riqueza es vivir contento con poco.",
-    "Conócete a ti mismo.",
-    "En un mundo de cambio, los que aprenden heredarán la tierra.",
-    "La información no es conocimiento. El conocimiento no es sabiduría.",
-    "Los analfabetos del siglo XXI no serán los que no sepan leer y escribir.",
-    "El aprendizaje no se logra por casualidad, debe buscarse con ardor.",
-    "Inteligencia más carácter: esa es la meta de la verdadera educación.",
-    "El propósito del aprendizaje es el crecimiento, y nuestras mentes pueden crecer continuamente.",
-    "La educación no es llenar un cubo, sino encender un fuego.",
-    "La mente no es un recipiente para llenar sino un fuego para encender.",
-    "El aprendizaje es lo único que la mente nunca agota, nunca teme y nunca lamenta.",
-    "Lee no para contradecir y refutar, sino para sopesar y considerar.",
-    "Un sabio aprende más de sus enemigos que un tonto de sus amigos.",
-    "La única fuente de conocimiento es la experiencia.",
-    "La imaginación es más importante que el conocimiento.",
-    "La lógica te llevará de A a B. La imaginación te llevará a todas partes.",
-    "Cualquiera que deja de aprender es viejo, ya sea a los veinte u ochenta.",
-    "Los mejores maestros te muestran dónde mirar pero no te dicen qué ver.",
-    "La educación es el pasaporte al futuro.",
-    "Cuanto más leo, más adquiero, más seguro estoy de que no sé nada.",
-    "Un niño, un maestro, un libro, un lápiz pueden cambiar el mundo.",
-    "No vemos las cosas como son; las vemos como somos.",
-    "Conocerte a ti mismo es el comienzo de toda sabiduría.",
-    "Enseñar es aprender dos veces.",
-    "El mayor maestro es la experiencia.",
-    "La sabiduría no es producto de la escolarización sino del intento de adquirirla toda la vida.",
-    "El tonto piensa que es sabio, pero el sabio sabe que es un tonto.",
-    "Es la marca de una mente educada poder entretener un pensamiento sin aceptarlo.",
-    "La lectura de todos los buenos libros es como una conversación con las mejores mentes.",
-    "Lo que aprendemos con placer nunca lo olvidamos.",
-    "El poder de la imaginación nos hace infinitos.",
-    "No tienes que ser grande para empezar, pero tienes que empezar para ser grande.",
-    "La educación es la llave para abrir la puerta dorada de la libertad.",
-    "El futuro depende de lo que hagas hoy.",
-    "Nunca eres demasiado viejo para establecer otra meta o soñar un nuevo sueño.",
-    "La única persona que estás destinado a ser es la persona que decides ser.",
-    "El hombre que no lee no tiene ventaja sobre el que no sabe leer.",
-    "Tu educación es un ensayo general para una vida que es tuya para liderar.",
-    "El mundo es un libro, y quienes no viajan leen solo una página.",
-    "El conocimiento debe mejorarse, desafiarse y aumentarse constantemente, o se desvanece.",
-    "Cuando sabes mejor, haces mejor.",
-    "La educación genera confianza. La confianza genera esperanza. La esperanza genera paz.",
-    "La mente más sabia aún tiene algo que aprender.",
-    "Leer sin reflexionar es como comer sin digerir.",
-    "Estudia el pasado si quieres definir el futuro.",
-    "El sabio aprende muchas cosas de sus enemigos.",
-    "No hay riqueza como el conocimiento, ni pobreza como la ignorancia.",
-    "La autoeducación es, creo firmemente, el único tipo de educación que existe.",
-    "La cura para el aburrimiento es la curiosidad. No hay cura para la curiosidad.",
-    "La inteligencia es la capacidad de adaptarse al cambio.",
-    "Aprender a ignorar las cosas es uno de los grandes caminos hacia la paz interior.",
-    "El arte de ser sabio es saber qué pasar por alto.",
-    "Una sola conversación con un hombre sabio vale un mes de estudio de libros.",
-    "El mayor descubrimiento de cualquier generación es que los seres humanos pueden alterar sus vidas.",
-    "Sé curioso, no crítico.",
-    "Los que saben, hacen. Los que entienden, enseñan.",
-    "La esencia del conocimiento es, teniéndolo, aplicarlo.",
-    "Un viaje de mil millas debe comenzar con un solo paso.",
-    "El único fracaso verdadero es no intentarlo en absoluto.",
-    "La sabiduría es la recompensa por sobrevivir nuestra propia estupidez.",
-    "Los libros son los legados que el genio deja a la humanidad.",
-    "La tinta del erudito es más sagrada que la sangre del mártir.",
-    "La lectura hace al hombre completo, la conversación lo hace ágil, la escritura lo hace exacto.",
-    "Un día sin aprender es un día desperdiciado.",
-    "El mayor maestro, el fracaso es.",
-    "Aprendiendo enseñarás, y enseñando aprenderás.",
-    "Dime qué lees y te diré quién eres.",
-    "Un libro es un regalo que puedes abrir una y otra vez.",
-    "Leer sin propósito es pasear, no ejercitar.",
-    "Los libros dan un alma al universo, alas a la mente, vuelo a la imaginación.",
-    "El hombre instruido sabe que aún es un estudiante.",
-    "El conocimiento gobernará para siempre a la ignorancia.",
-    "La verdadera sabiduría llega cuando nos damos cuenta de cuán poco entendemos.",
-    "La educación no se recibe. Se logra.",
-    "Cuanto más aprendes, a más lugares irás.",
-    "Una hora de lectura vale más que una biblioteca de conocimiento no leído.",
-    "La alfabetización es un puente de la miseria a la esperanza.",
-    "Los libros son los espejos del alma.",
-    "El conocimiento no descansa solo sobre la verdad, sino también sobre el error.",
-    "El amor por el aprendizaje, los rincones apartados, y toda la dulce serenidad de los libros.",
-    "La verdadera educación debe educarnos fuera de nosotros hacia algo mucho más fino.",
-    "El propósito de la educación es reemplazar una mente vacía por una abierta.",
-    "Algunos libros deben ser probados, otros devorados, pero solo unos pocos masticados.",
-    "Leer sin escribir es medio conocimiento.",
-    "La mente del hombre, estirada por nuevas ideas, nunca vuelve a sus dimensiones originales.",
-    "Los libros son un refugio, una especie de refugio claustral, de las vulgaridades del mundo real.",
-    "Una biblioteca no es un lujo sino una de las necesidades de la vida.",
-    "El conocimiento viene, pero la sabiduría permanece.",
-    "Enseñar es la forma más alta de comprensión.",
-    "Los libros son las abejas que llevan el polen vivificante de una mente a otra.",
-    "Para adquirir conocimiento, uno debe estudiar; pero para adquirir sabiduría, uno debe observar.",
-    "El hombre que no lee nada es más educado que el que solo lee periódicos.",
-    "Un libro verdaderamente bueno me enseña mejor que leerlo.",
-  ];
+  function getQuotesForLanguage(lang: string) {
+    return QUOTES_BY_LANGUAGE[lang as keyof typeof QUOTES_BY_LANGUAGE] || QUOTES_BY_LANGUAGE[SOURCE_LANGUAGE];
+  }
+
+  function getHeaderAriaLabel(lang: string) {
+    const label = lang === 'he' ? 'עמוד הבית' : 'Home';
+    return `Yuval - ${label}`;
+  }
 
   let lastQuoteIndex = -1;
 
+  const GENERIC_AUTHORS = new Set(['Original', 'מקורי', 'Original.', 'Anonymous']);
+
+  function normalizeQuote(raw: unknown): { text: string; author: string } {
+    if (typeof raw === 'string') {
+      return { text: raw, author: '' };
+    }
+    if (raw && typeof raw === 'object') {
+      const obj = raw as { text?: string; author?: string };
+      const author = obj.author && !GENERIC_AUTHORS.has(obj.author) ? obj.author : '';
+      return { text: obj.text ?? '', author };
+    }
+    return { text: '', author: '' };
+  }
+
   function showQuote() {
     const quoteEl = document.getElementById('header-quote');
+    const authorEl = document.getElementById('header-quote-author');
     const mobileQuote = document.getElementById('mobile-quote');
     const mobileQuoteDup = document.getElementById('mobile-quote-duplicate');
+    const mobileAuthor = document.getElementById('mobile-quote-author');
+    const mobileAuthorDup = document.getElementById('mobile-quote-author-duplicate');
     const mobileBar = document.getElementById('mobile-quote-bar');
+    const logoLink = document.getElementById('site-logo-link');
 
-    const lang = localStorage.getItem('yuval_language') || 'en';
-    const quotes = lang === 'he' ? quotesHE : lang === 'es' ? quotesES : quotesEN;
-    
-    // Get random quote, ensuring it's different from the last one
+    const lang = getCurrentLanguage();
+    const quotes = getQuotesForLanguage(lang);
+
+    if (!quotes.length) return;
+
     let newIndex;
     do {
       newIndex = Math.floor(Math.random() * quotes.length);
     } while (newIndex === lastQuoteIndex && quotes.length > 1);
+
     lastQuoteIndex = newIndex;
 
-    const randomQuote = quotes[newIndex];
-    const quoteWithMarks = `"${randomQuote}"`;
+    const { text, author } = normalizeQuote(quotes[newIndex]);
+    const quoteWithMarks = `"${text}"`;
+    const isRtl = document.documentElement.dir === 'rtl';
 
-    // Update desktop quote with fade effect
+    if (logoLink) {
+      logoLink.setAttribute('aria-label', getHeaderAriaLabel(lang));
+    }
+
     if (quoteEl) {
       quoteEl.classList.add('fade-out');
+      if (authorEl) authorEl.classList.add('fade-out');
       setTimeout(() => {
         quoteEl.textContent = quoteWithMarks;
-        quoteEl.dir = lang === 'he' ? 'rtl' : 'ltr';
+        quoteEl.dir = isRtl ? 'rtl' : 'ltr';
         quoteEl.classList.remove('fade-out');
+        if (authorEl) {
+          authorEl.textContent = author;
+          authorEl.dir = isRtl ? 'rtl' : 'ltr';
+          authorEl.classList.remove('fade-out');
+        }
       }, 500);
     }
 
-    // Update mobile marquee - set RTL class for animation direction
     if (mobileBar) {
-      if (lang === 'he') {
+      if (isRtl) {
         mobileBar.classList.add('rtl');
       } else {
         mobileBar.classList.remove('rtl');
       }
     }
 
-    // Update mobile marquee quotes (both copies for seamless loop)
-    if (mobileQuote) {
-      mobileQuote.textContent = quoteWithMarks;
-    }
-    if (mobileQuoteDup) {
-      mobileQuoteDup.textContent = quoteWithMarks;
-    }
+    if (mobileQuote) mobileQuote.textContent = quoteWithMarks;
+    if (mobileQuoteDup) mobileQuoteDup.textContent = quoteWithMarks;
+    if (mobileAuthor) mobileAuthor.textContent = author;
+    if (mobileAuthorDup) mobileAuthorDup.textContent = author;
   }
 
-  // Initial quote
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', showQuote);
-  } else {
+  function initHeaderQuotes() {
+    if (window.__yuvalHeaderQuotesInitialized) {
+      showQuote();
+      return;
+    }
+
+    window.__yuvalHeaderQuotesInitialized = true;
+
     showQuote();
+    window.__yuvalHeaderQuotesInterval = window.setInterval(showQuote, 10000);
+
+    window.addEventListener('language-changed', showQuote);
+    document.addEventListener('astro:page-load', showQuote);
   }
 
-  // Rotate quotes every 5 seconds
-  setInterval(showQuote, 5000);
+  // Bridge language-selector-change to language-changed for compatibility
+  window.addEventListener('language-selector-change', (e: Event) => {
+    const customEvent = e as CustomEvent<{ language: string }>;
+    if (customEvent.detail?.language) {
+      const lang = customEvent.detail.language;
 
-  // Listen for language changes
-  window.addEventListener('yuval:languageChange', showQuote);
-  document.addEventListener('astro:page-load', showQuote);
+      // Update localStorage first
+      localStorage.setItem('yuval_language', lang);
+
+      window.dispatchEvent(
+        new CustomEvent('language-changed', {
+          detail: { language: lang },
+          bubbles: true,
+        })
+      );
+    }
+  });
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initHeaderQuotes, { once: true });
+  } else {
+    initHeaderQuotes();
+  }
 </script>

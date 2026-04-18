@@ -1,72 +1,86 @@
-/**
- * Build-time search index — generates /search-index.json
- * Contains all chapters across all books for client-side full-book search.
- */
-
 import type { APIRoute } from 'astro';
 import { readFileSync, existsSync } from 'fs';
 import { resolve } from 'path';
 import { discoverAllBooks } from '../utils/book-discovery';
+import { SUPPORTED_LANGUAGES, SOURCE_LANGUAGE } from '../utils/language';
 
-/** Strip Markdown syntax → plain text */
+/** Strip Markdown → plain text */
 function mdToText(md: string): string {
   return md
-    .replace(/^---[\s\S]*?---/m, '')          // frontmatter
-    .replace(/```[\s\S]*?```/g, '')            // code blocks
-    .replace(/`[^`]+`/g, '')                   // inline code
-    .replace(/!\[.*?\]\(.*?\)/g, '')           // images
-    .replace(/\[([^\]]+)\]\(.*?\)/g, '$1')    // links → text
-    .replace(/#{1,6}\s+/g, '')                 // headings
-    .replace(/[*_~>|]/g, '')                   // markdown chars
-    .replace(/\s+/g, ' ')                      // collapse whitespace
+    .replace(/^---[\s\S]*?---/m, '')
+    .replace(/```[\s\S]*?```/g, '')
+    .replace(/`[^`]+`/g, '')
+    .replace(/!\[.*?\]\(.*?\)/g, '')
+    .replace(/\[([^\]]+)\]\(.*?\)/g, '$1')
+    .replace(/#{1,6}\s+/g, '')
+    .replace(/[*_~>|]/g, '')
+    .replace(/\s+/g, ' ')
     .trim();
 }
 
-/** Extract a short snippet around the first occurrence of query */
 function snippet(text: string, maxLen = 180): string {
   return text.length > maxLen ? text.slice(0, maxLen) + '…' : text;
 }
 
+type LocalizedMap = Record<string, string | undefined>;
+
+function getLocalized(value: LocalizedMap | undefined, lang: string): string {
+  if (!value) return '';
+  return value[lang] ?? value[SOURCE_LANGUAGE] ?? Object.values(value)[0] ?? '';
+}
+
 export const GET: APIRoute = () => {
   const books = discoverAllBooks();
+
+  const languages = SUPPORTED_LANGUAGES.map(l => l.code);
+
   const index: {
     book: string;
-    bookTitle_he: string;
-    bookTitle_en: string;
+    bookTitles: Record<string, string>;
     chapterId: number;
-    title_he: string;
-    title_en: string;
+    chapterTitles: Record<string, string>;
     url: string;
-    text_he: string;
-    text_en: string;
+    texts: Record<string, string>;
   }[] = [];
 
   for (const book of books) {
     for (const chapter of book.chapters) {
       const pad = String(chapter.id).padStart(2, '0');
 
-      const readFile = (lang: string) => {
+      const texts: Record<string, string> = {};
+
+      for (const lang of languages) {
         const path = resolve(`output/${book.slug}/chapter-${pad}.${lang}.md`);
-        if (!existsSync(path)) return '';
-        try { return mdToText(readFileSync(path, 'utf-8')); } catch { return ''; }
-      };
 
-      const text_he = readFile('he');
-      const text_en = readFile('en');
+        if (!existsSync(path)) continue;
 
-      // Skip if both empty
-      if (!text_he && !text_en) continue;
+        try {
+          const raw = readFileSync(path, 'utf-8');
+          const cleaned = mdToText(raw);
+          texts[lang] = snippet(cleaned, 2000);
+        } catch {
+          continue;
+        }
+      }
+
+      // אם אין טקסט באף שפה – דלג
+      if (Object.keys(texts).length === 0) continue;
+
+      const bookTitles: Record<string, string> = {};
+      const chapterTitles: Record<string, string> = {};
+
+      for (const lang of languages) {
+        bookTitles[lang] = getLocalized(book.titles, lang);
+        chapterTitles[lang] = getLocalized(chapter.titles, lang);
+      }
 
       index.push({
-        book:         book.slug,
-        bookTitle_he: book.title_he,
-        bookTitle_en: book.title_en,
-        chapterId:    chapter.id,
-        title_he:     chapter.title_he,
-        title_en:     chapter.title_en,
-        url:          `/read/${book.slug}/${chapter.id}`,
-        text_he:      snippet(text_he, 2000),
-        text_en:      snippet(text_en, 2000),
+        book: book.slug,
+        bookTitles,
+        chapterId: chapter.id,
+        chapterTitles,
+        url: `/read/${book.slug}/${chapter.id}`,
+        texts,
       });
     }
   }

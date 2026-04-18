@@ -17,8 +17,16 @@
     },
     "credits": {
       "type": "lecture_summary",
-      "lecturer": "ערן סלע",
-      "editor": "תומר קדם"
+      "lecturer": {
+        "he": "ערן סלע",
+        "en": "Eran Sela",
+        "es": "Eran Sela"
+      },
+      "editor": {
+        "he": "תומר קדם",
+        "en": "Tomer Kedem",
+        "es": "Tomer Kedem"
+      }
     },
     "category": {
       "he": "קורס הנדסת AI",
@@ -103,17 +111,17 @@
         "file_slug": "chapter-05",
         "type": "content",
         "titles": {
-          "he": "דוגמה לממשק חדש פיצ'ר חדש של - Verint AI Insights (תובנות בינה מלאכותית)",
-          "en": "Example of a New Feature Interface - Verint AI Insights (Artificial Intelligence Insights)",
-          "es": "Ejemplo de Nueva Interfaz de Características - Verint AI Insights (Insights de Inteligencia Artificial)"
+          "he": "דוגמה לממשק חדש פיצ'ר חדש של - Verint AI Insights",
+          "en": "Example of a New Feature Interface - Verint AI Insights",
+          "es": "Ejemplo de Nueva Interfaz de Características - Verint AI Insights"
         },
-        "title_he": "דוגמה לממשק חדש פיצ'ר חדש של - Verint AI Insights (תובנות בינה מלאכותית)",
-        "title_en": "Example of a New Feature Interface - Verint AI Insights (Artificial Intelligence Insights)",
+        "title_he": "דוגמה לממשק חדש פיצ'ר חדש של - Verint AI Insights",
+        "title_en": "Example of a New Feature Interface - Verint AI Insights",
         "sections": 0,
         "has_images": true,
         "word_count": 387,
         "topics": [],
-        "title_es": "Ejemplo de Nueva Interfaz de Características - Verint AI Insights (Insights de Inteligencia Artificial)"
+        "title_es": "Ejemplo de Nueva Interfaz de Características - Verint AI Insights"
       },
       {
         "id": 6,

@@ -1,5 +1,6 @@
 ---
 import type { Language } from '../types/index';
+import { getLanguageDirection } from '../utils/language';
 
 interface Props {
   wordCount: number;
@@ -63,7 +64,7 @@ const formattedCount = wordCount.toLocaleString(isHe ? 'he-IL' : 'en-US');
     margin-bottom: 2rem;
     padding: 0.625rem 1rem;
     background: var(--yuval-meta-bg);
-    border-radius: 8px;
+    border-radius: 0;
     border: 1px solid var(--yuval-meta-border);
     transition: color 0.3s, background 0.3s, border-color 0.3s;
   }

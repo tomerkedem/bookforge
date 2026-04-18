@@ -5,22 +5,25 @@ import ChapterSidebars from '../../../components/ChapterSidebars.astro';
 import ChapterMeta from '../../../components/ChapterMeta.astro';
 import Breadcrumbs from '../../../components/Breadcrumbs.astro';
 import type { Language, Chapter } from '../../../types/index';
-import { LANGUAGES } from '../../../utils/language';
+import { SUPPORTED_LANGUAGES, SOURCE_LANGUAGE } from '../../../utils/language';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import { marked } from '../../../utils/markdown';
 import { discoverAllBooks } from '../../../utils/book-discovery';
+import { t } from '../../../i18n';
 
-interface Props {
-  language?: Language;
+type LocalizedMap = Record<string, string | undefined>;
+
+function getLocalized(value: LocalizedMap | undefined, lang: string): string {
+  if (!value) return '';
+  return value[lang] ?? value[SOURCE_LANGUAGE] ?? Object.values(value)[0] ?? '';
 }
 
 export async function getStaticPaths() {
   const books = discoverAllBooks();
   return books.flatMap(book =>
     book.chapters.map(ch => ({
-      params: { book: book.slug, chapter: String(ch.id) },
-      props: { bookData: book }
+      params: { book: book.slug, chapter: String(ch.id) }
     }))
   );
 }
@@ -28,7 +31,6 @@ export async function getStaticPaths() {
 const { book, chapter: chapterIdStr } = Astro.params;
 const chapterId = parseInt(chapterIdStr || '0', 10);
 
-// In SSR mode, look up the book dynamically
 const books = discoverAllBooks();
 const bookData = books.find(b => b.slug === book);
 
@@ -36,472 +38,507 @@ if (!bookData) {
   return new Response('Book not found', { status: 404 });
 }
 
-const allChapters: Chapter[] = bookData?.chapters ?? [];
-const currentChapter = allChapters.find((ch: Chapter) => ch.id === chapterId);
-if (!currentChapter) {
+const chapters: Chapter[] = bookData.chapters ?? [];
+const current = chapters.find(ch => ch.id === chapterId);
+
+if (!current) {
   return new Response('Chapter not found', { status: 404 });
 }
 
-// Load ALL language versions at BUILD TIME for client-side switching
-function stripFirstH1(html: string): string {
-  return html.replace(/<h1[^>]*>.*?<\/h1>\s*/s, '');
+const availableLangs =
+  bookData.languages?.length
+    ? bookData.languages
+    : Object.keys(bookData.titles || {});
+
+const supportedCodes = SUPPORTED_LANGUAGES.map(l => l.code);
+
+const langs = supportedCodes.filter(l => availableLangs.includes(l));
+
+function annotateBookmarkAnchors(html: string): string {
+  const counters = { p: 0, h: 0 };
+  return html.replace(/<(p|h2|h3)(\s[^>]*)?>/gi, (_, tagRaw: string, attrsRaw?: string) => {
+    const tag = tagRaw.toLowerCase();
+    const attrs = attrsRaw || '';
+    if (/\sdata-bm-anchor=/.test(attrs)) {
+      return `<${tag}${attrs}>`;
+    }
+    const key = tag === 'p' ? 'p' : 'h';
+    const n = ++counters[key];
+    return `<${tag}${attrs} data-bm-anchor="${key}-${n}">`;
+  });
 }
 
-async function loadChapterContent(langCode: string, fallbackTitle: string, fallbackMsg: string): Promise<string> {
-  // Chapter 0 is the intro, stored as intro.{lang}.md
-  const filename = chapterId === 0 
-    ? `intro.${langCode}.md` 
-    : `chapter-${String(chapterId).padStart(2, '0')}.${langCode}.md`;
-  const filepath = resolve(`output/${book}`, filename);
+async function loadContent(lang: string): Promise<string> {
+  const filename =
+    chapterId === 0
+      ? `intro.${lang}.md`
+      : `chapter-${String(chapterId).padStart(2, '0')}.${lang}.md`;
+
+  const path = resolve(`output/${book}`, filename);
+
   try {
-    const md = readFileSync(filepath, 'utf-8');
+    const md = readFileSync(path, 'utf-8');
     let html = await marked(md);
     html = html.replaceAll('src="../assets/', `src="/${book}/assets/`);
-    return stripFirstH1(html);
+    // Remove leading <h1>...</h1> if present (to avoid duplicate chapter title)
+    html = html.replace(/^<h1[^>]*>.*?<\/h1>/s, '');
+    html = annotateBookmarkAnchors(html);
+    return html;
   } catch {
-    console.warn(`Warning: ${langCode} chapter file not found: ${filepath}`);
-    return `<h2>${fallbackTitle}</h2><p><em>${fallbackMsg}</em></p>`;
+    return `<h2 data-bm-anchor="h-1">${getLocalized(current.titles, lang)}</h2>`;
   }
 }
 
-let chapterContentHe = '';
-let chapterContentEn = '';
-let chapterContentEs = '';
+const contentByLang = Object.fromEntries(
+  await Promise.all(
+    langs.map(async l => [l, await loadContent(l)])
+  )
+) as Record<string, string>;
 
-try {
-  [chapterContentHe, chapterContentEn, chapterContentEs] = await Promise.all([
-    loadChapterContent('he', currentChapter.title_he, 'קובץ זה לא נמצא בזמן הבנייה'),
-    loadChapterContent('en', currentChapter.title_en, 'This chapter file was not found during build time'),
-    loadChapterContent('es', currentChapter.title_es || currentChapter.title_en, 'Este capítulo no fue encontrado durante la compilación'),
-  ]);
-} catch (error) {
-  console.error('Error loading chapter content:', error);
-  chapterContentHe = '<p>Error loading Hebrew content</p>';
-  chapterContentEn = '<p>Error loading English content</p>';
-  chapterContentEs = '<p>Error al cargar el contenido en español</p>';
-}
+const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] || SOURCE_LANGUAGE) as Language;
 ---
 
 <ReadingLayout
-  title={currentChapter.title_en}
-  language={LANGUAGES.EN}
+  title={getLocalized(current.titles, language)}
+  language={language}
+  availableLanguages={langs as Language[]}
 >
-  <!-- Chapter Sidebars: Moved to body level via slot to avoid View Transitions jump -->
+
   <ChapterSidebars
     slot="sidebars"
-    chapters={allChapters}
+    chapters={chapters}
     currentChapterId={chapterId}
     bookSlug={book || ''}
-    language={LANGUAGES.EN}
+    language={language}
   />
+  {/* Region 1 — Top strip: full-width band between the two sidebars.
+      Independent from the chapter title. Contains meta, breadcrumb,
+      chapter number eyebrow, and progress. */}
+  <div id="chapter-top-strip" class="chapter-top-strip">
+    {/* 1. Breadcrumb row */}
+    <div id="breadcrumb-container" class="breadcrumb-container">
+      {langs.map(l => (
+        <div
+          data-lang={l}
+          class={l === language ? 'visible' : 'hidden'}
+          dir={SUPPORTED_LANGUAGES.find(x => x.code === l)?.dir || 'ltr'}
+        >
+          <Breadcrumbs
+            language={l}
+            items={[
+              { key: 'breadcrumb.books', href: '/' },
+              { label: bookData.titles, href: `/books/${book}` },
+              { label: current.titles }
+            ]}
+          />
+        </div>
+      ))}
+    </div>
 
-  <!-- Sticky meta bar — directly below main header -->
-  <div id="chapter-meta-bar" class="chapter-meta-bar">
-    <div data-lang="he" class="hidden" dir="rtl">
-      <ChapterMeta
-        wordCount={currentChapter.word_count}
-        readingTimeMinutes={Math.ceil(currentChapter.word_count / 200)}
-        sections={currentChapter.sections}
-        language="he"
-      />
-    </div>
-    <div data-lang="en" class="visible" dir="ltr">
-      <ChapterMeta
-        wordCount={currentChapter.word_count}
-        readingTimeMinutes={Math.ceil(currentChapter.word_count / 200)}
-        sections={currentChapter.sections}
-        language="en"
-      />
-    </div>
-    <div data-lang="es" class="hidden" dir="ltr">
-      <ChapterMeta
-        wordCount={currentChapter.word_count}
-        readingTimeMinutes={Math.ceil(currentChapter.word_count / 200)}
-        sections={currentChapter.sections}
-        language="en"
-      />
+    {/* 2. Metadata / reading stats row — full-width, stats on start side, progress at end */}
+    <div id="chapter-meta-bar" class="chapter-meta-bar">
+      {langs.map(l => (
+        <div
+          data-lang={l}
+          class={l === language ? 'visible meta-bar-row' : 'hidden meta-bar-row'}
+          dir={SUPPORTED_LANGUAGES.find(x => x.code === l)?.dir || 'ltr'}
+        >
+          <div class="meta-bar-stats">
+            <ChapterMeta
+              wordCount={current.word_count}
+              readingTimeMinutes={Math.ceil(current.word_count / 200)}
+              sections={current.sections}
+              language={l}
+            />
+          </div>
+          <span class="progress-badge" id={`progress-badge-${l}`}>0%</span>
+        </div>
+      ))}
     </div>
   </div>
 
-  <!-- Breadcrumbs -->
-  <Breadcrumbs
-    items={[
-      { label_he: 'ספרים', label_en: 'Books', label_es: 'Libros', href: '/' },
-      { label_he: bookData.title_he, label_en: bookData.title_en, label_es: bookData.title_es, href: `/books/${book}` },
-      { label_he: currentChapter.title_he, label_en: currentChapter.title_en, label_es: currentChapter.title_es || currentChapter.title_en },
-    ]}
-    class="mb-4"
-  />
-
-  <!-- Sticky chapter header: title + progress — shrinks on scroll -->
-  <div id="chapter-header" class="chapter-header">
-    <div class="chapter-header-card">
-      <div data-lang="he" class="hidden header-lang" dir="rtl">
-        <div class="header-title-row">
-          <div class="chapter-number-badge">
-            <span class="chapter-number">{chapterId}</span>
-          </div>
-          <div class="chapter-title-group">
-            <span class="chapter-label">פרק</span>
-            <h1 class="chapter-title">{currentChapter.title_he}</h1>
-          </div>
-          <span class="progress-badge" id="progress-badge-he">0%</span>
-        </div>
+  {/* Region 2 — Chapter title block: own component below the strip.
+      Only the title lives here. No shared container, no shared framing.
+      Retains id="chapter-header" as a stable contract for language-switcher,
+      highlighter, and client-side nav consumers. */}
+  <div id="chapter-header" class="chapter-title-block">
+    {langs.map(l => (
+      <div
+        data-lang={l}
+        class={l === language ? 'visible' : 'hidden'}
+        dir={SUPPORTED_LANGUAGES.find(x => x.code === l)?.dir || 'ltr'}
+      >
+        <h1 class="chapter-title">
+          <span class="chapter-number-stack" aria-hidden="true">
+            <span class="chapter-number-label">{t('chapter.label', l) || 'Chapter'}</span>
+            <span class="chapter-number-badge">{chapterId}</span>
+          </span>
+          <span class="chapter-title-text">{getLocalized(current.titles, l)}</span>
+        </h1>
       </div>
-      <div data-lang="en" class="visible header-lang" dir="ltr">
-        <div class="header-title-row">
-          <div class="chapter-number-badge">
-            <span class="chapter-number">{chapterId}</span>
-          </div>
-          <div class="chapter-title-group">
-            <span class="chapter-label">Chapter</span>
-            <h1 class="chapter-title">{currentChapter.title_en}</h1>
-          </div>
-          <span class="progress-badge" id="progress-badge-en">0%</span>
-        </div>
-      </div>
-      <div data-lang="es" class="hidden header-lang" dir="ltr">
-        <div class="header-title-row">
-          <div class="chapter-number-badge">
-            <span class="chapter-number">{chapterId}</span>
-          </div>
-          <div class="chapter-title-group">
-            <span class="chapter-label">Capítulo</span>
-            <h1 class="chapter-title">{currentChapter.title_es || currentChapter.title_en}</h1>
-          </div>
-          <span class="progress-badge" id="progress-badge-es">0%</span>
-        </div>
-      </div>
-      <div class="header-progress-line">
-        <div class="header-progress-fill" id="header-progress-fill"></div>
-      </div>
-    </div>
+    ))}
   </div>
 
-  <!-- Chapter content -->
-  <div id="chapter-container" data-chapter-id={chapterId} data-book={book} data-word-count={currentChapter.word_count} data-book-title-he={bookData.title_he} data-book-title-en={bookData.title_en} data-total-chapters={allChapters.length} data-dominant-color={bookData.dominantColor} transition:animate="none">
-    <div data-lang="he" class="hidden" dir="rtl" style="text-align: right">
-      <div class="chapter-content prose prose-lg">
-        {chapterContentHe && <Fragment set:html={chapterContentHe} />}
+  <div id="chapter-container" data-book={book} data-chapter-id={chapterId}>
+    {langs.map(l => (
+      <div
+        data-lang={l}
+        class={l === language ? 'visible' : 'hidden'}
+        dir={SUPPORTED_LANGUAGES.find(x => x.code === l)?.dir || 'ltr'}
+      >
+        <div class="chapter-content prose prose-lg">
+          <Fragment set:html={contentByLang[l]} />
+        </div>
       </div>
-    </div>
+    ))}
 
-    <div data-lang="en" class="visible" dir="ltr" style="text-align: left">
-      <div class="chapter-content prose prose-lg">
-        {chapterContentEn && <Fragment set:html={chapterContentEn} />}
-      </div>
-    </div>
-
-    <div data-lang="es" class="hidden" dir="ltr" style="text-align: left">
-      <div class="chapter-content prose prose-lg">
-        {chapterContentEs && <Fragment set:html={chapterContentEs} />}
-      </div>
-    </div>
-
-    <!-- Chapter navigation -->
     <ChapterNavigation
       currentChapterId={chapterId}
-      chapters={allChapters}
-      bookSlug={book || 'bookforge'}
-      language={LANGUAGES.EN}
+      chapters={chapters}
+      bookSlug={book || ''}
+      language={language}
     />
   </div>
 </ReadingLayout>
 
 <style>
-  .hidden {
+.hidden { display: none !important; }
+.visible { display: block; }
+
+/* ─────────────────────────────────────────────────────────────
+   REGION 1 — TOP STRIP
+   Independent full-width band between sidebars. Not attached to,
+   not parent of, the chapter title. Sticky so it stays visible
+   while scrolling.
+   ───────────────────────────────────────────────────────────── */
+/* The article wraps content with px-4 / sm:px-6 / lg:px-8. The top strip
+   must escape that padding and sit edge-to-edge between sidebars. We cancel
+   the article's inline padding with equal negative margins, then zero our
+   own inline padding. */
+.chapter-top-strip {
+  position: sticky;
+  top: var(--reading-sticky-top, 4rem);
+  z-index: 40;
+  width: auto;
+  max-width: none;
+  margin-inline: -1rem;
+  margin-bottom: 0;
+  padding: 0.35rem 0 0.5rem;
+  background:
+    linear-gradient(to bottom,
+      color-mix(in srgb, var(--yuval-reading-bg) 96%, transparent),
+      color-mix(in srgb, var(--yuval-reading-bg) 88%, transparent 12%));
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid color-mix(in srgb, var(--gold-500) 12%, var(--yuval-border));
+}
+
+@media (min-width: 640px) {
+  .chapter-top-strip { margin-inline: -1.5rem; }
+}
+@media (min-width: 1024px) {
+  .chapter-top-strip { margin-inline: -2rem; }
+}
+
+.chapter-top-strip.scrolled {
+  box-shadow: 0 8px 20px rgba(17, 24, 39, 0.06);
+}
+
+.chapter-meta-bar,
+.breadcrumb-container {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* Meta row — full-width grid: stats centered, progress pinned to end */
+.meta-bar-row {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0;
+}
+
+.meta-bar-row.hidden {
+  display: none !important;
+}
+
+.meta-bar-stats {
+  grid-column: 2;
+  min-width: 0;
+}
+
+.meta-bar-row .progress-badge {
+  grid-column: 3;
+  justify-self: end;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   REGION 2 — CHAPTER TITLE BLOCK
+   Own component below the strip. No shared wrapper, no shared
+   framing. Only the title lives here.
+   ───────────────────────────────────────────────────────────── */
+.chapter-title-block {
+  position: sticky;
+  top: calc(var(--reading-sticky-top, 4rem) + var(--top-strip-h, 0px));
+  z-index: 39;
+  width: 100%;
+  max-width: 100%;
+  margin: 0 0 1.25rem;
+  padding: 0.6rem 0 0.7rem;
+  background: var(--yuval-reading-bg);
+  border-bottom: 1px solid color-mix(in srgb, var(--gold-500) 10%, var(--yuval-border));
+}
+
+/* Title's inner wrapper mirrors .chapter-content exactly so the
+   title's end edge lines up with the body's end edge. Same width
+   tokens, same centered margin — title reads as the first element
+   of the content container, not a page-level heading. */
+.chapter-title-block > [data-lang] {
+  width: 100%;
+  max-width: var(--reading-content-width);
+  margin: 0 auto;
+}
+
+@media (min-width: 1024px) {
+  .chapter-title-block > [data-lang] {
+    max-width: min(100%, 1040px);
+    padding-inline-start: 20px;
+  }
+}
+@media (min-width: 1280px) {
+  .chapter-title-block > [data-lang] {
+    max-width: min(100%, 1160px);
+    padding-inline-start: 20px;
+  }
+}
+@media (min-width: 1536px) {
+  .chapter-title-block > [data-lang] {
+    max-width: min(100%, 1280px);
+    padding-inline-start: 20px;
+  }
+}
+
+/* Chapter title — lives only inside .chapter-title-block.
+   Number stack + title sit in the same flow as one unified
+   heading group, aligned to the content container's start edge. */
+.chapter-title {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.75em;
+  font-family: var(--reading-font-family);
+  font-size: clamp(1.6rem, 1.2rem + 1.6vw, 2.4rem);
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.015em;
+  color: var(--yuval-chapter-title);
+  text-align: start;
+}
+
+.chapter-title-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* Vertical micro-component: small label above the gold number
+   badge. Tight, compact, aligned with the title as one group. */
+.chapter-number-stack {
+  flex: 0 0 auto;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15em;
+  line-height: 1;
+}
+
+.chapter-number-label {
+  font-size: 0.32em;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--gold-700) 75%, var(--yuval-text-tertiary));
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.chapter-number-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.55em;
+  height: 1.55em;
+  font-size: 0.6em;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--gold-700);
+  background:
+    linear-gradient(155deg,
+      color-mix(in srgb, var(--gold-300) 18%, var(--yuval-bg)) 0%,
+      color-mix(in srgb, var(--gold-500) 14%, var(--yuval-bg)) 55%,
+      color-mix(in srgb, var(--gold-600) 12%, var(--yuval-bg)) 100%);
+  border: 1px solid color-mix(in srgb, var(--gold-600) 40%, var(--yuval-border));
+  border-radius: 3px;
+  letter-spacing: 0;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--gold-300) 55%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, var(--gold-700) 18%, transparent),
+    0 1px 1px rgba(15, 23, 42, 0.04);
+  text-shadow: 0 1px 0 color-mix(in srgb, var(--gold-300) 45%, transparent);
+}
+
+/* Progress chip — sits in the top strip eyebrow row */
+.progress-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.5rem;
+  height: 1.5rem;
+  padding-inline: 0.55rem;
+  flex-shrink: 0;
+  border-radius: 2px;
+  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--gold-500) 22%, var(--yuval-border));
+  color: var(--gold-700);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  line-height: 1;
+}
+
+/* Meta row stats — no pill, centered cluster */
+#chapter-meta-bar :global(.chapter-meta) {
+  margin: 0;
+  padding: 0.4rem 0;
+  width: auto;
+  max-width: none;
+  background: transparent;
+  border: 0;
+  justify-content: center;
+  flex-wrap: nowrap;
+}
+
+/* Breadcrumb row — full width, edge-flush */
+#breadcrumb-container :global(.breadcrumbs),
+#breadcrumb-container :global(.breadcrumbs-nav) {
+  margin: 0 !important;
+  padding: 0 !important;
+  max-width: none !important;
+  width: 100%;
+}
+
+@media (min-width: 1024px) {
+  .chapter-top-strip {
+    padding: 0.45rem 0 0.6rem;
+  }
+  .chapter-title-block {
+    margin: 0 0 1.5rem;
+    padding: 0.8rem 0 0.9rem;
+  }
+}
+
+/* Mobile tap-to-top affordance on the chapter title block.
+   Subtle by design — no button styling, no background, no outline ring.
+   Just a whisper of interactivity: a gentle press-in on tap.
+   Activated only when JS has added .chapter-title-tap-enabled (mobile MQ). */
+@media (max-width: 1023px) {
+  .chapter-title-block.chapter-title-tap-enabled {
+    cursor: default;
+    -webkit-tap-highlight-color: transparent;
+    transition:
+      opacity 180ms var(--ease-standard, ease-out),
+      transform 180ms var(--ease-standard, ease-out);
+    will-change: opacity, transform;
+  }
+
+  /* Tap feedback — barely-there press-in. Opacity nudge + micro-scale.
+     No background, no border, no ring. Reads as a responsive surface,
+     not a button. */
+  .chapter-title-block.chapter-title-tap-enabled:active {
+    opacity: 0.72;
+    transform: scale(0.995);
+    transition-duration: 80ms;
+  }
+
+  /* Keyboard focus remains accessible but understated:
+     a thin gold underline on the title text, not a boxed outline. */
+  .chapter-title-block.chapter-title-tap-enabled:focus {
+    outline: none;
+  }
+  .chapter-title-block.chapter-title-tap-enabled:focus-visible .chapter-title-text {
+    text-decoration: underline;
+    text-decoration-color: color-mix(in srgb, var(--gold-500) 55%, transparent);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 4px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .chapter-title-block.chapter-title-tap-enabled {
+      transition: opacity 120ms linear;
+    }
+    .chapter-title-block.chapter-title-tap-enabled:active {
+      transform: none;
+    }
+  }
+}
+
+@media (max-width: 639px) {
+  .chapter-top-strip {
+    padding: 0.3rem 0 0.4rem;
+  }
+
+  .breadcrumb-container {
     display: none !important;
   }
 
-  .visible {
-    display: block;
-  }
-</style>
-
-<style>
-  /* Meta bar - sticky directly below main header */
-  .chapter-meta-bar {
-    position: sticky;
-    top: 64px;
-    z-index: 36;
-    margin-top: -0.25rem; /* Pull up to touch header */
-    margin-left: -1rem;
-    margin-right: -1rem;
-    background: rgba(255, 255, 255, 0.55);
-    backdrop-filter: blur(12px) saturate(1.6);
-    -webkit-backdrop-filter: blur(12px) saturate(1.6);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.5);
-    box-shadow:
-      0 2px 8px rgba(0, 0, 0, 0.05),
-      0 1px 2px rgba(0, 0, 0, 0.03);
+  .meta-bar-row {
+    gap: 0.5rem;
   }
 
-  @media (min-width: 640px) {
-    .chapter-meta-bar {
-      margin-top: -0.5rem; /* sm:py-2 compensation */
-    }
+  #chapter-meta-bar :global(.chapter-meta) {
+    font-size: 0.72rem;
+    gap: 0.35rem 0.5rem;
+    padding: 0.3rem 0;
   }
 
-  @media (min-width: 1024px) {
-    .chapter-meta-bar {
-      margin-top: -0.75rem; /* lg:py-3 compensation */
-    }
+  #chapter-meta-bar :global(.meta-icon) {
+    width: 0.95rem;
+    height: 0.95rem;
   }
 
-  :global(.dark) .chapter-meta-bar {
-    background: rgba(30, 30, 35, 0.85);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow:
-      0 2px 8px rgba(0, 0, 0, 0.2),
-      0 1px 2px rgba(0, 0, 0, 0.1);
+  .progress-badge {
+    min-width: 2.25rem;
+    height: 1.35rem;
+    padding-inline: 0.4rem;
+    font-size: 0.66rem;
   }
 
-  @media (min-width: 640px) {
-    .chapter-meta-bar {
-      margin-left: -1.5rem;
-      margin-right: -1.5rem;
-    }
-  }
-
-  @media (min-width: 1024px) {
-    .chapter-meta-bar {
-      margin-left: -2rem;
-      margin-right: -2rem;
-    }
-  }
-
-  .chapter-meta-bar :global(.chapter-meta) {
-    margin-bottom: 0;
-    border: none;
-    border-radius: 0;
-    background: transparent;
-  }
-
-  .chapter-header {
-    position: sticky;
-    top: 108px; /* 64px header + ~44px meta bar */
-    z-index: 35;
-    background: var(--yuval-reading-bg);
-    padding: 0.75rem 0 0;
-    /* Match chapter-content width for alignment */
-    max-width: var(--reading-content-width, 720px);
-    margin: 0 auto;
-    transition: padding 0.2s ease, background 0.3s ease;
-  }
-
-  .chapter-header-card {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.85));
-    border-radius: 16px;
-    padding: 1.25rem 1.5rem 1rem;
-    box-shadow:
-      0 4px 20px rgba(201, 162, 39, 0.08),
-      0 2px 8px rgba(0, 0, 0, 0.04),
-      inset 0 1px 0 rgba(255, 255, 255, 0.8);
-    border: 1px solid rgba(201, 162, 39, 0.15);
-    transition: all 0.25s ease;
-  }
-
-  :global(.dark) .chapter-header-card {
-    background: linear-gradient(135deg, rgba(45, 45, 50, 0.95), rgba(35, 35, 40, 0.9));
-    box-shadow:
-      0 4px 20px rgba(139, 115, 85, 0.12),
-      0 2px 8px rgba(0, 0, 0, 0.15),
-      inset 0 1px 0 rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(139, 115, 85, 0.25);
-  }
-
-  .chapter-header.scrolled {
-    padding-top: 0.375rem;
-    padding-bottom: 0.375rem;
-  }
-
-  .chapter-header.scrolled .chapter-header-card {
-    padding: 0.5rem 1rem;
-    border-radius: 10px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
-  }
-
-  /* Chapter number badge */
-  .chapter-number-badge {
-    flex-shrink: 0;
-    width: 52px;
-    height: 52px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(145deg, #c9a227, #a88620);
-    border-radius: 14px;
-    box-shadow:
-      0 4px 12px rgba(201, 162, 39, 0.35),
-      inset 0 2px 4px rgba(255, 255, 255, 0.2);
-    transition: all 0.25s ease;
-  }
-
-  :global(.dark) .chapter-number-badge {
-    background: linear-gradient(145deg, #8b7355, #6d5a45);
-    box-shadow:
-      0 4px 12px rgba(139, 115, 85, 0.4),
-      inset 0 2px 4px rgba(255, 255, 255, 0.1);
-  }
-
-  .chapter-header.scrolled .chapter-number-badge {
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
-  }
-
-  .chapter-number {
-    font-family: var(--font-heading, serif);
-    font-size: 1.5rem;
-    font-weight: 800;
-    color: #fff;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-    transition: font-size 0.25s ease;
-  }
-
-  .chapter-header.scrolled .chapter-number {
-    font-size: 0.875rem;
-  }
-
-  /* Chapter title group */
-  .chapter-title-group {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 0.125rem;
-  }
-
-  .chapter-label {
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: #c9a227;
-    opacity: 0.9;
-    transition: all 0.25s ease;
-  }
-
-  :global(.dark) .chapter-label {
-    color: #a8956d;
-  }
-
-  .chapter-header.scrolled .chapter-label {
-    display: none;
+  .chapter-title-block {
+    margin: 0 0 0.85rem;
+    padding: 0.45rem 0 0.55rem;
   }
 
   .chapter-title {
-    font-family: var(--font-heading, serif);
-    font-weight: 700;
-    font-size: clamp(1.25rem, 4vw, 1.75rem);
+    gap: 0.6em;
+    font-size: clamp(1.25rem, 0.9rem + 2vw, 1.6rem);
     line-height: 1.25;
-    color: var(--yuval-chapter-title);
-    margin: 0;
-    transition: font-size 0.25s ease, color 0.3s ease;
   }
 
-  .chapter-header.scrolled .chapter-title {
-    font-size: clamp(0.875rem, 2vw, 1rem);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+  .chapter-number-label {
+    font-size: 0.36em;
+    letter-spacing: 0.14em;
   }
 
-  .header-title-row {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
+  .chapter-number-badge {
+    width: 1.5em;
+    height: 1.5em;
+    font-size: 0.64em;
   }
-
-  .header-title-row[dir="rtl"] {
-    flex-direction: row-reverse;
-  }
-
-  /* Progress badge */
-  .progress-badge {
-    font-size: 0.8rem;
-    font-weight: 700;
-    font-variant-numeric: tabular-nums;
-    min-width: 3rem;
-    padding: 0.375rem 0.625rem;
-    text-align: center;
-    flex-shrink: 0;
-    background: linear-gradient(135deg, rgba(201, 162, 39, 0.15), rgba(201, 162, 39, 0.08));
-    color: #c9a227;
-    border-radius: 20px;
-    border: 1px solid rgba(201, 162, 39, 0.25);
-    opacity: 0;
-    transform: scale(0.8) translateX(10px);
-    transition: all 0.3s ease;
-  }
-
-  :global(.dark) .progress-badge {
-    background: linear-gradient(135deg, rgba(139, 115, 85, 0.2), rgba(139, 115, 85, 0.1));
-    color: #a8956d;
-    border: 1px solid rgba(139, 115, 85, 0.3);
-  }
-
-  .chapter-header.scrolled .progress-badge {
-    opacity: 1;
-    transform: scale(1) translateX(0);
-  }
-
-  .progress-badge.complete {
-    background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(34, 197, 94, 0.08));
-    color: #22c55e;
-    border-color: rgba(34, 197, 94, 0.3);
-  }
-
-  :global(.dark) .progress-badge.complete {
-    background: linear-gradient(135deg, rgba(74, 222, 128, 0.2), rgba(74, 222, 128, 0.1));
-    color: #4ade80;
-    border-color: rgba(74, 222, 128, 0.35);
-  }
-
-  /* Progress line */
-  .header-progress-line {
-    height: 3px;
-    background: linear-gradient(to right, rgba(201, 162, 39, 0.15), rgba(201, 162, 39, 0.08));
-    margin-top: 1rem;
-    border-radius: 2px;
-    overflow: hidden;
-    opacity: 0;
-    transition: opacity 0.3s ease, margin 0.25s ease;
-  }
-
-  :global(.dark) .header-progress-line {
-    background: linear-gradient(to right, rgba(139, 115, 85, 0.2), rgba(139, 115, 85, 0.1));
-  }
-
-  .chapter-header.scrolled .header-progress-line {
-    opacity: 1;
-    margin-top: 0.5rem;
-  }
-
-  .header-progress-fill {
-    height: 100%;
-    width: 0%;
-    background: linear-gradient(to right, #c9a227, #e8c547);
-    transition: width 0.15s ease-out;
-    border-radius: 2px;
-    box-shadow: 0 0 8px rgba(201, 162, 39, 0.4);
-  }
-
-  :global(.dark) .header-progress-fill {
-    background: linear-gradient(to right, #8b7355, #a8956d);
-    box-shadow: 0 0 8px rgba(139, 115, 85, 0.4);
-  }
-
-  .header-lang.hidden { display: none !important; }
-  .header-lang.visible { display: block; }
-
-  @media (max-width: 639px) {
-    .chapter-header.scrolled .header-meta-row :global(.chapter-meta) {
-      font-size: 0.625rem;
-    }
-  }
+}
 </style>
 
 <script>
-  import '../../../scripts/reading-page.ts';
+import '../../../scripts/reading-page.ts';
 </script>

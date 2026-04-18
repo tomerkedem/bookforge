@@ -1,0 +1,461 @@
+---
+/**
+ * /compare — Typography decision surface for Yuval.
+ *
+ * NOT routed from anywhere. Not indexed. This page is a workbench.
+ * Purpose: stand up two asymmetric chapter-header compositions
+ *   (Narkisim Ultra × Editorial New — the target pairing)
+ *   at two points along the atmosphere scalar (0.15 = near First Light,
+ *   0.85 = near Midnight) so the choice is made against the real layout,
+ *   not against a sample sheet.
+ *
+ * Font loading:
+ *   The real files (Narkisim Ultra, Editorial New) are NOT present yet.
+ *   Drop .woff2 files into /public/fonts/ with the exact names referenced
+ *   in the <style> block below; the page will swap from fallbacks to the
+ *   real faces automatically once the files are there.
+ *   Fallbacks (per the brief): Frank Ruhl Libre for Hebrew, a high-contrast
+ *   didone (Bodoni Moda) for Latin. These are stand-ins so the COMPOSITION
+ *   is judged; the final glyphs are judged only once the real files load.
+ *
+ * Intentionally bypasses BaseLayout: no Header, no ReadingProgress, no
+ *   BackToTop, no FAB stack. A sanctuary has no chrome.
+ */
+
+import { SOURCE_LANGUAGE } from '../utils/language';
+
+// Fixed sample text — intentionally not routed through i18n since this
+// page is a design workbench, not a user-facing surface.
+const hebrew = {
+  eyebrow: 'פרק שני',
+  title: 'הצומת שאיננה',
+  lede: 'פרק זה עוסק ברגע שבו הקורא חש כי הטקסט מדבר אליו ישירות, ולא אל קהל מופשט. כאן נבחן מדוע הרגע הזה איננו טכני אלא טקסי, ומדוע הוא דורש מרחב שלא קיים באף ממשק קריאה אחר.',
+  byline: 'יובל · פרק שני מתוך שלושה־עשר',
+};
+
+const latin = {
+  eyebrow: 'Chapter Two',
+  title: 'The Junction That Isn’t',
+  lede: 'This chapter concerns the moment when a reader senses that the text is addressing them directly — not an abstract audience. The moment is not technical. It is ritual, and it requires a space no other reading interface provides.',
+  byline: 'Yuval · Chapter 2 of 13',
+};
+---
+
+<!doctype html>
+<html lang={SOURCE_LANGUAGE} dir="rtl" translate="no">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex,nofollow" />
+    <title>/compare — Yuval typography workbench</title>
+
+    <!-- Fallback faces only. Real faces loaded from /public/fonts/ when present. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700;900&family=Bodoni+Moda:ital,opsz,wght@0,6..96,500;0,6..96,700;0,6..96,900;1,6..96,500&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      /* ═══════════════════════════════════════════════════════════
+         REAL FACES — load from /public/fonts/ when files are added.
+         font-display: block per the brief: premium display should wait,
+         not flash. If the file is missing, the browser falls through to
+         the fallback stack without throwing.
+         ═══════════════════════════════════════════════════════════ */
+      @font-face {
+        font-family: 'Narkisim Ultra';
+        src: url('/fonts/NarkisimUltra.woff2') format('woff2');
+        font-weight: 900;
+        font-style: normal;
+        font-display: block;
+      }
+      @font-face {
+        font-family: 'Editorial New';
+        src: url('/fonts/EditorialNew-Ultrabold.woff2') format('woff2');
+        font-weight: 800;
+        font-style: normal;
+        font-display: block;
+      }
+      @font-face {
+        font-family: 'Editorial New';
+        src: url('/fonts/EditorialNew-Italic.woff2') format('woff2');
+        font-weight: 400;
+        font-style: italic;
+        font-display: block;
+      }
+
+      /* ═══════════════════════════════════════════════════════════
+         ATMOSPHERE — one scalar drives every surface.
+         0 = First Light, 1 = Midnight. Two panels sample at 0.15 and 0.85.
+         Each panel sets its own --a and derives everything from it via
+         color-mix(). No class swaps, no theme selectors.
+         ═══════════════════════════════════════════════════════════ */
+      :root {
+        /* atmospheric anchors */
+        --first-light: oklch(97.2% 0.012 75);   /* warm paper */
+        --midnight:    oklch(12.5% 0.008 270);  /* graphite ink */
+
+        --ink-light:   oklch(20% 0.018 65);     /* ink on paper */
+        --ink-dark:    oklch(93% 0.010 75);     /* ink on midnight */
+
+        --rule-light:  oklch(35% 0.014 65 / 0.35);
+        --rule-dark:   oklch(78% 0.010 75 / 0.28);
+
+        /* one motion language, four curves */
+        --ease-standard:     cubic-bezier(0.2, 0, 0, 1);
+        --ease-emphasized:   cubic-bezier(0.3, 0, 0, 1);
+        --ease-accelerated:  cubic-bezier(0.3, 0, 1, 1);
+
+        /* modular type scale, 1.25 ratio */
+        --type-display: clamp(3.75rem, 2.4rem + 5.6vw, 6.5rem);
+        --type-h1:      clamp(2.25rem, 1.6rem + 2.6vw, 3.5rem);
+        --type-eyebrow: 0.8125rem;
+        --type-lede:    clamp(1.0625rem, 0.95rem + 0.5vw, 1.1875rem);
+        --type-byline:  0.8125rem;
+      }
+
+      html, body {
+        margin: 0;
+        padding: 0;
+        min-height: 100vh;
+        background: oklch(50% 0 0); /* neutral stage between the two panels */
+        color: white;
+        -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
+      }
+
+      /* ═══════════════════════════════════════════════════════════
+         STAGE — two panels, side by side on ≥ 1024px, stacked below.
+         No header, no footer, no chrome.
+         ═══════════════════════════════════════════════════════════ */
+      .stage {
+        display: grid;
+        grid-template-columns: 1fr;
+        min-height: 100vh;
+      }
+      @media (min-width: 1024px) {
+        .stage { grid-template-columns: 1fr 1fr; }
+      }
+
+      .panel {
+        --paper:  color-mix(in oklch, var(--first-light), var(--midnight) calc(var(--a) * 100%));
+        --ink:    color-mix(in oklch, var(--ink-light), var(--ink-dark) calc(var(--a) * 100%));
+        --rule:   color-mix(in oklch, var(--rule-light), var(--rule-dark) calc(var(--a) * 100%));
+        background: var(--paper);
+        color: var(--ink);
+        min-height: 100vh;
+        padding: clamp(2rem, 6vw, 6rem) clamp(1.5rem, 5vw, 5rem);
+        display: grid;
+        /* asymmetric baseline grid — 12 columns, content occupies 7,
+           eyebrow hangs into the outer margin (cols 2–3),
+           title flushes to the inner edge (cols 4–12 or mirrored for RTL) */
+        grid-template-columns: repeat(12, 1fr);
+        grid-template-rows: auto auto 1fr auto;
+        /* row-gap reduced from clamp(1.5–3rem) → clamp(0.9–1.6rem).
+           The tight pairing of title+lede is handled inside .tight-stack;
+           the grid no longer pushes them apart. */
+        row-gap: clamp(0.9rem, 1.6vw, 1.6rem);
+        position: relative;
+        transition: background 600ms var(--ease-standard),
+                    color 600ms var(--ease-standard);
+      }
+
+      .panel--he { --a: 0.15; }
+      .panel--en { --a: 0.85; }
+
+      /* ─── Atmosphere readout (top of each panel) ─── */
+      .meta {
+        grid-column: 1 / -1;
+        display: flex;
+        gap: 1.5rem;
+        align-items: baseline;
+        font-family: 'Bodoni Moda', 'Editorial New', Georgia, serif;
+        font-style: italic;
+        font-weight: 500;
+        font-size: 0.75rem;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: color-mix(in oklch, var(--ink), transparent 45%);
+      }
+      .meta strong {
+        font-style: normal;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+      }
+      .meta .rule {
+        flex: 1;
+        height: 1px;
+        background: var(--rule);
+      }
+
+      /* ═══════════════════════════════════════════════════════════
+         CHAPTER HEADER — ASYMMETRIC.
+         Never centered. Eyebrow hangs in outer margin. Title flushes
+         to the inner edge with a small optical overhang.
+         The composition is mirrored between RTL and LTR so that the
+         "outer margin" is always the side farthest from the reading
+         direction — that is where the eye comes to rest.
+         ═══════════════════════════════════════════════════════════ */
+
+      /* RTL panel — Hebrew. Reading flows right→left.
+         Composition: eyebrow hangs in the outer (right) margin.
+         The TITLE and the LEDE share a single structural axis:
+           — both flush LEFT (inner edge of the reading column)
+           — both span the same starting column (col 2)
+           — the title hangs ~0.18ch into the outer (left) margin
+           — the lede is pulled tight against the title baseline via a
+             NEGATIVE margin-top that overrides the panel's row-gap for
+             this pair only. This is the single tightest relationship on
+             the page, by intent: the lede reads as a continuation of the
+             title's thought, not a separate block.
+         The .tight-stack wrapper takes title + lede out of the panel
+         grid and lays them out on their own shared axis. */
+      .panel--he .eyebrow {
+        grid-column: 10 / 13;
+        grid-row: 2 / 3;
+        align-self: start;
+        justify-self: end;
+        text-align: right;
+      }
+      .panel--he .tight-stack {
+        grid-column: 2 / 11;
+        grid-row: 3 / 5;
+        display: block;
+      }
+      .panel--he .chapter-title {
+        text-align: left;
+        /* Direction-aware overhang. margin-inline-start is negative by
+           the script's natural reading start — in RTL that is the RIGHT
+           edge, so the title visually pulls to the LEFT (its flushed
+           edge) by the same 0.18ch it had before. Logical property means
+           the same declaration works correctly in LTR panels too. */
+        margin-inline-end: -0.18ch;       /* optical overhang at the inner edge */
+        letter-spacing: -0.025em;         /* locked further — lead-type density */
+        margin-top: 0;
+        margin-bottom: 0;
+      }
+      .panel--he .lede {
+        text-align: left;                 /* share the title's left axis */
+        max-width: 34ch;                  /* tighter column, stays on the right half of screen */
+        margin-inline-start: 0;           /* flush to the same x as title */
+        /* Pass 3: another 45% off the gap. At this point title and lede
+           are a single silhouette — the only air between them is the
+           typographic descender-to-cap distance. */
+        margin-top: clamp(0.18rem, 0.28vw, 0.32rem);
+        line-height: 1.82;
+      }
+      /* BYLINE — on the title's axis (the inner spine of the
+         composition). In RTL, the title is flush-LEFT of its container
+         (its inline-end edge), so justify-self: end anchors the byline
+         to the same vertical spine. margin-inline-end: -0.18ch then
+         pushes it outward into the outer margin by the same overhang
+         the title uses. */
+      .panel--he .byline {
+        grid-column: 2 / 11;
+        grid-row: 5 / 6;
+        align-self: end;
+        justify-self: end;                /* RTL: end = left edge of cell = title's axis */
+        text-align: left;
+        margin-inline-end: -0.18ch;
+      }
+
+      /* LTR panel — English. Mirrored.
+         Now uses the same .tight-stack pattern as Hebrew so that title
+         and lede share one structural axis (the RIGHT edge for LTR). */
+      .panel--en { direction: ltr; }
+      .panel--en .eyebrow {
+        grid-column: 1 / 4;
+        grid-row: 2 / 3;
+        align-self: start;
+        justify-self: start;
+        text-align: left;
+      }
+      .panel--en .tight-stack {
+        grid-column: 3 / 12;
+        grid-row: 3 / 5;
+        display: block;
+      }
+      .panel--en .chapter-title {
+        text-align: right;                /* flush to inner edge */
+        /* Direction-aware overhang. In LTR, margin-inline-end is the
+           RIGHT side — so a negative value pulls the title into the
+           outer right margin by 0.18ch. Logical property: one rule,
+           works correctly in both directions. */
+        margin-inline-end: -0.18ch;
+        margin-top: 0;
+        margin-bottom: 0;
+      }
+      .panel--en .lede {
+        text-align: right;                /* share the title's right axis */
+        margin-inline-end: 0;             /* flush to the same x as title */
+        margin-inline-start: auto;        /* pull the narrower lede to the right axis */
+        /* Pass 3: another 45% off. Title and lede now read as one unit. */
+        margin-top: clamp(0.2rem, 0.3vw, 0.35rem);
+      }
+      /* BYLINE — on the title's axis (the inner spine of the
+         composition).
+         The title uses text-align: right in this LTR panel, which
+         flushes it to the inline-END edge of its cell. For the byline
+         to share that exact vertical spine, it must also anchor to
+         inline-end — hence justify-self: end (NOT start). Then
+         margin-inline-end: -0.18ch pushes both outward by the same
+         overhang into the outer right margin.
+         Symmetric with .panel--he .byline: both use justify-self: end
+         because in both scripts the title is flushed to inline-end. */
+      .panel--en .byline {
+        grid-column: 3 / 12;
+        grid-row: 5 / 6;
+        align-self: end;
+        justify-self: end;                /* inline-end of cell = title's axis */
+        text-align: right;
+        margin-inline-end: -0.18ch;
+      }
+
+      /* ─── Type — the carved voice ─── */
+
+      .eyebrow {
+        font-family: 'Bodoni Moda', 'Editorial New', Georgia, serif;
+        font-size: var(--type-eyebrow);
+        font-weight: 500;
+        font-style: italic;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: color-mix(in oklch, var(--ink), transparent 35%);
+        margin: 0;
+      }
+      .panel--he .eyebrow {
+        font-family: 'Narkisim Ultra', 'Frank Ruhl Libre', Georgia, serif;
+        font-style: normal;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+      }
+
+      .chapter-title {
+        font-family: 'Narkisim Ultra', 'Frank Ruhl Libre', Georgia, serif;
+        font-weight: 900;
+        font-size: var(--type-display);
+        line-height: 0.96;
+        letter-spacing: -0.015em;
+        margin: 0;
+        font-feature-settings: 'ss01', 'calt', 'liga';
+      }
+      .panel--en .chapter-title {
+        font-family: 'Editorial New', 'Bodoni Moda', Georgia, serif;
+        font-weight: 800;
+        /* Monolithic block. 0.9 line-height lets the caps of one line
+           graze the descender line of the next — heavy stone blocks
+           stacked. Clipping risk on multi-line titles with descenders
+           (g, p, y, j) in the non-final line is accepted per brief;
+           the current sample title has no such case. If a future title
+           clips, address with a per-title override, not a global retreat. */
+        line-height: 0.9;
+        letter-spacing: -0.03em;
+      }
+
+      .lede {
+        font-family: 'Frank Ruhl Libre', Georgia, serif;
+        font-weight: 500;
+        /* Bumped from clamp(1.0625–1.1875rem) to clamp(1.125–1.25rem)
+           — about +1.5px at the low end, +1px at the top. Lets the lede
+           hold its own against the display weight of Narkisim/Editorial. */
+        font-size: clamp(1.125rem, 0.98rem + 0.55vw, 1.25rem);
+        line-height: 1.75;
+        max-width: 44ch;
+        color: color-mix(in oklch, var(--ink), transparent 8%);
+        font-feature-settings: 'onum', 'liga', 'calt';
+        margin: 0;
+      }
+      .panel--en .lede {
+        font-family: 'Bodoni Moda', Georgia, serif;
+        line-height: 1.68;
+        max-width: 40ch;                 /* keeps the lede on the left-half of the screen */
+      }
+
+      .byline {
+        font-family: 'Bodoni Moda', 'Editorial New', Georgia, serif;
+        font-size: var(--type-byline);
+        font-weight: 500;
+        font-style: italic;
+        letter-spacing: 0.1em;
+        color: color-mix(in oklch, var(--ink), transparent 50%);
+        margin: 0;
+      }
+      .panel--he .byline {
+        font-family: 'Narkisim Ultra', 'Frank Ruhl Libre', Georgia, serif;
+        font-style: normal;
+        font-weight: 500;
+        letter-spacing: 0.04em;
+      }
+
+      /* ─── Atmosphere indicator rule ─── */
+      /* A thin horizontal rule anchored to the outer margin of each panel,
+         tracking the atmosphere. Replaces a "badge" / "pill" — it is paper,
+         not UI. */
+      .panel::before {
+        content: '';
+        position: absolute;
+        top: clamp(2rem, 5vw, 4rem);
+        inset-inline-start: clamp(1.5rem, 5vw, 5rem);
+        width: clamp(2rem, 4vw, 4rem);
+        height: 1px;
+        background: var(--rule);
+      }
+
+      /* ─── Reduced-motion ─── */
+      @media (prefers-reduced-motion: reduce) {
+        .panel { transition: none; }
+      }
+    </style>
+  </head>
+
+  <body>
+    <main class="stage">
+
+      <!-- PANEL A — Hebrew, atmosphere 0.15 (near First Light) -->
+      <section class="panel panel--he" aria-label="Hebrew chapter header at atmosphere 0.15">
+        <header class="meta">
+          <strong>א</strong>
+          <span>Atmosphere 0.15</span>
+          <span class="rule" role="presentation"></span>
+          <span>Narkisim Ultra · fallback: Frank Ruhl Libre</span>
+        </header>
+
+        <p class="eyebrow">{hebrew.eyebrow}</p>
+
+        <!-- Title + lede share one structural axis. They are stacked
+             inside a single grid cell so that row-gap cannot separate
+             them, and their horizontal start aligns exactly. -->
+        <div class="tight-stack">
+          <h1 class="chapter-title">{hebrew.title}</h1>
+          <p class="lede">{hebrew.lede}</p>
+        </div>
+
+        <p class="byline">{hebrew.byline}</p>
+      </section>
+
+      <!-- PANEL B — Latin, atmosphere 0.85 (near Midnight) -->
+      <section class="panel panel--en" aria-label="Latin chapter header at atmosphere 0.85">
+        <header class="meta">
+          <strong>B</strong>
+          <span>Atmosphere 0.85</span>
+          <span class="rule" role="presentation"></span>
+          <span>Editorial New · fallback: Bodoni Moda</span>
+        </header>
+
+        <p class="eyebrow">{latin.eyebrow}</p>
+
+        <!-- Title + lede share the right-edge axis. Same pattern as the
+             Hebrew panel, mirrored. -->
+        <div class="tight-stack">
+          <h1 class="chapter-title">{latin.title}</h1>
+          <p class="lede">{latin.lede}</p>
+        </div>
+
+        <p class="byline">{latin.byline}</p>
+      </section>
+
+    </main>
+  </body>
+</html>

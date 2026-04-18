@@ -8,13 +8,22 @@
  *  - Click existing highlight → remove it
  */
 
+import { t } from '../i18n';
+import { getLang, nearestSectionHeading, nearestBmAnchor } from './reading-location';
+
+// ── i18n helpers ─────────────────────────────────────────────────────────────
+
+function tr(key: string, params?: Record<string, string | number>): string {
+  return t(key, getLang(), params);
+}
+
 // ── Types ────────────────────────────────────────────────────────────────────
 
 const COLORS = {
-  yellow: { label: 'Insight',  emoji: '💡' },
-  blue:   { label: 'Question', emoji: '❓' },
-  green:  { label: 'Action',   emoji: '✅' },
-  pink:   { label: 'Quote',    emoji: '💬' },
+  yellow: { key: 'highlight.yellow', emoji: '💡' },
+  blue:   { key: 'highlight.blue',   emoji: '❓' },
+  green:  { key: 'highlight.green',  emoji: '✅' },
+  pink:   { key: 'highlight.pink',   emoji: '💬' },
 } as const;
 
 type ColorKey = keyof typeof COLORS;
@@ -25,6 +34,8 @@ interface HighlightData {
   color: ColorKey;
   timestamp: number;
   note?: string;
+  anchor?: string;
+  sectionHeading?: string;
 }
 
 // ── Storage ──────────────────────────────────────────────────────────────────
@@ -43,6 +54,7 @@ function loadHighlights(book: string, chapter: string, lang: string): HighlightD
 
 function saveHighlights(book: string, chapter: string, lang: string, list: HighlightData[]): void {
   localStorage.setItem(storageKey(book, chapter, lang), JSON.stringify(list));
+  window.dispatchEvent(new CustomEvent('yuval-highlights-changed'));
 }
 
 // ── Context helpers ───────────────────────────────────────────────────────────
@@ -50,16 +62,18 @@ function saveHighlights(book: string, chapter: string, lang: string, list: Highl
 function getPageContext(): { book: string; chapter: string; lang: string } | null {
   const container = document.getElementById('chapter-container');
   if (!container) return null;
+
   const book = container.dataset.book || '';
   const chapter = container.dataset.chapterId || '';
-  const lang = new URLSearchParams(window.location.search).get('lang')
-    || localStorage.getItem('yuval_language') || 'en';
+  const lang = getLang();
+
   return { book, chapter, lang };
 }
 
 function getContentEl(): Element | null {
   const ctx = getPageContext();
   if (!ctx) return null;
+
   const container = document.getElementById('chapter-container');
   return container?.querySelector(`[data-lang="${ctx.lang}"]`) ?? container;
 }
@@ -71,7 +85,6 @@ function applyHighlight(hl: HighlightData, contentEl: Element): boolean {
 
   const walker = document.createTreeWalker(contentEl, NodeFilter.SHOW_TEXT, {
     acceptNode(node) {
-      // Skip already-highlighted nodes and code blocks
       const parent = node.parentElement;
       if (!parent) return NodeFilter.FILTER_REJECT;
       if (parent.closest('.yuval-hl, pre, code')) return NodeFilter.FILTER_REJECT;
@@ -80,6 +93,7 @@ function applyHighlight(hl: HighlightData, contentEl: Element): boolean {
   });
 
   let node: Text | null;
+
   while ((node = walker.nextNode() as Text | null)) {
     const text = node.textContent || '';
     const idx = text.indexOf(hl.text);
@@ -89,18 +103,21 @@ function applyHighlight(hl: HighlightData, contentEl: Element): boolean {
     mark.className = `yuval-hl yuval-hl-${hl.color}`;
     mark.dataset.hlId = hl.id;
     mark.dataset.hlColor = hl.color;
-    mark.title = COLORS[hl.color].label;
+    mark.title = tr(COLORS[hl.color].key);
     mark.textContent = hl.text;
 
     const parent = node.parentNode!;
     if (idx > 0) parent.insertBefore(document.createTextNode(text.slice(0, idx)), node);
     parent.insertBefore(mark, node);
+
     if (idx + hl.text.length < text.length) {
       parent.insertBefore(document.createTextNode(text.slice(idx + hl.text.length)), node);
     }
+
     parent.removeChild(node);
     return true;
   }
+
   return false;
 }
 
@@ -109,10 +126,10 @@ function applyHighlight(hl: HighlightData, contentEl: Element): boolean {
 function restoreHighlights(): void {
   const ctx = getPageContext();
   if (!ctx) return;
+
   const contentEl = getContentEl();
   if (!contentEl) return;
 
-  // Clear existing mark elements first (avoid duplication on re-init)
   contentEl.querySelectorAll('.yuval-hl').forEach(el => {
     const parent = el.parentNode!;
     while (el.firstChild) parent.insertBefore(el.firstChild, el);
@@ -131,17 +148,25 @@ function createToolbar(): HTMLElement {
   const el = document.createElement('div');
   el.id = 'hl-toolbar';
   el.setAttribute('role', 'toolbar');
-  el.setAttribute('aria-label', 'Highlight options');
+  el.setAttribute('aria-label', tr('highlight.toolbar'));
+
   el.innerHTML = `
-    <span class="hl-toolbar-label">Highlight</span>
+    <span class="hl-toolbar-label">${tr('highlight.title')}</span>
     <div class="hl-colors">
       ${(Object.entries(COLORS) as [ColorKey, typeof COLORS[ColorKey]][]).map(([color, meta]) => `
-        <button class="hl-dot hl-dot-${color}" data-color="${color}" title="${meta.label}" type="button" aria-label="${meta.label}">
+        <button
+          class="hl-dot hl-dot-${color}"
+          data-color="${color}"
+          title="${tr(meta.key)}"
+          type="button"
+          aria-label="${tr(meta.key)}"
+        >
           <span class="hl-dot-ring"></span>
         </button>
       `).join('')}
     </div>
   `;
+
   document.body.appendChild(el);
   return el;
 }
@@ -157,10 +182,9 @@ function showToolbar(rect: DOMRect): void {
   const tb = getToolbar();
   tb.classList.add('visible');
 
-  // Position above selection, centered
   const scrollY = window.scrollY;
   const scrollX = window.scrollX;
-  const tbWidth = 200; // approx, toolbar uses max-content
+  const tbWidth = 200;
   const top = rect.top + scrollY - 48;
   const left = rect.left + scrollX + rect.width / 2 - tbWidth / 2;
 
@@ -172,7 +196,7 @@ function hideToolbar(): void {
   toolbar?.classList.remove('visible');
 }
 
-// ── Hover popup (shown on mouseenter over highlight) ─────────────────────────
+// ── Hover popup ───────────────────────────────────────────────────────────────
 
 let hoverPopup: HTMLElement | null = null;
 let popupHideTimer: ReturnType<typeof setTimeout> | null = null;
@@ -182,9 +206,9 @@ function getHoverPopup(): HTMLElement {
     hoverPopup = document.createElement('div');
     hoverPopup.id = 'hl-hover-popup';
     hoverPopup.innerHTML = `
-      <button type="button" class="hl-popup-btn" id="hl-note-btn">📝</button>
-      <button type="button" class="hl-popup-btn" id="hl-card-btn">🖼</button>
-      <button type="button" class="hl-popup-btn" id="hl-remove-btn">✕</button>
+      <button type="button" class="hl-popup-btn" id="hl-note-btn" aria-label="${tr('highlight.note.add')}">📝</button>
+      <button type="button" class="hl-popup-btn" id="hl-card-btn" aria-label="${tr('highlight.quoteCard')}">🖼</button>
+      <button type="button" class="hl-popup-btn" id="hl-remove-btn" aria-label="${tr('highlight.remove')}">✕</button>
     `;
     document.body.appendChild(hoverPopup);
   }
@@ -192,11 +216,15 @@ function getHoverPopup(): HTMLElement {
 }
 
 function showHoverPopup(markEl: HTMLElement): void {
-  if (popupHideTimer) { clearTimeout(popupHideTimer); popupHideTimer = null; }
+  if (popupHideTimer) {
+    clearTimeout(popupHideTimer);
+    popupHideTimer = null;
+  }
 
   const popup = getHoverPopup();
   const rect = markEl.getBoundingClientRect();
-  popup.style.top  = `${rect.top + window.scrollY - 46}px`;
+
+  popup.style.top = `${rect.top + window.scrollY - 46}px`;
   popup.style.left = `${rect.left + window.scrollX + rect.width / 2}px`;
   popup.classList.add('visible');
 
@@ -204,10 +232,12 @@ function showHoverPopup(markEl: HTMLElement): void {
     popup.classList.remove('visible');
     removeHighlight(markEl.dataset.hlId || '');
   };
+
   (popup.querySelector('#hl-card-btn') as HTMLElement).onclick = () => {
     popup.classList.remove('visible');
     openQuoteCard(markEl);
   };
+
   (popup.querySelector('#hl-note-btn') as HTMLElement).onclick = () => {
     popup.classList.remove('visible');
     openInlineNoteEditor(markEl);
@@ -223,14 +253,10 @@ function openInlineNoteEditor(markEl: HTMLElement): void {
   const hl = list.find(h => h.id === hlId);
   if (!hl) return;
 
-  // Remove any existing editor
   document.getElementById('hl-inline-note-editor')?.remove();
 
-  const lang = ctx.lang;
-  const placeholder = lang === 'he'
-    ? 'כתוב הערה...'
-    : lang === 'es' ? 'Escribe una nota...' : 'Write a note...';
-  const hint = lang === 'he' ? 'Ctrl+Enter לשמירה · Esc לביטול' : 'Ctrl+Enter to save · Esc to cancel';
+  const placeholder = tr('highlight.note.placeholder');
+  const hint = tr('highlight.note.hint');
 
   const editor = document.createElement('div');
   editor.id = 'hl-inline-note-editor';
@@ -246,11 +272,14 @@ function openInlineNoteEditor(markEl: HTMLElement): void {
   `;
 
   const rect = markEl.getBoundingClientRect();
-  editor.style.top  = `${rect.bottom + window.scrollY + 6}px`;
+  editor.style.top = `${rect.bottom + window.scrollY + 6}px`;
   editor.style.left = `${Math.max(8, rect.left + window.scrollX - 10)}px`;
 
   editor.innerHTML = `
-    <textarea id="hl-inline-ta" rows="3" placeholder="${placeholder}"
+    <textarea
+      id="hl-inline-ta"
+      rows="3"
+      placeholder="${placeholder}"
       style="width:100%;font-size:13px;padding:6px 8px;border-radius:6px;
              border:1px solid var(--yuval-border,#e5e7eb);
              background:var(--yuval-bg-secondary,#f9f9f9);
@@ -261,6 +290,7 @@ function openInlineNoteEditor(markEl: HTMLElement): void {
   `;
 
   document.body.appendChild(editor);
+
   const ta = document.getElementById('hl-inline-ta') as HTMLTextAreaElement;
   ta.focus();
   ta.selectionStart = ta.selectionEnd = ta.value.length;
@@ -269,18 +299,29 @@ function openInlineNoteEditor(markEl: HTMLElement): void {
     const note = ta.value.trim();
     const updated = loadHighlights(ctx.book, ctx.chapter, ctx.lang);
     const idx = updated.findIndex(h => h.id === hlId);
+
     if (idx !== -1) {
       if (note) updated[idx].note = note;
       else delete updated[idx].note;
+
       saveHighlights(ctx.book, ctx.chapter, ctx.lang, updated);
     }
+
     editor.remove();
   };
 
-  ta.addEventListener('blur', () => setTimeout(() => { if (document.activeElement !== ta) save(); }, 150));
+  ta.addEventListener('blur', () => setTimeout(() => {
+    if (document.activeElement !== ta) save();
+  }, 150));
+
   ta.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); save(); }
-    if (e.key === 'Escape') { editor.remove(); }
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      save();
+    }
+    if (e.key === 'Escape') {
+      editor.remove();
+    }
   });
 }
 
@@ -291,18 +332,16 @@ function scheduleHidePopup(): void {
 }
 
 function cancelHidePopup(): void {
-  if (popupHideTimer) { clearTimeout(popupHideTimer); popupHideTimer = null; }
-}
-
-function hideRemoveTooltip(): void {
-  hoverPopup?.classList.remove('visible');
+  if (popupHideTimer) {
+    clearTimeout(popupHideTimer);
+    popupHideTimer = null;
+  }
 }
 
 function removeHighlight(hlId: string): void {
   const ctx = getPageContext();
   if (!ctx) return;
 
-  // Remove from DOM
   const mark = document.querySelector<HTMLElement>(`[data-hl-id="${hlId}"]`);
   if (mark) {
     const parent = mark.parentNode!;
@@ -310,7 +349,6 @@ function removeHighlight(hlId: string): void {
     parent.removeChild(mark);
   }
 
-  // Remove from storage
   const list = loadHighlights(ctx.book, ctx.chapter, ctx.lang);
   saveHighlights(ctx.book, ctx.chapter, ctx.lang, list.filter(h => h.id !== hlId));
 }
@@ -319,10 +357,10 @@ function removeHighlight(hlId: string): void {
 
 function injectStyles(): void {
   if (document.getElementById('hl-styles')) return;
+
   const style = document.createElement('style');
   style.id = 'hl-styles';
   style.textContent = `
-    /* ── Highlight marks ── */
     .yuval-hl {
       border-radius: 3px;
       padding: 1px 0;
@@ -343,7 +381,6 @@ function injectStyles(): void {
     :is(.dark) .yuval-hl-green  { background: #14532d55; color: #bbf7d0; }
     :is(.dark) .yuval-hl-pink   { background: #9f123955; color: #fecdd3; }
 
-    /* ── Floating toolbar ── */
     #hl-toolbar {
       position: absolute;
       z-index: 9998;
@@ -409,7 +446,6 @@ function injectStyles(): void {
     }
     .hl-dot:hover .hl-dot-ring { border-color: currentColor; opacity: 0.4; }
 
-    /* ── Highlight hover popup ── */
     #hl-hover-popup {
       position: absolute;
       z-index: 9999;
@@ -432,10 +468,12 @@ function injectStyles(): void {
       pointer-events: auto;
       transform: translateX(-50%) translateY(0);
     }
+
     :is(.dark) #hl-hover-popup {
       background: #2a2a2a;
       border-color: rgba(255,255,255,0.1);
     }
+
     .hl-popup-btn {
       display: flex;
       align-items: center;
@@ -448,29 +486,54 @@ function injectStyles(): void {
       cursor: pointer;
       transition: background 0.12s;
     }
+
+    #hl-note-btn,
     #hl-card-btn {
       background: var(--yuval-bg-secondary, #f3f4f6);
       color: var(--yuval-text, #111);
     }
-    #hl-card-btn:hover { background: #e5e7eb; }
+    #hl-note-btn:hover,
+    #hl-card-btn:hover {
+      background: #e5e7eb;
+    }
+
     #hl-remove-btn {
       background: #fef2f2;
       color: #dc2626;
     }
-    #hl-remove-btn:hover { background: #fee2e2; }
-    :is(.dark) #hl-card-btn { background: rgba(255,255,255,0.08); color: #eee; }
-    :is(.dark) #hl-card-btn:hover { background: rgba(255,255,255,0.13); }
-    :is(.dark) #hl-remove-btn { background: rgba(239,68,68,0.12); color: #f87171; }
-    :is(.dark) #hl-remove-btn:hover { background: rgba(239,68,68,0.22); }
+    #hl-remove-btn:hover {
+      background: #fee2e2;
+    }
 
-    /* ── Quote Card Modal ── */
+    :is(.dark) #hl-note-btn,
+    :is(.dark) #hl-card-btn {
+      background: rgba(255,255,255,0.08);
+      color: #eee;
+    }
+    :is(.dark) #hl-note-btn:hover,
+    :is(.dark) #hl-card-btn:hover {
+      background: rgba(255,255,255,0.13);
+    }
+    :is(.dark) #hl-remove-btn {
+      background: rgba(239,68,68,0.12);
+      color: #f87171;
+    }
+    :is(.dark) #hl-remove-btn:hover {
+      background: rgba(239,68,68,0.22);
+    }
+
     #qc-overlay {
-      position: fixed; inset: 0; z-index: 10000;
+      position: fixed;
+      inset: 0;
+      z-index: 10000;
       background: rgba(0,0,0,0.6);
       backdrop-filter: blur(6px);
-      display: flex; align-items: center; justify-content: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       padding: 24px;
-      opacity: 0; transition: opacity 0.25s ease;
+      opacity: 0;
+      transition: opacity 0.25s ease;
     }
     #qc-overlay.visible { opacity: 1; }
 
@@ -478,7 +541,8 @@ function injectStyles(): void {
       background: var(--yuval-surface, #fff);
       border-radius: 20px;
       box-shadow: 0 24px 80px rgba(0,0,0,0.3);
-      width: 100%; max-width: 560px;
+      width: 100%;
+      max-width: 560px;
       overflow: hidden;
       transform: scale(0.95) translateY(8px);
       transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
@@ -489,7 +553,6 @@ function injectStyles(): void {
       padding: 20px 20px 0;
     }
 
-    /* The card itself — matches download output */
     #qc-card {
       border-radius: 14px;
       overflow: hidden;
@@ -500,17 +563,21 @@ function injectStyles(): void {
     }
 
     .qc-bg {
-      position: absolute; inset: 0;
+      position: absolute;
+      inset: 0;
       background: var(--qc-bg, #1a1a2e);
     }
+
     .qc-bg-noise {
-      position: absolute; inset: 0;
+      position: absolute;
+      inset: 0;
       opacity: 0.04;
       background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
     }
 
     .qc-content {
-      position: relative; z-index: 1;
+      position: relative;
+      z-index: 1;
       padding: 28px 28px 20px;
       flex: 1;
     }
@@ -541,46 +608,65 @@ function injectStyles(): void {
       padding: 12px 28px;
       background: rgba(0,0,0,0.25);
       backdrop-filter: blur(8px);
-      position: relative; z-index: 1;
+      position: relative;
+      z-index: 1;
     }
 
     .qc-book-info {
-      display: flex; flex-direction: column; gap: 2px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
     }
+
     .qc-book-title {
-      font-size: 12px; font-weight: 700;
+      font-size: 12px;
+      font-weight: 700;
       color: rgba(255,255,255,0.9);
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
       max-width: 280px;
     }
+
     .qc-brand {
-      font-size: 10px; color: rgba(255,255,255,0.45);
-      letter-spacing: 0.08em; text-transform: uppercase;
+      font-size: 10px;
+      color: rgba(255,255,255,0.45);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
     }
 
     .qc-cover {
-      width: 40px; height: 56px;
+      width: 40px;
+      height: 56px;
       border-radius: 4px;
       object-fit: cover;
       box-shadow: 0 4px 12px rgba(0,0,0,0.4);
       flex-shrink: 0;
     }
+
     .qc-cover-placeholder {
-      width: 40px; height: 56px;
+      width: 40px;
+      height: 56px;
       border-radius: 4px;
       background: rgba(255,255,255,0.15);
       flex-shrink: 0;
     }
 
-    /* Color picker row */
     #qc-actions {
       padding: 16px 20px 20px;
-      display: flex; flex-wrap: wrap; align-items: center; gap: 12px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 12px;
     }
 
     .qc-share-row {
       width: 100%;
       flex-basis: 100%;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 0;
     }
 
     .qc-note {
@@ -594,10 +680,9 @@ function injectStyles(): void {
       border-left: 3px solid var(--qc-accent, rgba(255,255,255,0.25));
     }
 
-    /* Light palette overrides */
     .qc-content.qc-light .qc-text { color: #1a1a1a; }
-    .qc-content.qc-light .qc-note { 
-      color: rgba(0,0,0,0.65); 
+    .qc-content.qc-light .qc-note {
+      color: rgba(0,0,0,0.65);
       background: rgba(0,0,0,0.06);
       border-left-color: rgba(0,0,0,0.2);
     }
@@ -606,81 +691,112 @@ function injectStyles(): void {
     .qc-footer.qc-light .qc-brand { color: rgba(0,0,0,0.45); }
 
     .qc-palette {
-      display: flex; gap: 8px; flex: 1;
+      display: flex;
+      gap: 8px;
+      flex: 1;
     }
+
     .qc-swatch {
-      width: 26px; height: 26px; border-radius: 50%;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
       border: 2px solid transparent;
       cursor: pointer;
       transition: transform 0.15s, border-color 0.15s;
     }
     .qc-swatch:hover { transform: scale(1.15); }
-    .qc-swatch.active { border-color: var(--yuval-text, #111); transform: scale(1.1); }
+    .qc-swatch.active {
+      border-color: var(--yuval-text, #111);
+      transform: scale(1.1);
+    }
 
-    #qc-download-btn {
-      display: flex; align-items: center; gap-6px;
+    #qc-download-btn,
+    .qc-share-image-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
       padding: 9px 20px;
-      background: var(--yuval-text, #111);
-      color: var(--yuval-bg, #fff);
-      border: none; border-radius: 10px;
-      font-size: 13px; font-weight: 650;
+      border: none;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 650;
       cursor: pointer;
       transition: opacity 0.15s;
       white-space: nowrap;
     }
-    #qc-download-btn:hover { opacity: 0.85; }
-    #qc-download-btn:disabled { opacity: 0.5; cursor: wait; }
+
+    #qc-download-btn {
+      background: var(--yuval-text, #111);
+      color: var(--yuval-bg, #fff);
+    }
+
+    .qc-share-image-btn {
+      background: #6366f1;
+      color: #fff;
+    }
+
+    #qc-download-btn:hover,
+    .qc-share-image-btn:hover { opacity: 0.88; }
+
+    #qc-download-btn:disabled,
+    .qc-share-image-btn:disabled {
+      opacity: 0.5;
+      cursor: wait;
+    }
 
     #qc-close-btn {
-      position: absolute; top: 14px; right: 14px;
-      background: rgba(0,0,0,0.08); border: none;
-      border-radius: 50%; width: 30px; height: 30px;
-      cursor: pointer; font-size: 14px;
-      display: flex; align-items: center; justify-content: center;
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      background: rgba(0,0,0,0.08);
+      border: none;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      cursor: pointer;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       color: var(--yuval-text-muted, #888);
       transition: background 0.15s;
     }
     #qc-close-btn:hover { background: rgba(0,0,0,0.15); }
 
-    .qc-share-image-btn {
-      display: flex; align-items: center; gap: 6px;
-      padding: 9px 20px;
-      background: #6366f1;
-      color: #fff;
-      border: none; border-radius: 10px;
-      font-size: 13px; font-weight: 650;
-      cursor: pointer;
-      transition: opacity 0.15s;
-      white-space: nowrap;
-    }
-    .qc-share-image-btn:hover { opacity: 0.88; }
-    .qc-share-image-btn:disabled { opacity: 0.5; cursor: wait; }
-
-    .qc-share-row {
-      display: flex; gap: 8px; flex-wrap: wrap; margin-top: 0;
-    }
     .qc-share-btn {
-      display: flex; align-items: center; gap: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
       padding: 7px 14px;
       background: var(--yuval-bg-secondary, #f3f4f6);
       border: 1px solid var(--yuval-border, #e5e7eb);
       border-radius: 8px;
-      font-size: 12px; font-weight: 600;
+      font-size: 12px;
+      font-weight: 600;
       color: var(--yuval-text-secondary, #555);
       cursor: pointer;
       transition: background 0.15s, border-color 0.15s, color 0.15s;
       white-space: nowrap;
     }
+
     .qc-share-btn:hover {
       background: var(--yuval-surface, #fff);
       border-color: var(--yuval-text, #1a1a1a);
       color: var(--yuval-text, #1a1a1a);
     }
+
     :is(.dark) .qc-share-btn {
-      background: #2a2a2a; border-color: rgba(255,255,255,0.1); color: #aaa;
+      background: #2a2a2a;
+      border-color: rgba(255,255,255,0.1);
+      color: #aaa;
     }
-    :is(.dark) .qc-share-btn:hover { border-color: #aaa; color: #eee; }
+
+    :is(.dark) .qc-share-btn:hover {
+      border-color: #aaa;
+      color: #eee;
+    }
   `;
+
   document.head.appendChild(style);
 }
 
@@ -698,26 +814,24 @@ const PALETTES = [
 ];
 
 function getBookMeta(): { title: string; coverUrl: string } {
-  const lang = new URLSearchParams(window.location.search).get('lang')
-    || localStorage.getItem('yuval_language') || 'en';
+  const lang = getLang();
 
-  // Title: from chapter header
   const headerEl = document.querySelector<HTMLElement>(
     `#chapter-header [data-lang="${lang}"] .chapter-title,
      #chapter-header [data-lang="en"] .chapter-title`
   );
 
-  // Book title: from breadcrumb or page title
   const breadcrumbs = document.querySelectorAll<HTMLElement>('nav [aria-label] a, .breadcrumb-item');
   let bookTitle = '';
+
   if (breadcrumbs.length >= 2) {
     bookTitle = breadcrumbs[breadcrumbs.length - 2]?.textContent?.trim() || '';
   }
+
   if (!bookTitle) {
-    bookTitle = document.title.replace(/\s*\|.*/, '').trim();
+    bookTitle = headerEl?.textContent?.trim() || document.title.replace(/\s*\|.*/, '').trim();
   }
 
-  // Cover image
   const container = document.getElementById('chapter-container');
   const book = container?.dataset.book || '';
   const coverUrl = book ? `/books/${book}/cover.jpg` : '';
@@ -729,9 +843,9 @@ function openQuoteCard(markEl: HTMLElement): void {
   const text = markEl.textContent || '';
   if (!text.trim()) return;
 
-  // Get note from highlight data
   const hlId = markEl.dataset.hlId;
   let note = '';
+
   if (hlId) {
     const ctx = getPageContext();
     if (ctx) {
@@ -741,21 +855,19 @@ function openQuoteCard(markEl: HTMLElement): void {
     }
   }
 
-  // Remove existing overlay
   document.getElementById('qc-overlay')?.remove();
 
   let currentPalette = 0;
-
   const { title, coverUrl } = getBookMeta();
 
   function buildCardHTML(p: typeof PALETTES[0]): string {
     const coverPart = coverUrl
       ? `<img class="qc-cover" src="${coverUrl}" alt="" onerror="this.style.display='none'">`
       : `<div class="qc-cover-placeholder"></div>`;
-    const notePart = note
-      ? `<p class="qc-note">📝 ${note}</p>`
-      : '';
+
+    const notePart = note ? `<p class="qc-note">📝 ${note}</p>` : '';
     const lightClass = p.light ? ' qc-light' : '';
+
     return `
       <div class="qc-bg" style="background:${p.bg}"></div>
       <div class="qc-bg-noise"></div>
@@ -778,73 +890,76 @@ function openQuoteCard(markEl: HTMLElement): void {
   overlay.id = 'qc-overlay';
   overlay.innerHTML = `
     <div id="qc-modal">
-      <button id="qc-close-btn" aria-label="Close">✕</button>
+      <button id="qc-close-btn" aria-label="${tr('common.close')}">✕</button>
       <div id="qc-preview-wrap">
         <div id="qc-card">${buildCardHTML(PALETTES[0])}</div>
       </div>
       <div id="qc-actions">
         <div class="qc-palette">
           ${PALETTES.map((p, i) => `
-            <button class="qc-swatch${i === 0 ? ' active' : ''}"
-              style="background:${p.bg}; box-shadow: 0 0 0 1px ${p.light ? 'rgba(0,0,0,0.15)' : 'rgba(255,255,255,0.15)'} inset"
-              data-idx="${i}" title="${p.label}" type="button"></button>
+            <button
+              class="qc-swatch${i === 0 ? ' active' : ''}"
+              style="background:${p.bg}; box-shadow:0 0 0 1px ${p.light ? 'rgba(0,0,0,0.15)' : 'rgba(255,255,255,0.15)'} inset"
+              data-idx="${i}"
+              title="${p.label}"
+              type="button"
+            ></button>
           `).join('')}
         </div>
-        <button id="qc-download-btn" type="button">⬇ Download PNG</button>
+        <button id="qc-download-btn" type="button">⬇ ${tr('highlight.download')}</button>
         <button id="qc-share-image-btn" type="button" class="qc-share-image-btn" style="display:none">
-          📤 Share image
+          📤 ${tr('highlight.shareImage')}
         </button>
         <div class="qc-share-row">
-          <button class="qc-share-btn" id="qc-share-whatsapp" type="button" title="Share on WhatsApp">
-            <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.09.547 4.048 1.503 5.742L0 24l6.406-1.476A11.94 11.94 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.891 0-3.66-.5-5.19-1.372l-.37-.22-3.803.876.906-3.701-.242-.382A9.947 9.947 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
-            WhatsApp
-          </button>
-          <button class="qc-share-btn" id="qc-share-twitter" type="button" title="Share on X/Twitter">
-            <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-            X / Twitter
-          </button>
-          <button class="qc-share-btn" id="qc-share-copy" type="button" title="Copy link">
-            📋 Copy text
-          </button>
+          <button class="qc-share-btn" id="qc-share-whatsapp" type="button" title="WhatsApp">WhatsApp</button>
+          <button class="qc-share-btn" id="qc-share-twitter" type="button" title="X / Twitter">X / Twitter</button>
+          <button class="qc-share-btn" id="qc-share-copy" type="button" title="${tr('common.copy')}">📋 ${tr('common.copy')}</button>
         </div>
       </div>
     </div>
   `;
-  document.body.appendChild(overlay);
 
-  // Animate in
+  document.body.appendChild(overlay);
   requestAnimationFrame(() => overlay.classList.add('visible'));
 
-  // Close
   const close = () => {
     overlay.classList.remove('visible');
     setTimeout(() => overlay.remove(), 250);
   };
-  overlay.querySelector('#qc-close-btn')!.addEventListener('click', close);
-  overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); }, { once: true });
 
-  // Palette swap
+  overlay.querySelector('#qc-close-btn')!.addEventListener('click', close);
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) close();
+  });
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') close();
+  }, { once: true });
+
   overlay.querySelector('.qc-palette')!.addEventListener('click', e => {
     const btn = (e.target as HTMLElement).closest<HTMLElement>('.qc-swatch');
     if (!btn) return;
+
     const idx = parseInt(btn.dataset.idx || '0', 10);
     currentPalette = idx;
+
     overlay.querySelectorAll('.qc-swatch').forEach(s => s.classList.remove('active'));
     btn.classList.add('active');
+
     const card = overlay.querySelector<HTMLElement>('#qc-card')!;
     card.innerHTML = buildCardHTML(PALETTES[idx]);
   });
 
-  // ── Canvas render helper ──────────────────────────────────────────────────
   async function renderToCanvas(): Promise<HTMLCanvasElement> {
     const p = PALETTES[currentPalette];
     const isLight = p.light;
     const W = 1080;
-    // Increase height if there's a note
     const H = note ? 640 : 580;
+
     const canvas = document.createElement('canvas');
-    canvas.width = W; canvas.height = H;
+    canvas.width = W;
+    canvas.height = H;
+
     const ctx = canvas.getContext('2d')!;
 
     ctx.fillStyle = p.bg;
@@ -858,38 +973,48 @@ function openQuoteCard(markEl: HTMLElement): void {
 
     ctx.font = '500 36px -apple-system, BlinkMacSystemFont, sans-serif';
     ctx.fillStyle = isLight ? '#1a1a1a' : '#ffffff';
+
     const maxW = W - 112;
     const words = text.split(' ');
-    let line = '', lines: string[] = [];
+    let line = '';
+    const lines: string[] = [];
+
     for (const word of words) {
       const test = line ? `${line} ${word}` : word;
       if (ctx.measureText(test).width > maxW && line) {
-        lines.push(line); line = word;
-      } else { line = test; }
+        lines.push(line);
+        line = word;
+      } else {
+        line = test;
+      }
     }
+
     if (line) lines.push(line);
-    const lineH = 52, textStartY = 140;
+
+    const lineH = 52;
+    const textStartY = 140;
     lines.forEach((l, i) => ctx.fillText(l, 56, textStartY + i * lineH));
 
-    // Draw note if present
     if (note) {
       const noteY = textStartY + lines.length * lineH + 20;
+
       ctx.fillStyle = isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.08)';
       ctx.beginPath();
       ctx.roundRect(52, noteY, W - 104, 50, 8);
       ctx.fill();
-      // Left accent border
+
       ctx.fillStyle = p.accent;
       ctx.beginPath();
       ctx.roundRect(52, noteY, 4, 50, [4, 0, 0, 4]);
       ctx.fill();
-      // Note text
+
       ctx.font = 'italic 500 26px -apple-system, sans-serif';
       ctx.fillStyle = isLight ? 'rgba(0,0,0,0.65)' : 'rgba(255,255,255,0.7)';
       ctx.fillText(`📝 ${note}`, 72, noteY + 33);
     }
 
     const footerY = H - 100;
+
     ctx.fillStyle = isLight ? 'rgba(0,0,0,0.08)' : 'rgba(0,0,0,0.3)';
     ctx.beginPath();
     ctx.roundRect(0, footerY, W, 100, [0, 0, 24, 24]);
@@ -906,64 +1031,76 @@ function openQuoteCard(markEl: HTMLElement): void {
     try {
       const img = new Image();
       img.crossOrigin = 'anonymous';
+
       await new Promise<void>((res, rej) => {
-        img.onload = () => res(); img.onerror = () => rej(); img.src = coverUrl;
+        img.onload = () => res();
+        img.onerror = () => rej();
+        img.src = coverUrl;
       });
-      const cw = 60, ch = 86;
-      const cx = W - cw - 48, cy = footerY + (100 - ch) / 2;
+
+      const cw = 60;
+      const ch = 86;
+      const cx = W - cw - 48;
+      const cy = footerY + (100 - ch) / 2;
+
       ctx.save();
       ctx.beginPath();
       ctx.roundRect(cx, cy, cw, ch, 6);
       ctx.clip();
       ctx.drawImage(img, cx, cy, cw, ch);
       ctx.restore();
-    } catch { /* no cover */ }
+    } catch {}
 
     return canvas;
   }
 
-  // Show "Share image" btn only if Web Share API supports files
   if (navigator.canShare?.({ files: [new File([], 'x.png', { type: 'image/png' })] })) {
     const shareImgBtn = overlay.querySelector<HTMLButtonElement>('#qc-share-image-btn')!;
     shareImgBtn.style.display = '';
+
     shareImgBtn.addEventListener('click', async () => {
       shareImgBtn.disabled = true;
-      shareImgBtn.textContent = 'Generating…';
+      shareImgBtn.textContent = tr('common.generating');
+
       try {
         const canvas = await renderToCanvas();
         const blob = await new Promise<Blob>(res => canvas.toBlob(b => res(b!), 'image/png'));
         const file = new File([blob], 'yuval-quote.png', { type: 'image/png' });
-        await navigator.share({ files: [file], title: title, text: `"${text}"` });
-      } catch { /* user cancelled or unsupported */ }
-      finally {
+        await navigator.share({ files: [file], title, text: `"${text}"` });
+      } catch {
+      } finally {
         shareImgBtn.disabled = false;
-        shareImgBtn.textContent = '📤 Share image';
+        shareImgBtn.textContent = `📤 ${tr('highlight.shareImage')}`;
       }
     });
   }
 
-  // Share buttons
   const shareText = `"${text}" — ${title}`;
+
   overlay.querySelector('#qc-share-whatsapp')!.addEventListener('click', () => {
     window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}`, '_blank', 'noopener');
   });
+
   overlay.querySelector('#qc-share-twitter')!.addEventListener('click', () => {
     window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`, '_blank', 'noopener');
   });
+
   overlay.querySelector('#qc-share-copy')!.addEventListener('click', async () => {
     try {
       await navigator.clipboard.writeText(shareText);
       const btn = overlay.querySelector<HTMLButtonElement>('#qc-share-copy')!;
-      btn.textContent = '✓ Copied!';
-      setTimeout(() => { btn.textContent = '📋 Copy text'; }, 2000);
-    } catch { /* fallback */ }
+      btn.textContent = `✓ ${tr('common.copied')}`;
+      setTimeout(() => {
+        btn.textContent = `📋 ${tr('common.copy')}`;
+      }, 2000);
+    } catch {}
   });
 
-  // Download via Canvas
   overlay.querySelector('#qc-download-btn')!.addEventListener('click', async () => {
     const dlBtn = overlay.querySelector<HTMLButtonElement>('#qc-download-btn')!;
     dlBtn.disabled = true;
-    dlBtn.textContent = 'Generating…';
+    dlBtn.textContent = tr('common.generating');
+
     try {
       const canvas = await renderToCanvas();
       const link = document.createElement('a');
@@ -972,7 +1109,7 @@ function openQuoteCard(markEl: HTMLElement): void {
       link.click();
     } finally {
       dlBtn.disabled = false;
-      dlBtn.textContent = '⬇ Download PNG';
+      dlBtn.textContent = `⬇ ${tr('highlight.download')}`;
     }
   });
 }
@@ -983,20 +1120,16 @@ export function initHighlighter(signal: AbortSignal): void {
   injectStyles();
   restoreHighlights();
 
-  // Re-restore when chapter content is swapped via fetch
   window.addEventListener('chapter-content-swapped', restoreHighlights, { signal });
 
-  // ── Selection handler: show toolbar ──
-  // Track whether mouse is held down — only show toolbar AFTER full release
   let isMouseDown = false;
   document.addEventListener('mousedown', () => { isMouseDown = true; }, { signal });
 
-  document.addEventListener('mouseup', (e) => {
+  document.addEventListener('mouseup', () => {
     isMouseDown = false;
 
-    // Small delay so browser can finalize the selection after mouseup
     setTimeout(() => {
-      if (isMouseDown) return; // another mousedown started — abort
+      if (isMouseDown) return;
 
       const selection = window.getSelection();
       if (!selection || selection.isCollapsed) {
@@ -1005,18 +1138,20 @@ export function initHighlighter(signal: AbortSignal): void {
       }
 
       const text = selection.toString().trim();
-      if (text.length < 2) { hideToolbar(); return; }
+      if (text.length < 2) {
+        hideToolbar();
+        return;
+      }
 
-      // Only trigger inside the reading content
       const contentEl = getContentEl();
       if (!contentEl) return;
+
       const range = selection.getRangeAt(0);
       if (!contentEl.contains(range.commonAncestorContainer)) {
         hideToolbar();
         return;
       }
 
-      // Don't highlight inside code blocks
       if (range.commonAncestorContainer.parentElement?.closest('pre, code')) {
         hideToolbar();
         return;
@@ -1027,7 +1162,6 @@ export function initHighlighter(signal: AbortSignal): void {
     }, 50);
   }, { signal });
 
-  // ── Toolbar color click: save & apply highlight ──
   document.addEventListener('click', (e) => {
     const btn = (e.target as HTMLElement).closest<HTMLElement>('.hl-dot[data-color]');
     if (!btn) return;
@@ -1042,11 +1176,22 @@ export function initHighlighter(signal: AbortSignal): void {
     if (!ctx) return;
 
     const color = btn.dataset.color as ColorKey;
+
+    const range = selection.getRangeAt(0);
+    const hostNode = range.commonAncestorContainer as Node;
+    const hostEl = hostNode.nodeType === Node.ELEMENT_NODE
+      ? (hostNode as Element)
+      : hostNode.parentElement;
+    const anchor = nearestBmAnchor(hostEl);
+    const sectionHeading = hostEl ? nearestSectionHeading(hostEl) : undefined;
+
     const hl: HighlightData = {
       id: `hl_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
       text,
       color,
       timestamp: Date.now(),
+      ...(anchor ? { anchor } : {}),
+      ...(sectionHeading ? { sectionHeading } : {}),
     };
 
     const contentEl = getContentEl();
@@ -1063,7 +1208,6 @@ export function initHighlighter(signal: AbortSignal): void {
     }
   }, { signal });
 
-  // ── Hover over highlight: show popup ──
   document.addEventListener('mouseover', (e) => {
     const mark = (e.target as HTMLElement).closest<HTMLElement>('.yuval-hl');
     if (mark) {
@@ -1074,13 +1218,13 @@ export function initHighlighter(signal: AbortSignal): void {
 
   document.addEventListener('mouseout', (e) => {
     const from = e.target as HTMLElement;
-    const to   = e.relatedTarget as HTMLElement | null;
+    const to = e.relatedTarget as HTMLElement | null;
+
     if (from.closest('.yuval-hl') && !to?.closest('.yuval-hl, #hl-hover-popup')) {
       scheduleHidePopup();
     }
   }, { signal });
 
-  // Keep popup open while hovering over it
   document.addEventListener('mouseover', (e) => {
     if ((e.target as HTMLElement).closest('#hl-hover-popup')) cancelHidePopup();
   }, { signal });
@@ -1092,36 +1236,32 @@ export function initHighlighter(signal: AbortSignal): void {
     }
   }, { signal });
 
-  // Hide toolbar on outside click
   document.addEventListener('click', (e) => {
     if (!(e.target as HTMLElement).closest('#hl-toolbar, .hl-dot')) {
       hideToolbar();
     }
   }, { signal });
 
-  // ── Hide toolbar on scroll ──
   window.addEventListener('scroll', hideToolbar, { signal, passive: true });
 
-  // ── Mobile: long-press on paragraph to highlight it ──────────────────────
   if ('ontouchstart' in window) {
     let longPressTimer: ReturnType<typeof setTimeout> | null = null;
-    let longPressEl: HTMLElement | null = null;
     let touchMoved = false;
 
-    // Show mobile color picker as a bottom sheet
-    function showMobileColorPicker(el: HTMLElement, text: string): void {
+    function showMobileColorPicker(text: string, sourceEl?: Element | null): void {
       document.getElementById('hl-mobile-picker')?.remove();
 
       const ctx = getPageContext();
       if (!ctx) return;
 
-      const lang = ctx.lang;
-      const labels: Record<string, Record<string, string>> = {
-        he: { yellow: 'תובנה', blue: 'שאלה', green: 'פעולה', pink: 'ציטוט', cancel: 'ביטול', title: 'הדגש פסקה' },
-        en: { yellow: 'Insight', blue: 'Question', green: 'Action', pink: 'Quote', cancel: 'Cancel', title: 'Highlight paragraph' },
-        es: { yellow: 'Insight', blue: 'Pregunta', green: 'Acción', pink: 'Cita', cancel: 'Cancelar', title: 'Resaltar párrafo' },
+      const l = {
+        yellow: tr('highlight.yellow'),
+        blue: tr('highlight.blue'),
+        green: tr('highlight.green'),
+        pink: tr('highlight.pink'),
+        cancel: tr('common.cancel'),
+        title: tr('highlight.mobile.title'),
       };
-      const l = labels[lang] || labels.en;
 
       const sheet = document.createElement('div');
       sheet.id = 'hl-mobile-picker';
@@ -1136,12 +1276,16 @@ export function initHighlighter(signal: AbortSignal): void {
 
       const style = document.createElement('style');
       style.textContent = `
-        @keyframes hmSlideUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
+        @keyframes hmSlideUp {
+          from { transform: translateY(100%); }
+          to { transform: translateY(0); }
+        }
         #hl-mobile-picker { touch-action: none; }
       `;
       document.head.appendChild(style);
 
       const preview = text.length > 80 ? text.slice(0, 80) + '…' : text;
+
       sheet.innerHTML = `
         <div style="width:36px;height:4px;background:var(--yuval-border,#e5e7eb);border-radius:2px;margin:0 auto 16px"></div>
         <div style="font-size:12px;font-weight:700;color:var(--yuval-text-muted,#999);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:8px">${l.title}</div>
@@ -1149,6 +1293,7 @@ export function initHighlighter(signal: AbortSignal): void {
         <div id="hm-colors" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px"></div>
         <button id="hm-cancel" style="width:100%;padding:12px;border-radius:12px;border:1px solid var(--yuval-border,#e5e7eb);background:var(--yuval-bg-secondary,#f3f4f6);font-size:14px;font-weight:600;color:var(--yuval-text-secondary,#555);cursor:pointer">${l.cancel}</button>
       `;
+
       document.body.appendChild(sheet);
 
       const colorsEl = document.getElementById('hm-colors')!;
@@ -1157,7 +1302,7 @@ export function initHighlighter(signal: AbortSignal): void {
         { key: 'blue',   bg: '#dbeafe', border: '#bfdbfe', emoji: '❓' },
         { key: 'green',  bg: '#dcfce7', border: '#bbf7d0', emoji: '✅' },
         { key: 'pink',   bg: '#fce7f3', border: '#fbcfe8', emoji: '💬' },
-      ];
+      ] as const;
 
       colorDefs.forEach(({ key, bg, border, emoji }) => {
         const btn = document.createElement('button');
@@ -1166,20 +1311,27 @@ export function initHighlighter(signal: AbortSignal): void {
           background:${bg}; cursor:pointer; font-size:20px; display:flex;
           flex-direction:column; align-items:center; gap:4px;
         `;
+
         const labelSpan = document.createElement('span');
         labelSpan.style.cssText = 'font-size:10px;font-weight:600;color:#555';
-        labelSpan.textContent = l[key] || key;
+        labelSpan.textContent = l[key];
+
         btn.textContent = emoji;
         btn.appendChild(labelSpan);
 
         btn.addEventListener('click', () => {
           const color = key as ColorKey;
+          const anchor = nearestBmAnchor(sourceEl ?? null);
+          const sectionHeading = sourceEl ? nearestSectionHeading(sourceEl) : undefined;
           const hl: HighlightData = {
             id: `hl_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
             text,
             color,
             timestamp: Date.now(),
+            ...(anchor ? { anchor } : {}),
+            ...(sectionHeading ? { sectionHeading } : {}),
           };
+
           const contentEl = getContentEl();
           if (contentEl) {
             const applied = applyHighlight(hl, contentEl);
@@ -1189,17 +1341,26 @@ export function initHighlighter(signal: AbortSignal): void {
               saveHighlights(ctx.book, ctx.chapter, ctx.lang, list);
             }
           }
+
+          backdrop.remove();
           sheet.remove();
         });
+
         colorsEl.appendChild(btn);
       });
 
-      document.getElementById('hm-cancel')?.addEventListener('click', () => sheet.remove());
+      document.getElementById('hm-cancel')?.addEventListener('click', () => {
+        backdrop.remove();
+        sheet.remove();
+      });
 
-      // Backdrop tap closes
       const backdrop = document.createElement('div');
       backdrop.style.cssText = 'position:fixed;inset:0;z-index:10099;background:rgba(0,0,0,0.3)';
-      backdrop.addEventListener('click', () => { sheet.remove(); backdrop.remove(); });
+      backdrop.addEventListener('click', () => {
+        sheet.remove();
+        backdrop.remove();
+      });
+
       document.body.insertBefore(backdrop, sheet);
     }
 
@@ -1207,26 +1368,34 @@ export function initHighlighter(signal: AbortSignal): void {
 
     document.addEventListener('touchstart', (e) => {
       touchMoved = false;
+
       const target = (e.target as HTMLElement).closest<HTMLElement>(SELECTORS);
       if (!target) return;
-      longPressEl = target;
+
       longPressTimer = setTimeout(() => {
         if (touchMoved) return;
+
         const text = target.textContent?.trim() || '';
         if (text.length < 5) return;
-        // Haptic feedback if available
+
         if ('vibrate' in navigator) navigator.vibrate(40);
-        showMobileColorPicker(target, text);
+        showMobileColorPicker(text, target);
       }, 600);
     }, { signal, passive: true });
 
     document.addEventListener('touchmove', () => {
       touchMoved = true;
-      if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+      if (longPressTimer) {
+        clearTimeout(longPressTimer);
+        longPressTimer = null;
+      }
     }, { signal, passive: true });
 
     document.addEventListener('touchend', () => {
-      if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+      if (longPressTimer) {
+        clearTimeout(longPressTimer);
+        longPressTimer = null;
+      }
     }, { signal, passive: true });
   }
 }

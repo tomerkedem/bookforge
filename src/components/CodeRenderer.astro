@@ -1,0 +1,46 @@
+---
+import CodeRunner from "./CodeRunner.astro";
+import CodeBlock from "./CodeBlock.astro";
+
+interface Props {
+  code: string;
+  language?: string;
+  title?: string;
+  editable?: boolean;
+  showLineNumbers?: boolean;
+}
+
+const {
+  code,
+  language = "text",
+  title = "",
+  editable = true,
+  showLineNumbers = true,
+} = Astro.props;
+
+const lang = (language || "text").toLowerCase();
+
+// רק שפות שבאמת יש להן מנוע הרצה
+const RUNNABLE = new Set([
+  "python"
+]);
+
+const isRunnable = RUNNABLE.has(lang);
+---
+
+{isRunnable ? (
+  <CodeRunner
+    code={code}
+    language={lang}
+    title={title}
+    editable={editable}
+    showLineNumbers={showLineNumbers}
+  />
+) : (
+  <CodeBlock
+    code={code}
+    language={lang}
+    title={title}
+    showLineNumbers={showLineNumbers}
+  />
+)}

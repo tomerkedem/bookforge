@@ -1,67 +1,28 @@
 /**
- * Reading Stats Panel — shows chapters read, words read, highlights, streak.
- * Triggered by a small "📊" button injected near the FAB cluster.
+ * Reading Stats Panel — dynamic i18n version
  */
 
-type LangKey = 'he' | 'en' | 'es';
+import { t, getI18nDirection, resolveLanguage } from '../i18n';
 
-function getLang(): LangKey {
-  return (new URLSearchParams(window.location.search).get('lang')
-    || localStorage.getItem('yuval_language')
-    || 'en') as LangKey;
+// ── Language ────────────────────────────────────────────────────────────────
+
+function getLang(): string {
+  return resolveLanguage(
+    new URLSearchParams(window.location.search).get('lang')
+      || localStorage.getItem('yuval_language')
+      || 'en'
+  );
 }
 
-// ── i18n ─────────────────────────────────────────────────────────────────────
+function tr(key: string, params?: Record<string, string | number>): string {
+  return t(key, getLang(), params);
+}
 
-const i18n: Record<LangKey, {
-  title: string;
-  chaptersRead: string;
-  wordsRead: string;
-  highlights: string;
-  streak: string;
-  streakDays: (n: number) => string;
-  of: string;
-  close: string;
-  dir: 'rtl' | 'ltr';
-}> = {
-  he: {
-    title: 'סטטיסטיקות קריאה',
-    chaptersRead: 'פרקים שהושלמו',
-    wordsRead: 'מילים נקראו',
-    highlights: 'הדגשות שמורות',
-    streak: 'רצף קריאה',
-    streakDays: (n) => n === 1 ? 'יום אחד' : `${n} ימים`,
-    of: 'מתוך',
-    close: 'סגור',
-    dir: 'rtl',
-  },
-  es: {
-    title: 'Estadísticas',
-    chaptersRead: 'Capítulos leídos',
-    wordsRead: 'Palabras leídas',
-    highlights: 'Resaltados guardados',
-    streak: 'Racha de lectura',
-    streakDays: (n) => n === 1 ? '1 día' : `${n} días`,
-    of: 'de',
-    close: 'Cerrar',
-    dir: 'ltr',
-  },
-  en: {
-    title: 'Reading Stats',
-    chaptersRead: 'Chapters completed',
-    wordsRead: 'Words read',
-    highlights: 'Saved highlights',
-    streak: 'Reading streak',
-    streakDays: (n) => n === 1 ? '1 day' : `${n} days`,
-    of: 'of',
-    close: 'Close',
-    dir: 'ltr',
-  },
-};
+function getDir(): 'rtl' | 'ltr' {
+  return getI18nDirection(getLang());
+}
 
-function tr() { return i18n[getLang()]; }
-
-// ── Data helpers ──────────────────────────────────────────────────────────────
+// ── Data helpers ─────────────────────────────────────────────────────────────
 
 function getCurrentBook(): string {
   return document.getElementById('chapter-container')?.dataset.book || '';
@@ -75,53 +36,53 @@ interface StatsResult {
   streak: number;
 }
 
-function STREAK_KEY(book: string) { return `yuval_streak_${book}`; }
+function STREAK_KEY(book: string) {
+  return `yuval_streak_${book}`;
+}
 
 function computeStats(): StatsResult {
   const book = getCurrentBook();
 
-  // Count completed chapters from the completion storage
   let chaptersRead = 0;
   let wordsRead = 0;
   let totalChapters = 0;
 
-  // Get chapter count from sidebar TOC links
   document.querySelectorAll<HTMLElement>('[data-chapter-id]').forEach(el => {
     if (el.tagName === 'LI') totalChapters++;
   });
-  // Fallback: count from sidebar TOC
+
   if (!totalChapters) {
     totalChapters = document.querySelectorAll('.toc-item').length;
   }
 
-  // Get completed chapters from the proper completion storage
   try {
-    const completedChapters = JSON.parse(
+    const completed = JSON.parse(
       localStorage.getItem(`yuval_ch_complete_${book}`) || '[]'
     );
-    chaptersRead = completedChapters.length;
-  } catch { /* skip */ }
+    chaptersRead = completed.length;
+  } catch {}
 
-  // Estimate words read: chapters read × avg word count of current chapter
   const currentWordCount = parseInt(
-    document.getElementById('chapter-container')?.dataset.wordCount || '0', 10
+    document.getElementById('chapter-container')?.dataset.wordCount || '0',
+    10
   );
-  const avgWordsPerChapter = currentWordCount > 0 ? currentWordCount : 2500;
-  wordsRead = chaptersRead * avgWordsPerChapter;
 
-  // Count highlights across all chapters
+  const avg = currentWordCount > 0 ? currentWordCount : 2500;
+  wordsRead = chaptersRead * avg;
+
   let highlights = 0;
-  const hlPrefix = `yuval_hl_${book}_ch`;
+  const prefix = `yuval_hl_${book}_ch`;
+
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
-    if (!key?.startsWith(hlPrefix)) continue;
+    if (!key?.startsWith(prefix)) continue;
+
     try {
       const list = JSON.parse(localStorage.getItem(key) || '[]');
       highlights += list.length;
-    } catch { /* skip */ }
+    } catch {}
   }
 
-  // Streak calculation
   const streak = computeStreak(book);
 
   return { chaptersRead, totalChapters, wordsRead, highlights, streak };
@@ -129,29 +90,29 @@ function computeStats(): StatsResult {
 
 function computeStreak(book: string): number {
   const key = STREAK_KEY(book);
-  const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+  const today = new Date().toISOString().slice(0, 10);
 
   try {
     const stored = JSON.parse(localStorage.getItem(key) || '{}');
-    const { lastDate, count = 0 } = stored as { lastDate?: string; count?: number };
+    const { lastDate, count = 0 } = stored;
 
     if (!lastDate) {
-      // First time — start streak
       localStorage.setItem(key, JSON.stringify({ lastDate: today, count: 1 }));
       return 1;
     }
 
     const last = new Date(lastDate);
-    const now  = new Date(today);
-    const diffDays = Math.round((now.getTime() - last.getTime()) / 86400000);
+    const now = new Date(today);
+    const diff = Math.round((now.getTime() - last.getTime()) / 86400000);
 
-    if (diffDays === 0) return count;          // same day
-    if (diffDays === 1) {                       // consecutive day
+    if (diff === 0) return count;
+
+    if (diff === 1) {
       const newCount = count + 1;
       localStorage.setItem(key, JSON.stringify({ lastDate: today, count: newCount }));
       return newCount;
     }
-    // Gap > 1 day — reset
+
     localStorage.setItem(key, JSON.stringify({ lastDate: today, count: 1 }));
     return 1;
   } catch {
@@ -159,189 +120,7 @@ function computeStreak(book: string): number {
   }
 }
 
-// ── CSS ───────────────────────────────────────────────────────────────────────
-
-function injectStyles(): void {
-  if (document.getElementById('reading-stats-styles')) return;
-  const s = document.createElement('style');
-  s.id = 'reading-stats-styles';
-  s.textContent = `
-    /* ── Stats FAB button ── */
-    #stats-fab-btn {
-      position: fixed;
-      bottom: 208px;
-      right: 20px;
-      z-index: 9980;
-      width: 44px; height: 44px;
-      border-radius: 50%;
-      background: var(--yuval-surface, #fff);
-      border: 1px solid var(--yuval-border, #e5e7eb);
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-      color: var(--yuval-text-secondary, #555);
-      cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 17px;
-      transition: transform 0.2s, box-shadow 0.2s, background 0.15s;
-    }
-    #stats-fab-btn svg { display: block; }
-    #stats-fab-btn:hover {
-      transform: scale(1.08);
-      box-shadow: 0 4px 16px rgba(0,0,0,0.14);
-      background: var(--yuval-bg-secondary, #f3f4f6);
-    }
-    #stats-fab-btn:hover .stats-bar {
-      animation: statsGrow 0.6s ease-in-out infinite;
-      transform-origin: bottom;
-    }
-    #stats-fab-btn:hover .stats-bar-1 { animation-delay: 0s; }
-    #stats-fab-btn:hover .stats-bar-2 { animation-delay: 0.15s; }
-    #stats-fab-btn:hover .stats-bar-3 { animation-delay: 0.3s; }
-    @keyframes statsGrow {
-      0%, 100% { transform: scaleY(1); }
-      50% { transform: scaleY(0.6); }
-    }
-    :is(.dark) #stats-fab-btn {
-      background: #2a2a2a;
-      border-color: rgba(255,255,255,0.1);
-    }
-    [dir="rtl"] #stats-fab-btn { right: auto; left: 20px; }
-
-    /* ── Overlay ── */
-    #stats-overlay {
-      position: fixed; inset: 0; z-index: 9995;
-      background: rgba(0,0,0,0.45);
-      backdrop-filter: blur(4px);
-      opacity: 0;
-      transition: opacity 0.25s ease;
-      pointer-events: none;
-    }
-    #stats-overlay.open { opacity: 1; pointer-events: auto; }
-
-    /* ── Modal ── */
-    #stats-modal {
-      position: fixed;
-      top: 50%; left: 50%;
-      transform: translate(-50%, -50%) scale(0.95);
-      width: min(380px, 90vw);
-      z-index: 9996;
-      background: var(--yuval-surface, #fff);
-      border: 1px solid var(--yuval-border, #e5e7eb);
-      border-radius: 20px;
-      box-shadow: 0 24px 60px rgba(0,0,0,0.18);
-      padding: 28px 24px 24px;
-      opacity: 0;
-      transition: opacity 0.25s ease, transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
-      pointer-events: none;
-    }
-    #stats-modal.open {
-      opacity: 1;
-      transform: translate(-50%, -50%) scale(1);
-      pointer-events: auto;
-    }
-    :is(.dark) #stats-modal {
-      background: #1e1e1e;
-      border-color: rgba(255,255,255,0.08);
-    }
-
-    /* ── Header ── */
-    #stats-modal-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 24px;
-    }
-    #stats-modal-title {
-      font-size: 16px;
-      font-weight: 700;
-      color: var(--yuval-text, #1a1a1a);
-      letter-spacing: -0.01em;
-    }
-    #stats-modal-close {
-      background: none; border: none;
-      color: var(--yuval-text-tertiary, #888);
-      font-size: 18px; cursor: pointer;
-      width: 28px; height: 28px;
-      display: flex; align-items: center; justify-content: center;
-      border-radius: 6px;
-      transition: background 0.15s, color 0.15s;
-    }
-    #stats-modal-close:hover {
-      background: var(--yuval-bg-secondary, #f3f4f6);
-      color: var(--yuval-text, #1a1a1a);
-    }
-
-    /* ── Stat cards grid ── */
-    .stats-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
-    .stat-card {
-      background: var(--yuval-bg-secondary, #f9f9f9);
-      border: 1px solid var(--yuval-border, #e5e7eb);
-      border-radius: 14px;
-      padding: 16px 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-    :is(.dark) .stat-card {
-      background: #252525;
-      border-color: rgba(255,255,255,0.07);
-    }
-    .stat-icon { font-size: 22px; line-height: 1; }
-    .stat-value {
-      font-size: 22px;
-      font-weight: 800;
-      color: var(--yuval-text, #1a1a1a);
-      letter-spacing: -0.02em;
-      line-height: 1.1;
-    }
-    .stat-label {
-      font-size: 11px;
-      font-weight: 500;
-      color: var(--yuval-text-muted, #999);
-      letter-spacing: 0.03em;
-    }
-
-    /* ── Progress bar (chapters) ── */
-    .stat-progress {
-      margin-top: 4px;
-      height: 3px;
-      border-radius: 99px;
-      background: var(--yuval-border, #e5e7eb);
-      overflow: hidden;
-    }
-    .stat-progress-fill {
-      height: 100%;
-      border-radius: 99px;
-      background: #6366f1;
-      transition: width 0.8s cubic-bezier(0.34,1.56,0.64,1);
-    }
-
-    /* ── Streak fire card ── */
-    .stat-card.streak .stat-value { color: #f97316; }
-    .stat-card.streak .stat-icon  { filter: drop-shadow(0 0 8px rgba(249,115,22,0.5)); }
-    .stat-card.streak .streak-flame {
-      animation: flicker 1.5s ease-in-out infinite;
-    }
-    @keyframes flicker {
-      0%, 100% { transform: scale(1) rotate(0deg); filter: brightness(1); }
-      25% { transform: scale(1.05) rotate(-2deg); filter: brightness(1.1); }
-      50% { transform: scale(0.98) rotate(1deg); filter: brightness(0.95); }
-      75% { transform: scale(1.03) rotate(-1deg); filter: brightness(1.05); }
-    }
-    
-    /* ── Modern stat icons ── */
-    .stat-icon svg { display: block; }
-    .stat-card:not(.streak) .stat-icon svg {
-      color: var(--yuval-text-secondary, #555);
-    }
-  `;
-  document.head.appendChild(s);
-}
-
-// ── DOM ───────────────────────────────────────────────────────────────────────
+// ── UI ───────────────────────────────────────────────────────────────────────
 
 function buildWidget(): void {
   if (document.getElementById('stats-modal')) return;
@@ -349,13 +128,9 @@ function buildWidget(): void {
   const btn = document.createElement('button');
   btn.id = 'stats-fab-btn';
   btn.type = 'button';
-  btn.setAttribute('aria-label', 'Reading stats');
-  btn.innerHTML = `
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20">
-      <path d="M18 20V10" class="stats-bar stats-bar-1"/>
-      <path d="M12 20V4" class="stats-bar stats-bar-2"/>
-      <path d="M6 20v-6" class="stats-bar stats-bar-3"/>
-    </svg>`;
+  btn.setAttribute('aria-label', tr('stats.title'));
+  btn.title = tr('stats.title');
+  btn.innerHTML = '📊';
   document.body.appendChild(btn);
 
   const overlay = document.createElement('div');
@@ -364,115 +139,61 @@ function buildWidget(): void {
 
   const modal = document.createElement('div');
   modal.id = 'stats-modal';
-  modal.setAttribute('role', 'dialog');
-  modal.setAttribute('aria-modal', 'true');
   document.body.appendChild(modal);
 
   btn.addEventListener('click', openStats);
   overlay.addEventListener('click', closeStats);
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && modal.classList.contains('open')) closeStats();
-  });
+}
+
+function formatWords(n: number): string {
+  return n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n);
 }
 
 function renderStats(): void {
   const modal = document.getElementById('stats-modal');
   if (!modal) return;
 
-  const labels = tr();
-  const stats  = computeStats();
-
-  modal.setAttribute('dir', labels.dir);
+  const stats = computeStats();
+  const lang = getLang();
 
   const pct = stats.totalChapters > 0
     ? Math.round((stats.chaptersRead / stats.totalChapters) * 100)
     : 0;
 
-  const wordsFormatted = stats.wordsRead >= 1000
-    ? `${(stats.wordsRead / 1000).toFixed(1)}k`
-    : String(stats.wordsRead);
+  modal.setAttribute('dir', getDir());
 
   modal.innerHTML = `
     <div id="stats-modal-header">
-      <span id="stats-modal-title">
-        <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18" style="vertical-align:-3px;margin-inline-end:6px;">
-          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-        </svg>
-        ${labels.title}
-      </span>
-      <button id="stats-modal-close" aria-label="${labels.close}">✕</button>
+      <span>${tr('stats.title')}</span>
+      <button id="stats-close">${tr('stats.close')}</button>
     </div>
+
     <div class="stats-grid">
 
-      <div class="stat-card" style="grid-column: span 2">
-        <span class="stat-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="24" height="24">
-            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
-            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
-            <path d="M8 7h8M8 11h8M8 15h5"/>
-          </svg>
-        </span>
-        <span class="stat-value">${stats.chaptersRead}
-          <span style="font-size:13px;font-weight:500;color:var(--yuval-text-muted,#999)">
-            ${labels.of} ${stats.totalChapters || '?'}
-          </span>
-        </span>
-        <span class="stat-label">${labels.chaptersRead}</span>
-        <div class="stat-progress">
-          <div class="stat-progress-fill" style="width:0%" data-target="${pct}"></div>
-        </div>
+      <div class="stat-card">
+        <div>${stats.chaptersRead} ${tr('stats.of')} ${stats.totalChapters}</div>
+        <div>${tr('stats.chapters')}</div>
       </div>
 
       <div class="stat-card">
-        <span class="stat-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="24" height="24">
-            <path d="M12 20h9"/>
-            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
-          </svg>
-        </span>
-        <span class="stat-value">${wordsFormatted}</span>
-        <span class="stat-label">${labels.wordsRead}</span>
+        <div>${formatWords(stats.wordsRead)}</div>
+        <div>${tr('stats.words')}</div>
       </div>
 
       <div class="stat-card">
-        <span class="stat-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="24" height="24">
-            <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
-            <circle cx="12" cy="12" r="3"/>
-          </svg>
-        </span>
-        <span class="stat-value">${stats.highlights}</span>
-        <span class="stat-label">${labels.highlights}</span>
+        <div>${stats.highlights}</div>
+        <div>${tr('stats.highlights')}</div>
       </div>
 
-      <div class="stat-card streak" style="grid-column: span 2">
-        <span class="stat-icon">
-          <svg viewBox="0 0 24 24" fill="none" width="28" height="28" class="streak-flame">
-            <defs>
-              <linearGradient id="flameGrad" x1="0%" y1="100%" x2="0%" y2="0%">
-                <stop offset="0%" style="stop-color:#f97316"/>
-                <stop offset="50%" style="stop-color:#fb923c"/>
-                <stop offset="100%" style="stop-color:#fbbf24"/>
-              </linearGradient>
-            </defs>
-            <path d="M12 2C8 6 6 10 6 13a6 6 0 0 0 12 0c0-3-2-7-6-11z" fill="url(#flameGrad)" stroke="#ea580c" stroke-width="1"/>
-            <path d="M12 9c-2 2-3 4-3 5.5a3 3 0 0 0 6 0c0-1.5-1-3.5-3-5.5z" fill="#fef3c7" opacity="0.9"/>
-          </svg>
-        </span>
-        <span class="stat-value">${labels.streakDays(stats.streak)}</span>
-        <span class="stat-label">${labels.streak}</span>
+      <div class="stat-card">
+        <div>${t('stats.streakDays', lang, { n: stats.streak })}</div>
+        <div>${tr('stats.streak')}</div>
       </div>
 
     </div>
   `;
 
-  document.getElementById('stats-modal-close')?.addEventListener('click', closeStats);
-
-  // Animate progress bar after paint
-  requestAnimationFrame(() => {
-    const fill = modal.querySelector<HTMLElement>('.stat-progress-fill');
-    if (fill) fill.style.width = `${pct}%`;
-  });
+  document.getElementById('stats-close')?.addEventListener('click', closeStats);
 }
 
 function openStats(): void {
@@ -486,13 +207,22 @@ function closeStats(): void {
   document.getElementById('stats-modal')?.classList.remove('open');
 }
 
-// ── Init ──────────────────────────────────────────────────────────────────────
+// ── Init ─────────────────────────────────────────────────────────────────────
 
 export function initReadingStats(): void {
-  injectStyles();
   buildWidget();
 
-  // Record today's visit for streak (on every page load)
   const book = getCurrentBook();
   if (book) computeStreak(book);
+
+  window.addEventListener('language-changed', () => {
+    const button = document.getElementById('stats-fab-btn');
+    if (button) {
+      button.setAttribute('aria-label', tr('stats.title'));
+    }
+
+    if (document.getElementById('stats-modal')?.classList.contains('open')) {
+      renderStats();
+    }
+  });
 }

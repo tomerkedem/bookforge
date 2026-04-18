@@ -1,29 +1,43 @@
 /**
  * i18n public API.
  *
- * Usage (Astro/TypeScript):
- *   import { t } from '../i18n';
- *   t('nav.books', lang)             // → "Books"
- *   t('nav.chapterOf', lang, { n: 3, total: 11 }) // → "Chapter 3 of 11"
- *
- * Usage (HTML):
- *   <span data-i18n="nav.books">Books</span>
- *   The applyLanguageToPage() function in language.ts handles DOM swapping.
- *
- * Adding a new language:
- *   1. Add to SUPPORTED_LANGUAGES in src/utils/language.ts
- *   2. Add translations to src/i18n/translations.ts
- *   Nothing else needs to change.
+ * Rules:
+ * - Language metadata comes from src/utils/language.ts
+ * - UI text falls back to English
+ * - Missing key falls back to the key itself
+ * - No hardcoded RTL language list here
  */
 
 import { translations } from './translations';
+import { getSupportedLanguage, getLanguageDirection, SOURCE_LANGUAGE } from '../utils/language';
 
 export type { Translations } from './translations';
 export { translations } from './translations';
 
+const FALLBACK_LANGUAGE = SOURCE_LANGUAGE;
+
+function normalizeLang(lang: string | null | undefined): string {
+  return (lang || '').trim().toLowerCase();
+}
+
+export function resolveLanguage(lang: string | null | undefined): string {
+  const normalized = normalizeLang(lang);
+
+  if (!normalized) {
+    return FALLBACK_LANGUAGE;
+  }
+
+  const supported = getSupportedLanguage(normalized);
+  if (supported) {
+    return supported.code;
+  }
+
+  return FALLBACK_LANGUAGE;
+}
+
 /**
  * Translate a key to the given language.
- * Falls back: requested lang → 'en' → key itself.
+ * Falls back: requested lang -> en -> key itself.
  * Supports {{param}} interpolation.
  */
 export function t(
@@ -31,11 +45,18 @@ export function t(
   lang: string,
   params?: Record<string, string | number>
 ): string {
+  const resolvedLang = resolveLanguage(lang);
   const entry = translations[key];
-  if (!entry) return key;
 
-  const text = entry[lang] ?? entry['en'] ?? key;
-  if (!params) return text;
+  if (!entry) {
+    return key;
+  }
+
+  let text = entry[resolvedLang] ?? entry[FALLBACK_LANGUAGE] ?? key;
+
+  if (!params) {
+    return text;
+  }
 
   return text.replace(/\{\{(\w+)\}\}/g, (_, name) =>
     params[name] !== undefined ? String(params[name]) : `{{${name}}}`
@@ -43,10 +64,40 @@ export function t(
 }
 
 /**
- * Returns true if the language is RTL.
- * Decoupled from language.ts so scripts can import without bringing in DOM code.
+ * Returns the writing direction for the resolved language.
+ * Delegates to the central language registry.
+ */
+export function getI18nDirection(lang: string): 'ltr' | 'rtl' {
+  return getLanguageDirection(resolveLanguage(lang));
+}
+
+/**
+ * Backward-compatible alias.
+ * Prefer getI18nDirection() in new code.
  */
 export function isRtlLang(lang: string): boolean {
-  const RTL_LANGS = new Set(['he', 'ar', 'fa', 'ur', 'yi', 'dv']);
-  return RTL_LANGS.has(lang);
+  return getI18nDirection(lang) === 'rtl';
+}
+
+/**
+ * Apply translations to DOM nodes marked with:
+ * - data-i18n="key"
+ * - data-i18n-title="key"
+ */
+export function applyTranslations(root: ParentNode, lang: string): void {
+  const resolvedLang = resolveLanguage(lang);
+
+  const textNodes = root.querySelectorAll<HTMLElement>('[data-i18n]');
+  textNodes.forEach(node => {
+    const key = node.dataset.i18n;
+    if (!key) return;
+    node.textContent = t(key, resolvedLang);
+  });
+
+  const titleNodes = root.querySelectorAll<HTMLElement>('[data-i18n-title]');
+  titleNodes.forEach(node => {
+    const key = node.dataset.i18nTitle;
+    if (!key) return;
+    node.title = t(key, resolvedLang);
+  });
 }

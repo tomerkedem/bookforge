@@ -1,24 +1,193 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import { DEFAULT_LANGUAGE, isValidLanguage, getLanguageDirection } from '../utils/language';
+import { t } from '../i18n';
+
+const urlLang = Astro.url.searchParams.get('lang')?.trim().toLowerCase();
+const language = urlLang && isValidLanguage(urlLang) ? urlLang : DEFAULT_LANGUAGE;
+const isRtl = getLanguageDirection(language) === 'rtl';
+
+const title = t('error.404.title', language);
+const body = t('error.404.body', language);
+const suggest = t('error.404.suggest', language);
+const homeLabel = t('general.home', language);
 ---
 
-<BaseLayout title="Page Not Found">
-  <div class="min-h-[70vh] flex flex-col items-center justify-center px-4 text-center">
-    <p class="text-8xl sm:text-9xl font-heading font-bold text-yuval-text-muted select-none">404</p>
-    <h1 class="mt-4 font-heading font-bold text-2xl sm:text-3xl text-yuval-text">
-      Page Not Found
-    </h1>
-    <p class="mt-2 text-base sm:text-lg text-yuval-text-secondary max-w-md">
-      The page you're looking for doesn't exist or has been moved.
-    </p>
-    <a
-      href="/"
-      class="mt-8 inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-yuval-accent text-yuval-accent-text font-medium text-sm hover:bg-yuval-accent-hover transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yuval-highlight focus-visible:ring-offset-2"
-    >
-      <svg class="w-4 h-4 rtl:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-      </svg>
-      Back to Home
-    </a>
-  </div>
+<BaseLayout title={title}>
+  <main class="err-page" dir={isRtl ? 'rtl' : 'ltr'} data-i18n-root>
+    <div class="err-card">
+      <div class="err-illustration" aria-hidden="true">
+        <svg viewBox="0 0 200 140" class="err-svg" role="img">
+          <defs>
+            <linearGradient id="book-grad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#fbbf24"/>
+              <stop offset="100%" stop-color="#d97706"/>
+            </linearGradient>
+          </defs>
+          <ellipse cx="100" cy="125" rx="60" ry="5" fill="rgba(0,0,0,0.08)"/>
+          <g class="err-book">
+            <path d="M50 30 L50 115 L100 108 L150 115 L150 30 L100 23 Z" fill="url(#book-grad)" opacity="0.92"/>
+            <path d="M100 23 L100 108" stroke="rgba(0,0,0,0.18)" stroke-width="1.5"/>
+            <path d="M60 45 L90 41 M60 55 L88 51 M60 65 L85 61" stroke="rgba(0,0,0,0.25)" stroke-width="1.2" stroke-linecap="round"/>
+            <path d="M110 41 L140 45 M112 51 L140 55 M115 61 L140 65" stroke="rgba(0,0,0,0.25)" stroke-width="1.2" stroke-linecap="round"/>
+          </g>
+          <text x="100" y="88" text-anchor="middle" font-family="'Frank Ruhl Libre', Georgia, serif" font-size="32" font-weight="700" fill="#78350f" opacity="0.85">?</text>
+        </svg>
+      </div>
+
+      <p class="err-code" aria-hidden="true">404</p>
+      <h1 class="err-title" data-i18n="error.404.title">{title}</h1>
+      <p class="err-body" data-i18n="error.404.body">{body}</p>
+      <p class="err-suggest" data-i18n="error.404.suggest">{suggest}</p>
+
+      <a href="/" class="err-cta">
+        <svg class="err-cta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M3 12L12 3l9 9"/>
+          <path d="M5 10v10h14V10"/>
+        </svg>
+        <span data-i18n="general.home">{homeLabel}</span>
+      </a>
+    </div>
+  </main>
+
+  <style>
+    .err-page {
+      min-height: 72vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1rem;
+    }
+
+    .err-card {
+      text-align: center;
+      max-width: 32rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.4rem;
+      animation: err-fade-in 420ms cubic-bezier(0.2, 0, 0, 1) both;
+    }
+
+    .err-illustration {
+      width: min(260px, 60vw);
+      margin-bottom: 0.75rem;
+    }
+    .err-svg { width: 100%; height: auto; }
+    .err-book {
+      transform-origin: 100px 70px;
+      animation: err-book-tilt 6s ease-in-out infinite;
+    }
+
+    .err-code {
+      font-family: 'Frank Ruhl Libre', Georgia, serif;
+      font-size: clamp(4rem, 14vw, 6rem);
+      font-weight: 700;
+      line-height: 1;
+      color: var(--yuval-text-muted, #9a8c7c);
+      letter-spacing: -0.04em;
+      user-select: none;
+      margin: 0;
+    }
+
+    .err-title {
+      font-family: 'Frank Ruhl Libre', Georgia, serif;
+      font-size: clamp(1.5rem, 4vw, 2rem);
+      font-weight: 700;
+      color: var(--yuval-text, #1a1a1a);
+      margin: 0.25rem 0 0;
+      letter-spacing: -0.015em;
+    }
+
+    .err-body {
+      font-size: 1rem;
+      line-height: 1.6;
+      color: var(--yuval-text-secondary, #555);
+      max-width: 28rem;
+      margin: 0.5rem 0 0;
+    }
+
+    .err-suggest {
+      font-size: 0.9rem;
+      color: var(--yuval-text-muted, #888);
+      margin: 0.25rem 0 0;
+    }
+
+    .err-cta {
+      margin-top: 1.5rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.5rem;
+      border-radius: 0.5rem;
+      background: var(--yuval-accent, #d97706);
+      color: var(--yuval-accent-text, #fff);
+      font-weight: 600;
+      font-size: 0.95rem;
+      text-decoration: none;
+      box-shadow: 0 4px 12px -2px rgba(217,119,6,0.28), 0 2px 4px -1px rgba(0,0,0,0.04);
+      transition: transform 120ms cubic-bezier(0.2,0,0,1),
+                  box-shadow 200ms cubic-bezier(0.2,0,0,1),
+                  background 200ms cubic-bezier(0.2,0,0,1);
+    }
+    .err-cta:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px -4px rgba(217,119,6,0.38), 0 4px 8px -2px rgba(0,0,0,0.06);
+      background: var(--yuval-accent-hover, #b45309);
+    }
+    .err-cta:active { transform: translateY(0); }
+    .err-cta:focus-visible {
+      outline: 2px solid var(--yuval-highlight, #fbbf24);
+      outline-offset: 3px;
+    }
+    .err-cta-icon { width: 1.1rem; height: 1.1rem; }
+
+    [dir="rtl"] .err-cta-icon { transform: scaleX(-1); }
+
+    @keyframes err-fade-in {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes err-book-tilt {
+      0%, 100% { transform: rotate(-2deg); }
+      50%      { transform: rotate(2deg); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .err-card, .err-book { animation: none; }
+      .err-cta { transition: none; }
+    }
+
+    @media (max-width: 639px) {
+      .err-page { min-height: 65vh; padding: 1.5rem 1rem; }
+      .err-body { font-size: 0.95rem; }
+    }
+  </style>
+
+  <script>
+    import { t, resolveLanguage, getI18nDirection } from '../i18n';
+
+    function currentLang() {
+      return resolveLanguage(
+        new URLSearchParams(window.location.search).get('lang')
+          || localStorage.getItem('yuval_language')
+          || 'en'
+      );
+    }
+
+    function apply(lang: string) {
+      const root = document.querySelector<HTMLElement>('[data-i18n-root]');
+      if (!root) return;
+      root.setAttribute('dir', getI18nDirection(lang));
+      root.querySelectorAll<HTMLElement>('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (key) el.textContent = t(key, lang);
+      });
+      document.title = t('error.404.title', lang);
+    }
+
+    apply(currentLang());
+    window.addEventListener('language-changed', () => apply(currentLang()));
+  </script>
 </BaseLayout>

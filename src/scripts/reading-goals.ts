@@ -4,95 +4,61 @@
  * Stored in localStorage per book.
  */
 
-type LangKey = 'he' | 'en' | 'es';
+import { t, getI18nDirection, resolveLanguage } from '../i18n';
 
-function getLang(): LangKey {
-  return (new URLSearchParams(window.location.search).get('lang')
-    || localStorage.getItem('yuval_language')
-    || 'en') as LangKey;
+function getLang(): string {
+  return resolveLanguage(
+    new URLSearchParams(window.location.search).get('lang')
+      || localStorage.getItem('yuval_language')
+      || 'en'
+  );
+}
+
+function tr(key: string, params?: Record<string, string | number>): string {
+  return t(key, getLang(), params);
+}
+
+function getDir(): 'rtl' | 'ltr' {
+  return getI18nDirection(getLang());
 }
 
 function getCurrentBook(): string {
   return document.getElementById('chapter-container')?.dataset.book || '';
 }
 
-// ── i18n ─────────────────────────────────────────────────────────────────────
-
-const i18n: Record<LangKey, {
-  title: string;
-  goal: string;
-  setGoal: string;
-  streak: (n: number) => string;
-  todayDone: string;
-  minutesLeft: (n: number) => string;
-  save: string;
-  cancel: string;
-  goalOptions: { label: string; minutes: number }[];
-  dir: 'rtl' | 'ltr';
-}> = {
-  he: {
-    title: 'יעד קריאה יומי',
-    goal: 'יעד',
-    setGoal: 'הגדר יעד',
-    streak: (n) => n === 1 ? '🔥 יום אחד' : `🔥 ${n} ימים`,
-    todayDone: '✅ השגת את היעד היום!',
-    minutesLeft: (n) => `${n} דקות נותרו`,
-    save: 'שמור',
-    cancel: 'ביטול',
-    goalOptions: [
+function getGoalOptions(lang: string): { label: string; minutes: number }[] {
+  const byLang: Record<string, { label: string; minutes: number }[]> = {
+    he: [
       { label: '10 דקות', minutes: 10 },
       { label: '20 דקות', minutes: 20 },
       { label: '30 דקות', minutes: 30 },
       { label: 'שעה', minutes: 60 },
     ],
-    dir: 'rtl',
-  },
-  es: {
-    title: 'Meta de lectura diaria',
-    goal: 'Meta',
-    setGoal: 'Establecer meta',
-    streak: (n) => n === 1 ? '🔥 1 día' : `🔥 ${n} días`,
-    todayDone: '✅ ¡Meta alcanzada hoy!',
-    minutesLeft: (n) => `${n} min restantes`,
-    save: 'Guardar',
-    cancel: 'Cancelar',
-    goalOptions: [
+    es: [
       { label: '10 min', minutes: 10 },
       { label: '20 min', minutes: 20 },
       { label: '30 min', minutes: 30 },
       { label: '1 hora', minutes: 60 },
     ],
-    dir: 'ltr',
-  },
-  en: {
-    title: 'Daily Reading Goal',
-    goal: 'Goal',
-    setGoal: 'Set goal',
-    streak: (n) => n === 1 ? '🔥 1 day' : `🔥 ${n} days`,
-    todayDone: '✅ Goal reached today!',
-    minutesLeft: (n) => `${n} min left`,
-    save: 'Save',
-    cancel: 'Cancel',
-    goalOptions: [
+    en: [
       { label: '10 min', minutes: 10 },
       { label: '20 min', minutes: 20 },
       { label: '30 min', minutes: 30 },
       { label: '1 hour', minutes: 60 },
     ],
-    dir: 'ltr',
-  },
-};
+  };
 
-function tr() { return i18n[getLang()]; }
+  return byLang[lang] ?? byLang.en;
+}
 
 // ── Storage ───────────────────────────────────────────────────────────────────
 
 interface GoalData {
-  goalMinutes: number;          // user target
-  todayMinutes: number;         // minutes read today
-  todayDate: string;            // YYYY-MM-DD
-  streak: number;               // consecutive days goal was met
-  lastStreakDate: string;       // last date streak was updated
+  goalMinutes: number;
+  todayMinutes: number;
+  todayDate: string;
+  streak: number;
+  lastStreakDate: string;
 }
 
 const GOAL_KEY = 'yuval_reading_goal';
@@ -108,7 +74,13 @@ function loadGoal(): GoalData {
       lastStreakDate: '',
     };
   } catch {
-    return { goalMinutes: DEFAULT_GOAL, todayMinutes: 0, todayDate: today(), streak: 0, lastStreakDate: '' };
+    return {
+      goalMinutes: DEFAULT_GOAL,
+      todayMinutes: 0,
+      todayDate: today(),
+      streak: 0,
+      lastStreakDate: '',
+    };
   }
 }
 
@@ -145,11 +117,9 @@ function onVisibilityChange() {
 
 function tickGoal(): void {
   const data = loadGoal();
-  const t = today();
+  const tdy = today();
 
-  // Reset daily counter if new day
-  if (data.todayDate !== t) {
-    // Check streak: was goal met yesterday?
+  if (data.todayDate !== tdy) {
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
     const yStr = yesterday.toISOString().slice(0, 10);
@@ -157,14 +127,13 @@ function tickGoal(): void {
     if (data.todayDate === yStr && data.todayMinutes >= data.goalMinutes) {
       data.streak += 1;
     } else if (data.todayDate !== yStr) {
-      data.streak = 0; // missed a day
+      data.streak = 0;
     }
 
     data.todayMinutes = 0;
-    data.todayDate = t;
+    data.todayDate = tdy;
   }
 
-  // Add session minutes
   data.todayMinutes = Math.min(data.goalMinutes * 2, getReadMinutes());
   saveGoal(data);
   updateIndicator(data);
@@ -197,8 +166,10 @@ function injectStyles(): void {
     }
     :is(.dark) #goal-indicator { background: #2a2a2a; border-color: rgba(255,255,255,0.1); }
     [dir="rtl"] #goal-indicator { right: auto; left: 20px; }
+    @media (max-width: 1023px) {
+      #goal-indicator { display: none !important; }
+    }
 
-    /* Circular SVG progress ring */
     #goal-ring { position: absolute; inset: 0; }
     #goal-ring-track { fill: none; stroke: var(--yuval-border, #e5e7eb); stroke-width: 3; }
     #goal-ring-fill {
@@ -213,7 +184,6 @@ function injectStyles(): void {
     #goal-ring-fill.done { stroke: #16a34a; }
     #goal-emoji { font-size: 18px; position: relative; z-index: 1; }
 
-    /* Goal modal */
     #goal-modal-overlay {
       position: fixed; inset: 0; z-index: 10001;
       background: rgba(0,0,0,0.5); backdrop-filter: blur(6px);
@@ -309,7 +279,8 @@ function buildIndicator(): void {
   const el = document.createElement('button');
   el.id = 'goal-indicator';
   el.type = 'button';
-  el.setAttribute('aria-label', 'Reading goal');
+  el.setAttribute('aria-label', tr('goal.title'));
+  el.title = tr('goal.title');
   el.innerHTML = `
     <svg id="goal-ring" viewBox="0 0 44 44">
       <circle id="goal-ring-track" cx="22" cy="22" r="19"/>
@@ -324,10 +295,16 @@ function buildIndicator(): void {
 function updateIndicator(data: GoalData): void {
   const fill = document.getElementById('goal-ring-fill');
   const emoji = document.getElementById('goal-emoji');
+  const indicator = document.getElementById('goal-indicator');
+
   if (!fill || !emoji) return;
 
+  if (indicator) {
+    indicator.setAttribute('aria-label', tr('goal.title'));
+  }
+
   const pct = Math.min(1, data.todayMinutes / data.goalMinutes);
-  const circumference = 2 * Math.PI * 19; // r=19
+  const circumference = 2 * Math.PI * 19;
   const offset = circumference * (1 - pct);
 
   fill.style.strokeDasharray = String(circumference);
@@ -337,8 +314,10 @@ function updateIndicator(data: GoalData): void {
     fill.classList.add('done');
     emoji.textContent = '✅';
   } else if (pct > 0) {
+    fill.classList.remove('done');
     emoji.textContent = '📖';
   } else {
+    fill.classList.remove('done');
     emoji.textContent = '🎯';
   }
 }
@@ -348,51 +327,51 @@ function updateIndicator(data: GoalData): void {
 function openGoalModal(): void {
   if (document.getElementById('goal-modal-overlay')) return;
 
-  const labels = tr();
+  const lang = getLang();
   const data = loadGoal();
   let selectedMinutes = data.goalMinutes;
 
   const pct = Math.min(100, Math.round((data.todayMinutes / data.goalMinutes) * 100));
   const remaining = Math.max(0, Math.ceil(data.goalMinutes - data.todayMinutes));
   const progressText = pct >= 100
-    ? labels.todayDone
-    : labels.minutesLeft(remaining);
+    ? tr('goal.reached')
+    : tr('goal.minutesLeft', { n: remaining });
 
   const overlay = document.createElement('div');
   overlay.id = 'goal-modal-overlay';
-  overlay.setAttribute('dir', labels.dir);
+  overlay.setAttribute('dir', getDir());
+
   overlay.innerHTML = `
     <div id="goal-modal">
-      <h2>🎯 ${labels.title}</h2>
-      <div class="goal-streak-row">${labels.streak(data.streak)}</div>
+      <h2>🎯 ${tr('goal.title')}</h2>
+      <div class="goal-streak-row">${tr('goal.streak', { n: data.streak })}</div>
       <div class="goal-progress-row">
-        <div class="goal-progress-label">${labels.goal}: ${data.goalMinutes} min</div>
+        <div class="goal-progress-label">${tr('goal.title')}: ${data.goalMinutes} min</div>
         <div class="goal-progress-bar">
           <div class="goal-progress-fill" style="width:0%" data-target="${pct}"></div>
         </div>
         <div class="goal-progress-text">${progressText}</div>
       </div>
       <div class="goal-options">
-        ${labels.goalOptions.map(opt => `
+        ${getGoalOptions(lang).map(opt => `
           <button class="goal-option${opt.minutes === selectedMinutes ? ' active' : ''}"
             data-minutes="${opt.minutes}" type="button">${opt.label}</button>
         `).join('')}
       </div>
       <div class="goal-modal-actions">
-        <button class="goal-btn" id="goal-cancel">${labels.cancel}</button>
-        <button class="goal-btn primary" id="goal-save">${labels.save}</button>
+        <button class="goal-btn" id="goal-cancel">${tr('goal.cancel')}</button>
+        <button class="goal-btn primary" id="goal-save">${tr('goal.save')}</button>
       </div>
     </div>
   `;
+
   document.body.appendChild(overlay);
 
-  // Animate bar
   requestAnimationFrame(() => {
     const f = overlay.querySelector<HTMLElement>('.goal-progress-fill');
     if (f) f.style.width = `${pct}%`;
   });
 
-  // Option selection
   overlay.querySelectorAll<HTMLButtonElement>('.goal-option').forEach(btn => {
     btn.addEventListener('click', () => {
       selectedMinutes = parseInt(btn.dataset.minutes || '20', 10);
@@ -403,10 +382,12 @@ function openGoalModal(): void {
 
   const close = () => overlay.remove();
 
-  document.getElementById('goal-cancel')!.addEventListener('click', close);
-  overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+  document.getElementById('goal-cancel')?.addEventListener('click', close);
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) close();
+  });
 
-  document.getElementById('goal-save')!.addEventListener('click', () => {
+  document.getElementById('goal-save')?.addEventListener('click', () => {
     data.goalMinutes = selectedMinutes;
     saveGoal(data);
     updateIndicator(data);
@@ -420,13 +401,19 @@ export function initReadingGoals(signal: AbortSignal): void {
   injectStyles();
   buildIndicator();
 
-  // Track visibility changes
   document.addEventListener('visibilitychange', onVisibilityChange);
 
-  // Tick every 30s to update progress
   const interval = setInterval(tickGoal, 30_000);
-  // Initial tick after 5s
   setTimeout(tickGoal, 5_000);
+
+  const onLangChange = () => {
+    const indicator = document.getElementById('goal-indicator');
+    if (indicator) {
+      indicator.setAttribute('aria-label', tr('goal.title'));
+    }
+  };
+
+  window.addEventListener('language-changed', onLangChange, { signal });
 
   signal.addEventListener('abort', () => {
     clearInterval(interval);

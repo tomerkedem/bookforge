@@ -1,4 +1,4 @@
-# Example of a New Feature Interface - Verint AI Insights (Artificial Intelligence Insights)
+# Example of a New Feature Interface - Verint AI Insights
 
 They allow the customer to take a subset of calls, it can be a few hundred calls that represent some business topic and they want to understand insights related to it.
 

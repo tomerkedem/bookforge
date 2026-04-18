@@ -37,9 +37,9 @@ RTL_LANGUAGES: Set[str] = {lang.code for lang in SUPPORTED_LANGUAGES if lang.dir
 LTR_LANGUAGES: Set[str] = {lang.code for lang in SUPPORTED_LANGUAGES if lang.dir == 'ltr'}
 
 # Default language for fallbacks
-DEFAULT_LANGUAGE = 'en'
-SOURCE_LANGUAGE = 'he'  # Books are written in Hebrew, translated to others
 
+SOURCE_LANGUAGE = 'he'  # Books are written in Hebrew, translated to others
+DEFAULT_LANGUAGE = SOURCE_LANGUAGE
 
 def get_language_meta(code: str) -> LanguageMeta | None:
     """Get metadata for a language code."""
