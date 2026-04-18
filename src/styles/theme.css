@@ -356,10 +356,10 @@ body.focus-mode::after {
   outline-offset: 3px;
 }
 
-#tts-fab       { bottom: 5rem; }
-#stats-fab-btn { bottom: 8.25rem; }
-#bm-fab-btn    { bottom: 11.5rem; }
-#highlights-fab{ bottom: 14.75rem; }
+#highlights-fab{ bottom: 5rem; }
+#bm-fab-btn    { bottom: 8.25rem; }
+#stats-fab-btn { bottom: 11.5rem; }
+#tts-fab       { bottom: 14.75rem; }
 
 /* Mobile: the unified #reading-fab is the single floating entry point.
    The individual FABs stay in the DOM so the unified menu can delegate

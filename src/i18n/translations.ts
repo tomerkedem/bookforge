@@ -114,6 +114,18 @@ export const translations: Translations = {
   'tts.voice':             { he: 'קול',             en: 'Voice',            es: 'Voz' },
   'tts.notSupported':      { he: 'הדפדפן שלך לא תומך בקריאה בקול', en: "Your browser doesn't support text-to-speech", es: 'Tu navegador no soporta lectura en voz alta' },
   'tts.clickToRead':       { he: 'לחץ לקריאה מכאן', en: 'Click to read from here', es: 'Clic para leer desde aquí' },
+  'tts.resume':            { he: 'המשך מהמיקום האחרון', en: 'Resume from last position', es: 'Reanudar desde la última posición' },
+  'tts.panelTitle':        { he: 'הקראה',           en: 'Read aloud',       es: 'Lectura en voz alta' },
+  'tts.slow':              { he: 'איטי',             en: 'Slow',             es: 'Lento' },
+  'tts.normal':            { he: 'רגיל',             en: 'Normal',           es: 'Normal' },
+  'tts.fast':              { he: 'מהיר',             en: 'Fast',             es: 'Rápido' },
+  'tts.fromSelection':     { he: 'התחל מהטקסט שנבחר', en: 'Start from selected text', es: 'Empezar desde la selección' },
+  'tts.fromTop':           { he: 'התחל מההתחלה',    en: 'Start from top',   es: 'Empezar desde arriba' },
+  'tts.preview':           { he: 'האזן לדוגמה',     en: 'Preview voice',    es: 'Vista previa' },
+  'tts.progress':          { he: 'התקדמות הקראה',   en: 'Reading progress', es: 'Progreso de lectura' },
+  'tts.close':             { he: 'סגור',             en: 'Close',            es: 'Cerrar' },
+  'tts.noVoices':          { he: 'לא נמצאו קולות',   en: 'No voices found',  es: 'No se encontraron voces' },
+  'tts.miniPlayer':        { he: 'נגן הקראה',        en: 'Read-aloud player', es: 'Reproductor de lectura' },
 
   // ── Bookmarks ───────────────────────────────────────────────────────────────
   'bookmarks.title':       { he: 'סימניות',        en: 'Bookmarks',        es: 'Marcadores' },

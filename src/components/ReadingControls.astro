@@ -72,6 +72,19 @@
       </button>
     </div>
 
+    <!-- Read aloud (mobile only) -->
+    <div class="fab-item fab-item-mobile-only">
+      <span class="fab-label" data-i18n="tts.panelTitle">Read aloud</span>
+      <button id="fab-tts-btn" class="fab-sub-btn" aria-label="Read aloud" title="Read aloud">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75"
+            d="M11 5 6 9H2v6h4l5 4V5z" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75"
+            d="M15.54 8.46a5 5 0 0 1 0 7.07M19.07 4.93a10 10 0 0 1 0 14.14" />
+        </svg>
+      </button>
+    </div>
+
   </div><!-- /fab-actions -->
 
   <!-- Main FAB toggle -->
@@ -218,11 +231,11 @@
   }
 
   [dir="rtl"] .fab-label {
-    transform: translateX(-8px);
+    transform: translate(-8px, -50%);
   }
 
   [dir="rtl"] .fab-item:hover .fab-label {
-    transform: translateX(0);
+    transform: translate(0, -50%);
   }
 
   /* Main FAB button */
@@ -293,12 +306,18 @@
 
   /* Each sub-action row */
   .fab-item {
+    position: relative;
     display: flex;
     align-items: center;
-    gap: 10px;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
   }
 
   .fab-label {
+    position: absolute;
+    top: 50%;
+    inset-inline-end: calc(100% + 10px);
     font-size: 0.75rem;
     font-weight: 500;
     color: var(--yuval-text-secondary);
@@ -309,14 +328,14 @@
     white-space: nowrap;
     box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     opacity: 0;
-    transform: translateX(8px);
+    transform: translate(8px, -50%);
     transition: opacity 150ms var(--ease-standard), transform 150ms var(--ease-standard);
     pointer-events: none;
   }
 
   .fab-item:hover .fab-label {
     opacity: 1;
-    transform: translateX(0);
+    transform: translate(0, -50%);
   }
 
   /* Sub buttons */
@@ -795,6 +814,14 @@
     $('fab-highlights-btn')?.addEventListener('click', () => {
       toggleFab(false);
       $('highlights-fab')?.click();
+    });
+
+    /* Read aloud (mobile-only): open the TTS panel via global hook */
+    $('fab-tts-btn')?.addEventListener('click', () => {
+      toggleFab(false);
+      const open = (window as unknown as { __ttsOpenPanel?: () => void }).__ttsOpenPanel;
+      if (typeof open === 'function') open();
+      else (window as unknown as { __ttsToggle?: () => void }).__ttsToggle?.();
     });
 
     /* Close panel */
