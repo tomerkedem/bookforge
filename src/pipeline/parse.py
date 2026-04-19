@@ -398,122 +398,113 @@ def extract_images(docx_path: str, book_name: str, assets_base_dir: str = DEFAUL
         except Exception:
             continue
 
-    # Step 3: Check for images in SDT elements (before paragraphs - cover page)
-    # These appear at position -1 (before first paragraph)
-    image_positions_temp = []  # (para_idx, rel_id, w_px, h_px)
-    
+       # Step 3: Check for images in SDT elements (before paragraphs - cover page)
+    # Keep tuple shape consistent: (para_idx, run_idx, rel_id, w_px, h_px)
+    image_positions_temp = []
+
     body = doc.element.body
     for element in body:
         tag_name = element.tag.split('}')[-1] if '}' in element.tag else element.tag
-        if tag_name == 'sdt':  # Structured Document Tag (cover page)
-            # Search for images in this SDT
+        if tag_name == 'sdt':
             blips = element.xpath('.//a:blip', namespaces={
                 'a': 'http://schemas.openxmlformats.org/drawingml/2006/main'
             })
             for blip in blips:
                 embed_id = blip.get('{http://schemas.openxmlformats.org/officeDocument/2006/relationships}embed')
                 if embed_id and embed_id in image_data:
-                    # Position -1 means before first paragraph (cover)
-                    image_positions_temp.append((-1, embed_id, 0, 0))
-    
+                    image_positions_temp.append((-1, 0, embed_id, 0, 0))
+
     # Step 4: Map images in paragraphs (with dimensions)
     for para_idx, para in enumerate(doc.paragraphs):
         for run_idx, run in enumerate(para.runs):
             run_xml = run._element.xml.decode('utf-8') if isinstance(run._element.xml, bytes) else run._element.xml
-            if '<w:drawing' in run_xml or '<w:pict' in run_xml:
-                # Extract exact rel_id via regex (avoid substring false matches)
+
+            if '<w:drawing' in run_xml or '<w:pict' in run_xml or 'r:embed=' in run_xml:
                 embeds = re.findall(r'r:embed="(rId\d+)"', run_xml)
                 matched_rel_id = None
+
                 for eid in embeds:
                     if eid in image_data:
                         matched_rel_id = eid
                         break
+
                 if not matched_rel_id:
-                    # Fallback: substring search (legacy)
                     for rel_id in image_data.keys():
                         if rel_id in run_xml:
                             matched_rel_id = rel_id
                             break
+
                 if matched_rel_id:
-                    # Extract dimensions from wp:extent (EMU → pixels at 96 DPI)
                     w_px, h_px = 0, 0
                     extents = re.findall(r'<wp:extent\s+cx="(\d+)"\s+cy="(\d+)"', run_xml)
                     if extents:
                         cx, cy = int(extents[0][0]), int(extents[0][1])
                         w_px = round(cx / 914400 * 96)
                         h_px = round(cy / 914400 * 96)
+
                     image_positions_temp.append((para_idx, run_idx, matched_rel_id, w_px, h_px))
 
-    # Step 5: Sort by paragraph position
+    # Step 5: Sort consistently by paragraph + run
     image_positions_temp.sort(key=lambda x: (x[0], x[1]))
 
-    # Step 6: Determine if we have a cover image
-    # Priority: Images at position -1 (SDT/cover page) > Early paragraph images
+    # Step 6: Determine cover image
     has_cover = False
     cover_rel_id = None
-    
-    if len(image_positions_temp) > 0:
-        first_img_idx = image_positions_temp[0][0]
-        
-        # Position -1 means SDT (cover page) - always use as cover
-        if first_img_idx == -1:
-            # If multiple images at -1, use the LAST one (user deleted first)
+
+    if image_positions_temp:
+        first_img_para_idx = image_positions_temp[0][0]
+
+        # SDT cover page image
+        if first_img_para_idx == -1:
             sdt_images = [img for img in image_positions_temp if img[0] == -1]
-            if len(sdt_images) > 1:
-                cover_rel_id = sdt_images[-1][1]  # Last image in SDT
-                print(f"[OK] Cover image found: SDT image (cover page), using last of {len(sdt_images)} images")
-            else:
-                cover_rel_id = image_positions_temp[0][1]
-                print(f"[OK] Cover image found: SDT image (cover page)")
+            cover_rel_id = sdt_images[-1][2]
             has_cover = True
-        # If first image appears within first 15 paragraphs, it's the cover
-        elif first_img_idx < 15:
+            print(f"[OK] Cover image found: SDT image (cover page)")
+
+        # Otherwise, first image early in the document is treated as cover
+        elif first_img_para_idx < 15:
+            cover_rel_id = image_positions_temp[0][2]
             has_cover = True
-            cover_rel_id = image_positions_temp[0][1]
-            print(f"[OK] Cover image found: first image at paragraph {first_img_idx}")
+            print(f"[OK] Cover image found: first image at paragraph {first_img_para_idx}")
+
         else:
-            print(f"[WARN] No cover: First image at para {first_img_idx} (too late in document)")
-            print(f"  All images will be numbered sequentially (no cover.png)")
-    
+            print(f"[WARN] No cover: First image at para {first_img_para_idx} (too late in document)")
+            print("  All images will be numbered sequentially (no cover.png)")
+
+    # DEBUG
+    print(f"  [DEBUG] rel images found: {len(image_data)}")
+    print(f"  [DEBUG] positioned images found: {len(image_positions_temp)}")
+    print(f"  [DEBUG] has_cover: {has_cover}, cover_rel_id: {cover_rel_id}")
+
     # Step 7: Save images
     image_files = {}
     image_positions = []
-    image_counter = 1  # Start from 1 for chapter images
+    image_counter = 1
 
     for para_idx, run_idx, rel_id, w_px, h_px in image_positions_temp:
         img_info = image_data[rel_id]
 
         if has_cover and rel_id == cover_rel_id:
-            # Save dedicated cover file
-            cover_path = assets_dir / "cover.png"
-            with open(cover_path, "wb") as f:
-                f.write(img_info["data"])
-
-            # Also save numbered copy so the image can still appear in normal flow
-            numbered_filename = f"image-{str(image_counter).zfill(2)}.{img_info['ext']}"
-            numbered_path = assets_dir / numbered_filename
-            with open(numbered_path, "wb") as f:
-                f.write(img_info["data"])
-
-            image_files[rel_id] = str(cover_path)
-            filename = numbered_filename
-            image_counter += 1
-
+            filename = "cover.png"
+            img_path = assets_dir / filename
         else:
             filename = f"image-{str(image_counter).zfill(2)}.{img_info['ext']}"
             img_path = assets_dir / filename
-            with open(img_path, "wb") as f:
-                f.write(img_info["data"])
-
-            image_files[rel_id] = str(img_path)
             image_counter += 1
 
+        with open(img_path, "wb") as f:
+            f.write(img_info["data"])
+
+        image_files[rel_id] = str(img_path)
         image_positions.append((para_idx, run_idx, rel_id, filename, w_px, h_px))
+
+    print(f"  [DEBUG] saved images: {[p[3] for p in image_positions]}")
+
     return {
         'files': image_files,
         'positions': image_positions,
         'has_cover': has_cover,
-        'book_name': book_name  # For absolute URL paths
+        'book_name': book_name
     }
 
 
