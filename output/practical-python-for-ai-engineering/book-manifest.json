@@ -1,0 +1,234 @@
+{
+  "book": {
+    "titles": {
+      "he": "Practical Python For Ai Engineering"
+    },
+    "subtitles": {
+      "he": ""
+    },
+    "descriptions": {
+      "he": ""
+    },
+    "chapters": [
+      {
+        "id": 1,
+        "file_slug": "chapter-01",
+        "type": "content",
+        "titles": {
+          "he": "למה פייתון היא שפה חשובה בעידן ה-AI"
+        },
+        "sections": 6,
+        "has_images": false,
+        "word_count": 1649,
+        "topics": []
+      },
+      {
+        "id": 2,
+        "file_slug": "chapter-02",
+        "type": "content",
+        "titles": {
+          "he": "יסודות פייתון למתכנתים מנוסים תחביר בסיסי"
+        },
+        "sections": 8,
+        "has_images": false,
+        "word_count": 2931,
+        "topics": []
+      },
+      {
+        "id": 3,
+        "file_slug": "chapter-03",
+        "type": "content",
+        "titles": {
+          "he": "מבני נתונים שימושיים"
+        },
+        "sections": 8,
+        "has_images": false,
+        "word_count": 3330,
+        "topics": []
+      },
+      {
+        "id": 4,
+        "file_slug": "chapter-04",
+        "type": "content",
+        "titles": {
+          "he": "פונקציות בפייתון"
+        },
+        "sections": 10,
+        "has_images": false,
+        "word_count": 3972,
+        "topics": []
+      },
+      {
+        "id": 5,
+        "file_slug": "chapter-05",
+        "type": "content",
+        "titles": {
+          "he": "מודולים, חבילות וארגון פרויקט"
+        },
+        "sections": 10,
+        "has_images": false,
+        "word_count": 2000,
+        "topics": []
+      },
+      {
+        "id": 6,
+        "file_slug": "chapter-06",
+        "type": "content",
+        "titles": {
+          "he": "סביבות עבודה ותלויות"
+        },
+        "sections": 8,
+        "has_images": false,
+        "word_count": 2321,
+        "topics": []
+      },
+      {
+        "id": 7,
+        "file_slug": "chapter-07",
+        "type": "content",
+        "titles": {
+          "he": "קבצים, נתיבים וקונפיגורציה"
+        },
+        "sections": 9,
+        "has_images": false,
+        "word_count": 1259,
+        "topics": []
+      },
+      {
+        "id": 8,
+        "file_slug": "chapter-08",
+        "type": "content",
+        "titles": {
+          "he": "חריגות, לוגים ואבחון"
+        },
+        "sections": 8,
+        "has_images": true,
+        "word_count": 813,
+        "topics": []
+      },
+      {
+        "id": 9,
+        "file_slug": "chapter-09",
+        "type": "content",
+        "titles": {
+          "he": "תכנות מונחה עצמים בסיסי"
+        },
+        "sections": 9,
+        "has_images": false,
+        "word_count": 1914,
+        "topics": []
+      },
+      {
+        "id": 10,
+        "file_slug": "chapter-10",
+        "type": "content",
+        "titles": {
+          "he": "טיפוסיות סטטית עם typing"
+        },
+        "sections": 8,
+        "has_images": false,
+        "word_count": 1326,
+        "topics": []
+      },
+      {
+        "id": 11,
+        "file_slug": "chapter-11",
+        "type": "content",
+        "titles": {
+          "he": "דקורטורים, Context Managers ו-dataclass"
+        },
+        "sections": 9,
+        "has_images": false,
+        "word_count": 1096,
+        "topics": []
+      },
+      {
+        "id": 12,
+        "file_slug": "chapter-12",
+        "type": "content",
+        "titles": {
+          "he": "בדיקות אוטומטיות וארגונומיה למפתח"
+        },
+        "sections": 9,
+        "has_images": false,
+        "word_count": 716,
+        "topics": []
+      },
+      {
+        "id": 13,
+        "file_slug": "chapter-13",
+        "type": "content",
+        "titles": {
+          "he": "ביצועים, זיכרון וקצת NumPy"
+        },
+        "sections": 6,
+        "has_images": false,
+        "word_count": 1116,
+        "topics": []
+      },
+      {
+        "id": 14,
+        "file_slug": "chapter-14",
+        "type": "content",
+        "titles": {
+          "he": "Pandas למהנדסי AI"
+        },
+        "sections": 10,
+        "has_images": false,
+        "word_count": 3269,
+        "topics": []
+      },
+      {
+        "id": 15,
+        "file_slug": "chapter-15",
+        "type": "content",
+        "titles": {
+          "he": "אסינכרוניות בסיסית וממשקי רשת"
+        },
+        "sections": 9,
+        "has_images": false,
+        "word_count": 2022,
+        "topics": []
+      },
+      {
+        "id": 16,
+        "file_slug": "chapter-16",
+        "type": "content",
+        "titles": {
+          "he": "ממשק שורת פקודה (CLI)"
+        },
+        "sections": 7,
+        "has_images": false,
+        "word_count": 2103,
+        "topics": []
+      },
+      {
+        "id": 17,
+        "file_slug": "chapter-17",
+        "type": "content",
+        "titles": {
+          "he": "תרגול מאוחד: בניית mini_text_analyzer"
+        },
+        "sections": 12,
+        "has_images": false,
+        "word_count": 554,
+        "topics": []
+      },
+      {
+        "id": 18,
+        "file_slug": "chapter-18",
+        "type": "content",
+        "titles": {
+          "he": "(בונוס) תבנית פרויקט למתכנת AI"
+        },
+        "sections": 9,
+        "has_images": false,
+        "word_count": 1058,
+        "topics": []
+      }
+    ],
+    "languages": [
+      "he"
+    ]
+  }
+}
