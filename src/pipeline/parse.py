@@ -6,11 +6,57 @@ Returns a list of chapters with title, content, and images.
 
 import os
 import re
+import json
 from pathlib import Path
+from collections import Counter
 
 
 INTRO_KEYWORDS = ["מבוא", "פתיחה", "הקדמה", "introduction", "preface", "foreword"]
 COVER_KEYWORDS = ["שער", "cover", "title"]
+
+
+# =============================================================================
+# Instrumentation: count how many times each regex-cleanup rule actually fires.
+# The goal is to confirm which rules are still needed after the ingest.py fix
+# that produces cleaner markdown at the source. Rules that never fire across
+# several real books are dead code and can be removed.
+#
+# Usage from build.py:
+#     from pipeline.parse import reset_clean_stats, dump_clean_stats
+#     reset_clean_stats()
+#     ... run pipeline ...
+#     dump_clean_stats("clean_markdown_stats.json")
+# =============================================================================
+
+_CLEAN_STATS: Counter = Counter()
+
+
+def reset_clean_stats() -> None:
+    """Call at the start of a pipeline run to zero the counters."""
+    _CLEAN_STATS.clear()
+
+
+def dump_clean_stats(path: str = "clean_markdown_stats.json") -> None:
+    """Write the accumulated counters to a JSON report."""
+    report = {
+        "total_substitutions": sum(_CLEAN_STATS.values()),
+        "rules_fired": len([v for v in _CLEAN_STATS.values() if v > 0]),
+        "by_rule": dict(sorted(_CLEAN_STATS.items(), key=lambda kv: -kv[1])),
+    }
+    Path(path).write_text(
+        json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+
+
+def _counted_sub(rule_id: str, pattern: str, repl, text: str, flags: int = 0) -> str:
+    """
+    Drop-in replacement for re.sub that also counts how many
+    substitutions were made under the given rule_id.
+    """
+    new_text, count = re.subn(pattern, repl, text, flags=flags)
+    if count:
+        _CLEAN_STATS[rule_id] += count
+    return new_text
 
 
 def _clean_title(text: str) -> str:
@@ -29,50 +75,25 @@ def _clean_title(text: str) -> str:
 
 def extract_book_info(ingested: dict) -> dict:
     """
-    Extract book title and subtitle from the cover page.
-    Looks at paragraphs BEFORE the first Heading 1.
-    
-    In a typical Word document:
-    - First significant paragraph = Book title
-    - Second significant paragraph = Subtitle
-    
-    Returns: {title: str, subtitle: str}
+    Return empty book title and subtitle.
+
+    Book-level metadata (title, subtitle) should be provided via the
+    --title CLI argument, not auto-detected from the Word document.
+    Auto-detection was unreliable because:
+    - Some books use a Word SDT (cover page) element which python-docx
+      does not expose as a regular paragraph
+    - Some books have no cover page at all and start directly with
+      a Heading 1 that is a chapter title, not the book title
+    - The previous heuristic (collect paragraphs before first Heading 1)
+      grabbed arbitrary content from inside the first chapter when no
+      cover existed
+
+    This function is kept as a stub so that call sites in build.py
+    and elsewhere continue to work unchanged. The returned values
+    are empty, and build.py already falls back to the --title CLI
+    argument and to the book slug when title/subtitle are empty.
     """
-    blocks = ingested.get("blocks", [])
-    title = ""
-    subtitle = ""
-    
-    # Find first Heading 1 position
-    first_heading_idx = None
-    paragraph_blocks = [b for b in blocks if b.get("type") == "paragraph"]
-
-    for idx, block in enumerate(paragraph_blocks):
-        style = block.get("style", "")
-        if "Heading 1" in style:
-            first_heading_idx = idx
-            break
-
-    # Collect significant text paragraphs before Heading 1
-    cover_texts = []
-    limit = first_heading_idx if first_heading_idx is not None else min(20, len(paragraph_blocks))
-
-    for idx in range(limit):
-        block = paragraph_blocks[idx]
-        text = block.get("text", "").strip()
-        style = block.get("style", "")
-
-        # Skip empty and heading paragraphs
-        if not text or "Heading" in style:
-            continue
-
-        # Skip if looks like author name or date
-        if len(text) < 100:
-            cover_texts.append(text)
-
-        if len(cover_texts) >= 2:
-            break
-        
-    return {"title": title, "subtitle": subtitle}
+    return {"title": "", "subtitle": ""}
 
 
 def _clean_heading(text: str) -> str:
@@ -91,172 +112,278 @@ def _clean_heading(text: str) -> str:
 def _fix_code_blocks(text: str) -> str:
     """
     Fix code block format from Word documents.
-    
+
     Word format: python``` ... ```
     Target format: ```python ... ```
-    
+
     Supported languages: python, javascript, bash, markdown, etc.
     Normalizes language names to lowercase.
-    Normalizes md → markdown.
+    Normalizes md -> markdown.
+
+    Instrumented: firings of each sub-rule are counted so we can see
+    whether this function is still needed after the ingest.py fix.
+    Function is currently not called from anywhere in the codebase,
+    so the counts will likely stay at zero.
     """
-    import re
-    
     # Pattern: language``` at start of line, then code, then ``` at end
-    # Match: python``` or javascript``` etc.
     pattern = r'^(\w+)```\s*\n([\s\S]*?)```\s*$'
-    
+
     def replace_block(match):
-        lang = match.group(1).lower()  # Normalize to lowercase
-        # Normalize md → markdown
+        lang = match.group(1).lower()
         if lang == 'md':
             lang = 'markdown'
         code = match.group(2).rstrip()
+        _CLEAN_STATS["fix_code_blocks_multiline"] += 1
         return f'```{lang}\n{code}\n```'
-    
-    # Process multiline - use MULTILINE flag
+
     result = re.sub(pattern, replace_block, text, flags=re.MULTILINE)
-    
-    # Also handle inline pattern on same line: python```code```
+
+    # Inline pattern: python```code```
     inline_pattern = r'(\w+)```([^`]+)```'
+
     def replace_inline(match):
         lang = match.group(1).lower()
         if lang == 'md':
             lang = 'markdown'
         code = match.group(2)
+        _CLEAN_STATS["fix_code_blocks_inline"] += 1
         return f'```{lang}\n{code}\n```'
+
     result = re.sub(inline_pattern, replace_inline, result)
-    
+
     # Normalize existing language tags (case normalization)
-    result = re.sub(r'```Python\b', '```python', result)
-    result = re.sub(r'```Bash\b', '```bash', result)
-    result = re.sub(r'```Markdown\b', '```markdown', result)
-    result = re.sub(r'```MD\b', '```markdown', result, flags=re.IGNORECASE)
-    result = re.sub(r'```md\b', '```markdown', result)
-    
+    result = _counted_sub("fix_code_lang_Python", r'```Python\b', '```python', result)
+    result = _counted_sub("fix_code_lang_Bash", r'```Bash\b', '```bash', result)
+    result = _counted_sub("fix_code_lang_Markdown", r'```Markdown\b', '```markdown', result)
+    result = _counted_sub(
+        "fix_code_lang_MD_case_insensitive",
+        r'```MD\b',
+        '```markdown',
+        result,
+        flags=re.IGNORECASE,
+    )
+    result = _counted_sub("fix_code_lang_md_lower", r'```md\b', '```markdown', result)
+
     return result
 
 
 
 def _clean_markdown_final(text: str) -> str:
     """
-    Final comprehensive cleanup of markdown artifacts from Word formatting.
-    This is the LAST line of defense - catches all edge cases.
-    
-    IMPORTANT: This function must NOT break intentional bold formatting.
-    It only fixes malformed patterns from Word conversion.
-    
-    Patterns fixed:
-    - **** (4+ asterisks) → **
-    - **:** or **: ** → :
-    - **, ** between bold markers → ,
-    - ** ** (spaced asterisks) → space
-    - ה**text** → **הtext** (Hebrew prefix letters)
-    - **text**.** → **text**.
-    - line ending with . ** label → line ending with . **label**
-    - Unbalanced ** on a line (odd count) → balanced
-    - python``` code ``` → ```python code ```
-    - "- •" or "- 1)" duplicate bullets → single prefix
-    - " **" (space before closing) → "**"
-    - "%digit)" corrupted numbering → "digit)" (also %digit.)
-    - "1) text" at line start → "**(1)** text" (prevent hidden list numbers)
-    - ": **" (colon then space before close) → ":** " (bold ends at colon)
+    Instrumented cleanup of markdown artifacts from Word formatting.
+
+    Behavior is identical to the original - same rules in the same order.
+    The only change is that every substitution is counted in _CLEAN_STATS
+    under a stable rule_id. This lets us see which rules still fire after
+    the ingest.py fix, and remove the ones that never do.
+
+    Original patterns (kept for context):
+    - **** (4+ asterisks) -> **
+    - **:** or **: ** -> :
+    - **, ** between bold markers -> ,
+    - ** ** (spaced asterisks) -> space
+    - Hebrew prefix letter absorbed into bold
+    - **text**.** -> **text**.
+    - Unbalanced ** -> balanced
+    - "- •" or "- 1)" duplicate bullets -> single prefix
+    - Corrupted numbering with percent sign -> digit
+    - "1) text" at line start -> "**(1)** text"
+    - ": **" (colon with space before close) -> ":** "
     """
-    import re
-    
-    # First fix code blocks
-    # text = _fix_code_blocks(text)
-    
-    # Fix corrupted numbering: %1), %2), %1., %2. etc. → 1), 2), 1., 2. etc.
-    # This happens when Word encoding corrupts digit-based list markers
-    text = re.sub(r'%(\d+)([\.\)])', r'\1\2', text)
-    
+    # Fix corrupted numbering: %1), %2), %1., %2. etc. -> 1), 2), 1., 2. etc.
+    text = _counted_sub("01_percent_digit_marker", r'%(\d+)([\.\)])', r'\1\2', text)
+
     # Fix duplicate list prefixes: "- •", "- 1)", "- 2." etc.
-    # These happen when parse.py adds "- " and text already has prefix
-    # Match "- " followed by bullet or numbered prefix
-    text = re.sub(r'^(\s*)-\s+(•)', r'\1\2', text, flags=re.MULTILINE)
-    text = re.sub(r'^(\s*)-\s+(\d+[\)\.])(\s)', r'\1\2\3', text, flags=re.MULTILINE)
-    
-    # Convert standalone "1)" at start of line to "**(1)**" to prevent markdown list interpretation
-    # This ensures the number is displayed visibly instead of being hidden by list rendering
-    text = re.sub(r'^(\d+)\)\s+', r'**(\1)** ', text, flags=re.MULTILINE)
-    
-    # Fix space before closing ** (end of line or followed by punctuation)
-    text = re.sub(r' \*\*$', '**', text, flags=re.MULTILINE)
-    text = re.sub(r' \*\*([.,;:!?)])', r'**\1', text)
-    
-    # Fix ": **" pattern (colon with space before closing bold) → ":** "
-    # Common in Hebrew text like "**שם: **טקסט" → "**שם:** טקסט"
-    text = re.sub(r': \*\*', ':** ', text)
-    
-    # Process line by line to handle unbalanced ** properly
+    text = _counted_sub(
+        "02_duplicate_bullet_dash_dot",
+        r'^(\s*)-\s+(•)',
+        r'\1\2',
+        text,
+        flags=re.MULTILINE,
+    )
+    text = _counted_sub(
+        "03_duplicate_bullet_dash_number",
+        r'^(\s*)-\s+(\d+[\)\.])(\s)',
+        r'\1\2\3',
+        text,
+        flags=re.MULTILINE,
+    )
+
+    # Convert standalone "1)" at start of line to "**(1)**"
+    text = _counted_sub(
+        "04_number_paren_to_bold",
+        r'^(\d+)\)\s+',
+        r'**(\1)** ',
+        text,
+        flags=re.MULTILINE,
+    )
+
+    # Fix space before closing **
+    text = _counted_sub(
+        "05_space_before_close_eol",
+        r' \*\*$',
+        '**',
+        text,
+        flags=re.MULTILINE,
+    )
+    text = _counted_sub(
+        "06_space_before_close_punct",
+        r' \*\*([.,;:!?)])',
+        r'**\1',
+        text,
+    )
+
+    # ": **" -> ":** "
+    text = _counted_sub("07_colon_space_before_close", r': \*\*', ':** ', text)
+
+    # Per-line processing
     lines = text.split('\n')
     cleaned_lines = []
-    
+
     for line in lines:
-        # Count ** pairs
-        asterisk_count = line.count('**')
-        
-        # 1. Fix consecutive asterisks (4 or more) → **
-        line = re.sub(r'\*{4,}', '**', line)
-        
-        # 2. Fix **:** pattern → :
-        line = re.sub(r'\*\*:\*\*', ':', line)
-        line = re.sub(r'\*\*:\s*\*\*', ': ', line)
-        
-        # 3. Fix trailing **.** or **. → .
-        line = re.sub(r'\*\*\.\*\*', '.', line)
-        line = re.sub(r'\*\*\.$', '.', line)
-        
-        # 4. Fix **, ** pattern (comma between bold markers)
-        line = re.sub(r'\*\*,\s*\*\*', ', ', line)
-        
-        # 5. Fix ** ** pattern (space between markers)
-        line = re.sub(r'\*\*\s+\*\*', ' ', line)
-        
-        # 6. Fix Hebrew prefix letters before bold: ה**text** → **הtext**
-        # Hebrew prefix letters (אותיות השימוש): ה, ו, ב, כ, ל, מ, ש
-        line = re.sub(r'([הובכלמש])\*\*([^*]+)\*\*', r'**\1\2**', line)
-        
-        # 7. Fix sentence ending with ". **label" → ". **label**"
-        # Pattern: text ends with . then space then ** then text without closing **
+        # 1. Fix consecutive asterisks (4 or more) -> **
+        line = _counted_sub("08_four_plus_asterisks", r'\*{4,}', '**', line)
+
+        # 2. Fix **:** pattern
+        line = _counted_sub("09_bold_colon_bold", r'\*\*:\*\*', ':', line)
+        line = _counted_sub("10_bold_colon_space_bold", r'\*\*:\s*\*\*', ': ', line)
+
+        # 3. Fix trailing **.**
+        line = _counted_sub("11_bold_dot_bold", r'\*\*\.\*\*', '.', line)
+        line = _counted_sub("12_bold_dot_eol", r'\*\*\.$', '.', line)
+
+        # 4. Fix **, **
+        line = _counted_sub("13_bold_comma_bold", r'\*\*,\s*\*\*', ', ', line)
+
+        # 5. Fix ** ** (space between markers)
+        line = _counted_sub("14_bold_space_bold", r'\*\*\s+\*\*', ' ', line)
+
+        # 6. Hebrew prefix before bold
+        line = _counted_sub(
+            "15_hebrew_prefix_before_bold",
+            r'([הובכלמש])\*\*([^*]+)\*\*',
+            r'**\1\2**',
+            line,
+        )
+
+        # 7. Sentence ending with ". **label" without closing
         match = re.search(r'\.\s+\*\*([^*]+)$', line)
         if match and line.count('**') % 2 != 0:
-            # Odd number of ** means unbalanced - add closing
             line = line + '**'
-        
-        # 8. Fix bullet points with misplaced **: "- text:** label**" → "- **text: label**"
-        line = re.sub(r'^(- )([^*]+):\*\*\s*([^*]+)\*\*$', r'\1**\2: \3**', line)
-        
-        # 9. Fix pattern: "- תת-בעיה 1:** האלגוריתם**" → "- **תת-בעיה 1: האלגוריתם**"
-        line = re.sub(r'^(- )([^*:]+):\*\*\s*([^*]+)\*\*', r'\1**\2: \3**', line)
-        
-        # 10. Fix label patterns at line start: " text**:" → " **text:**"
-        line = re.sub(r'^(\s*)([^\s*][^*\n]{2,})\*\*:', r'\1**\2:**', line)
-        
-        # 11. Fix standalone ** on its own line (no content)
+            _CLEAN_STATS["16_close_unbalanced_after_dot"] += 1
+
+        # 8. Bullet with misplaced **
+        line = _counted_sub(
+            "17_bullet_colon_bold_label",
+            r'^(- )([^*]+):\*\*\s*([^*]+)\*\*$',
+            r'\1**\2: \3**',
+            line,
+        )
+
+        # 9. Partial variant of 8
+        line = _counted_sub(
+            "18_bullet_colon_bold_label_partial",
+            r'^(- )([^*:]+):\*\*\s*([^*]+)\*\*',
+            r'\1**\2: \3**',
+            line,
+        )
+
+        # 10. Label at line start
+        line = _counted_sub(
+            "19_label_colon_at_start",
+            r'^(\s*)([^\s*][^*\n]{2,})\*\*:',
+            r'\1**\2:**',
+            line,
+        )
+
+        # 11. Standalone ** on a line
         if re.match(r'^\s*\*\*\s*$', line):
             line = ''
-        
-        # 12. Fix quotes: "**text**" → "text"
-        line = re.sub(r'"\*\*([^*"]+)\*\*"', r'"\1"', line)
-        
-        # 13. Recount and handle remaining unbalanced **
+            _CLEAN_STATS["20_standalone_bold_line"] += 1
+
+        # 12. "**text**" inside quotes -> "text"
+        line = _counted_sub(
+            "21_bold_inside_quotes",
+            r'"\*\*([^*"]+)\*\*"',
+            r'"\1"',
+            line,
+        )
+
+        # 13. Remaining unbalanced **
         final_count = line.count('**')
         if final_count % 2 != 0 and final_count > 0:
-            # Still unbalanced - check if it's an unclosed bold at end
             if re.search(r'\*\*[^*]+$', line) and not re.search(r'[^*]\*\*$', line):
-                # Has opening ** but no closing - add it
                 line = line + '**'
+                _CLEAN_STATS["22_close_trailing_unbalanced"] += 1
             elif re.search(r'^\s*\*\*\s*$', line):
-                # Just ** alone - remove it
                 line = ''
-        
-        # 14. Clean multiple spaces
-        line = re.sub(r' {2,}', ' ', line)
-        
+                _CLEAN_STATS["23_remove_lonely_bold"] += 1
+
+        # 14. Collapse multiple spaces
+        line = _counted_sub("24_multiple_spaces", r' {2,}', ' ', line)
+
         cleaned_lines.append(line)
-    
+
     return '\n'.join(cleaned_lines)
+
+
+def _build_markdown_table(rows: list) -> str:
+    """
+    Build a markdown pipe-table from a list of rows.
+
+    Each row is a list of cell dicts with a `text` field that already
+    contains the cell's content rendered as markdown (with inline
+    formatting from ingest.py::_runs_to_markdown). The first row is
+    treated as the header; a separator line is emitted after it as
+    markdown pipe-tables require.
+
+    Edge cases handled:
+    - Empty cells are rendered as a single space so the pipe syntax
+      stays valid ("| |" is valid, "||" is not).
+    - Rows with differing cell counts are padded with empty cells to
+      match the widest row, so the table stays rectangular.
+    - Newlines inside a cell are replaced with a space. Markdown pipe
+      tables do not support multi-line cells; using <br> would work on
+      some renderers but break on others, so a space is the safer
+      choice. This is a known limitation of the pipe-table format.
+    - Pipe characters inside cell text are already escaped by
+      ingest.py (see _extract_table_data), so we don't escape again.
+    """
+    if not rows:
+        return ""
+
+    def cell_text(cell):
+        # ingest.py now builds the cell's markdown directly, including
+        # inline formatting (bold, italic, code, links). Previously we
+        # re-rendered from `runs` here, which lost formatting because
+        # the cell-level run extractor used to emit plain text only.
+        t = cell.get("text", "")
+        # Collapse newlines; pipe tables cannot contain real line breaks
+        t = t.replace("\n", " ").replace("\r", " ").strip()
+        return t if t else " "
+
+    # Find the widest row so we can pad narrower rows
+    max_cols = max(len(row) for row in rows)
+
+    normalized_rows = []
+    for row in rows:
+        cells = [cell_text(c) for c in row]
+        # Pad with empty cells if this row is shorter than the widest
+        while len(cells) < max_cols:
+            cells.append(" ")
+        normalized_rows.append(cells)
+
+    lines = []
+    # Header row (first row is assumed to be the header)
+    header = normalized_rows[0]
+    lines.append("| " + " | ".join(header) + " |")
+    # Separator
+    lines.append("| " + " | ".join(["---"] * max_cols) + " |")
+    # Body rows
+    for cells in normalized_rows[1:]:
+        lines.append("| " + " | ".join(cells) + " |")
+
+    return "\n".join(lines)
 
 
 def parse(ingested: dict) -> list[dict]:
@@ -270,11 +397,16 @@ def parse(ingested: dict) -> list[dict]:
         text = block.get("text", "")
         doc_idx = block.get("doc_index", idx)
 
-        # Tables should stay inside current chapter
+        # Tables: build a proper markdown pipe-table from the structured
+        # rows that ingest.py extracted. Previously we passed through an
+        # empty `text` field (table blocks have no `text`, only `rows`),
+        # which silently dropped every table from the output.
         if block_type == "table":
             if current:
+                rows = block.get("rows", [])
+                table_md = _build_markdown_table(rows)
                 current["content"].append({
-                    "text": text,
+                    "text": table_md,
                     "style": "Table",
                     "para_index": doc_idx,
                     "indent_level": 0
@@ -563,6 +695,9 @@ def _detect_code_block_start(text: str) -> str | None:
     - ```bash
     - ```javascript
     - ```
+
+    Instrumented: we count detections to confirm whether this branch
+    is still needed after ingest.py classifies code paragraphs by style.
     """
     if not text:
         return None
@@ -593,8 +728,10 @@ def _detect_code_block_start(text: str) -> str | None:
     }
 
     if not lang:
+        _CLEAN_STATS["detect_code_block_start_fired"] += 1
         return "text"
 
+    _CLEAN_STATS["detect_code_block_start_fired"] += 1
     return aliases.get(lang, lang)
 
 def to_markdown(chapter: dict, image_positions: list = None, next_heading_idx: int = None, book_name: str = "") -> str:
@@ -698,7 +835,11 @@ def to_markdown(chapter: dict, image_positions: list = None, next_heading_idx: i
         # =========================
         # Inline code
         # =========================
-        elif style == "code" or (text.startswith("`") and not lang_marker):
+        # Rely on the style set by ingest.py, which classifies paragraphs
+        # as code based on monospace fonts and language detection. The old
+        # fallback of "text starts with backtick" misfired on Markdown-
+        # about-Markdown content (books that discuss code syntax).
+        elif style == "code":
             lines.append(text)
             lines.append("")
             i += 1
@@ -716,16 +857,14 @@ def to_markdown(chapter: dict, image_positions: list = None, next_heading_idx: i
         # =========================
         # Lists
         # =========================
+        # ingest.py already injects the correct list prefix (bullet char or
+        # number) and indentation into the text, based on the numbering data
+        # it extracted from the .docx file. We pass the text through as-is.
+        # Previously this branch added another "- " prefix, which produced
+        # duplicate markers like "- •" or "- 1)" that _clean_markdown_final
+        # then had to clean up with regex (rules 02 and 03).
         elif "List" in style:
-            stripped = text.lstrip()
-            normalized_text = re.sub(r'^[•\-\*]\s*', '', stripped)
-            has_number_prefix = bool(re.match(r'^\d+[\)\.]\s', stripped))
-            prefix_indent = "  " * indent_level
-
-            if has_number_prefix:
-                lines.append(f"{prefix_indent}{stripped}")
-            else:
-                lines.append(f"{prefix_indent}- {normalized_text}")
+            lines.append(text)
 
         # =========================
         # Tables

@@ -28,7 +28,15 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from pipeline.ingest import ingest_and_write_json
-from pipeline.parse import parse, extract_images, to_markdown, extract_book_info, DEFAULT_ASSETS_DIR
+from pipeline.parse import (
+    parse,
+    extract_images,
+    to_markdown,
+    extract_book_info,
+    DEFAULT_ASSETS_DIR,
+    reset_clean_stats,
+    dump_clean_stats,
+)
 from pipeline.organize import organize
 from pipeline.translate import get_chapters_to_translate, build_batch_prompt, fix_all_hebrew_files, update_content_structure_titles
 from pipeline.languages import (
@@ -75,6 +83,12 @@ def run_pipeline(docx_path: str, book_name: str,
     print(f"BookForge Pipeline: {book_name}")
     print(f"{'=' * 60}")
 
+    # Reset instrumentation counters. The parse module tracks how many
+    # times each markdown-cleanup rule fires, so we can see which rules
+    # are still needed after the ingest fix. Counters are dumped at
+    # the end of this run to clean_markdown_stats.json.
+    reset_clean_stats()
+
     # Step 1: Ingest
     print("\n[1/7] Ingest...")
     book_dir = Path(output_dir) / book_name
@@ -82,7 +96,7 @@ def run_pipeline(docx_path: str, book_name: str,
 
     ingested = ingest_and_write_json(
         file_path=docx_path,
-        output_path=book_dir / "content-structure.json",
+        output_path=book_dir / "book-manifest.json",
         language=SOURCE_LANGUAGE,
     )
 
@@ -132,7 +146,7 @@ def run_pipeline(docx_path: str, book_name: str,
         total_images += img_count
     print(f"  {total_images} images placed across {len(chapters_md)} chapters")
 
-    # Step 5: Organize output (cleans stale files + generates content-structure.json)
+    # Step 5: Organize output (cleans stale files + generates book-manifest.json)
     print("\n[5/7] Organize output...")
     created = organize(book_name, chapters_md, output_dir,
                        languages=languages,
@@ -185,6 +199,13 @@ def run_pipeline(docx_path: str, book_name: str,
     print(f"Output: {book_dir}")
     print(f"{'=' * 60}")
 
+    # Dump markdown cleanup statistics. The resulting JSON shows how many
+    # times each cleanup rule in parse.py actually fired on this run, so
+    # we can decide which rules are still needed and which are dead code.
+    stats_path = book_dir / "clean_markdown_stats.json"
+    dump_clean_stats(str(stats_path))
+    print(f"Cleanup stats: {stats_path}")
+
     return {
         "chapters": len(chapters),
         "images": total_images,
@@ -197,7 +218,7 @@ def run_pipeline(docx_path: str, book_name: str,
 
 def finalize_book(book_name: str, languages: list[str] = None, output_dir: str = "output"):
     """
-    Finalize book after translations: update content-structure.json and sync.
+    Finalize book after translations: update book-manifest.json and sync.
     
     Call this after Translator agent completes all translations.
     
@@ -218,9 +239,9 @@ def finalize_book(book_name: str, languages: list[str] = None, output_dir: str =
     
     print(f"Finalizing {book_name}...")
     
-    # Update content-structure.json with translated titles
+    # Update book-manifest.json with translated titles
     updated = update_content_structure_titles(str(book_dir), languages)
-    print(f"  Updated {updated} titles in content-structure.json")
+    print(f"  Updated {updated} titles in book-manifest.json")
     
     # Sync to src/output
     src_output = project_root / "src" / "output" / book_name

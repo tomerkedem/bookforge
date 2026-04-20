@@ -8,7 +8,7 @@ from pipeline.languages import get_language_meta, LANGUAGE_CODES, SOURCE_LANGUAG
 
 def update_content_structure_titles(book_dir: str, languages: list[str] = None) -> int:
     """
-    Update content-structure.json with translated chapter titles from .{lang}.md files.
+    Update book-manifest.json with translated chapter titles from .{lang}.md files.
 
     After translation, each chapter file has its title in the first # heading.
     This function reads those titles and updates chapter["titles"][lang].
@@ -26,10 +26,10 @@ def update_content_structure_titles(book_dir: str, languages: list[str] = None) 
         languages = LANGUAGE_CODES
 
     book_path = Path(book_dir)
-    json_path = book_path / "content-structure.json"
+    json_path = book_path / "book-manifest.json"
 
     if not json_path.exists():
-        print("  [SKIP] No content-structure.json found")
+        print("  [SKIP] No book-manifest.json found")
         return 0
 
     data = json.loads(json_path.read_text(encoding="utf-8"))
@@ -74,7 +74,7 @@ def update_content_structure_titles(book_dir: str, languages: list[str] = None) 
         encoding="utf-8",
     )
 
-    print(f"  [UPDATE] content-structure.json: {updated_count} titles updated")
+    print(f"  [UPDATE] book-manifest.json: {updated_count} titles updated")
     return updated_count
 
 
@@ -93,7 +93,7 @@ def build_book_metadata_prompt(book_dir: str, target_languages: list[str] = None
         Prompt string for the agent to translate book metadata.
     """
     book_path = Path(book_dir)
-    json_path = book_path / "content-structure.json"
+    json_path = book_path / "book-manifest.json"
 
     if not json_path.exists():
         return ""
@@ -176,7 +176,7 @@ def build_book_metadata_prompt(book_dir: str, target_languages: list[str] = None
 
         נתיב לעדכון: {json_path}
 
-        לאחר התרגום, עדכן את content-structure.json כך:
+        לאחר התרגום, עדכן את book-manifest.json כך:
         - titles: אובייקט שבו כל מפתח הוא קוד שפה וכל ערך הוא הכותרת המתורגמת
         - subtitles: אובייקט שבו כל מפתח הוא קוד שפה וכל ערך הוא כותרת המשנה המתורגמת
         - descriptions: אובייקט שבו כל מפתח הוא קוד שפה וכל ערך הוא התיאור המתורגם
@@ -209,7 +209,7 @@ def get_book_metadata_for_translation(book_dir: str) -> dict:
         Dict with source title/subtitle and chapter titles for context.
     """
     book_path = Path(book_dir)
-    json_path = book_path / "content-structure.json"
+    json_path = book_path / "book-manifest.json"
 
     if not json_path.exists():
         return {}
@@ -236,7 +236,7 @@ def update_book_metadata(
     credits: dict[str, dict[str, str]] | None = None,
 ) -> bool:
     """
-    Update book-level metadata in content-structure.json.
+    Update book-level metadata in book-manifest.json.
 
     Uses language-based dictionaries:
     - titles
@@ -248,7 +248,7 @@ def update_book_metadata(
     Each key is a language code and each value is the translated text.
     """
     book_path = Path(book_dir)
-    json_path = book_path / "content-structure.json"
+    json_path = book_path / "book-manifest.json"
 
     if not json_path.exists():
         return False
@@ -285,5 +285,5 @@ def update_book_metadata(
         encoding="utf-8",
     )
 
-    print("  [UPDATE] Book metadata updated in content-structure.json")
+    print("  [UPDATE] Book metadata updated in book-manifest.json")
     return True

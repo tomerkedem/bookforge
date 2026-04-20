@@ -253,18 +253,6 @@ def _match_run_to_hyperlink(
     return None, cursor
 
 
-def _clean_markdown_asterisks(text: str) -> str:
-    text = re.sub(r"\*{4,}", "**", text)
-    text = re.sub(r"\*\*([^*]+)\*\*\*\*([^*]+)\*\*", r"**\1 \2**", text)
-    text = re.sub(r"\*\*\s+\*\*", " ", text)
-    text = re.sub(r"^\*\*\s*\*\*", "", text)
-    text = re.sub(r"\*\*\s*\*\*$", "", text)
-    text = re.sub(r"([הובכלמש])\*\*([^*]+)\*\*", r"**\1\2**", text)
-    text = re.sub(r"\*\*\.\*\*", ".", text)
-    text = re.sub(r"\*\*:\*\*", ":", text)
-    return text.strip()
-
-
 def _detect_code_language(text: str) -> str:
     if not text or not text.strip():
         return ""
@@ -290,17 +278,52 @@ def _detect_code_language(text: str) -> str:
     return max(scores, key=scores.get)
 
 
-def _get_run_format(run) -> str:
+def _empty_format_flags() -> Dict[str, bool]:
+    """Return a default format flags dict with all flags set to False."""
+    return {
+        "bold": False,
+        "italic": False,
+        "underline": False,
+        "code": False,
+        "small": False,
+        "superscript": False,
+        "subscript": False,
+    }
+
+
+def _get_run_format(run) -> Dict[str, bool]:
+    """
+    Return a dict of formatting flags for this run.
+
+    Each run can have multiple flags set at once (e.g. bold + underline).
+    This is a change from the previous behavior where only one format
+    could be returned as a string. The dict representation allows
+    adjacent runs with identical formatting to be merged correctly,
+    which eliminates most of the "broken markdown" artifacts that
+    previously required regex cleanup downstream.
+
+    Rules:
+    - If the font is monospace, only `code` is set; all other flags
+      are False. This matches the previous behavior where code took
+      priority, and it's also a Markdown constraint: `code spans`
+      cannot contain other inline formatting.
+    - superscript and subscript are mutually exclusive by nature;
+      if both are somehow set, superscript wins (matches prior behavior).
+    """
+    flags = _empty_format_flags()
+
+    # Code (monospace font) takes priority and suppresses other flags.
     try:
         font_name = run.font.name
         if font_name and font_name.lower() in MONOSPACE_FONTS:
-            return "code"
+            flags["code"] = True
+            return flags
     except Exception:
         pass
 
-    is_bold = bool(getattr(run, "bold", False))
-    is_italic = bool(getattr(run, "italic", False))
-    is_underline = bool(getattr(run, "underline", False))
+    flags["bold"] = bool(getattr(run, "bold", False))
+    flags["italic"] = bool(getattr(run, "italic", False))
+    flags["underline"] = bool(getattr(run, "underline", False))
 
     font_size = None
     try:
@@ -315,10 +338,8 @@ def _get_run_format(run) -> str:
     except Exception:
         font_size = None
 
-    is_small = bool(font_size and font_size <= SMALL_FONT_THRESHOLD)
+    flags["small"] = bool(font_size and font_size <= SMALL_FONT_THRESHOLD)
 
-    is_superscript = False
-    is_subscript = False
     try:
         r_pr = _safe_find(run._element, f"{W_NS}rPr")
         if r_pr is not None:
@@ -326,50 +347,73 @@ def _get_run_format(run) -> str:
             if vert_align is not None:
                 val = vert_align.get(f"{W_NS}val")
                 if val == "superscript":
-                    is_superscript = True
+                    flags["superscript"] = True
                 elif val == "subscript":
-                    is_subscript = True
+                    flags["subscript"] = True
     except Exception:
         pass
 
-    if is_superscript:
-        return "superscript"
-    if is_subscript:
-        return "subscript"
-    if is_bold and is_italic:
-        return "bold_italic"
-    if is_bold:
-        return "bold"
-    if is_italic:
-        return "italic"
-    if is_underline:
-        return "underline"
-    if is_small:
-        return "small"
+    # Superscript wins over subscript if both are somehow set.
+    if flags["superscript"]:
+        flags["subscript"] = False
 
-    return "plain"
+    return flags
 
 
-def _apply_markdown_format(fmt: str, text: str) -> str:
-    if fmt == "bold_italic":
-        return f"***{text}***"
-    if fmt == "bold":
-        return f"**{text}**"
-    if fmt == "italic":
-        return f"*{text}*"
-    if fmt == "code":
+def _apply_markdown_format(flags: Dict[str, bool], text: str) -> str:
+    """
+    Apply markdown/HTML formatting to text based on a flags dict.
+
+    Wrapping order matters for readability of the output. We apply from
+    innermost to outermost as follows (outer wrappers are applied last):
+
+      1. code        - innermost, and Markdown disallows other formatting
+                       inside a code span, so if code is set, we stop here.
+      2. superscript / subscript  (mutually exclusive)
+      3. small
+      4. underline
+      5. italic
+      6. bold        - outermost
+
+    The order means a run that is both bold and italic becomes
+    `**_text_**` (bold on the outside, italic inside).
+
+    If text is empty or whitespace-only, no formatting is applied,
+    because `** **` and similar produce malformed markdown.
+    """
+    if not text:
+        return text
+
+    # Code takes over; Markdown code spans cannot contain other formatting.
+    if flags.get("code"):
         if "\n" in text:
             return text
         return f"`{text}`"
-    if fmt == "underline":
-        return f"<u>{text}</u>"
-    if fmt == "superscript":
-        return f"<sup>{text}</sup>"
-    if fmt == "subscript":
-        return f"<sub>{text}</sub>"
-    if fmt == "small":
-        return f"<small>{text}</small>"
-    return text
+
+    # Never wrap whitespace-only text in formatting; it produces broken markdown.
+    if not text.strip():
+        return text
+
+    result = text
+
+    if flags.get("superscript"):
+        result = f"<sup>{result}</sup>"
+    elif flags.get("subscript"):
+        result = f"<sub>{result}</sub>"
+
+    if flags.get("small"):
+        result = f"<small>{result}</small>"
+
+    if flags.get("underline"):
+        result = f"<u>{result}</u>"
+
+    if flags.get("italic"):
+        result = f"*{result}*"
+
+    if flags.get("bold"):
+        result = f"**{result}**"
+
+    return result
 
 
 def _extract_runs_data(para, doc_hyperlinks: Dict[str, str]) -> List[dict]:
@@ -410,17 +454,29 @@ def _extract_runs_data(para, doc_hyperlinks: Dict[str, str]) -> List[dict]:
 
 
 def _runs_to_markdown(runs_data: List[dict]) -> str:
+    """
+    Convert a list of run dicts into a single markdown string.
+
+    Runs are merged when their format flags are identical AND their
+    hyperlink targets match. This is a stricter criterion than the
+    previous code allowed, and it's what eliminates the `**text****text**`
+    style artifacts that used to require regex cleanup: when Word
+    arbitrarily splits a bold span into two runs with the same
+    formatting, they now correctly merge back into one before
+    markdown wrapping is applied.
+    """
     if not runs_data:
         return ""
 
     merged: List[dict] = []
 
     for item in runs_data:
-        if (
+        same_format = (
             merged
             and merged[-1]["format"] == item["format"]
             and merged[-1]["hyperlink"] == item["hyperlink"]
-        ):
+        )
+        if same_format:
             merged[-1]["text"] += item["text"]
         else:
             merged.append(dict(item))
@@ -433,7 +489,7 @@ def _runs_to_markdown(runs_data: List[dict]) -> str:
             formatted = f"[{formatted}]({item['hyperlink']})"
         parts.append(formatted)
 
-    return _clean_markdown_asterisks("".join(parts).strip())
+    return "".join(parts).strip()
 
 
 def _extract_paragraph_layout(para) -> dict:
@@ -697,7 +753,13 @@ def _classify_paragraph_block(style_name: str, runs_data: List[dict], markdown_t
     if markdown_text.count("\n") >= 2:
         code_ratio = 0
         if runs_data:
-            code_runs = sum(1 for r in runs_data if r["format"] == "code")
+            # r["format"] is now a dict of flags, not a string.
+            # A run is "code" when its code flag is True.
+            code_runs = sum(
+                1
+                for r in runs_data
+                if isinstance(r.get("format"), dict) and r["format"].get("code")
+            )
             code_ratio = code_runs / max(1, len(runs_data))
 
         detected_lang = _detect_code_language(markdown_text)
@@ -707,39 +769,175 @@ def _classify_paragraph_block(style_name: str, runs_data: List[dict], markdown_t
     return "paragraph"
 
 
-def _extract_table_cell_runs(tc) -> List[dict]:
-    text = []
+def _cell_has_first_column_style(tc) -> bool:
+    """
+    Detect whether a table cell is marked as belonging to the table's
+    first column via Word's conditional formatting (w:cnfStyle).
+
+    In Word, Table Styles can declare that the first column renders
+    in bold (or other emphasis). When that happens, individual runs
+    in those cells do NOT carry <w:b> themselves - the bold comes from
+    the Table Style through cnfStyle. python-docx's run.bold returns
+    None because there is no explicit bold on the run.
+
+    We detect this marker by looking for <w:cnfStyle w:firstColumn="1">
+    inside the cell's <w:tcPr>. A similar mechanism exists for
+    firstRow, lastRow, lastColumn, and the banded variants, but by
+    far the most common pattern in Hebrew technical books is "first
+    column is bold" (the label column) and we limit to that.
+    """
     try:
-        for t in tc.findall(f".//{W_NS}t"):
-            text.append(t.text or "")
+        tc_pr = tc.find(f"{W_NS}tcPr")
+        if tc_pr is None:
+            return False
+        cnf = tc_pr.find(f"{W_NS}cnfStyle")
+        if cnf is None:
+            return False
+        first_col = cnf.get(f"{W_NS}firstColumn")
+        return first_col == "1"
+    except Exception:
+        return False
+
+
+def _force_bold_on_runs(runs: List[dict]) -> List[dict]:
+    """
+    Return a copy of runs with bold=True forced on every run.
+
+    Used for header rows and conditionally-styled first columns,
+    where the bold is inherited from the Table Style rather than
+    set directly on the run.
+
+    We don't mutate the input because the same run dicts may be
+    used elsewhere in the future. Whitespace-only runs are left
+    alone; they would produce "** **" (broken markdown) if wrapped.
+    """
+    out: List[dict] = []
+    for r in runs:
+        new_fmt = dict(r.get("format", _empty_format_flags()))
+        if r.get("text", "").strip():
+            new_fmt["bold"] = True
+        out.append({
+            "text": r.get("text", ""),
+            "format": new_fmt,
+            "hyperlink": r.get("hyperlink"),
+        })
+    return out
+
+
+def _extract_table_cell_runs(tc, paragraph_map, doc_hyperlinks: Dict[str, str]) -> List[dict]:
+    """
+    Extract runs from a table cell with full formatting preserved.
+
+    A cell contains one or more paragraphs, and each paragraph contains
+    runs. We iterate paragraphs using python-docx's cell.paragraphs
+    accessor, then use _extract_runs_data (the same function used for
+    body paragraphs) to get runs with format flags.
+
+    Previously this function joined all <w:t> text into one "plain"
+    run, which silently stripped every bold/italic/underline from
+    tables while the rest of the document preserved formatting.
+
+    Paragraph breaks inside a cell are preserved as newlines between
+    the runs of adjacent paragraphs. _build_markdown_table in parse.py
+    collapses those newlines to spaces (pipe tables cannot contain
+    real line breaks).
+    """
+    # Build wrapper Paragraph objects from the raw <w:p> elements in
+    # the cell. paragraph_map is the map built at ingest start from
+    # doc.paragraphs; for table cells we build a small local version
+    # since cell paragraphs are not in the top-level paragraph list.
+    from docx.text.paragraph import Paragraph
+
+    all_runs: List[dict] = []
+
+    try:
+        # Find paragraph elements inside this cell
+        cell_paragraphs = tc.findall(f"{W_NS}p")
+        if not cell_paragraphs:
+            # Fallback: some cells nest paragraphs inside other elements
+            cell_paragraphs = tc.findall(f".//{W_NS}p")
+
+        for p_idx, p_elem in enumerate(cell_paragraphs):
+            # Wrap the raw element in a Paragraph. The second argument
+            # is "parent", which Paragraph uses for style inheritance.
+            # Passing None is acceptable here because we only need runs.
+            para = Paragraph(p_elem, None)
+            para_runs = _extract_runs_data(para, doc_hyperlinks)
+
+            # Insert a newline run between paragraphs inside the cell.
+            # This preserves the logical break; parse.py will later
+            # collapse newlines to spaces for pipe-table output.
+            if p_idx > 0 and para_runs:
+                all_runs.append({
+                    "text": "\n",
+                    "format": _empty_format_flags(),
+                    "hyperlink": None,
+                })
+
+            all_runs.extend(para_runs)
     except Exception:
         pass
 
-    joined = "".join(text).strip()
-    if not joined:
-        return []
-
-    return [
-        {
-            "text": joined,
-            "format": "plain",
-            "hyperlink": None,
-        }
-    ]
+    return all_runs
 
 
-def _extract_table_data(tbl_element, doc_index: int) -> dict:
+def _extract_table_data(
+    tbl_element,
+    doc_index: int,
+    paragraph_map: Dict[Any, Any],
+    doc_hyperlinks: Dict[str, str],
+) -> dict:
+    """
+    Extract a table into a structured dict.
+
+    Each cell now carries:
+    - `runs`: list of run dicts with format flags (bold, italic, etc.)
+    - `text`: markdown string built from the runs, with pipe chars
+      escaped so they don't break the markdown pipe-table syntax
+
+    Bold inheritance from Table Style:
+    Many Word tables style their header row or first column as bold
+    via a Table Style rather than by setting <w:b> on individual runs.
+    We approximate that here by force-applying bold to:
+      1. Every cell in the first row (standard header convention)
+      2. Every cell whose <w:cnfStyle w:firstColumn="1"> is set
+         (Word's marker that the Table Style's "first column" rule
+         applies to this cell)
+
+    This is a heuristic: it will add bold to headers and first-column
+    labels that would otherwise look unemphasized in the rendered
+    markdown, matching how the table appears in Word. It can produce
+    false positives if the author used a Table Style that does NOT
+    bold the first column, but that combination is rare in the Hebrew
+    technical books this pipeline targets.
+
+    Previously `text` was a plain-text join of <w:t> nodes, which
+    dropped every formatting mark from cells.
+    """
     rows = []
 
     try:
-        for tr in tbl_element.findall(f".//{W_NS}tr"):
+        tr_elements = tbl_element.findall(f".//{W_NS}tr")
+        for row_idx, tr in enumerate(tr_elements):
             row = []
+            is_header_row = (row_idx == 0)
             for tc in tr.findall(f".//{W_NS}tc"):
-                runs = _extract_table_cell_runs(tc)
-                text = "".join(r["text"] for r in runs).replace("|", r"\|")
+                runs = _extract_table_cell_runs(tc, paragraph_map, doc_hyperlinks)
+
+                # Apply bold inheritance from Table Style:
+                # - Header row gets bold unconditionally
+                # - Any cell marked as firstColumn by cnfStyle gets bold
+                if is_header_row or _cell_has_first_column_style(tc):
+                    runs = _force_bold_on_runs(runs)
+
+                md_text = _runs_to_markdown(runs)
+                # Escape pipe characters so they don't break the
+                # pipe-table syntax in parse.py. This is safe because
+                # markdown does not use raw pipes inside cell content.
+                md_text = md_text.replace("|", r"\|")
                 row.append(
                     {
-                        "text": text,
+                        "text": md_text,
                         "runs": runs,
                     }
                 )
@@ -842,7 +1040,7 @@ def _ingest_docx(path: Path, language: str = "he") -> dict:
             continue
 
         if tag == "tbl":
-            table_block = _extract_table_data(element, doc_index)
+            table_block = _extract_table_data(element, doc_index, paragraph_map, doc_hyperlinks)
             if table_block["rows"]:
                 blocks.append(table_block)
             doc_index += 1

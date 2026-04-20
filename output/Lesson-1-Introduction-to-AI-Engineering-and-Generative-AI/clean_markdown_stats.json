@@ -1,0 +1,15 @@
+{
+  "total_substitutions": 345,
+  "rules_fired": 9,
+  "by_rule": {
+    "07_colon_space_before_close": 157,
+    "24_multiple_spaces": 84,
+    "05_space_before_close_eol": 47,
+    "14_bold_space_bold": 29,
+    "15_hebrew_prefix_before_bold": 7,
+    "12_bold_dot_eol": 7,
+    "22_close_trailing_unbalanced": 7,
+    "21_bold_inside_quotes": 6,
+    "11_bold_dot_bold": 1
+  }
+}

@@ -1,7 +1,7 @@
 """
 Organizes chapter markdown files into the output directory.
 Creates the folder structure for each book.
-Cleans stale files from previous runs and generates content-structure.json.
+Cleans stale files from previous runs and generates book-manifest.json.
 
 Now supports dynamic languages - pass any list of language codes.
 """
@@ -100,7 +100,7 @@ def organize(book_name: str, chapters_md: list[dict], output_dir: str = "output"
     # See parse.py extract_images() for asset handling
 
     # Clean stale chapter files from previous runs (for all languages)
-    _clean_stale_chapters(book_dir, len(chapters_md), languages)
+    _clean_stale_chapters(book_dir, chapters_md, languages)
 
     created = []
     content_chapter_num = 0  # Counter for regular chapters (not intro)
@@ -123,24 +123,49 @@ def organize(book_name: str, chapters_md: list[dict], output_dir: str = "output"
         he_file.write_text(content_with_rtl, encoding="utf-8")
         created.append(str(he_file))
 
-    # Generate content-structure.json with dynamic language support
+    # Generate book-manifest.json with dynamic language support
     _generate_content_structure(book_dir, chapters_md, languages, book_titles, book_subtitles, book_descriptions)
 
     return created
 
 
-def _clean_stale_chapters(book_dir: Path, chapter_count: int, languages: list[str]):
-    """Remove chapter files with numbers beyond the current chapter count."""
-    # Clean stale chapter files for all languages
+def _clean_stale_chapters(book_dir: Path, chapters_md: list[dict], languages: list[str]):
+    """
+    Remove chapter files from previous runs that no longer correspond to
+    the current book's chapter list.
+
+    Rules:
+    - Count only content chapters (not intro) when deciding valid
+      chapter numbers. Content chapters are numbered 01..N where N
+      is the count of content chapters.
+    - Delete chapter-XX files whose number exceeds N.
+    - Delete intro.{lang}.md if the current book has no intro chapter
+      but a stale one exists from a previous run.
+
+    Previously this function used `chapter_count - 1` which assumed an
+    intro always exists, silently leaving stale files behind when it did not.
+    """
+    content_chapter_count = sum(
+        1 for ch in chapters_md if ch.get("type", "content") != "intro"
+    )
+    has_intro = any(ch.get("type") == "intro" for ch in chapters_md)
+
     for lang in languages:
+        # Clean stale chapter-XX files beyond the current count
         for f in book_dir.glob(f"chapter-*.{lang}.md"):
             match = re.match(r"chapter-(\d+)\.", f.name)
             if match:
                 num = int(match.group(1))
-                # chapter_count includes intro, so actual chapters = chapter_count - 1
-                if num > chapter_count - 1:
+                if num > content_chapter_count:
                     f.unlink()
                     print(f"  [CLEAN] Removed stale: {f.name}")
+
+        # Remove a stale intro file if the current book no longer has an intro
+        if not has_intro:
+            intro_file = book_dir / f"intro.{lang}.md"
+            if intro_file.exists():
+                intro_file.unlink()
+                print(f"  [CLEAN] Removed stale: {intro_file.name}")
 
 
 def _generate_content_structure(book_dir: Path, chapters_md: list[dict],
@@ -148,7 +173,7 @@ def _generate_content_structure(book_dir: Path, chapters_md: list[dict],
                                  book_titles: dict[str, str],
                                  book_subtitles: dict[str, str],
                                  book_descriptions: dict[str, str]):
-    """Generate content-structure.json from chapter markdown content with dynamic language support."""
+    """Generate book-manifest.json from chapter markdown content with dynamic language support."""
     chapters_json = []
     content_chapter_num = 0  # Counter for regular chapters
     default_title = _format_title(book_dir.name)
@@ -180,9 +205,6 @@ def _generate_content_structure(book_dir: Path, chapters_md: list[dict],
 
         # Build titles dict for all languages (placeholder until translation)
         chapter_titles = {lang: title_source for lang in languages}
-        
-        # Build legacy title fields for all languages
-        legacy_title_fields = {f"title_{lang}": title_source for lang in languages}
 
         chapter_entry = {
             "id": chapter_id,
@@ -194,31 +216,23 @@ def _generate_content_structure(book_dir: Path, chapters_md: list[dict],
             "word_count": word_count,
             "topics": []
         }
-        chapter_entry.update(legacy_title_fields)
         chapters_json.append(chapter_entry)
 
     # Build book-level titles/subtitles/descriptions for all languages
     titles = {}
     subtitles = {}
     descriptions = {}
-    
+
     for lang in languages:
         titles[lang] = book_titles.get(lang) or book_titles.get(SOURCE_LANGUAGE) or default_title
         subtitles[lang] = book_subtitles.get(lang) or book_subtitles.get(SOURCE_LANGUAGE) or ""
         descriptions[lang] = book_descriptions.get(lang) or book_descriptions.get(SOURCE_LANGUAGE) or ""
-
-    # Build legacy title/subtitle fields for all languages
-    legacy_fields = {}
-    for lang in languages:
-        legacy_fields[f"title_{lang}"] = titles.get(lang) or default_title
-        legacy_fields[f"subtitle_{lang}"] = subtitles.get(lang) or ""
 
     data = {
         "book": {
             "titles": titles,
             "subtitles": subtitles,
             "descriptions": descriptions,
-            **legacy_fields,
             "chapters": chapters_json,
             "languages": languages
         }
