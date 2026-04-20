@@ -170,157 +170,117 @@ def _fix_code_blocks(text: str) -> str:
 
 def _clean_markdown_final(text: str) -> str:
     """
-    Instrumented cleanup of markdown artifacts from Word formatting.
+    Cleanup of residual markdown artifacts after Word-to-Markdown
+    conversion.
 
-    Behavior is identical to the original - same rules in the same order.
-    The only change is that every substitution is counted in _CLEAN_STATS
-    under a stable rule_id. This lets us see which rules still fire after
-    the ingest.py fix, and remove the ones that never do.
+    Earlier versions of this function carried 24 rules. Instrumentation
+    across real book runs showed that after the ingest.py refactor
+    (format-flag based run merging, direct markdown emission in table
+    cells, bullet prefix normalization to standard "-"), only 9 of
+    those 24 rules ever fired. The other 15 were dead code targeting
+    patterns that no longer survive into parse.py.
 
-    Original patterns (kept for context):
-    - **** (4+ asterisks) -> **
-    - **:** or **: ** -> :
-    - **, ** between bold markers -> ,
-    - ** ** (spaced asterisks) -> space
-    - Hebrew prefix letter absorbed into bold
-    - **text**.** -> **text**.
-    - Unbalanced ** -> balanced
-    - "- •" or "- 1)" duplicate bullets -> single prefix
-    - Corrupted numbering with percent sign -> digit
-    - "1) text" at line start -> "**(1)** text"
-    - ": **" (colon with space before close) -> ":** "
+    What remains here is the minimum needed for residual artifacts
+    the ingest step cannot prevent on its own, most of them trailing
+    whitespace caused by Word authors who put a space before closing
+    a bold run.
+
+    Rules kept (ordered roughly from "most defensive" to "cosmetic"):
+      01 space_before_close_eol       - "word **" at end of line
+      02 colon_space_before_close     - ": **"   -> ":** "
+      03 bold_dot_bold                - "**.**"  -> "."  (rare edge)
+      04 bold_dot_eol                 - "**." at end of line
+      05 bold_space_bold              - "** **"  -> " "
+      06 hebrew_prefix_before_bold    - "ה**X**" -> "**הX**"
+      07 bold_inside_quotes           - "\"**X**\"" -> "\"X\""
+      08 close_trailing_unbalanced    - odd count of ** at EOL -> close
+      09 multiple_spaces              - collapse runs of spaces
+
+    Rules removed and why:
+      %1)->1) numbering (no longer appears from ingest)
+      "- •" / "- 1)" duplicate bullet prefixes (ingest emits "-" only)
+      "1)" -> "**(1)**" conversion (unused)
+      " **X" with punctuation after (subsumed by rule 01 in practice)
+      4+ asterisks (run-merge in ingest prevents this)
+      "**:**", "**: **" (run-merge prevents this)
+      "**, **" (run-merge prevents this)
+      closing after ". **text" (edge case, did not fire)
+      bullet+colon+bold rewrites (multiple variants, did not fire)
+      label-at-start rewrite (did not fire)
+      standalone ** on a line (did not fire; overlaps rule 08)
+      lonely-bold removal (overlaps rule 08)
+
+    Keep this list in sync with the dashboard dump in
+    dump_clean_stats(); if a removed rule starts firing again we
+    should prefer fixing the root cause in ingest.py rather than
+    re-introducing a rule here.
     """
-    # Fix corrupted numbering: %1), %2), %1., %2. etc. -> 1), 2), 1., 2. etc.
-    text = _counted_sub("01_percent_digit_marker", r'%(\d+)([\.\)])', r'\1\2', text)
-
-    # Fix duplicate list prefixes: "- •", "- 1)", "- 2." etc.
+    # Block-level (whole-text) patterns
+    # ---------------------------------
+    # 01. Trailing " **" at end of line (Word users often add a space
+    # before closing a bold run; that space survives ingest and looks
+    # like "word **" in the output).
     text = _counted_sub(
-        "02_duplicate_bullet_dash_dot",
-        r'^(\s*)-\s+(•)',
-        r'\1\2',
-        text,
-        flags=re.MULTILINE,
-    )
-    text = _counted_sub(
-        "03_duplicate_bullet_dash_number",
-        r'^(\s*)-\s+(\d+[\)\.])(\s)',
-        r'\1\2\3',
-        text,
-        flags=re.MULTILINE,
-    )
-
-    # Convert standalone "1)" at start of line to "**(1)**"
-    text = _counted_sub(
-        "04_number_paren_to_bold",
-        r'^(\d+)\)\s+',
-        r'**(\1)** ',
-        text,
-        flags=re.MULTILINE,
-    )
-
-    # Fix space before closing **
-    text = _counted_sub(
-        "05_space_before_close_eol",
+        "01_space_before_close_eol",
         r' \*\*$',
         '**',
         text,
         flags=re.MULTILINE,
     )
-    text = _counted_sub(
-        "06_space_before_close_punct",
-        r' \*\*([.,;:!?)])',
-        r'**\1',
-        text,
-    )
 
-    # ": **" -> ":** "
-    text = _counted_sub("07_colon_space_before_close", r': \*\*', ':** ', text)
+    # 02. ": **" -> ":** " (move the space outside the bold run so the
+    # colon reads as part of the label, not as content). Highest firing
+    # rule in practice because authors commonly write "Label: **value**"
+    # by highlighting "Label:" without including the trailing space.
+    text = _counted_sub("02_colon_space_before_close", r': \*\*', ':** ', text)
 
     # Per-line processing
+    # -------------------
     lines = text.split('\n')
     cleaned_lines = []
 
     for line in lines:
-        # 1. Fix consecutive asterisks (4 or more) -> **
-        line = _counted_sub("08_four_plus_asterisks", r'\*{4,}', '**', line)
+        # 03. "**.**" -> "." (rare; a bold that contains just a period).
+        line = _counted_sub("03_bold_dot_bold", r'\*\*\.\*\*', '.', line)
 
-        # 2. Fix **:** pattern
-        line = _counted_sub("09_bold_colon_bold", r'\*\*:\*\*', ':', line)
-        line = _counted_sub("10_bold_colon_space_bold", r'\*\*:\s*\*\*', ': ', line)
+        # 04. Trailing "**." at end of line (bold that closes with a
+        # period but the close marker ended up before the period).
+        line = _counted_sub("04_bold_dot_eol", r'\*\*\.$', '.', line)
 
-        # 3. Fix trailing **.**
-        line = _counted_sub("11_bold_dot_bold", r'\*\*\.\*\*', '.', line)
-        line = _counted_sub("12_bold_dot_eol", r'\*\*\.$', '.', line)
+        # 05. "** **" with whitespace between open/close -> single space.
+        line = _counted_sub("05_bold_space_bold", r'\*\*\s+\*\*', ' ', line)
 
-        # 4. Fix **, **
-        line = _counted_sub("13_bold_comma_bold", r'\*\*,\s*\*\*', ', ', line)
-
-        # 5. Fix ** ** (space between markers)
-        line = _counted_sub("14_bold_space_bold", r'\*\*\s+\*\*', ' ', line)
-
-        # 6. Hebrew prefix before bold
+        # 06. Hebrew single-letter prefix sitting just outside a bold
+        # run, e.g. "ה**עולם**" -> "**העולם**". Word sometimes breaks
+        # runs between a prefix letter and the noun it attaches to.
         line = _counted_sub(
-            "15_hebrew_prefix_before_bold",
+            "06_hebrew_prefix_before_bold",
             r'([הובכלמש])\*\*([^*]+)\*\*',
             r'**\1\2**',
             line,
         )
 
-        # 7. Sentence ending with ". **label" without closing
-        match = re.search(r'\.\s+\*\*([^*]+)$', line)
-        if match and line.count('**') % 2 != 0:
-            line = line + '**'
-            _CLEAN_STATS["16_close_unbalanced_after_dot"] += 1
-
-        # 8. Bullet with misplaced **
+        # 07. Quoted bold: "**text**" -> "text". When the whole content
+        # of a quote was bolded, the visual effect is redundant because
+        # the quotes already mark emphasis. Strips the bold.
         line = _counted_sub(
-            "17_bullet_colon_bold_label",
-            r'^(- )([^*]+):\*\*\s*([^*]+)\*\*$',
-            r'\1**\2: \3**',
-            line,
-        )
-
-        # 9. Partial variant of 8
-        line = _counted_sub(
-            "18_bullet_colon_bold_label_partial",
-            r'^(- )([^*:]+):\*\*\s*([^*]+)\*\*',
-            r'\1**\2: \3**',
-            line,
-        )
-
-        # 10. Label at line start
-        line = _counted_sub(
-            "19_label_colon_at_start",
-            r'^(\s*)([^\s*][^*\n]{2,})\*\*:',
-            r'\1**\2:**',
-            line,
-        )
-
-        # 11. Standalone ** on a line
-        if re.match(r'^\s*\*\*\s*$', line):
-            line = ''
-            _CLEAN_STATS["20_standalone_bold_line"] += 1
-
-        # 12. "**text**" inside quotes -> "text"
-        line = _counted_sub(
-            "21_bold_inside_quotes",
+            "07_bold_inside_quotes",
             r'"\*\*([^*"]+)\*\*"',
             r'"\1"',
             line,
         )
 
-        # 13. Remaining unbalanced **
+        # 08. If a line ends with an unbalanced ** (odd count, trailing
+        # open), close it. This is a last-resort safety net; ingest's
+        # run merging already prevents most of these.
         final_count = line.count('**')
         if final_count % 2 != 0 and final_count > 0:
             if re.search(r'\*\*[^*]+$', line) and not re.search(r'[^*]\*\*$', line):
                 line = line + '**'
-                _CLEAN_STATS["22_close_trailing_unbalanced"] += 1
-            elif re.search(r'^\s*\*\*\s*$', line):
-                line = ''
-                _CLEAN_STATS["23_remove_lonely_bold"] += 1
+                _CLEAN_STATS["08_close_trailing_unbalanced"] += 1
 
-        # 14. Collapse multiple spaces
-        line = _counted_sub("24_multiple_spaces", r' {2,}', ' ', line)
+        # 09. Collapse runs of whitespace. Cosmetic.
+        line = _counted_sub("09_multiple_spaces", r' {2,}', ' ', line)
 
         cleaned_lines.append(line)
 

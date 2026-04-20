@@ -384,6 +384,15 @@ def _apply_markdown_format(flags: Dict[str, bool], text: str) -> str:
     The order means a run that is both bold and italic becomes
     `**_text_**` (bold on the outside, italic inside).
 
+    Leading and trailing whitespace inside the text is moved OUTSIDE
+    the wrappers before applying them. This matters because Word
+    authors often include a trailing space inside a bold run
+    (e.g. "AI ") which would otherwise render as "**AI **" in markdown.
+    Some renderers tolerate that; others (and assistive tech) treat
+    the trailing space as part of the emphasis, which is noisy and
+    semantically wrong. Moving the whitespace outside produces
+    "**AI** " which renders and reads correctly everywhere.
+
     If text is empty or whitespace-only, no formatting is applied,
     because `** **` and similar produce malformed markdown.
     """
@@ -400,7 +409,17 @@ def _apply_markdown_format(flags: Dict[str, bool], text: str) -> str:
     if not text.strip():
         return text
 
-    result = text
+    # Split out leading/trailing whitespace so wrappers hug just the
+    # visible content. We reattach the whitespace after wrapping.
+    # lstrip()/rstrip() return the trimmed string; slicing gives us
+    # back the removed whitespace parts exactly as they were.
+    stripped = text.strip()
+    leading_len = len(text) - len(text.lstrip())
+    trailing_len = len(text) - len(text.rstrip())
+    leading = text[:leading_len]
+    trailing = text[len(text) - trailing_len:] if trailing_len else ""
+
+    result = stripped
 
     if flags.get("superscript"):
         result = f"<sup>{result}</sup>"
@@ -419,7 +438,7 @@ def _apply_markdown_format(flags: Dict[str, bool], text: str) -> str:
     if flags.get("bold"):
         result = f"**{result}**"
 
-    return result
+    return f"{leading}{result}{trailing}"
 
 
 def _extract_runs_data(para, doc_hyperlinks: Dict[str, str]) -> List[dict]:
