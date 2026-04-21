@@ -10,39 +10,33 @@
 
 צרו תיקייה בשם mini_text_analyzer עם מבנה תקני:
 
+```bash
 mini_text_analyzer/
-
 ├── src/
-
-│ ├── mini_text_analyzer/
-
-│ │ ├── __init__.py
-
-│ │ └── text_pipeline.py
-
+│   ├── mini_text_analyzer/
+│   │   ├── __init__.py
+│   │   └── text_pipeline.py
 ├── tests/
-
-│ └── test_pipeline.py
-
+│   └── test_pipeline.py
 ├── data/
-
-│ └── sample.txt
-
+│   └── sample.txt
 ├── requirements.txt
-
 └── README.md
+```
 
 אתחלו סביבה וירטואלית:
 
+```bash
 python -m venv .venv
-
-source .venv/bin/activate # (או .venv\Scripts\activate ב-Windows)
+source .venv/bin/activate  # (או .venv\Scripts\activate ב-Windows)
+```
 
 אתחלו גם Git:
 
+```bash
 git init
-
 echo ".venv/" > .gitignore
+```
 
 ## תרגיל 2 - טוקניזציה וניקוי בסיסי (פרקים 2-4)
 
@@ -64,11 +58,12 @@ echo ".venv/" > .gitignore
 צרו קובץ config.json עם הגדרות ברירת מחדל (שפה, מיקום קובצי קלט ופלט). 
 בנו פונקציה שטוענת את ההגדרות בצורה גנרית:
 
+```python
 import json, pathlib
 
 def load_config(path: str = "config.json") -> dict:
-
-return json.loads(pathlib.Path(path).read_text(encoding="utf-8"))
+    return json.loads(pathlib.Path(path).read_text(encoding="utf-8"))
+```
 
 ## תרגיל 5 - חריגות ולוגים מובנים (פרק 8)
 
@@ -84,19 +79,17 @@ return json.loads(pathlib.Path(path).read_text(encoding="utf-8"))
 
 צרו מחלקה:
 
+```python
 class TextPipeline:
+    def __init__(self, config: dict):
+        self.config = config
 
-def __init__(self, config: dict):
+    def clean(self, text: str) -> str:
+        ...
 
-self.config = config
-
-def clean(self, text: str) -> str:
-
-...
-
-def stats(self, text: str) -> dict:
-
-...
+    def stats(self, text: str) -> dict:
+        ...
+```
 
 המחלקה מאחדת את כל השלבים: קריאה, ניקוי, ניתוח, וכתיבה.
 
@@ -104,7 +97,9 @@ def stats(self, text: str) -> dict:
 
 הוסיפו **type hints** לכל פונקציה ומחלקה:
 
+```python
 def stats(self, text: str) -> dict[str, float]:
+```
 
 כך תקבלו אוטוקומפלישן מדויק ועזר למבקרים סטטיים.
 
@@ -129,9 +124,10 @@ def stats(self, text: str) -> dict[str, float]:
 
 בנו קובץ mintx.py עם פקודות:
 
+```bash
 mintx clean input.txt output.txt
-
 mintx stats output.txt
+```
 
 הקפידו על תיעוד (--help) וקודי יציאה תקינים.
 

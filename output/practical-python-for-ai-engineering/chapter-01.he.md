@@ -80,19 +80,16 @@
 
 פייתון לא מבצעת את החישוב, אלא מנהלת אותו דרך ספריות חכמות כמו PyTorch, TensorFlow, או NumPy, שמאחורי הקלעים מריצות קוד ב-++C וב-CUDA.
 
-לדוגמה:
+**לדוגמה:**
 
+```python
 import torch
-
 x = torch.ones((1000, 1000)).cuda()
-
 y = torch.ones((1000, 1000)).cuda()
-
 z = x @ y
-
 # matrix multiplication - actually executed on the GPU
-
 print(z)
+```
 
 השורה z = x @ y נראית תמימה, אבל מאחוריה מתבצעים מיליוני חישובים מקבילים על כרטיס גרפי במהירות ש-Python לבדה לא הייתה מגיעה אליה לעולם.
 
@@ -191,57 +188,39 @@ print(z)
 
 **הקוד:**
 
+```python
 """
-
 text_to_json.py
-
 A simple script that computes basic text statistics and returns JSON.
-
 """
 
 import json
-
 from typing import Dict
 
 def clean_text(text: str) -> str:
-
-"""Removes extra spaces and unnecessary line breaks."""
-
-# split() without arguments handles all whitespace, including \n and \t
-
-return " ".join(text.strip().split())
+    """Removes extra spaces and unnecessary line breaks."""
+    # split() without arguments handles all whitespace, including \n and \t
+    return " ".join(text.strip().split())
 
 def text_stats(text: str) -> Dict[str, int]:
-
-"""Returns a dictionary with word and character counts."""
-
-cleaned = clean_text(text)
-
-return {
-
-"word_count": len(cleaned.split()),
-
-"char_count": len(cleaned)
-
-}
+    """Returns a dictionary with word and character counts."""
+    cleaned = clean_text(text)
+    return {
+        "word_count": len(cleaned.split()),
+        "char_count": len(cleaned)
+    }
 
 def to_json(data: Dict) -> str:
-
-"""Converts a dictionary to JSON with UTF-8 (Hebrew) support."""
-
-return json.dumps(data, ensure_ascii=False, indent=2)
+    """Converts a dictionary to JSON with UTF-8 (Hebrew) support."""
+    return json.dumps(data, ensure_ascii=False, indent=2)
 
 if __name__ == "__main__":
-
-# Sample input with redundant spaces
-
-sample_text = " This is a short text with extra spaces. "
-
-stats = text_stats(sample_text)
-
-result = to_json(stats)
-
-print(result)
+    # Sample input with redundant spaces
+    sample_text = "  This is a short text   with   extra spaces.  "
+    stats = text_stats(sample_text)
+    result = to_json(stats)
+    print(result)
+```
 
 **למה זו דוגמה “הנדסית”?**
 

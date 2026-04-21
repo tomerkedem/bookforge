@@ -412,12 +412,19 @@ def parse(ingested: dict) -> list[dict]:
             if "Heading" in style:
                 text = _clean_heading(text)
 
-            current["content"].append({
+            item = {
                 "text": text,
                 "style": style if block_type != "code" else "code",
                 "para_index": doc_idx,
-                "indent_level": 0
-            })
+                "indent_level": 0,
+            }
+            # Preserve the language declared by ingest for code blocks so
+            # to_markdown() can group contiguous code paragraphs with the
+            # same language into a single fenced code block.
+            if block_type == "code":
+                item["code_language"] = block.get("language") or "text"
+
+            current["content"].append(item)
 
     if current:
         chapters.append(current)
@@ -789,16 +796,76 @@ def to_markdown(chapter: dict, image_positions: list = None, next_heading_idx: i
                 continue
 
         # =========================
-        # Inline code
+        # Code paragraphs (from Code-* styles in Word)
         # =========================
-        # Rely on the style set by ingest.py, which classifies paragraphs
-        # as code based on monospace fonts and language detection. The old
-        # fallback of "text starts with backtick" misfired on Markdown-
-        # about-Markdown content (books that discuss code syntax).
+        # ingest.py marks paragraphs as code based on Code-* styles
+        # (authoritative) or monospace-font heuristics (legacy fallback).
+        # We collect contiguous code items into one fenced block so the
+        # output is a proper ``` ... ``` region rather than many inline
+        # code spans - which is what the author of the docx actually
+        # intended when they styled paragraphs with Code-Python or
+        # similar.
+        #
+        # Grouping rules:
+        # - Consecutive items with style="code" and the same code_language
+        #   belong to the same block.
+        # - An empty-text code item (a blank line the author left inside
+        #   a code sample) is absorbed into the current block to preserve
+        #   the original spacing.
+        # - Switching to a different language or to a non-code item
+        #   closes the block.
         elif style == "code":
-            lines.append(text)
+            lang = item.get("code_language") or "text"
+            code_lines = [text]
+            j = i + 1
+            while j < len(content):
+                next_item = content[j]
+                next_style = next_item["style"]
+                next_text = next_item["text"]
+
+                # Same-language code paragraph - include it
+                if next_style == "code" and (next_item.get("code_language") or "text") == lang:
+                    code_lines.append(next_text)
+                    j += 1
+                    continue
+
+                # Spacing-style empty paragraph sandwiched between two
+                # code paragraphs belongs to the code block. Authors
+                # commonly leave a blank line between two Python
+                # statements for readability.
+                if next_style == "Spacing" or (next_style != "code" and not next_text.strip()):
+                    # Peek ahead: only absorb this empty paragraph if
+                    # the NEXT non-empty item is also code with the
+                    # same language.
+                    k = j + 1
+                    while k < len(content):
+                        peek = content[k]
+                        peek_text = peek["text"]
+                        if peek["style"] == "Spacing" or (peek["style"] != "code" and not peek_text.strip()):
+                            k += 1
+                            continue
+                        break
+                    if (
+                        k < len(content)
+                        and content[k]["style"] == "code"
+                        and (content[k].get("code_language") or "text") == lang
+                    ):
+                        code_lines.append("")
+                        j += 1
+                        continue
+
+                # Different language or non-code content - stop the block
+                break
+
+            # Trim trailing blank lines inside the block (cosmetic)
+            while code_lines and not code_lines[-1].strip():
+                code_lines.pop()
+
+            lines.append(f"```{lang}")
+            lines.extend(code_lines)
+            lines.append("```")
             lines.append("")
-            i += 1
+            i = j
             continue
 
         # =========================

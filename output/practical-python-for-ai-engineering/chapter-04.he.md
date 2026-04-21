@@ -50,15 +50,14 @@
 
 **פרמטרים בסיסיים**
 
+```python
 def greet(name):
-
-print(f"Hello {name}!")
+    print(f"Hello {name}!")
 
 # Example usage:
-
-# greet("Noam")
-
+# greet("Noam") 
 # Output: Hello Noam!
+```
 
 מאחורי הפשטות הזו מסתתרת לא מעט עוצמה. כשאתה מעביר ערך לפונקציה, פייתון לא יוצרת ממנו עותק חדש, היא פשוט נותנת לפונקציה גישה לאותו אובייקט בזיכרון. אם זה אובייקט שניתן לשינוי, כמו רשימה או מילון, כל שינוי שתעשה עליו בתוך הפונקציה ישפיע גם מחוץ לה. וזה מצוין כשזה מה שאתה רוצה, אבל עלול להיות כאב ראש כשלא. כדי להימנע מהפתעות כאלה, כדאי לעבוד על עותק חדש כשלא רוצים “אפקט צד”.
 
@@ -67,38 +66,39 @@ print(f"Hello {name}!")
 פונקציה מחזירה ערך בעזרת return. 
 אם אין return, היא מחזירה אוטומטית None.
 
+```python
 def add(a, b):
-
-return a + b
+    return a + b
 
 result = add(5, 7)
-
-print(result) # 12
+print(result)  # 12
+```
 
 אין צורך להגדיר טיפוס החזרה, אבל מתכנתים מנוסים מוסיפים type hintsכדי לשמור על סדר:
 
+```python
 def add(a: int, b: int) -> int:
-
-return a + b
+    return a + b
+```
 
 **החזרת כמה ערכים יחד**
 
 בניגוד לשפות אחרות שדורשות מחלקה או מבנה נתונים מיוחד, 
 פייתון מאפשרת להחזיר מספר ערכים בבת אחת. פשוט על ידי החזרת tuple:
 
+```yaml
 def min_max_avg(values: list[int]) -> tuple[int, int, float]:
-
-"""Computes the minimum, maximum, and average of a list of integers."""
-
-return min(values), max(values), sum(values) / len(values)
+    """Computes the minimum, maximum, and average of a list of integers."""
+    return min(values), max(values), sum(values) / len(values)
+```
 
 ועכשיו אפשר לפרק את התוצאה ישירות:
 
+```yaml
 nums = [10, 5, 8, 12]
-
 low, high, avg = min_max_avg(nums)
-
-print(low, high, avg) # 5 12 8.75
+print(low, high, avg)  # 5 12 8.75
+```
 
 זה נקרא **tuple unpacking**, וזו אחת הסיבות שפייתון כל כך קריאה היא מאפשרת “להוציא מידע ממבנה” בלי תחביר כבד.
 
@@ -107,13 +107,13 @@ print(low, high, avg) # 5 12 8.75
 פייתון מאפשרת גם קריאה מפורשת לפי שם, 
 מה שהופך את הקוד לברור יותר:
 
+```python
 def connect(host: str, port: int):
-
-print(f"Connecting to {host}:{port}...")
+    print(f"Connecting to {host}:{port}...")
 
 connect(port=8080, host="localhost")
-
 # Output: Connecting to localhost:8080...
+```
 
 כך אתה לא תלוי בסדר הפרמטרים, והקוד שלך כמעט קורא את עצמו.
 
@@ -127,15 +127,14 @@ connect(port=8080, host="localhost")
 פייתון מאפשרת להגדיר ערכי ברירת מחדל לפרמטרים, 
 וכך להפוך פונקציות לגמישות וידידותיות יותר:
 
+```python
 def greet(name: str, greeting: str = "Hello"):
-
-print(f"{greeting}, {name}!")
+    print(f"{greeting}, {name}!")
 
 # Examples of calling the function:
-
-greet("Noam") # Hello, Noam! (uses default)
-
-greet("Noam", "Welcome") # Welcome, Noam! (overrides default)
+greet("Noam")               # Hello, Noam! (uses default)
+greet("Noam", "Welcome")     # Welcome, Noam! (overrides default)
+```
 
 זה נוח, קריא, ומקצר המון קוד. אבל מתחת לפני השטח מסתתרת אחת המלכודות הוותיקות והמסוכנות ביותר בשפה: 
 ה-**mutable default trap.**
@@ -144,15 +143,14 @@ greet("Noam", "Welcome") # Welcome, Noam! (overrides default)
 
 **המלכודת:** ערכי ברירת מחדל נוצרים פעם אחת בלבד פייתון מחשבת את ערכי ברירת-המחדל רק פעם אחת, בזמן הגדרת הפונקציה, ולא בכל פעם שהיא נקראת. אם הערך הוא משתנה Mutable (כמו list, dict, או set), הוא יישמר בזיכרון בין קריאות לפונקציה.
 
+```python
 def add_item(item, items=[]):
+    items.append(item)
+    return items
 
-items.append(item)
-
-return items
-
-print(add_item("A")) # ['A']
-
-print(add_item("B")) # ['A', 'B'] # surprising
+print(add_item("A"))  # ['A']
+print(add_item("B"))  # ['A', 'B']  # surprising
+```
 
 במקום להתחיל רשימה חדשה בכל קריאה, הפונקציה משתמשת באותה רשימה מהפעם הקודמת. זו לא “תקלה”, זה העיצוב של השפה, אבל אם לא יודעים עליו, זה עלול ליצור באגים חמקמקים מאוד.
 
@@ -161,21 +159,20 @@ print(add_item("B")) # ['A', 'B'] # surprising
 הדרך הבטוחה היא להשתמש ב-None כברירת מחדל, 
 וליצור את האובייקט בתוך גוף הפונקציה:
 
+```python
 def add_item(item, items=None):
-
-if items is None:
-
-items = []
-
-items.append(item)
-
-return items
+    if items is None:
+        items = []
+    items.append(item)
+    return items
+```
 
 כעת כל קריאה מתחילה עם רשימה חדשה:
 
-print(add_item("A")) # ['A']
-
-print(add_item("B")) # ['B']
+```python
+print(add_item("A"))  # ['A']
+print(add_item("B"))  # ['B']
+```
 
 פשוט, ברור, ובטוח.
 
@@ -199,22 +196,23 @@ print(add_item("B")) # ['B']
 
 הכוכבית היחידה * משמשת לאיסוף כל הפרמטרים **המיקומיים** (positionals) לתוך tuple.
 
+```python
 def summarize(*args):
-
-print(args)
+    print(args)
 
 summarize(1, 2, 3)
-
 # output: (1, 2, 3)
+```
 
 כל הערכים שהועברו נכנסים ל-args כרצף (tuple). 
 אפשר לעבור עליהם בלולאה, לסכום אותם, או לעבד אותם כרשימה:
 
+```python
 def add_all(*numbers):
+    return sum(numbers)
 
-return sum(numbers)
-
-print(add_all(3, 5, 10)) # 18
+print(add_all(3, 5, 10))  # 18
+```
 
 אם אתה לא יודע מראש כמה פרמטרים יגיעו, זו הדרך הבטוחה לטפל בזה.
 
@@ -224,47 +222,41 @@ print(add_all(3, 5, 10)) # 18
 
 הם נשמרים בתוך מילון (dict) כך שקל לגשת אליהם לפי שם:
 
-def describe_person(**kwargs):**
-
-print(kwargs)
+```python
+def describe_person(**kwargs):
+    print(kwargs)
 
 describe_person(name="Tamar", age=29, city="Tel Aviv")
-
 # {'name': 'Tamar', 'age': 29, 'city': 'Tel Aviv'}
+```
 
 אפשר להשתמש בהם ישירות:
 
-def describe_person(**kwargs):**
-
-for key, value in kwargs.items():
-
-print(f"{key}: {value}")
+```python
+def describe_person(**kwargs):
+    for key, value in kwargs.items():
+        print(f"{key}: {value}")
 
 describe_person(name="Tamar", age=29, city="Tel Aviv")
-
 # Output:
-
 # name: Tamar
-
 # age: 29
-
 # city: Tel Aviv
+```
 
 **שילוב של שניהם**
 
 פייתון מאפשרת לשלב בין שני הסוגים, קודם *args, אחר כך **kwargs:**
 
-def debug(*args, **kwargs):**
-
-print("ARGS:", args)
-
-print("KWARGS:", kwargs)
+```python
+def debug(*args, **kwargs):
+    print("ARGS:", args)
+    print("KWARGS:", kwargs)
 
 debug(10, 20, mode="test", verbose=True)
-
 # ARGS: (10, 20)
-
 # KWARGS: {'mode': 'test', 'verbose': True}
+```
 
 כך ניתן לכתוב פונקציות גמישות שמקבלות קלט מכל סוג 
 כמו פונקציות לוג, דיבוג, או עיבוד נתונים גנרי.
@@ -277,49 +269,30 @@ debug(10, 20, mode="test", verbose=True)
 
 הפונקציה יודעת מה חשוב לה, וכל השאר נכנס דרך המילון בלי לשבור כלום.
 
-def run_inference(model, **config):**
-
-# default values
-
-temperature = config.get("temperature", 0.7)
-
-max_tokens = config.get("max_tokens", 256)
-
-
-
-# use only what is needed right now
-
-return model.generate(temp=temperature, limit=max_tokens)
-
-
-
+```python
+def run_inference(model, **config):
+    # default values
+    temperature = config.get("temperature", 0.7)
+    max_tokens = config.get("max_tokens", 256)
+ 
+    # use only what is needed right now
+    return model.generate(temp=temperature, limit=max_tokens)
+ 
 # usage example
-
 config = {
-
-"temperature": 0.8,
-
-"max_tokens": 512,
-
-"top_p": 0.9,
-
-# new field not used yet
-
-"logprobs": True
-
-# another unused field
-
+    "temperature": 0.8,
+    "max_tokens": 512,
+    "top_p": 0.9,
+      # new field not used yet
+    "logprobs": True
+   # another unused field
 }
-
-
-
-result = run_inference(gpt_model, **config)**
-
+ 
+result = run_inference(gpt_model, **config)
 print(result)
-
 # example output:
-
 # "The model generated a response with temperature 0.8 and a limit of 512 tokens"
+```
 
 הפונקציה משתמשת רק בפרמטרים שהיא מכירה. שדות חדשים לא שוברים שום דבר.
 
@@ -329,37 +302,24 @@ print(result)
 
 אחרי חודש מוסיפים תמיכה ב-top_p. הקריאות נשארות זהות.
 
-def run_inference(model, **config):**
-
-temperature = config.get("temperature", 0.7)
-
-max_tokens = config.get("max_tokens", 256)
-
-top_p = config.get("top_p", 1.0) # new usage
-
-
-
-return model.generate(
-
-temp=temperature,
-
-limit=max_tokens,
-
-top_p=top_p
-
-)
-
-
-
+```yaml
+def run_inference(model, **config):
+    temperature = config.get("temperature", 0.7)
+    max_tokens = config.get("max_tokens", 256)
+    top_p = config.get("top_p", 1.0) # new usage
+ 
+    return model.generate(
+        temp=temperature,
+        limit=max_tokens,
+        top_p=top_p
+    )
+ 
 # same call exactly as before
-
-result = run_inference(gpt_model, **config)**
-
+result = run_inference(gpt_model, **config)
 print(result)
-
 # example output:
-
 # "The model generated a response with temp 0.8, limit 512, top_p 0.9"
+```
 
 זה כל הרעיון: מתחילים פשוט, מוסיפים יכולות כשצריך, והקוד שמסביב לא נשבר.
 
@@ -371,29 +331,28 @@ print(result)
 
 בפייתון, פונקציות מתנהגות כמו כל משתנה אחר אפשר לשמור אותה במשתנה, להעביר אותה כפרמטר, להחזיר אותה כפלט, ואפילו לבנות פונקציות שמייצרות פונקציות אחרות. זו לא סתם גמישות תחבירית, זו דרך חשיבה. במקום להעביר רק נתונים, אתה מעביר **התנהגות**. **פונקציה שמאוחסנת במשתנה**
 
+```python
 def greet(name: str) -> str:
-
-return f"Hello {name}!"
+    return f"Hello {name}!"
 
 say_hi = greet
-
 print(say_hi("Noam"))
-
-# Hello Noam!
+ # Hello Noam!
+```
 
 כאן say_hi הוא משתנה שמצביע לפונקציה greet. לא בוצעה קריאה לפונקציה, רק “שימור” שלה. זה מאפשר להעביר פונקציות בדיוק כמו שמעבירים מחרוזת או רשימה.
 
 **פונקציה כפרמטר לפונקציה אחרת**
 
+```python
 def apply_twice(func, value):
-
-return func(func(value))
+    return func(func(value))
 
 def add_one(x: int) -> int:
-
-return x + 1
+    return x + 1
 
 print(apply_twice(add_one, 3))
+```
 
 כאן הפונקציה apply_twice מקבלת פונקציה אחרת (add_one) 
 ומפעילה אותה פעמיים על הערך. אין כאן קסם, רק ניצול של העובדה שפונקציות הן אובייקטים לכל דבר.
@@ -402,27 +361,25 @@ print(apply_twice(add_one, 3))
 
 כן, גם זה אפשרי. וזה אפילו שימושי מאוד:
 
+```python
 def make_multiplier(factor: int):
-
-def multiply(x: int) -> int:
-
-return x * factor
-
-return multiply
+    def multiply(x: int) -> int:
+        return x * factor
+    return multiply
 
 double = make_multiplier(2)
-
-print(double(5)) # 10
+print(double(5))   # 10
+```
 
 זו פונקציה שיוצרת פונקציות. כשקוראים ל-(2) make_multiplier היא לא מחזירה מספר, אלא פונקציה חדשה בשם multiply שכבר “מכירה” את הערך של factor. כל פעם שנקרא ל-double, היא תשתמש באותו ערך שנשמר. במקרה הזה 2. התופעה הזו נקראת Closure. המשמעות היא שהפונקציה הפנימית זוכרת את הערכים שהיו זמינים בזמן שנוצרה, גם אחרי שהפונקציה החיצונית כבר הסתיימה. זה שימושי במיוחד כשאתה רוצה ליצור פונקציות מותאמות מראש למשל פונקציה שמחשבת מחיר עם מע״מ, מקדם הנחה, או כל קבוע אחר:
 
+```python
 add_vat = make_multiplier(1.17)
-
 discount = make_multiplier(0.9)
 
-print(add_vat(100)) # 117.0
-
-print(discount(200)) # 180.0
+print(add_vat(100))   # 117.0
+print(discount(200))  # 180.0
+```
 
 כל אחת מהן “זוכרת” את המקדם שלה, וזה מה שהופך את ה-Closure לכלי כל כך אלגנטי לבניית לוגיקה חכמה ופשוטה.
 
@@ -430,15 +387,14 @@ print(discount(200)) # 180.0
 
 במערכות AI אנחנו מריצים קוד שחוזר על עצמו ניקוי טקסט, מדידה, לוגים, עיבוד פלטים, ועוד. כשפונקציות הן אובייקטים, אפשר לבנות **תהליכים גנריים**, שמקבלים “התנהגות” כפרמטר, בלי לשכפל לוגיקה.
 
+```python
 def process_text(text: str, transform):
+    clean = text.strip().lower()
+    return transform(clean)
 
-clean = text.strip().lower()
-
-return transform(clean)
-
-result = process_text(" AI IS AMAZING ", lambda t: t.replace("ai", "ML"))
-
+result = process_text("  AI IS AMAZING  ", lambda t: t.replace("ai", "ML"))
 print(result) # ml is amazing
+```
 
 כך פונקציה אחת יכולה לטפל בכל תרחיש רק מחליפים את ההתנהגות שמועברת לה.
 
@@ -454,7 +410,9 @@ print(result) # ml is amazing
 
 **התחביר**
 
+```python
 lambda parameters: expression
+```
 
 הביטוי היחיד שאחרי הנקודתיים הוא מה שהפונקציה מחזירה.
 
@@ -462,15 +420,17 @@ lambda parameters: expression
 
 לדוגמה:
 
-square = lambda x: x ** 2**
-
-print(square(5)) # 25
+```python
+square = lambda x: x ** 2
+print(square(5))  # 25
+```
 
 זה שווה ערך לכתיבה:
 
+```python
 def square(x):
-
-return x ** 2**
+    return x ** 2
+```
 
 אבל הרבה יותר קצרה כשמדובר בפעולה פשוטה.
 
@@ -479,23 +439,20 @@ return x ** 2**
 פונקציות lambda הופכות לחזקות במיוחד כשהן משולבות עם כלים כמו map, filter, ו-sorted 
 פונקציות שמקבלות פונקציה אחרת כפרמטר.
 
+```python
 numbers = [1, 2, 3, 4, 5]
 
 # square all numbers
-
-squares = list(map(lambda x: x ** 2, numbers))**
+squares = list(map(lambda x: x ** 2, numbers))
 
 # filter even numbers
-
 evens = list(filter(lambda x: x % 2 == 0, numbers))
 
 print(squares)
-
-# [1, 4, 9, 16, 25]
-
+ # [1, 4, 9, 16, 25]
 print(evens)
-
-# [2, 4]
+   # [2, 4]
+```
 
 במקום להגדיר פונקציה חיצונית בשם, אנחנו פשוט “שולפים” פונקציה קטנה לתוך השורה.
 
@@ -503,13 +460,12 @@ print(evens)
 
 פייתון מאפשרת גם למיין לפי ביטוי מסוים באמצעות key:
 
+```python
 words = ["AI", "python", "Machine", "deep"]
-
 words.sort(key=lambda w: len(w))
-
 print(words)
-
-# ['AI', 'deep', 'python', 'Machine']
+ # ['AI', 'deep', 'python', 'Machine']
+```
 
 ה- lambda כאן משמשת כתנאי מיון זמני, בלי להגדיר פונקציה נפרדת.
 
@@ -519,13 +475,12 @@ print(words)
 
 לדוגמה:
 
-texts = [" AI ", "Data ", " science "]
-
+```python
+texts = [" AI ", "Data ", " science  "]
 cleaned = list(map(lambda t: t.strip().lower(), texts))
-
 print(cleaned)
-
-# ['ai', 'data', 'science']
+ # ['ai', 'data', 'science']
+```
 
 זו בדיוק הגישה הפייתונית: לא לפזר פונקציות מיותרות, אלא לכתוב רק מה שצריך.
 
@@ -548,15 +503,14 @@ print(cleaned)
 
 זהו התחום הצר ביותר, משתנים שהוגדרו **בתוך פונקציה.**
 
+```python
 def show():
-
-msg = "Hello"
-
-return msg
+    msg = "Hello"
+    return msg
 
 # function call
-
-print(show()) # Hello
+print(show())  # Hello
+```
 
 **הסבר קצר:** 
 הפונקציה show() **לא** מדפיסה בעצמה, אלא *מחזירה* את הערך "Hello". הקריאה ל-print(show()) מדפיסה את מה שהפונקציה החזירה. זו דרך נקייה וברורה יותר לכתוב פונקציות. הן עושות חישוב ומחזירות תוצאה, וההדפסה מתבצעת רק מחוץ להן.
@@ -566,19 +520,18 @@ print(show()) # Hello
 כשיש פונקציות בתוך פונקציות, 
 הפונקציה הפנימית יכולה לגשת למשתנים של הפונקציה העוטפת.
 
+```python
 def outer():
+    name = "Tamar"
 
-name = "Tamar"
+    def inner():
+       return "Hello " + name
 
-def inner():
-
-return "Hello " + name
-
-return inner()
+    return inner()
 
 # function call
-
-print(outer()) # Hello Tamar
+print(outer())   # Hello Tamar
+```
 
 הפונקציה inner() לא מגדירה את name בעצמה, 
 אלא משתמשת בערך שהוגדר ב-scope העוטף שלה (outer).
@@ -587,19 +540,17 @@ print(outer()) # Hello Tamar
 
 אם המשתנה לא נמצא לא בתחום המקומי (Local) ולא בתחום העוטף (Enclosing), פייתון תבדוק אם הוא הוגדר ברמה הגלובלית של הקובץ.
 
+```python
 count = 0
 
 def increment():
-
-global count
-
-count += 1
+    global count
+    count += 1
 
 # function call
-
 increment()
-
-print(count) # 1
+print(count)  # 1
+```
 
 המילה global אומרת לפייתון: “אל תיצור משתנה חדש מקומי, השתמש בזה שמוגדר מחוץ לפונקציה.”
 
@@ -612,33 +563,26 @@ print(count) # 1
 
 מילים כמו len, sum, range, ו-print הן חלק מה-Built-ins של פייתון. אפשר “לדרוס” אותן בטעות, ולכן כדאי להימנע משמות כאלה בקוד שלך:
 
+```python
 sum = 42
-
-# the original sum function is no longer available
+ # the original sum function is no longer available
+```
 
 **דוגמה שמאחדת הכול**
 
+```python
 x = "global"
-
-
-
+ 
 def outer():
-
-x = "enclosing"
-
-def inner():
-
-x = "local"
-
-print(x)
-
-inner()
-
-
-
+    x = "enclosing"
+    def inner():
+        x = "local"
+        print(x)
+    inner()
+ 
 outer()
-
 # Output: local
+```
 
 אם נמחוק את ההגדרה המקומית (x = "local"), פייתון תשתמש בזה מה-Enclosing. אם גם זה לא קיים, היא תעבור ל-Global, 
 ואם גם שם לא תמצא, תבדוק ב-Built-ins. זו בדיוק שרשרת ה-LEGB.
@@ -662,36 +606,28 @@ Scope ברור = קוד צפוי = פחות באגים.
 Docstring הוא מחרוזת טקסט שנמצאת מיד אחרי הגדרת פונקציה, מחלקה או מודול. 
 הוא כתוב בין שלושה גרשיים (""") ומשמש כפירוט רשמי לתיעוד.
 
+```python
 def add(a: int, b: int) -> int:
-
-"""
-
-Return the sum of two numbers.
-
-:param a: the first number
-
-:param b: the second number
-
-:return: the sum of both values
-
-"""
-
-return a + b
+    """
+    Return the sum of two numbers.
+    :param a: the first number
+    :param b: the second number
+    :return: the sum of both values
+    """
+    return a + b
+```
 
 זה לא סתם הערה. 
 פייתון ממש שומרת את ה-Docstring כחלק מהאובייקט עצמו.
 
+```python
 print(add.__doc__)
-
 # Output:
-
-# Return the sum of two numbers.
-
-# :param a: the first number
-
-# :param b: the second number
-
-# :return: the sum of both values
+#    Return the sum of two numbers.
+#    :param a: the first number
+#    :param b: the second number
+#    :return: the sum of both values
+```
 
 כלומר, זהו תיעוד חי, לא רק טקסט.
 
@@ -707,47 +643,37 @@ print(add.__doc__)
 
 1. **סגנון Google**
 
+```python
 def load_dataset(path: str) -> list[str]:
+    """
+    Load a text file and return a list of lines.
 
-"""
+    Args:
+        path (str): the path to the file.
 
-Load a text file and return a list of lines.
-
-Args:
-
-path (str): the path to the file.
-
-Returns:
-
-list[str]: a list of lines from the file.
-
-"""
-
-with open(path, 'r') as file:
-
-return file.readlines()
+    Returns:
+        list[str]: a list of lines from the file.
+    """
+    with open(path, 'r') as file:
+        return file.readlines()
+```
 
 2. **סגנון reStructuredText (בשימוש נרחב ב-Sphinx)**
 
+```python
 def load_dataset(path: str) -> list[str]:
+    """
+    Load a text file and return a list of lines.
 
-"""
+    Args:
+        path (str): the path to the file.
 
-Load a text file and return a list of lines.
-
-Args:
-
-path (str): the path to the file.
-
-Returns:
-
-list[str]: a list of lines from the file.
-
-"""
-
-with open(path, "r", encoding="utf8") as f:
-
-return f.read().splitlines()
+    Returns:
+        list[str]: a list of lines from the file.
+    """
+    with open(path, "r", encoding="utf8") as f:
+       return f.read().splitlines()
+```
 
 אין סגנון אחד "נכון" העיקר שתהיה עקביות בכל הפרויקט.
 
@@ -755,13 +681,12 @@ return f.read().splitlines()
 
 גם פונקציות עזר קצרות ראויות ל-Docstring. לא בגלל שמישהו אחר יקרא אותן, אלא כדי לעזור לך להבין מה חשבת כשכתבת אותן.
 
+```python
 def normalize(text: str) -> str:
-
-"""Removes leading/trailing whitespace and converts text to lowercase."""
-
-# Strip whitespace from both ends and convert to lowercase
-
-return text.strip().lower()
+    """Removes leading/trailing whitespace and converts text to lowercase."""
+    # Strip whitespace from both ends and convert to lowercase
+    return text.strip().lower()
+```
 
 שורה אחת מספיקה כשאין מורכבות.
 
@@ -805,21 +730,21 @@ return text.strip().lower()
 
 3. להיקרא בהתאם למה שהיא עושה.
 
+```python
 def load_and_clean_data(path):
-
-# does too much
-
-...
+ # does too much
+    ...
+```
 
 עדיף:
 
+```python
 def load_data(path):
-
-...
+    ...
 
 def clean_data(data):
-
-...
+    ...
+```
 
 זה אולי יותר שורות קוד, אבל הרבה פחות כאב ראש.
 
@@ -870,15 +795,13 @@ def clean_data(data):
 
 **normalize ניקוי בסיסי**
 
+```python
 def normalize(text: str) -> str:
-
-"""
-
-Clean text by removing extra spaces and converting to lowercase.
-
-"""
-
-return text.strip().lower()
+    """
+    Clean text by removing extra spaces and converting to lowercase.
+    """
+    return text.strip().lower()
+```
 
 שורה אחת, אבל חשובה: 
 היא מבטיחה שכל שלב אחר יעבוד על נתונים עקביים. 
@@ -886,57 +809,42 @@ return text.strip().lower()
 
 **tokenize פיצול למילים**
 
+```python
 import re
 
 def tokenize(text: str) -> list[str]:
+    """
+    Split text into words while removing punctuation.
+    """
 
-"""
-
-Split text into words while removing punctuation.
-
-"""
-
-text = re.sub(r"[^\w\s-]", " ", text) # keep hyphens
-
-return [w for w in text.split() if w]
+    text = re.sub(r"[^\w\s-]", " ", text)  # keep hyphens
+    return [w for w in text.split() if w]
+```
 
 זו דרך פשוטה ויעילה לבצע tokenization ראשוני לא מושלם כמו מודלי NLP, אבל מספיק לרוב התרחישים המוקדמים.
 
 **word_stats חישוב מדדים בסיסיים**
 
+```python
 from collections import Counter
 
 def word_stats(words: list[str]) -> dict[str, int | str | float]:
-
-"""
-
-Compute basic metrics for a list of words.
-
-"""
-
-total = len(words)
-
-if total == 0:
-
-return {"num_words": 0, "avg_length": 0, "most_common": ""}
-
-
-
-avg_length = sum(len(w) for w in words) / total
-
-most_common = Counter(words).most_common(1)[0][0]
-
-
-
-return {
-
-"num_words": total,
-
-"avg_length": round(avg_length, 2),
-
-"most_common": most_common
-
-}
+    """
+    Compute basic metrics for a list of words.
+    """
+    total = len(words)
+    if total == 0:
+       return {"num_words": 0, "avg_length": 0, "most_common": ""}
+    
+    avg_length = sum(len(w) for w in words) / total
+    most_common = Counter(words).most_common(1)[0][0]
+    
+    return {
+       "num_words": total,
+       "avg_length": round(avg_length, 2),
+       "most_common": most_common
+    }
+```
 
 כאן אנחנו משלבים כמה עקרונות:
 
@@ -948,29 +856,25 @@ return {
 
 **analyze_text הרכבה של מספר פונקציות**
 
+```python
 def analyze_text(text: str) -> dict[str, int | str | float]:
-
-"""
-
-Run all analysis steps on raw text.
-
-"""
-
-clean = normalize(text)
-
-words = tokenize(clean)
-
-return word_stats(words)
+    """
+    Run all analysis steps on raw text.
+    """
+    clean = normalize(text)
+    words = tokenize(clean)
+    return word_stats(words)
+```
 
 זו כבר פונקציה “על” שמדגימה הרכבה נכונה של פונקציות קטנות. היא עושה דבר אחד בלבד קוראת לפונקציות אחרות במבנה ברור, בלי להתעסק בפרטים שלהן.
 
 **דוגמת הרצה**
 
+```python
 if __name__ == "__main__":
-
-sample = "The AI of Python is amazing. Python is easy fast and convenient."
-
-print(analyze_text(sample))
+    sample = "The AI of Python is amazing. Python is easy fast and convenient."
+    print(analyze_text(sample))
+```
 
 **טיפ הנדסי**
 

@@ -23,28 +23,28 @@ NumPy, Generators, ו-Profilers היא הופכת ל-כלי הנדסי של ממ
 
 לפני שמייעלים קוד, צריך לדעת **מה באמת איטי**. המודול timeit נועד בדיוק לזה. למדוד זמן ריצה בצורה אמינה, נקייה ובלתי תלוית-מערכת.
 
+```python
 import timeit
 
-code = "result = [x**2 for x in range(10_000)]"**
-
+code = "result = [x**2 for x in range(10_000)]"
 print(timeit.timeit(code, number=100))
+```
 
 timeit מריץ את הקוד שוב ושוב ומחזיר ממוצע זמן ריצה מדויק. 
 כך ניתן להשוות בין גרסאות של פונקציה ולראות איזו מהן באמת מהירה יותר, לא לפי תחושת בטן, אלא לפי נתונים.
 
 דוגמה קטנה:
 
+```python
 import timeit
 
 setup = "nums = list(range(1000))"
-
-v1 = "sum([x**2 for x in nums])"**
-
-v2 = "sum(x**2 for x in nums)" # Generator does not create a full list in memory**
+v1 = "sum([x**2 for x in nums])"
+v2 = "sum(x**2 for x in nums)"  # Generator does not create a full list in memory
 
 print(timeit.timeit(v1, setup=setup, number=1000))
-
 print(timeit.timeit(v2, setup=setup, number=1000))
+```
 
 במבחן אמיתי, תופתע לגלות שהגרסה הקצרה יותר לא רק נקייה וברורה יותר, אלא גם מהירה וחסכונית בזיכרון בזכות השימוש ב-,Generator Expression שמחשב ערכים תוך כדי תנועה במקום ליצור רשימה שלמה מראש. מדידת זמן ריצה היא לא רק שלב לפני אופטימיזציה, היא כלי למחשבה. ברגע שמודדים באופן עקבי, מתחילים לזהות תבניות: אילו פעולות באמת יקרות, ואילו רק נראות כך. מפתח שמודד, כותב קוד מדויק יותר, ולא מהיר “במקרה”.
 
@@ -52,23 +52,24 @@ print(timeit.timeit(v2, setup=setup, number=1000))
 
 לפעמים הקוד כולו מרגיש “איטי”, אבל האמת היא שפונקציה אחת גונבת את כל הזמן. כדי למצוא אותה, יש את cProfile:
 
+```python
 import cProfile
 
 def compute():
-
-return sum(i * i for i in range(100_000))
+    return sum(i * i for i in range(100_000))
 
 cProfile.run("compute()")
+```
 
 הפלט יגיד לך כמה פעמים כל פונקציה נקראה וכמה זמן היא לקחה. אם אחת מהן אחראית ל-80% מהזמן, מצאת את הבעיה.
 
 רוצה לראות כמה זה יפה? התקן snakeviz:
 
+```bash
 pip install snakeviz
-
 python -m cProfile -o out.prof myscript.py
-
 snakeviz out.prof
+```
 
 ותקבל גרף צבעוני של זמן הריצה שלך.
 
@@ -78,17 +79,15 @@ snakeviz out.prof
 
 כאן נכנסים לתמונהGenerators פונקציות שמחזירות ערכים אחד-אחד, לפי הצורך, במקום לבנות רשימה שלמה מראש.
 
+```python
 def squares():
-
-for i in range(1_000_000):
-
-yield i ** 2**
+    for i in range(1_000_000):
+        yield i ** 2
 
 for n in squares():
-
-if n > 100:
-
-break
+    if n > 100:
+        break
+```
 
 הפונקציה הזו לא שומרת מיליון ערכים בזיכרון. היא פשוט מחשבת כל ערך כשצריך אותו וזה חוסך המון זיכרון, בלי לפגוע בפשטות הקוד. אפשר לחשוב על Generator כעל צינור שמזרים נתונים, במקום דלי שמחזיק הכול מראש.
 
@@ -101,47 +100,44 @@ break
 
 איך היא עושה את זה? פשוט: במקום לשמור רשימת אובייקטים בזיכרון, כמו שפייתון עושה בדרל כלל, NumPy שומרת בלוק אחד צפוף של נתונים (ב-C). כשאתה מבצע חישוב, היא מפעילה את הפעולה על כל הבלוק בבת אחת בלי לולאה אחת בפייתון.
 
+```python
 import numpy as np
 
 a = np.arange(1_000_000)
-
-b = a * 2 # vectorized operation many times faster than a regular loop
+b = a * 2  # vectorized operation many times faster than a regular loop
+```
 
 במקום לעבור איבר-איבר, המעבד מבצע את כל ההכפלה “בבאטץ’ אחד”. זו בדיוק וקטוריזציה (Vectorization) 
 היכולת לבצע פעולה אחת על מערך שלם, באמצעות הוראות מעבד שמטפלות בכמה ערכים בו-זמנית.
 
 **דוגמה**
 
+```python
 import numpy as np
 
 x = np.array([1, 2, 3])
-
 y = np.array([4, 5, 6])
 
-print(x + y) # [5 7 9] - Element-wise addition
-
-print(x * y) # [4 10 18] - Element-wise multiplication (Hadamard product)
-
-print(np.mean(x)) # 2.0 - Statistical mean
+print(x + y)        # [5 7 9] - Element-wise addition
+print(x * y)        # [4 10 18] - Element-wise multiplication (Hadamard product)
+print(np.mean(x))   # 2.0 - Statistical mean
 
 m = np.random.rand(3, 3)
-
 print(np.linalg.inv(m)) # Matrix inverse using linear algebra module
+```
 
 במבט ראשון זה נראה כמו קוד רגיל. חיבור רשימות, כפל איברים, חישוב ממוצע. אבל מתחת לפני השטח, NumPyלא רצה בלולאה אחת. היא שומרת את כל הנתונים במערך צפוף (array) בזיכרון, 
 ומעבירה את הפעולה כולה לקוד C יעיל, שמבצע אותה על כל הנתונים יחד, בלי הפרשנות האיטית של פייתון. כך זה נראה בגרסה "רגילה" לעומת גרסה וקטורית:
 
+```python
 # regular version
-
 result = []
-
 for i in range(len(x)):
-
-result.append(x[i] + y[i])
+    result.append(x[i] + y[i])
 
 # vectorized version NumPy
-
 result = x + y
+```
 
 התוצאה זהה, אבל זמן הריצה שונה לגמרי.
 
@@ -161,23 +157,23 @@ result = x + y
 
 **גישה נאיבית:**
 
+```python
 from collections import Counter
 
 def word_freq_naive(words: list[str]) -> dict[str, int]:
-
-return dict(Counter(words))
+    return dict(Counter(words))
+```
 
 **גישה וקטורית עם NumPy:**
 
+```python
 import numpy as np
 
 def word_freq_numpy(words: list[str]) -> dict[str, int]:
-
-arr = np.array(words)
-
-unique, counts = np.unique(arr, return_counts=True)
-
-return dict(zip(unique, counts))
+    arr = np.array(words)
+    unique, counts = np.unique(arr, return_counts=True)
+    return dict(zip(unique, counts))
+```
 
 ב-dataset קטן זה לא משנה. אבל כשיש לך מיליון מילים, הגרסה של NumPy תרוץ פי 5-10 מהר יותר, בלי לשנות שורה של לוגיקה.
 

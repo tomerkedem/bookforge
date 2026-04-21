@@ -29,9 +29,11 @@
 
 ייבוא של מודול שלם:
 
+```python
 import math
 
-print(math.sqrt(16)) # 4.0
+print(math.sqrt(16))  # 4.0
+```
 
 כאן אתה אומר לפייתון: “תטען את הקובץ math.py (מהספרייה הסטנדרטית), ואני אשתמש בפונקציות שלו דרך השם math.”
 
@@ -39,9 +41,11 @@ print(math.sqrt(16)) # 4.0
 
 ייבוא של חלק מסוים בלבד:
 
+```python
 from math import sqrt
 
 print(sqrt(25))
+```
 
 חוסך הקלדה, אבל עדיף להשתמש בזה רק כשבאמת יש צורך. 
 כדי לשמור על קריאות ולדעת מאיפה הגיע כל שם.
@@ -50,9 +54,10 @@ print(sqrt(25))
 
 כמעט כל מתכנת מכיר את זה:
 
+```python
 import numpy as np
-
 import pandas as pd
+```
 
 זהו קיצור מקובל שמקל על הקריאה והופך את הקוד לאחיד בין צוותים.
 
@@ -61,15 +66,14 @@ import pandas as pd
 במערכות עיבוד נתונים, יש עשרות מודולים קטנים: 
 ניקוי טקסט, קריאה ממקורות, חישוב מדדים, שמירת תוצאות, לוגים, ועוד. מנגנון import מאפשר **להרכיב מהם מערכת אחת נקייה**, בלי כפילויות או תלות הדדית מיותרת.
 
+```python
 from text.cleaner import normalize
-
 from text.tokenizer import tokenize
-
 from text.stats import word_stats
 
 def analyze(text):
-
-return word_stats(tokenize(normalize(text)))
+    return word_stats(tokenize(normalize(text)))
+```
 
 כל שורה ברורה, כל רכיב ממוקד. והכול משתלב בהרמוניה.
 
@@ -86,27 +90,19 @@ return word_stats(tokenize(normalize(text)))
 
 זה מבנה פרויקט בסיסי שמתאים גם לפרודקשן:
 
+```bash
 my_project/
-
 ├─ src/
-
-│ └─ my_package/
-
-│ ├─ __init__.py
-
-│ ├─ core.py
-
-│ └─ utils.py
-
+│  └─ my_package/
+│     ├─ __init__.py
+│     ├─ core.py
+│     └─ utils.py
 ├─ scripts/
-
-│ └─ run_demo.py
-
+│  └─ run_demo.py
 ├─ tests/
-
-│ └─ test_core.py
-
+│  └─ test_core.py
 └─ requirements.txt
+```
 
 בתיקייה src נמצא קוד הספרייה שלך. בתוך scripts תשמור קבצי הרצה או דוגמאות, וב-,tests בדיקות יחידה.
 
@@ -114,49 +110,47 @@ my_project/
 
 src/my_package/core.py
 
+```python
 def tokenize(text: str) -> list[str]:
-
-return text.split()
+    return text.split()
 
 def count_tokens(text: str) -> int:
-
-return len(tokenize(text))
+    return len(tokenize(text))
+```
 
 src/my_package/utils.py
 
+```python
 def normalize(text: str) -> str:
-
-return " ".join(text.split()).strip()
+    return " ".join(text.split()).strip()
+```
 
 src/my_package/__init__.py
 
+```python
 from .core import tokenize, count_tokens
-
 from .utils import normalize
 
 __all__ = ["tokenize", "count_tokens", "normalize"]
-
 __version__ = "0.1.0"
+```
 
 **קובץ הרצה חיצוני**
 
 scripts/run.py
 
+```python
 import sys
-
 sys.path.append("src")
-
-# In a simple development environment. Not needed in a real installation.
+ # In a simple development environment. Not needed in a real installation.
 
 import my_package as mp
 
-text = "hello world"
-
-print(mp.normalize(text)) # hello world
-
-print(mp.tokenize(text)) # ['hello', 'world']
-
+text = "hello   world"
+print(mp.normalize(text))  # hello world
+print(mp.tokenize(text))   # ['hello', 'world']
 print(mp.count_tokens(text)) # 2
+```
 
 **למה זו הגישה הנכונה בפרויקטים גדולים**
 
@@ -177,9 +171,10 @@ print(mp.count_tokens(text)) # 2
 זו הדרך הברורה והעדיפה ברוב המקרים: 
 פשוט לייבא לפי שם החבילה המלא מהשורש של הפרויקט.
 
+```python
 # from src/my_package/text/cleaner.py
-
 from my_package.utils import normalize
+```
 
 ייבוא מוחלט ברור לכל מי שקורא את הקוד, גם מחוץ לפרויקט. 
 הוא עובד מצוין כשיש לך סביבת הרצה יציבה (כמו התקנה ב-venv או מבנה src/ מסודר).
@@ -188,9 +183,10 @@ from my_package.utils import normalize
 
 שימושי כשאתה עובד בתוך אותה חבילה ומעדיף לקצר כתיבה:
 
+```python
 # from src/my_package/text/tokenizer.py
-
 from ..utils import normalize
+```
 
 שני הנקודות (..) אומרות "עלה תיקייה אחת למעלה". 
 אפשר להשתמש גם ב-. (תיקייה נוכחית) או ביותר מנקודה אחת לפי הצורך.
@@ -214,51 +210,38 @@ from ..utils import normalize
 
 **איך זה נראה במודול אמיתי**
 
+```python
 """
-
 text tools
-
 Utility functions for text processing: cleaning, tokenizing, and counting tokens.
 
 Basic usage:
-
-from my_package.text_tools import normalize, tokenize, count_tokens
-
-s = normalize(" Hello world ")
-
-words = tokenize(s) # ['Hello', 'world']
-
-n = count_tokens(s) # 2
+    from my_package.text_tools import normalize, tokenize, count_tokens
+    s = normalize(" Hello   world ")
+    words = tokenize(s)          # ['Hello', 'world']
+    n = count_tokens(s)          # 2
 
 Related modules:
-
 my_package.utils
-
 """
 
 from __future__ import annotations
 
 __all__ = ["normalize", "tokenize", "count_tokens"]
-
 __version__ = "0.2.0"
 
 def normalize(text: str) -> str:
-
-"""Return a clean and well spaced text string."""
-
-return " ".join(text.split()).strip()
+    """Return a clean and well spaced text string."""
+    return " ".join(text.split()).strip()
 
 def tokenize(text: str) -> list[str]:
-
-"""Split text into words based on spaces."""
-
-return text.split()
+    """Split text into words based on spaces."""
+    return text.split()
 
 def count_tokens(text: str) -> int:
-
-"""Count how many tokens appear in the cleaned text."""
-
-return len(tokenize(normalize(text)))
+    """Count how many tokens appear in the cleaned text."""
+    return len(tokenize(normalize(text)))
+```
 
 מה חשוב לשים בדוקסטרינג של מודול:
 
@@ -272,11 +255,12 @@ return len(tokenize(normalize(text)))
 
 **איך קוראים את זה בזמן אמת**
 
+```python
 import my_package.text_tools as tt
 
-print(tt.__doc__[:120], "...") # show the beginning of the module docstring
-
-help(tt) # full display with functions and explanations
+print(tt.__doc__[:120], "...")  # show the beginning of the module docstring
+help(tt)                        # full display with functions and explanations
+```
 
 **סגנון תיעוד קצר ואחיד**
 
@@ -290,21 +274,17 @@ help(tt) # full display with functions and explanations
 
 למשל, סגנון תמציתי:
 
+```python
 def summarize(text: str, max_tokens: int = 64) -> str:
+    """
+    Create a short summary for the given text.
 
-"""
-
-Create a short summary for the given text.
-
-text: the original text.
-
-max_tokens: maximum summary length.
-
-returns: a string containing the summary.
-
-"""
-
-...
+    text: the original text.
+    max_tokens: maximum summary length.
+    returns: a string containing the summary.
+    """
+    ...
+```
 
 טיפ קטן לפרויקטים גדולים:
 
@@ -339,19 +319,17 @@ returns: a string containing the summary.
 כל קובץ אמור לעשות דבר אחד ברור. 
 אם אתה מוצא את עצמך גולל 300 שורות שמערבבות לוגיקות שונות. זה סימן לשהגיע הזמן לפיצול.
 
+```python
 # text_clean.py
-
 def normalize(text: str) -> str:
-
-return " ".join(text.split()).strip()
+    return " ".join(text.split()).strip()
 
 # text_tokenize.py
-
 from .text_clean import normalize
 
 def tokenize(text: str) -> list[str]:
-
-return normalize(text).split()
+    return normalize(text).split()
+```
 
 **סדר imports**
 
@@ -363,23 +341,23 @@ return normalize(text).split()
 
 3. מודולים פנימיים שלך
 
+```python
 from pathlib import Path
-
 import pandas as pd
-
 from my_package.text_tokenize import tokenize
+```
 
 **ממשק ציבורי ברור**
 
 אם זו חבילה, חשוב להגדיר מה נחשף החוצה.
 
+```python
 # __init__.py
-
 from .text_clean import normalize
-
 from .text_tokenize import tokenize
 
 __all__ = ["normalize", "tokenize"]
+```
 
 **כלל אצבע פשוט**
 
@@ -391,22 +369,22 @@ __all__ = ["normalize", "tokenize"]
 
 **דוגמה פשוטה**
 
+```python
 # text_utils.py
-
 def normalize(text: str) -> str:
-
-return " ".join(text.split()).strip()
+    return " ".join(text.split()).strip()
 
 if __name__ == "__main__":
-
-sample = " Hello world "
-
-print(normalize(sample)) # Hello world
+    sample = "  Hello   world  "
+    print(normalize(sample))  # Hello world
+```
 
 כשאתה מריץ את הקובץ ישירות (python text_utils.py), 
 פייתון תבצע גם את החלק שבתוך ה-if. אבל אם תייבא את הקובץ ממקום אחר:
 
+```python
 from text_utils import normalize
+```
 
 הקטע שבתוך ה-if **לא ירוץ** בכלל.
 
@@ -446,25 +424,24 @@ from text_utils import normalize
 
 src/my_package/string_utils.py
 
+```python
 def normalize_spaces(s: str) -> str:
-
-return " ".join(s.split()).strip()
+    return " ".join(s.split()).strip()
 
 def safe_lower(s: str | None) -> str:
-
-return (s or "").lower()
+    return (s or "").lower()
+```
 
 שימוש מתוך מודול אחר:
 
+```python
 # src/my_package/text/cleaner.py
-
 from my_package.string_utils import normalize_spaces, safe_lower
 
 def normalize(text: str) -> str:
-
-text = normalize_spaces(text)
-
-return safe_lower(text)
+    text = normalize_spaces(text)
+    return safe_lower(text)
+```
 
 **כללי עבודה פשוטים**
 
@@ -482,77 +459,69 @@ return safe_lower(text)
 
 אחרי שהבנו איך מחלקים קוד למודולים וחבילות, הגיע הזמן לראות איך זה נראה בפרויקט אמיתי. הדוגמה הבאה מציגה גרסה פשוטה של כלי לעיבוד טקסטים **mini_text**. הרעיון הוא לא רק לפצל קבצים, אלא לבנות מבנה שמאפשר להתרחב בלי לגעת בלוגיקה קיימת.
 
+```bash
 mini_text/
-
 ├─ src/
-
-│ └─ mini_text/
-
-│ ├─ __init__.py
-
-│ ├─ clean.py
-
-│ ├─ tokenize.py
-
-│ └─ stats.py
-
+│  └─ mini_text/
+│     ├─ __init__.py
+│     ├─ clean.py
+│     ├─ tokenize.py
+│     └─ stats.py
 └─ scripts/
-
-└─ run_demo.py
+   └─ run_demo.py
+```
 
 **clean.py**
 
+```python
 def normalize(text: str) -> str:
-
-"""Remove extra spaces and apply basic cleaning."""
-
-return " ".join(text.split()).strip()
+    """Remove extra spaces and apply basic cleaning."""
+    return " ".join(text.split()).strip()
+```
 
 **tokenize.py**
 
+```python
 from mini_text.clean import normalize
 
 def tokenize(text: str) -> list[str]:
-
-"""Split text into words after cleaning."""
-
-return normalize(text).split()
+    """Split text into words after cleaning."""
+    return normalize(text).split()
+```
 
 **stats.py**
 
+```python
 from mini_text.tokenize import tokenize
 
 def count_tokens(text: str) -> int:
-
-"""Count the number of words in the text."""
-
-return len(tokenize(text))
+    """Count the number of words in the text."""
+    return len(tokenize(text))
+```
 
 **init.py**
 
+```python
 from .clean import normalize
-
 from .tokenize import tokenize
-
 from .stats import count_tokens
 
 __all__ = ["normalize", "tokenize", "count_tokens"]
+```
 
 **run_demo.py**
 
+```python
 import sys
-
 sys.path.append("src")
 
 from mini_text import normalize, tokenize, count_tokens
 
-text = " Hello to the AI era "
-
-print(normalize(text)) # Hello to the AI era
-
-print(tokenize(text)) # ['Hello', 'to', 'the', 'AI', 'era']
-
-print(count_tokens(text)) # 5
+text = "  Hello   to   the AI era "
+print(normalize(text))        # Hello to the AI era
+print(tokenize(text))         # ['Hello', 'to', 'the', 'AI', 'era']
+print(count_tokens(text))     # 5
+```
 
 **למה זה עובד טוב**
 

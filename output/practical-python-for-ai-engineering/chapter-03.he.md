@@ -87,33 +87,33 @@ list, dict, set, tuple, ו-collections
 
 **פעולות נפוצות**
 
+```python
 data = [10, 20, 30, 40]
 
 print(len(data)) # 4 - length of list
-
-print(data[0]) # 10 - first element
-
-print(data[-1]) # 40 - last element
-
+print(data[0])   # 10 - first element
+print(data[-1])  # 40 - last element
 print(data[1:3]) # [20, 30] - slice
+```
 
 רשימות בפייתון מתנהגות כמעט כמו מערך, 
 אבל עם יתרון עצום: הן **דינמיות** 
 אפשר להוסיף, להסיר ולשנות ערכים תוך כדי ריצה.
 
-data.append(50) # Adds to the end
-
+```python
+data.append(50)   # Adds to the end
 data.insert(0, 5) # Inserts at index 0 (the beginning)
+data.remove(30)   # Removes the first occurrence of value 30
 
-data.remove(30) # Removes the first occurrence of value 30
-
-print(data) # [5, 10, 20, 40, 50]
+print(data)       # [5, 10, 20, 40, 50]
+```
 
 רשימות גם ניתנות למיון בקלות:
 
+```python
 data.sort()
-
 data.reverse()
+```
 
 והכול קורה במקום, בלי צורך להחזיר עותקים חדשים (כמו במחרוזות).
 
@@ -147,33 +147,32 @@ data.reverse()
 שילוב קטן עם comprehension או תנאים, 
 ומתקבל קוד מדויק ויעיל:
 
+```python
 scores = [88, 92, 75, 100, 67]
-
 high_scores = [s for s in scores if s >= 90]
-
-print(high_scores) # [92, 100]
+print(high_scores)  # [92, 100]
+```
 
 **שכפול רשימות**
 
 שכפול הוא נקודה רגישה בפייתון: 
 כשמעתיקים רשימה עם = נוצר רק מצביע חדש, לא עותק אמיתי.
 
+```python
 a = [1, 2, 3]
-
 b = a
-
 b.append(4)
-
-print(a) # [1, 2, 3, 4]
+print(a)  # [1, 2, 3, 4]
+```
 
 שני המשתנים מצביעים על אותה רשימה! 
 כדי לשכפל באמת, יש להשתמש באחת מהדרכים הבאות:
 
-b = a.copy() # or
-
-b = list(a) # or
-
-b = a[:] # full slicing
+```python
+b = a.copy()  # or
+b = list(a)   # or
+b = a[:]      # full slicing
+```
 
 ## dict מילונים (key → value) ושימושים
 
@@ -182,15 +181,13 @@ b = a[:] # full slicing
 
 **איך נראה מילון**
 
+```python
 person = {
-
-"name": "Tamar",
-
-"age": 29,
-
-"is_active": True
-
+    "name": "Tamar",
+    "age": 29,
+    "is_active": True
 }
+```
 
 כל ערך מאוחסן תחת מפתח ייחודי. 
 המפתחות במילון חייבים להיות בלתי ניתנים לשינוי (immutable). 
@@ -198,32 +195,31 @@ person = {
 
 גישה לערכים פשוטה וברורה:
 
-print(person["name"]) # Tamar
-
-print(person["age"]) # 29
+```python
+print(person["name"])   # Tamar
+print(person["age"])    # 29
+```
 
 אם תנסה לגשת למפתח שלא קיים, תקבל שגיאה (KeyError). 
 לכן בפועל, נהוג להשתמש בפונקציה בטוחה יותר:
 
+```python
 print(person.get("email", "No email provided"))
-
 # Output: No email provided
+```
 
 אם המפתח לא קיים, מוחזר הערך ברירת-המחדל.
 
 **הוספה, עדכון והסרה**
 
+```python
 person["city"] = "Tel Aviv"
-
 # add
-
 person["age"] = 30
-
 # update
-
 del person["is_active"]
-
 # delete
+```
 
 פשוט, ישיר, וקריא. 
 אין צורך במתודות מורכבות או בקונסטרוקציות מסורבלות.
@@ -234,82 +230,64 @@ del person["is_active"]
 
 לפעמים נרצה להסיר פריט ממילון קיים. מפתח שלם, או ערך מסוים בתוך מילון פנימי.
 
+```python
 person = {"name": "Tomer", "age": 13, "city": "Petah Tikva"}
 
 # delete a key entirely
-
 del person["age"]
 
 # safe deletion - no error if the key doesn't exist
-
 # pop returns the value of the deleted key, or None if not found
-
 person.pop("city", None)
+```
 
 אם רוצים לרוקן את כל המילון:
 
+```python
 person.clear()
-
 # Removes all items from the dictionary, leaving it empty: {}
+```
 
 **מחיקת ערכים ממילון מורכב**
 
 לפעמים נרצה למחוק רק שדה מתוך פריט, לפעמים פריט שלם, ולפעמים את כל הנתונים. 
 בדוגמה הבאה רואים את כל המצבים הנפוצים:
 
+```python
 students = {
-
-1: {"name": "Charlie", "age": 16, "grade": 82},
-
-2: {"name": "Noam", "age": 15, "grade": 95},
-
-3: {"name": "Tomer", "age": 17, "grade": 78},
-
+    1: {"name": "Charlie", "age": 16, "grade": 82},
+    2: {"name": "Noam", "age": 15, "grade": 95},
+    3: {"name": "Tomer", "age": 17, "grade": 78},
 }
 
 # Delete only the age of student Charlie
-
 del students[1]["age"]
 
 print(students)
-
 # {1: {'name': 'Charlie', 'grade': 82},
-
-# 2: {'name': 'Noam', 'age': 15, 'grade': 95},
-
-# 3: {'name': 'Tomer', 'age': 17, 'grade': 78}}
+#  2: {'name': 'Noam', 'age': 15, 'grade': 95},
+#  3: {'name': 'Tomer', 'age': 17, 'grade': 78}}
 
 # Delete the student with ID 2
-
 del students[2]
-
 print(students)
-
 # {1: {'name': 'Charlie', 'grade': 82},
-
-# 3: {'name': 'Tomer', 'age': 17, 'grade': 78}}
+#  3: {'name': 'Tomer', 'age': 17, 'grade': 78}}
 
 # Delete a student by name (via inner value)
-
 # Note: list() is used to avoid 'dictionary changed size during iteration' error
-
 for student_id, info in list(students.items()):
+    if info["name"] == "Charlie":
+        del students[student_id]
 
-if info["name"] == "Charlie":
-
-del students[student_id]
-
-print(students)
-
+print(students) 
 # {3: {'name': 'Tomer', 'age': 17, 'grade': 78}}
 
 # Delete all students
-
 students.clear()
-
 print(students)
-
 # {}
+```
 
 כך אפשר לשלוט בדיוק ברמה של המחיקה. משדה יחיד ועד ניקוי מוחלט של כל המידע.
 
@@ -319,17 +297,16 @@ print(students)
 
 שלושה דרכים עיקריות לעבור על מילון:
 
+```python
 for key in person:
-
-print(key) # keys only
+    print(key)  # keys only
 
 for value in person.values():
-
-print(value) # values only
+    print(value) # values only
 
 for key, value in person.items():
-
-print(key, "→", value) # both key and value
+    print(key, "→", value) # both key and value
+```
 
 הצורה השלישית: ()items - היא הנפוצה ביותר, 
 בעיקר כשאנחנו מעבדים נתונים לצורכי לוגים, JSON או ניתוח תוצאות.
@@ -348,15 +325,13 @@ print(key, "→", value) # both key and value
 
 זו דרך טבעית לתאר **נתונים מובנים**, בלי צורך במחלקות מורכבות.
 
+```python
 model_output = {
-
-"text": "AI is amazing",
-
-"tokens": 4,
-
-"score": 0.98
-
+    "text": "AI is amazing",
+    "tokens": 4,
+    "score": 0.98
 }
+```
 
 כך נראים כמעט כל הפלטים שמוחזרים מ-OpenAI, Hugging Face, או LangChain. 
 המבנה הזה מאפשר גישה ברורה, המרה ל-JSON, וחיסכון בזמן פיתוח.
@@ -365,39 +340,35 @@ model_output = {
 
 **פעולות שימושיות**
 
+```python
 data = {"a": 1, "b": 2, "c": 3}
 
 print("a" in data)
-
 # True - check if key exists
 
 print(data.keys())
-
 # dict_keys(['a', 'b', 'c']) - show all keys
 
 print(data.values())
-
 # dict_values([1, 2, 3]) - show all values
 
 print(list(data.items()))
-
 # [('a', 1), ('b', 2), ('c', 3)] - show list of (key, value) pairs
+```
 
 אפשר גם למזג שני מילונים בקלות:
 
+```python
 defaults = {"lang": "he", "mode": "prod"}
-
 custom = {"mode": "dev"}
 
-# Merges two dictionaries.
-
+# Merges two dictionaries. 
 # If keys overlap, the value from the last dictionary (custom) wins.
-
 config = {**defaults, **custom}
 
 print(config)
-
 # {'lang': 'he', 'mode': 'dev'}
+```
 
 אם יש התנגשות במפתחות, הערכים מהשני גוברים.
 
@@ -412,25 +383,23 @@ print(config)
 
 **יצירה ושימוש בסיסי**
 
+```python
 tags = {"AI", "ML", "NLP", "AI"}
-
 print(tags)
-
 # {'AI', 'ML', 'NLP'}
-
 # Note: Sets are unordered collections of unique elements; the duplicate "AI" is automatically removed.
+```
 
 כמו שאפשר לראות, הערך "AI" הופיע פעמיים, אבל נשמר רק פעם אחת. פייתון שומרת רק את הערכים הייחודיים, ללא סדר קבוע.
 
 אפשר גם ליצור קבוצה מרשימה קיימת:
 
+```python
 numbers = [1, 2, 2, 3, 3, 3]
-
 unique_numbers = set(numbers)
-
 print(unique_numbers)
-
 # {1, 2, 3} - Converting a list to a set automatically removes duplicates
+```
 
 **פעולות קבוצתיות**
 
@@ -438,25 +407,22 @@ Set מאפשר לבצע פעולות מתמטיות קלאסיות בקלות,
 כמו איחוד, חיתוך והפרש 
 וזה בדיוק מה שמועיל בניתוח נתונים מורכבים.
 
+```python
 a = {"AI", "ML", "Data"}
-
 b = {"AI", "Vision", "Robotics"}
 
 print(a | b)
-
 # Union: {'AI', 'ML', 'Data', 'Vision', 'Robotics'} (All unique elements)
 
 print(a & b)
-
 # Intersection: {'AI'} (Elements present in both)
 
 print(a - b)
-
 # Difference: {'ML', 'Data'} (Elements in 'a' but not in 'b')
 
 print(a ^ b)
-
 # Symmetric Difference: {'ML', 'Data', 'Vision', 'Robotics'} (Elements in either 'a' or 'b', but not b
+```
 
 אלה פעולות רשת קלאסיות: איפה יש חפיפה, איפה לא. 
 בעולם ה-AI הן שימושיות במיוחד להשוואת תגים, קטגוריות או מזהים ייחודיים.
@@ -465,33 +431,33 @@ print(a ^ b)
 
 **סינון כפילויות**:
 
+```python
 tokens = ["ai", "ai", "is", "awesome"]
-
 unique_tokens = list(set(tokens))
 
 print(unique_tokens)
-
 # Output: ['awesome', 'ai', 'is'] (The order may vary as sets are unordered)
+```
 
 
 
 **בדיקה מהירה של שייכות** (מהירה בהרבה מרשימה):
 
+```python
 if "ai" in unique_tokens:
-
-print("Found!")
+    print("Found!")
+```
 
 **השוואת קבוצות תוצאות** ממודלים שונים:
 
+```python
 model_a = {"positive", "neutral"}
-
 model_b = {"neutral", "negative"}
-
 overlap = model_a & model_b
 
 print(overlap)
-
 # {'neutral'}
+```
 
 **הבדל חשוב מול רשימות**
 
@@ -519,11 +485,11 @@ Set **אינו שומר על סדר**.
 
 **איך נראה tuple**
 
+```python
 point = (10, 20)
-
 print(point[0]) # 10
-
 print(point[1]) # 20
+```
 
 `# Note: Tuples are immutable, meaning you cannot change their values `
 
@@ -532,52 +498,50 @@ print(point[1]) # 20
 התחביר כמעט זהה לרשימה. רק עם סוגריים עגולים במקום מרובעים. 
 מה שמייחד את tuple הוא העובדה שלא ניתן לשנות אותו:
 
+```python
 point[0] = 5
-
 # will raise an error: 'tuple' object does not support item assignment
+```
 
 ברגע שיצרת tuple, הערכים שבו קבועים. 
 זו תכונה חשובה כשמדובר בנתונים שאתה לא רוצה שישתנו בטעות, למשל תוצאות ביניים, קואורדינטות, או נתונים שמיועדים לשימוש חוזר.
 
 **יצירה והמרה**
 
+```python
 data = (1, 2, 3) # Single-element tuple
-
-single = (5,)
-
+single = (5,)  
 # Correct: Without the comma, (5) is treated as an integer in parentheses.
 
 # Converting between types
-
-as_list = list(data) # [1, 2, 3]
-
+as_list = list(data)    # [1, 2, 3]
 as_tuple = tuple(as_list) # (1, 2, 3)
+```
 
 פסיק אחד קטן הוא מה שהופך ביטוי ל-tuple אמיתי. 
 בלי הפסיק, פייתון תזהה את זה כערך רגיל, לא כקבוצה.
 
 **Unpacking פירוק חכם** אחת הסיבות ש-tuples כל כך נוחים היא היכולת לפרק אותם בקלות:
 
+```python
 x, y = (10, 20)
-
 print(x, y)
-
 # 10 20
+```
 
 ה-tuple "נפתח" לשניים או שלוש משתנים, לפי הסדר. 
 וזה עובד גם בפונקציות שמחזירות כמה ערכים:
 
+```python
 def get_stats():
-
-return (10, 5, 2)
+    return (10, 5, 2)
 
 max_val, avg, min_val = get_stats()
 
 print(max_val) # 10
-
-print(avg) # 5
-
+print(avg)     # 5
 print(min_val) # 2
+```
 
 במקום להחזיר מילון, לפעמים עדיף להחזיר tuple כשהמבנה פשוט וברור.
 
@@ -587,33 +551,30 @@ print(min_val) # 2
 
 כשפונקציה מחזירה כמה ערכים, שימוש ב-tuple מבטיח שמבנה התוצאה יציב וברור:
 
+```python
 def analyze(text: str) -> tuple[int, int]:
-
-"""returns (word count, character count)."""
-
-return len(text.split()), len(text)
+    """returns (word count, character count)."""
+    return len(text.split()), len(text)
 
 # Example usage:
-
 # words, chars = analyze("AI is amazing")
-
 # print(words) # 3
-
 # print(chars) # 13
+```
 
 השימוש ב-tuple מבהיר שהתוצאה קבועה וחד-צורתית.
 
 כעת אפשר להשתמש בערכים כך:
 
+```python
 words, chars = analyze("שלום עולם")
 
-print(words)
-
+print(words) 
 # 2
 
 print(chars)
-
 # 9 (Including the space)
+```
 
 tuple מבטיח שהתוצאה תישאר תמיד באותו מבנה.
 
@@ -621,11 +582,11 @@ tuple מבטיח שהתוצאה תישאר תמיד באותו מבנה.
 
 מאחר ש-tuple הוא immutable, ניתן להשתמש בו כ-key במילון:
 
+```python
 coords = {(10, 20): "A", (15, 25): "B"}
-
 print(coords[(10, 20)])
-
 # A
+```
 
 אי אפשר לעשות זאת עם list, ולכן tuple הוא מבנה אידיאלי לייצוג מיקום, צבע או כל זוג ערכים יציב.
 
@@ -633,9 +594,10 @@ print(coords[(10, 20)])
 
 כשלא רוצים שאף חלק בקוד ישנה ערכים בטעות, tuple מספק שכבת הגנה טבעית (read-only):
 
+```python
 rgb = (255, 128, 0)
-
-# rgb[0] = 0 → will raise an error: 'tuple' object does not support item assignment
+# rgb[0] = 0  → will raise an error: 'tuple' object does not support item assignment
+```
 
 כך ניתן לשמור על נתונים קריטיים "נעולים".
 
@@ -643,13 +605,13 @@ rgb = (255, 128, 0)
 
 בספריות כמו NumPy אוpandas , **tuple** משמשת לתיאור מימדים (dimensions) או קואורדינטות קבועות:
 
+```python
 import numpy as np
 
 array = np.zeros((3, 5))
-
-print(array.shape)
-
+print(array.shape) 
 # (3, 5)
+```
 
 היא מאפשרת לייצג את מימדי הנתונים בצורה ברורה וחד-משמעית.
 
@@ -659,15 +621,14 @@ print(array.shape)
 
 זוהי דרך שימושית להעביר אוספי נתונים לפונקציות בצורה אלגנטית.
 
+```python
 def show(x, y):
-
-print(x, y)
+    print(x, y)
 
 point = (10, 20)
-
-show(*point)
-
+show(*point)  
 # 10 20
+```
 
 **tuple לעומת list**
 
@@ -711,39 +672,35 @@ defaultdict, ‏Counter, ו-deque.
 
 נניח שאתה רוצה לספור כמה פעמים כל תו מופיע במחרוזת:
 
+```python
 text = "banana"
-
 freq = {}
 
 for ch in text:
-
-if ch not in freq:
-
-freq[ch] = 0
-
-freq[ch] += 1
+    if ch not in freq:
+        freq[ch] = 0
+    freq[ch] += 1
 
 print(freq)
-
 # {'b': 1, 'a': 3, 'n': 2}
+```
 
 זה עובד, אבל מכוער.
 
 עם defaultdict, אין צורך לבדוק אם המפתח קיים:
 
+```python
 from collections import defaultdict
 
 text = "banana"
-
 freq = defaultdict(int)
 
 for ch in text:
-
-freq[ch] += 1
+    freq[ch] += 1
 
 print(freq)
-
 # defaultdict(<class 'int'>, {'b': 1, 'a': 3, 'n': 2})
+```
 
 ברגע שפייתון רואה מפתח חדש, היא פשוט יוצרת ערך ברירת-מחדל (במקרה הזה - 0), 
 ומאפשרת להמשיך כאילו הוא כבר קיים. 
@@ -754,29 +711,26 @@ print(freq)
 אם כל מה שאתה צריך הוא ספירה, 
 פייתון כבר מספקת פתרון ישיר עוד יותר:
 
+```python
 from collections import Counter
 
 words = ["ai", "is", "amazing", "ai", "is", "ai"]
-
 count = Counter(words)
-
 print(count)
-
 # Counter({'ai': 3, 'is': 2, 'amazing': 1})
+```
 
 אפשר לשלב אותו עם פעולות מתקדמות:
 
+```python
 print(count.most_common(1))
-
 # [('ai', 3)]
-
 # Returns a list containing the tuple of the most frequent element and its count.
 
 print(count["is"])
-
 # 2
-
 # Directly access the frequency of a specific element.
+```
 
 Counter שומר על מבנה של מילון, 
 אבל מתנהג כמו כלי סטטיסטי קטן 
@@ -787,29 +741,25 @@ Counter שומר על מבנה של מילון,
 deque (נשמע כמו "deck") הוא רשימה מהירה במיוחד 
 שמאפשרת להוסיף ולהסיר איברים משני הכיוונים ביעילות גבוהה.
 
+```python
 from collections import deque
 
 queue = deque(["task1", "task2", "task3"])
-
 queue.append("task4")
-
 # add to the end
 
 queue.appendleft("urgent")
-
 # add to the beginning
 
 print(queue)
-
 # deque(['urgent', 'task1', 'task2', 'task3', 'task4'])
 
 queue.pop()
-
 # remove from the end ("task4")
 
 queue.popleft()
-
 # remove from the beginning ("urgent")
+```
 
 בניגוד ל-list, הוספה או הסרה בתחילת רשימה גדולה **לא דורשת העתקה של כל האיברים**. 
 במערכות שבהן יש תורים (queues) או זרימת נתונים (streams), deque הוא הבחירה הנכונה.
@@ -842,61 +792,43 @@ queue.popleft()
 
 **הקוד**
 
+```python
 from collections import Counter
-
 import re
 
 def simple_word_stats(text: str) -> dict[str, float | str]:
+    """
+    Computes basic text statistics:
+    - number of words
+    - number of characters
+    - average word length
+    - most common word
+    """
+    # basic punctuation cleanup
+    clean_text = re.sub(r"[^\w\s]", "", text)
+    words = clean_text.split()
+    num_words = len(words)
+    num_chars = len(clean_text)
+    avg_length = sum(len(w) for w in words) / num_words if num_words else 0
+    most_common = Counter(words).most_common(1)[0][0] if words else ""
 
-"""
-
-Computes basic text statistics:
-
-- number of words
-
-- number of characters
-
-- average word length
-
-- most common word
-
-"""
-
-# basic punctuation cleanup
-
-clean_text = re.sub(r"[^\w\s]", "", text)
-
-words = clean_text.split()
-
-num_words = len(words)
-
-num_chars = len(clean_text)
-
-avg_length = sum(len(w) for w in words) / num_words if num_words else 0
-
-most_common = Counter(words).most_common(1)[0][0] if words else ""
-
-return {
-
-"num_words": num_words,
-
-"num_chars": num_chars,
-
-"avg_word_length": round(avg_length, 2),
-
-"most_common_word": most_common
-
-}
+    return {
+       "num_words": num_words,
+       "num_chars": num_chars,
+       "avg_word_length": round(avg_length, 2),
+       "most_common_word": most_common
+    }
+```
 
 **דוגמת הרצה**
 
+```python
 sample = "AI is amazing. AI changes everything!"
-
 print(simple_word_stats(sample))
 
 # Output:
-
 # {'num_words': 6, 'num_chars': 35, 'avg_word_length': 5.0, 'most_common_word': 'AI'}
+```
 
 
 

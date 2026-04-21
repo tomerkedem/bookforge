@@ -11,23 +11,21 @@
 
 במקום להתעסק במיקומים ובממדים, אתה עובד עם שמות עמודות ושורות ממש כמו בגיליון Excel, רק עם כוח של קוד.
 
+```python
 import pandas as pd
 
 # Read a CSV file directly into a DataFrame
-
 df = pd.read_csv("data/users.csv")
 
 # First look at the data
-
 print(df.head())
 
 # Filter rows with a logical condition
-
 active = df[df["is_active"] == True]
 
 # Count active users
-
 print("Active users:", len(active))
+```
 
 בשלוש שורות אתה עושה מה שב-NumPy היה דורש מערך דו-ממדי, חישוב אינדקסים, והמרת טיפוסים.
 
@@ -54,29 +52,26 @@ list ו-dicts הם מושלמים כשמדובר באובייקטים בודדי
 
 ניקח דוגמה קטנה:
 
+```python
 users = [
-
-{"name": "Dana", "age": 29, "city": "Tel Aviv"},
-
-{"name": "Roi", "age": 34, "city": "Haifa"},
-
-{"name": "Noa", "age": None, "city": "Jerusalem"},
-
+    {"name": "Dana", "age": 29, "city": "Tel Aviv"},
+    {"name": "Roi", "age": 34, "city": "Haifa"},
+    {"name": "Noa", "age": None, "city": "Jerusalem"},
 ]
 
 # Calculate average age
-
 ages = [u["age"] for u in users if u["age"] is not None]
-
 print(sum(ages) / len(ages))
+```
 
 לעומת זאת, ב-Pandas:
 
+```python
 import pandas as pd
 
 df = pd.DataFrame(users)
-
 print(df["age"].mean())
+```
 
 שורה אחת, בלי לולאות, בלי בדיקות, בלי טעויות. 
 והכי חשוב, אותה פקודה תעבוד גם על מיליון שורות, עם אותה יעילות וקריאות.
@@ -107,15 +102,18 @@ print(df["age"].mean())
 
 Series מייצגת עמודה בודדת עם אינדקס. היא דומה לרשימה, אבל שומרת הקשר בין מפתח לערך.
 
+```python
 import pandas as pd
 
 ages = pd.Series([29, 34, 41], index=["Dana", "Roi", "Hila"])
+```
 
 אפשר לבצע עליה פעולות מתמטיות ולוגיות ישירות:
 
-ages.mean() # average
-
-ages[ages > 30] # filter by condition
+```python
+ages.mean()      # average
+ages[ages > 30]  # filter by condition
+```
 
 במונחים של NumPy, זו עטיפה וקטורית עם שמות. במונחים של מפתח, זו הדרך לחשוב על עמודת נתונים ולא על מערך.
 
@@ -124,23 +122,22 @@ ages[ages > 30] # filter by condition
 DataFrame הוא אוסף של Series עם אותו אינדקס. 
 זהו מבנה דו-ממדי שמאפשר לעבוד עם נתונים כמו בטבלה, אבל עם ביצועים של מערך.
 
+```python
 import pandas as pd
 
 df = pd.DataFrame({
-
-"name": ["Dana", "Roi", "Hila"],
-
-"age": [29, 34, 41],
-
-"city": ["Tel Aviv", "Haifa", "Jerusalem"]
-
+    "name": ["Dana", "Roi", "Hila"],
+    "age": [29, 34, 41],
+    "city": ["Tel Aviv", "Haifa", "Jerusalem"]
 })
+```
 
 ה-index נוצר אוטומטית, אך אפשר להגדיר אינדקס סמנטי:
 
+```python
 df = df.set_index("name")
-
 df.loc["Dana"]
+```
 
 כל עמודה היא Series עצמאית, וכל שורה מייצגת ישות. 
 המודל הזה חזק במיוחד כשמתייחסים לנתונים כ-features ו-labels.
@@ -150,15 +147,14 @@ df.loc["Dana"]
 בכל שלב של הכנת dataset, ניתוח טקסט, ניקוי נתונים, או תיוג דוגמאות תעבוד על DataFrame אחד או כמה. 
 לדוגמה:
 
+```python
 reviews = pd.DataFrame({
-
-"text": ["Excellent product", "Slow delivery", "Amazing service"],
-
-"sentiment": [1, 0, 1]
-
+    "text": ["Excellent product", "Slow delivery", "Amazing service"],
+    "sentiment": [1, 0, 1]
 })
 
 reviews[reviews["sentiment"] == 1]["text"]
+```
 
 כך נראה קוד אמיתי במערכת NLP. אין צורך בלולאות או רשימות ביניים, הכול מבוסס פעולות וקטוריות.
 
@@ -169,59 +165,55 @@ reviews[reviews["sentiment"] == 1]["text"]
 
 **CSV** פורמט פשוט ונפוץ במיוחד. מומלץ להגדיר תמיד קידוד UTF-8 כדי למנוע בעיות עם טקסטים בעברית.
 
+```python
 import pandas as pd
 
 df = pd.read_csv("data/users.csv", encoding="utf-8")
-
 df.head()
+```
 
 ב-Pandas, כל עמודה מקבלת טיפוס נתון (dtype) אוטומטית. 
 כאשר עובדים עם datasets גדולים, כדאי להגדיר את ה-dtype ידנית כדי לחסוך זיכרון ולשפר ביצועים. 
 לדוגמה:
 
+```python
 df = pd.read_csv(
-
-"data/users.csv",
-
-encoding="utf-8",
-
-dtype={"id": "int32", "age": "float32", "is_active": "bool"}
-
+    "data/users.csv",
+    encoding="utf-8",
+    dtype={"id": "int32", "age": "float32", "is_active": "bool"}
 )
+```
 
 הסיבה פשוטה: ברירת המחדל של Pandas משתמשת בטיפוסים רחבים (int64, float64), מה שעלול להכפיל את צריכת הזיכרון על קבצים גדולים. הגדרה מפורשת מאפשרת גם טעינה מדויקת יותר, בעיקר כשיש ערכים חסרים או עמודות בוליאניות.
 
 **JSON** פורמט אידיאלי לעבודה עם **APIs**, לוגים ונתונים חצי-מובנים (Semi-Structured). 
 Pandas יודעת לטעון ישירות קובץ JSON שמכיל רשימה של אובייקטים:
 
+```python
 import pandas as pd
 
 df = pd.read_json("data/users.json")
+```
 
 כאשר מבנה הנתונים מקונן (nested), נדרש שיטוח (Normalization) כדי להפוך את הנתונים לטבלה שטוחה. 
 במקום לכתוב קוד רקורסיבי, משתמשים ב-pd.json_normalize:
 
+```python
 import pandas as pd
 
 data = [
-
-{"id": 1, "user": {"name": "Dana", "city": "Tel Aviv"}},
-
-{"id": 2, "user": {"name": "Roi", "city": "Haifa"}}
-
+    {"id": 1, "user": {"name": "Dana", "city": "Tel Aviv"}},
+    {"id": 2, "user": {"name": "Roi", "city": "Haifa"}}
 ]
 
 df = pd.json_normalize(data)
-
 print(df)
 
 # Output:
-
-# id user.name user.city
-
-# 0 1 Dana Tel Aviv
-
-# 1 2 Roi Haifa
+#    id user.name user.city
+# 0   1      Dana  Tel Aviv
+# 1   2       Roi     Haifa
+```
 
 הפונקציה יוצרת עמודות עם שמות היררכיים
 
@@ -230,21 +222,27 @@ print(df)
 
 **Excel** שימושי במיוחד כשמקור הנתונים מגיע מצוות עסקי או ממערכת דיווח. כל גיליון (Sheet) בקובץ ניתן לטעינה בנפרד:
 
-import pandas as pd
+```python
+import pandas as pd 
 
 df = pd.read_excel("data/sales.xlsx", sheet_name="2025_Q1")
+```
 
 אם הקובץ מכיל כמה גיליונות, ניתן לטעון את כולם כ-dict של DataFrames:
 
+```python
 import pandas as pd
 
 sheets = pd.read_excel("data/sales.xlsx", sheet_name=None)
+```
 
 במקרים שבהם יש צורך לעבד את הנתונים ולשלוח חזרה דו"ח מעודכן
 
 ניתן לשמור חזרה לקובץ Excel:
 
+```python
 df.to_excel("data/clean_sales.xlsx", index=False)
+```
 
 חשוב להבין ש-Excel אינו פורמט יעיל לעיבוד כמו Parquet, אך הוא שימושי לשכבת אינטגרציה עם משתמשים לא-טכניים.
 
@@ -252,11 +250,12 @@ df.to_excel("data/clean_sales.xlsx", index=False)
 
 **Parquet** פורמט עמודות (Columnar) מודרני שמיועד לנפחי נתונים גדולים. בשונה מ-CSV, הוא שומר את סוגי הנתונים **(dtypes)** ואת מבנה הטבלה, דוחס כל עמודה בנפרד, ומאפשר טעינה סלקטיבית של עמודות בלבד.
 
+```python
 import pandas as pd
 
 df.to_parquet("data/users.parquet")
-
 df = pd.read_parquet("data/users.parquet")
+```
 
 היתרון המרכזי, מהירות ויעילות.טעינה מקובץ Parquet גדולה פי כמה מטעינה מקובץ CSV, בזכות דחיסה חכמה (Snappy או ZSTD) וגישה ישירה לבלוקים.
 
@@ -290,56 +289,48 @@ loc, iloc, ו-Boolean Indexing.
 loc עובדת לפי שמות האינדקס והעמודות. 
 זהו הממשק הברור ביותר כשיש עמודות בעלות משמעות.
 
+```python
 import pandas as pd
 
 df = pd.DataFrame({
-
-"name": ["Dana", "Roi", "Hila"],
-
-"age": [29, 34, 41],
-
-"city": ["Tel Aviv", "Haifa", "Jerusalem"]
-
+    "name": ["Dana", "Roi", "Hila"],
+    "age": [29, 34, 41],
+    "city": ["Tel Aviv", "Haifa", "Jerusalem"]
 }).set_index("name")
 
 df.loc["Dana", "city"]
 
 # Output:
-
 # 'Tel Aviv'
+```
 
 ניתן גם לבחור תת-טבלה:
 
+```python
 df.loc[["Dana", "Hila"], ["age", "city"]]
 
 # Output:
-
-# age city
-
-# name
-
-# Dana 29 Tel Aviv
-
-# Hila 41 Jerusalem
+#       age       city
+# name                
+# Dana   29   Tel Aviv
+# Hila   41  Jerusalem
+```
 
 **iloc - לפי מיקום**
 
 iloc דומה אך מתבססת על מיקום מספרי (אינדקסים). 
 שימושית בעיקר כשאין אינדקס סמנטי.
 
+```python
 # Result: 34.666666666666664
-
-ages.mean() # average
+ages.mean()      # average
 
 # Result:
-
-# Roi 34
-
-# Hila 41
-
+# Roi     34
+# Hila    41
 # dtype: int64
-
-ages[ages > 30] # filter by condition
+ages[ages > 30]  # filter by condition
+```
 
 התחביר דומה ל-NumPy, אך מחזיר תמיד אובייקטים של Pandas (לא רשימות או מערכים).
 
@@ -348,29 +339,26 @@ ages[ages > 30] # filter by condition
 זוהי השיטה הגמישה ביותר: 
 מסנן שמבוסס על ביטוי לוגי.
 
+```python
 df[df["age"] > 30]
 
 # Output:
-
-# age city
-
-# name
-
-# Roi 34 Haifa
-
-# Hila 41 Jerusalem
+#       age       city
+# name                
+# Roi    34      Haifa
+# Hila   41  Jerusalem
+```
 
 אפשר לשלב כמה תנאים:
 
+```python
 df[(df["age"] > 30) & (df["city"] == "Haifa")]
 
 # Output:
-
-# age city
-
-# name
-
-# Roi 34 Haifa
+#       age   city
+# name            
+# Roi    34  Haifa
+```
 
 שיטה זו היא הבסיס לכל סינון דינמי. החל ממיון משתמשים פעילים ועד חיתוך dataset לפני אימון.
 
@@ -379,17 +367,15 @@ df[(df["age"] > 30) & (df["city"] == "Haifa")]
 כל השיטות ניתנות לשילוב. 
 לדוגמה, שליפה לפי תנאי ולאחר מכן בחירה בעמודות מסוימות בלבד:
 
+```python
 df.loc[df["age"] > 30, ["city"]]
 
 # Output:
-
-# city
-
-# name
-
-# Roi Haifa
-
-# Hila Jerusalem
+#            city
+# name           
+# Roi       Haifa
+# Hila  Jerusalem
+```
 
 גישה כזו חוסכת לולאות, מונעת שגיאות, ונשארת קריאה גם כשעובדים על מיליוני שורות.
 
@@ -405,77 +391,65 @@ Map מאפשרת לבצע שינוי ישיר על עמודה אחת.
 
 שיטה זו יעילה כשנדרש שינוי פשוט בעמודה יחידה, כמו נירמול טקסטים או החלפת ערכים.
 
+```python
 import pandas as pd
 
 df = pd.DataFrame({
-
-"name": ["Dana", "Roi", "Hila"],
-
-"city": ["Tel Aviv", "Haifa", "Jerusalem"]
-
+    "name": ["Dana", "Roi", "Hila"],
+    "city": ["Tel Aviv", "Haifa", "Jerusalem"]
 })
 
 print(df)
 
 # Output:
-
-# name city
-
-# 0 Dana Tel Aviv
-
-# 1 Roi Haifa
-
-# 2 Hila Jerusalem
+#    name       city
+# 0  Dana   Tel Aviv
+# 1   Roi      Haifa
+# 2  Hila  Jerusalem
+```
 
 **apply - פונקציה על שורה או עמודה**
 
 Apply מאפשרת הפעלת פונקציה על כל שורה או עמודה. 
 זו הדרך הנוחה ביותר לבצע חישובים מותאמים אישית.
 
+```python
 df["name_length"] = df["name"].apply(len)
+```
 
 ניתן גם להפעיל פונקציה על כל שורה (axis=1):
 
+```python
 df["desc"] = df.apply(lambda r: f"{r['name']} - {r['city']}", axis=1)
 
 # Resulting DataFrame:
-
-# name city name_length desc
-
-# 0 Dana Tel Aviv 4 Dana - Tel Aviv
-
-# 1 Roi Haifa 3 Roi - Haifa
-
-# 2 Hila Jerusalem 4 Hila - Jerusalem
+#    name       city  name_length              desc
+# 0  Dana   Tel Aviv            4    Dana - Tel Aviv
+# 1   Roi      Haifa            3        Roi - Haifa
+# 2  Hila  Jerusalem            4   Hila - Jerusalem
+```
 
 היתרון, גמישות. החיסרון, איטי יחסית לפעולות וקטוריות. 
 לכן ב-datasets גדולים עדיף להשתמש ב-NumPy או ב-transform מובנות של Pandas.
 
+```python
 import pandas as pd
 
 sales = pd.DataFrame({
-
-"region": ["North", "South", "North", "Central"],
-
-"amount": [120, 80, 150, 200]
-
+    "region": ["North", "South", "North", "Central"],
+    "amount": [120, 80, 150, 200]
 })
 
 # Grouping by region and calculating the mean
-
 sales.groupby("region")["amount"].mean()
 
 # Output:
-
 # region
-
-# Central 200.0
-
-# North 135.0
-
-# South 80.0
-
+# Central    200.0
+# North      135.0
+# South       80.0
 # Name: amount, dtype: float64
+```
 
 כך ניתן לחשב ממוצעים, סכומים, או סטטיסטיקות אחרות לכל קבוצה. למשל, ממוצע דירוגים לפי משתמש או קטגוריה.
 
@@ -500,59 +474,61 @@ sales.groupby("region")["amount"].mean()
 
 השיטה הראשונה היא זיהוי:
 
+```python
 import pandas as pd
-
 import numpy as np
 
 df = pd.DataFrame({
-
-"name": ["Dana", "Roi", "Hila"],
-
-"age": [29, np.nan, 41],
-
-"city": ["Tel Aviv", None, "Jerusalem"]
-
+    "name": ["Dana", "Roi", "Hila"],
+    "age": [29, np.nan, 41],
+    "city": ["Tel Aviv", None, "Jerusalem"]
 })
 
 df.isna()
 
 # Output:
-
-# name age city
-
-# 0 False False False
-
-# 1 False True True
-
-# 2 False False False
+#     name    age   city
+# 0  False  False  False
+# 1  False   True   True
+# 2  False  False  False
+```
 
 isna() מחזירה טבלת True/False לפי מיקום הערכים החסרים. 
 כדי לבדוק כמה חסרים קיימים בכל עמודה:
 
+```python
 df.isna().sum()
+```
 
 **הסרת ערכים חסרים**
 
 אם הנתונים החסרים מועטים, אפשר פשוט להסיר את הרשומות:
 
+```python
 clean_df = df.dropna()
+```
 
 ברירת המחדל מסירה כל שורה שבה יש לפחות NaN אחד. 
 אם נרצה להסיר רק שורות שבהן כל הערכים חסרים:
 
+```python
 df.dropna(how="all")
+```
 
 **מילוי ערכים חסרים**
 
 כאשר הנתונים חשובים מדי להסרה, ניתן למלא אותם בערך ברירת מחדל:
 
+```python
 df["age"] = df["age"].fillna(df["age"].mean())
-
 df["city"] = df["city"].fillna("Unknown")
+```
 
 fillna מאפשרת גם **שחזור ערכים סמוכים** ב-datasets סדרתיים (כמו סדרות זמן):
 
+```python
 df["age"].fillna(method="ffill", inplace=True) # copy the previous value
+```
 
 
 
@@ -583,37 +559,28 @@ df["age"].fillna(method="ffill", inplace=True) # copy the previous value
 merge היא המקבילה של פעולת JOIN ב-SQL. 
 היא מאפשרת לחבר שתי טבלאות לפי עמודה משותפת, למשל user_id.
 
+```python
 import pandas as pd
 
 users = pd.DataFrame({
-
-"user_id": [1, 2, 3],
-
-"name": ["Dana", "Roi", "Hila"]
-
+    "user_id": [1, 2, 3],
+    "name": ["Dana", "Roi", "Hila"]
 })
 
 orders = pd.DataFrame({
-
-"user_id": [1, 1, 2],
-
-"order_amount": [120, 80, 200]
-
+    "user_id": [1, 1, 2],
+    "order_amount": [120, 80, 200]
 })
 
 merged = pd.merge(users, orders, on="user_id", how="left")
 
 # Resulting DataFrame:
-
-# user_id name order_amount
-
-# 0 1 Dana 120.0
-
-# 1 1 Dana 80.0
-
-# 2 2 Roi 200.0
-
-# 3 3 Hila NaN
+#    user_id  name  order_amount
+# 0        1  Dana         120.0
+# 1        1  Dana          80.0
+# 2        2   Roi         200.0
+# 3        3  Hila           NaN
+```
 
 הפרמטר how מגדיר את סוג המיזוג - "inner", "left", "right", או "outer". 
 השימוש הנפוץ ביותר הוא "left" כדי לשמור את הנתונים מטבלת הבסיס גם כשאין התאמה מלאה.
@@ -623,25 +590,21 @@ merged = pd.merge(users, orders, on="user_id", how="left")
 concat משמשת להדבקה של DataFrames זה מעל זה (או זה לצד זה). 
 מושלם כשמקבלים קבצים מאותו מבנה מכמה מקורות.
 
+```python
 import pandas as pd
 
 q1 = pd.DataFrame({"month": ["Jan", "Feb"], "sales": [100, 120]})
-
 q2 = pd.DataFrame({"month": ["Mar", "Apr"], "sales": [130, 140]})
 
 df = pd.concat([q1, q2], ignore_index=True)
 
 # Resulting DataFrame:
-
-# month sales
-
-# 0 Jan 100
-
-# 1 Feb 120
-
-# 2 Mar 130
-
-# 3 Apr 140
+#   month  sales
+# 0   Jan    100
+# 1   Feb    120
+# 2   Mar    130
+# 3   Apr    140
+```
 
 אם מעבירים axis=1, ההדבקה מתבצעת אופקית, עמודות לצד עמודות.
 
@@ -650,25 +613,20 @@ df = pd.concat([q1, q2], ignore_index=True)
 join מאפשרת למזג DataFrames לפי אינדקס, 
 שימושית במיוחד לאחר שהוגדר set_index().
 
+```python
 users = users.set_index("user_id")
-
 orders = orders.set_index("user_id")
 
 users.join(orders, how="left")
 
 # Resulting DataFrame:
-
-# name order_amount
-
-# user_id
-
-# 1 Dana 120.0
-
-# 1 Dana 80.0
-
-# 2 Roi 200.0
-
-# 3 Hila NaN
+#          name  order_amount
+# user_id                    
+# 1        Dana         120.0
+# 1        Dana          80.0
+# 2         Roi         200.0
+# 3        Hila           NaN
+```
 
 אותו רעיון כמו merge, אבל תחביר נקי יותר כשעובדים עם אינדקסים.
 
@@ -693,25 +651,23 @@ users.join(orders, how="left")
 
 נניח שקיבלנו dataset של ביקורות משתמשים על מוצרים, בקובץ CSV:
 
+```bash
 id,text,rating
-
 1, Excellent product,5
-
 2, Slow delivery,2
-
 3, Excellent service!,4
-
 4, Not satisfied,1
-
 5, Very good quality,5
+```
 
 טעינה וניקוי בסיסי
 
+```python
 import pandas as pd
 
 df = pd.read_csv("data/reviews.csv", encoding="utf-8")
-
 df.dropna(subset=["text"], inplace=True)
+```
 
 נפטרנו מרשומות חסרות ונשארנו רק עם שורות שבהן יש טקסט.
 
@@ -719,46 +675,45 @@ df.dropna(subset=["text"], inplace=True)
 
 השלב הבא הוא ניקוי הערות המשתמשים לקראת עיבוד שפה טבעית (NLP). נשתמש בפונקציה פשוטה לנירמול:
 
+```python
 def normalize(text: str) -> str:
-
-text = text.strip().lower()
-
-return text.replace("!", "").replace(".", "")
+    text = text.strip().lower()
+    return text.replace("!", "").replace(".", "")
 
 df["clean_text"] = df["text"].apply(normalize)
 
 # Resulting DataFrame:
-
-# id text rating clean_text
-
-# 0 1 Excellent product 5 excellent product
-
-# 1 2 Slow delivery 2 slow delivery
-
-# 2 3 Excellent service! 4 excellent service
-
-# 3 4 Not satisfied 1 not satisfied
-
-# 4 5 Very good quality 5 very good quality
+#    id               text  rating         clean_text
+# 0   1  Excellent product       5  excellent product
+# 1   2      Slow delivery       2      slow delivery
+# 2   3  Excellent service!      4  excellent service
+# 3   4      Not satisfied       1      not satisfied
+# 4   5  Very good quality       5  very good quality
+```
 
 **הוספת Feature חדש**
 
 נחשב את אורך כל ביקורת כמספר מילים 
 Feature בסיסי אך שימושי למודלים של סנטימנט:
 
+```python
 df["word_count"] = df["clean_text"].apply(lambda t: len(t.split()))
+```
 
 קיבוץ לפי דירוג
 
+```python
 avg_len = df.groupby("rating")["word_count"].mean()
-
 print(avg_len)
+```
 
 כך נוכל לגלות תובנות ראשוניות. למשל, האם ביקורות שליליות קצרות יותר מביקורות חיוביות.
 
 **שמירה לפורמט יעיל**
 
+```python
 df.to_parquet("data/clean_reviews.parquet", index=False)
+```
 
 ה-DataFrame הנקי מוכן לשימוש במודל שפה, לאימון או לאחזור RAG ב- Pipeline.
 
@@ -798,13 +753,14 @@ Pandas טוענת את כל הנתונים לזיכרון הראשי (RAM). אם
 Polars היא ספרייה מודרנית שנכתבה ב-Rust, ומבוססת על עיבוד עמודות. 
 היא מהירה משמעותית מ-Pandas, תומכת בעיבוד מקבילי (multithreading), ומציגה ממשק API דומה מאוד, כך שקל לעבור אליה.
 
+```python
 import polars as pl
 
 df = pl.read_csv("data/large_dataset.csv")
 
 # In Polars, 'groupby' was deprecated in favor of 'group_by'
-
 summary = df.group_by("category").agg(pl.col("value").mean())
+```
 
 היתרונות:
 
@@ -820,15 +776,15 @@ summary = df.group_by("category").agg(pl.col("value").mean())
 
 **Dask** מרחיבה את Pandas לעיבוד מקבילי מבוזר. במקום לטעון את כל הנתונים בבת אחת, היא מחלקת את העבודה למקטעים קטנים (Chunks) ומבצעת אותם במקביל בזיכרון או באשכול (Cluster).
 
+```python
 import dask.dataframe as dd
 
 # Dask performs lazy evaluation, reading only metadata initially
-
 df = dd.read_csv("data/large_dataset.csv")
 
 # Computations are queued in a task graph; .compute() triggers execution
-
 result = df["value"].mean().compute()
+```
 
 שיטת העבודה כמעט זהה ל-Pandas 
 אך מאחורי הקלעים Dask מפעילה מערכת תורים שמבצעת את החישובים בחלקים.

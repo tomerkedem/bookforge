@@ -12,21 +12,18 @@
 
 Fixtures הן פונקציות שמכינות נתונים או סביבה לבדיקה, ומוחזרות לבדיקה אוטומטית לפי שם.
 
+```python
 import pytest
-
 from mini_text_analyzer.text_utils import tokenize
 
 @pytest.fixture
-
 def sample_text() -> str:
-
-return "Python is an amazing language"
+    return "Python is an amazing language"
 
 def test_tokenize_with_fixture(sample_text):
-
-tokens = tokenize(sample_text)
-
-assert len(tokens) == 4
+    tokens = tokenize(sample_text)
+    assert len(tokens) == 4
+```
 
 אפשר להגדיר Fixtures כלליים בקובץ conftest.py כדי לשתף אותם בכל הפרויקט. הם מעולים להכנות חוזרות כמו פתיחת קובץ, יצירת אובייקט API, או ניקוי נתונים.
 
@@ -34,15 +31,14 @@ assert len(tokens) == 4
 
 נרצה לוודא שגם במקרים חריגים הפונקציה מתנהגת כמצופה. כלומר, זורקת את החריגה הנכונה.
 
+```python
 import pytest
-
 from mini_text_analyzer.io_utils import read_json
 
 def test_read_json_not_found():
-
-with pytest.raises(FileNotFoundError):
-
-read_json("data/missing.json")
+    with pytest.raises(FileNotFoundError):
+        read_json("data/missing.json")
+```
 
 בדיקה כזו אינה נועדה “להפיל” את הקוד, אלא לוודא שהתנהגות השגיאה צפויה, מתועדת וניתנת ללכידה.
 
@@ -50,31 +46,22 @@ read_json("data/missing.json")
 
 לא תמיד נרצה לגשת לשירות חיצוני אמיתי בזמן הבדיקות (כמו OpenAI API או Google Cloud). במקום זאת, נשתמש ב-Mock, אובייקט שמדמה התנהגות אמיתית.
 
+```python
 from unittest.mock import patch
-
 from mini_text_analyzer.llm_client import query_model
 
 @patch("mini_text_analyzer.llm_client.send_request")
-
 def test_query_model(mock_send):
-
-# Setup the mock behavior
-
-mock_send.return_value = {"text": "Hello world"}
-
-
-
-# Execute the function that uses the mock
-
-result = query_model("hi")
-
-
-
-# Verify the results and that the mock was called
-
-assert "Hello" in result
-
-mock_send.assert_called_once_with("hi")
+    # Setup the mock behavior
+    mock_send.return_value = {"text": "Hello world"}
+    
+    # Execute the function that uses the mock
+    result = query_model("hi")
+    
+    # Verify the results and that the mock was called
+    assert "Hello" in result
+    mock_send.assert_called_once_with("hi")
+```
 
 אנו בודקים את הלוגיקה שלנו בלי תלות ברשת או ב-API אמיתי. 
 גישה זו חיונית במיוחד במערכות מבוססות AI שבהן הגישה החיצונית איטית או עולה כסף.
@@ -93,67 +80,52 @@ mock_send.assert_called_once_with("hi")
 
 דוגמה לקובץ .pre-commit-config.yaml:
 
+```yaml
 repos:
-
-- repo: https://github.com/psf/black
-
-rev: 24.4.0
-
-hooks:
-
-- id: black
-
-- repo: https://github.com/astral-sh/ruff-pre-commit
-
-rev: v0.6.3
-
-hooks:
-
-- id: ruff
-
-- repo: https://github.com/pre-commit/mirrors-mypy
-
-rev: v1.10.0
-
-hooks:
-
-- id: mypy
+  - repo: https://github.com/psf/black
+    rev: 24.4.0
+    hooks:
+      - id: black
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.6.3
+    hooks:
+      - id: ruff
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.10.0
+    hooks:
+      - id: mypy
+```
 
 ## דוגמה מרכזית: בדיקות ל-tokenize ו-clean
 
 נבנה בדיקות אמיתיות לשתי פונקציות מהפרקים הקודמים:
 
+```python
 from mini_text_analyzer.text_utils import tokenize, normalize
 
 def test_tokenize_simple():
-
-text = "Hello world"
-
-result = tokenize(text)
-
-assert result == ["Hello", "world"]
+    text = "Hello world"
+    result = tokenize(text)
+    assert result == ["Hello", "world"]
 
 def test_normalize_lowercase():
-
-text = " Python "
-
-result = normalize(text)
-
-assert result == "Python"
+    text = "  Python  "
+    result = normalize(text)
+    assert result == "Python"
+```
 
 אפשר גם לבדוק קלט בעייתי:
 
+```python
 import pytest
 
 def test_tokenize_empty():
-
-assert tokenize("") == []
+    assert tokenize("") == []
 
 def test_normalize_non_string():
-
-with pytest.raises(AttributeError):
-
-normalize(None)
+    with pytest.raises(AttributeError):
+        normalize(None)
+```
 
 בדיקות קטנות, ממוקדות וברורות, הרבה יותר יעילות מבדיקה אחת ענקית שמנסה לבדוק את הכול.
 
@@ -163,31 +135,23 @@ normalize(None)
 
 דוגמה פשוטה ל-GitHub Actions:
 
+```yaml
 name: Tests
 
 on: [push, pull_request]
 
 jobs:
-
-test:
-
-runs-on: ubuntu-latest
-
-steps:
-
-- uses: actions/checkout@v4
-
-- name: Set up Python
-
-uses: actions/setup-python@v5
-
-with:
-
-python-version: '3.12'
-
-- run: pip install -r requirements.txt
-
-- run: pytest -v
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r requirements.txt
+      - run: pytest -v
+```
 
 כך כל שינוי בקוד עובר בדיקה אוטומטית, בלי שמפתח צריך לזכור להריץ משהו ידנית.
 

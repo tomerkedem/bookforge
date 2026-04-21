@@ -6,13 +6,12 @@
 בניגוד לשפות שמכריחות אותך להצהיר מראש על טיפוס המשתנה, בפייתון הטיפוס שייך לערך, לא למשתנה עצמו. 
 וזו אחת התפיסות החשובות ביותר להבין לפני שמתחילים לעבוד איתה ברצינות.
 
+```bash
 name = "Tomer"
-
 age = 32
-
 active = True
-
 score = None
+```
 
 בארבע שורות קצרות יצרנו ארבעה טיפוסים שונים לגמרי.
 
@@ -41,9 +40,10 @@ active הוא בוליאני (bool),
 המשתנה הוא רק מצביע, מעין תווית שמפנה לאובייקט בזיכרון. 
 המשמעות היא שאפשר לשנות את הערך ואת הטיפוס של אותו שם משתנה בכל רגע:
 
+```bash
 x = 10
-
 x = "ten"
+```
 
 הקוד הזה חוקי לגמרי, אבל הוא גם מתכון לבאגים חמקמקים. 
 כי אם במקום אחד נניח ש-x הוא מספר, ובמקום אחר ננסה לחבר אותו למחרוזת, נקבל שגיאה בזמן ריצה.
@@ -51,9 +51,10 @@ x = "ten"
 זו אחת הסיבות לכך שמתכנתים מנוסים עובדים עם type hints. 
 גם אם פייתון לא דורשת אותם, הם הפכו לסטנדרט הנדסי שמקל על תחזוקה ובדיקות סטטיות.
 
+```python
 def add(a: int, b: int) -> int:
-
-return a + b
+    return a + b
+```
 
 פייתון עצמה לא תכפה את זה בזמן ריצה, אבל כלים כמו mypy או IDE חכם (VS Code, PyCharm) יתריעו ברגע שתעביר טיפוס לא צפוי. 
 וכך נשמרת גם הגמישות של השפה וגם האמינות של הקוד.
@@ -74,19 +75,16 @@ return a + b
 
 **התחביר פשוט להפליא:**
 
+```python
 temperature = 31
 
 if temperature > 30:
-
-print("It is very hot today!")
-
+    print("It is very hot today!")
 elif temperature > 20:
-
-print("Pleasant weather")
-
+    print("Pleasant weather")
 else:
-
-print("It is cool outside")
+    print("It is cool outside")
+```
 
 אין סוגריים, אין נקודה-פסיק, ואין מילים מיותרות. 
 הקוד נקרא כמעט כמו משפט בשפה טבעית.
@@ -106,17 +104,16 @@ print("It is cool outside")
 
 </div>
 
+```python
 name = ""
 
 if name:
-
-print("Username exists")
-
+    print("Username exists")
 else:
+    print("No name entered")
+```
 
-print("No name entered")
-
-כאן name הוא מחרוזת ריקה ולכן מתפרש כ-False.
+כאן name הוא מחרוזת ריקה ולכן מתפרש כ-False. 
 זה אחד המאפיינים שהופכים את הקוד הפייתוני לקצר וברור 
 במקום לכתוב ולבדוק if len(name) > 0:, פשוט כותבים if name:.
 
@@ -124,21 +121,17 @@ print("No name entered")
 
 פייתון שומרת על לוגיקה ברורה מאוד:
 
+```python
 is_hot = temperature > 30
-
 is_humid = True
 
 if is_hot and is_humid:
-
-print("Turn on the air conditioner")
-
+    print("Turn on the air conditioner")
 elif is_hot or is_humid:
-
-print("Open a window")
-
+    print("Open a window")
 else:
-
-print("It is just right")
+    print("It is just right")
+```
 
 and ו-or הם לא מילים שמורות מקריות, הן קריאות ממש כמו אנגלית. 
 בניגוד לשפות כמו #C או Java שבהן תכתוב && ו-||, כאן אתה פשוט כותב את המילים עצמן.
@@ -150,7 +143,9 @@ and ו-or הם לא מילים שמורות מקריות, הן קריאות ממ
 כשיש תנאי קצר, אין צורך בשלוש שורות. 
 אפשר לכתוב אותו כך:
 
+```python
 status = "hot" if temperature > 30 else "pleasant"
+```
 
 זהו ביטוי מלא שמחזיר ערך, לא רק פקודה. 
 במקום קוד מסורבל, אפשר לכתוב שורה אחת קריאה וברורה. 
@@ -165,19 +160,16 @@ status = "hot" if temperature > 30 else "pleasant"
 
 לדוגמה:
 
+```python
 actions = {
-
-"hot": "Turn on the air conditioner",
-
-"cold": "Turn on the heater",
-
-"normal": "No action needed"
-
+    "hot": "Turn on the air conditioner",
+    "cold": "Turn on the heater",
+    "normal": "No action needed"
 }
 
 state = "hot"
-
 print(actions[state])
+```
 
 אותו רעיון של תנאים, אבל בלי if אחד אפילו. 
 זוהי הדרך הפייתונית: להעדיף מבנים גמישים על פני הסתעפויות לוגיות אינסופיות.
@@ -196,28 +188,30 @@ print(actions[state])
 בפייתון, for לא נועדה “לספור צעדים” כמו ב-#C או Java. 
 היא עוברת על אובייקטים איטרביליים, כלומר על כל מבנה שאפשר לעבור עליו ברצף: רשימות, מחרוזות, קבצים, ואפילו *גנרטורים* (generators) -מבנים שיוצרים ערכים “תוך כדי תנועה” במקום לשמור את כולם מראש בזיכרון.
 
+```python
 names = ["Tamar", "Noam", "Tomer"]
 
 for name in names:
-
-print(f"Hi {name}!")
+    print(f"Hi {name}!")
+```
 
 הקוד הזה כמעט מדבר אנגלית: “עבור על כל name בתוך names, והדפס Hi”. 
 אין כאן אינדקסים, אין תנאי עצירה, ואין צורך לכתוב לולאה אינסופית כדי לבדוק מתי להפסיק. פייתון דואגת לזה בעצמה.
 
 אם בכל זאת צריך את האינדקס, פשוט משתמשים ב-enumerate:
 
+```python
 for i, name in enumerate(names):
-
-print(i, name)
+    print(i, name)
+```
 
 התוצאה:
 
+```bash
 0 Tamar
-
 1 Noam
-
 2 Tomer
+```
 
 כך מקבלים גם את המיקום וגם את הערך, בלי לספור ידנית.
 
@@ -226,15 +220,15 @@ print(i, name)
 בלולאת while משמשים כשלא ידוע מראש כמה פעמים צריך לחזור על משהו. 
 **היא ממשיכה לרוץ כל עוד התנאי מתקיים.**
 
+```python
 count = 0
 
 while count < 3:
-
-print("Repeating this again...")
-
-count += 1
+    print("Repeating this again...")
+    count += 1
 
 print("Finished!")
+```
 
 גם כאן אין סוגריים או נקודה-פסיק. 
 הכול פשוט, אך עם שליטה מלאה.
@@ -244,17 +238,14 @@ print("Finished!")
 לפעמים צריך לעצור לולאה באמצע, או לדלג על סבב אחד. 
 בפייתון עושים זאת בעזרת שתי מילים שמדברות בעד עצמן:
 
+```python
 for n in range(10):
-
-if n == 5:
-
-break # stop completely
-
-if n % 2 == 0:
-
-continue # skip even numbers
-
-print(n)
+    if n == 5:
+        break  # stop completely
+    if n % 2 == 0:
+        continue  # skip even numbers
+    print(n)
+```
 
 הלולאה נעצרת כשהיא פוגשת את המספר 5, ומדלגת על כל המספרים הזוגיים בדרך לשם.
 
@@ -262,17 +253,14 @@ print(n)
 
 אחד המאפיינים הפחות מוכרים של פייתון לולאה שיכולה להכיל גם בלוק else, שמתבצע רק אם **הלולאה הסתיימה באופן טבעי**, בלי break.
 
+```python
 for n in range(5):
-
-if n == 3:
-
-print("Found!")
-
-break
-
+    if n == 3:
+        print("Found!")
+        break
 else:
-
-print("Not found")
+    print("Not found")
+```
 
 אם break לא התרחש, יופעל ה-else. זה מאפשר לכתוב לוגיקה נקייה בלי דגלים מיותרים.
 
@@ -283,9 +271,10 @@ print("Not found")
 
 למשל, כדי לסכום מספרים, אין צורך לעבור עליהם בלולאה:
 
+```python
 numbers = [1, 2, 3, 4]
-
 total = sum(numbers)
+```
 
 הקוד הקצר הזה גם קריא יותר וגם יעיל יותר. 
 זו אחת התכונות שהופכות את פייתון לשפה שמתאימה לפיתוח ה-AI:
@@ -301,28 +290,28 @@ total = sum(numbers)
 
 התחביר הכללי הוא:
 
+```python
 sequence[start:end:step]
+```
 
 שלושת הפרמטרים האלה הם כולם אופציונליים. 
 דוגמה פשוטה על מחרוזת:
 
+```python
 text = "Artificial Intelligence"
 
 print(text[0:10])
-
 # 'Artificial'
 
 print(text[:10])
-
 # same result - starts from the beginning
 
 print(text[11:])
-
 # 'Intelligence'
 
 print(text[::-1])
-
 # full reverse
+```
 
 **מספר דברים שכדאי לשים לב אליהם:**
 
@@ -339,23 +328,22 @@ print(text[::-1])
 
 מחרוזת (str) היא בעצם רצף תווים, ולכן כללי החיתוך חלים עליה באופן טבעי:
 
+```python
 word = "Python"
-
 print(word[1:4])
-
 # 'yth'
-
 print(word[-2:])
-
 # 'on'
+```
 
 אפשר לחשוב על זה כמו על “מבט מדויק פנימה” למחרוזת. 
 והכי חשוב slicing בפייתון אף פעם לא זורק חריגה אם הגבולות חורגים. 
 במקום זאת, הוא פשוט מחזיר את מה שקיים:
 
+```python
 print(word[2:99])
-
 # 'thon' - No error! Out of bounds indices are handled gracefully by slicing.
+```
 
 זו החלטת עיצוב שמגנה עליך מטעויות קטנות, 
 ומאפשרת להריץ מניפולציות על טקסטים בביטחון.
@@ -367,27 +355,24 @@ print(word[2:99])
 
 **דוגמאות חשובות:**
 
-text = " Python is Awesome! "
+```python
+text = " Python is Awesome!  "
 
 print(text.strip())
-
 # remove surrounding whitespace
 
 print(text.lower())
-
 # convert to lowercase
 
 print(text.upper())
-
 # convert to uppercase
 
 print(text.replace("Awesome", "Powerful"))
-
 # replace substring
 
 print(text.split())
-
 # ['Python', 'is', 'Awesome!']
+```
 
 כל אחת מהפקודות האלה מחזירה מחרוזת חדשה, המקורית נשארת כשהייתה. 
 זו התנהגות חשובה במיוחד בעיבוד טקסטים במערכות .AI
@@ -401,15 +386,14 @@ print(text.split())
 ההבדל ביניהם קטן כשמדובר בשתי מילים, 
 אבל נהיה דרמטי כשמדובר באלפי חיבורים בלולאה.
 
+```python
 # direct concatenation
-
 result = "Hello " + "World"
 
 # efficient concatenation using a list
-
 words = ["AI", "is", "changing", "everything"]
-
 result = " ".join(words)
+```
 
 join() יעילה פי כמה, 
 כי היא יוצרת את המחרוזת הסופית בפעולה אחת בזיכרון, 
@@ -439,11 +423,11 @@ join() יעילה פי כמה,
 ולפני f-strings, עיצוב טקסט היה אחד המקומות הכי פחות קריאים בקוד. 
 למשל, אם רצית להדפיס פרטי משתמש בשיטה הישנה, היית כותב:
 
+```python
 name = "Tamar"
-
 age = 29
-
 print("My name is {} and I am {} years old".format(name, age))
+```
 
 וזה עוד בסדר. 
 אבל תנסה להכניס חישוב או תנאי קטן - והכול מיד נהיה מבולגן.
@@ -455,38 +439,42 @@ f-strings פתרו את זה בדרך פייתונית טיפוסית:
 
 הוספת האות f לפני מחרוזת מאפשרת לשלב בתוכה ביטויים דינמיים, ממש כאילו כתבת קוד רגיל:
 
+```python
 name = "Tamar"
-
 age = 29
-
 print(f"My name is {name} and I am {age} years old")
+```
 
 בתוך הסוגריים המסולסלים {} אפשר לשים כל ביטוי חוקי של פייתון: 
 חישוב, קריאה לפונקציה, תנאי. הכול.
 
+```python
 print(f"In a year I will be {age + 1} years old")
+```
 
 או אפילו:
 
+```python
 print(f"Name in uppercase: {name.upper()}")
+```
 
 **עיצוב מספרים ותאריכים**
 
 f-strings כוללות גם תחביר מובנה לעיצוב ערכים. בלי להסתבך עם פונקציות חיצוניות.
 
+```python
 pi = 3.1415926535
-
 print(f"Pi approximation: {pi:.3f}")
-
 # Output:
-
 # Pi approximation: 3.142
+```
 
 ניתן גם לשלוט בצורה מדויקת בעימוד וביישור של טקסט, ממש כמו ב-printf הקלאסית:
 
+```python
 for n in range(1, 4):
-
-print(f"{n:>3} → {n*n:>5}")
+    print(f"{n:>3} → {n*n:>5}")
+```
 
 החלק שבין הסוגריים המסולסלים {} מאפשר להגדיר איך הערך יוצג.
 
@@ -529,15 +517,17 @@ f-strings הם הכלי שאתה לא רוצה לוותר עליו.
 
 במקום:
 
+```python
 squares = []
-
 for n in range(5):
-
-squares.append(n * n)
+    squares.append(n * n)
+```
 
 **אפשר פשוט לכתוב:**
 
+```python
 squares = [n * n for n in range(5)]
+```
 
 והתוצאה למעשה זהה. 
 רשימה חדשה נבנית תוך כדי מעבר על טווח הערכים. 
@@ -548,7 +538,9 @@ squares = [n * n for n in range(5)]
 
 **עם תנאים** אפשר לשלב גם תנאי ישירות בתוך הביטוי:
 
+```python
 evens = [n for n in range(10) if n % 2 == 0]
+```
 
 כאן נבנית רשימה של כל המספרים הזוגיים בין ‎0‎ ל-‎9‎. 
 הלולאה והתנאי מתמזגים לשורה אחת נקייה, שאפשר לקרוא אותה כמו משפט רגיל: 
@@ -556,11 +548,11 @@ evens = [n for n in range(10) if n % 2 == 0]
 
 **דוגמה מעשית על טקסטים**
 
+```python
 text = "Machine learning is amazing"
-
 words = [w.lower() for w in text.split() if len(w) > 3]
-
 print(words)
+```
 
 זו בדיוק החשיבה שנרצה לראות אצל מהנדס AI: 
 לא איך לעבור על כל מילה, אלא **איך לסנן ולעבד בקו אחד ברור.**
@@ -570,17 +562,16 @@ print(words)
 המבנה הזה עובד לא רק עם רשימות. 
 פייתון מאפשרת להשתמש באותו רעיון גם עם סוגים אחרים של אוספים:
 
+```python
 # Dictionary comprehension
-
 squares_dict = {n: n * n for n in range(5)}
 
 # Set comprehension
-
 squares_set = {n * n for n in range(5)}
 
 # Generator comprehension
-
 nums_gen = (n * n for n in range(1_000_000))
+```
 
 **Set comprehension**
 
@@ -617,21 +608,16 @@ nums_gen = (n * n for n in range(1_000_000))
 
 **הקוד**
 
+```python
 def clean_sentences(sentences: list[str]) -> list[str]:
-
-"""
-
-Cleans a list of sentences:
-
-1. Removes surrounding whitespace.
-
-2. Skips empty sentences.
-
-3. Returns a new, clean list.
-
-"""
-
-return [s.strip() for s in sentences if s.strip()]
+    """
+    Cleans a list of sentences:
+    1. Removes surrounding whitespace.
+    2. Skips empty sentences.
+    3. Returns a new, clean list.
+    """
+    return [s.strip() for s in sentences if s.strip()]
+```
 
 פשטות קיצונית, אבל גם יעילות.
 
@@ -639,43 +625,30 @@ return [s.strip() for s in sentences if s.strip()]
 
 **דוגמה להרצה**
 
+```python
 def clean_sentences(sentences: list[str]) -> list[str]:
-
-"""
-
-Cleans a list of sentences:
-
-1. Removes surrounding whitespace.
-
-2. Skips empty sentences.
-
-3. Returns a new, clean list.
-
-"""
-
-return [s.strip() for s in sentences if s.strip()]
+    """
+    Cleans a list of sentences:
+    1. Removes surrounding whitespace.
+    2. Skips empty sentences.
+    3. Returns a new, clean list.
+    """
+    return [s.strip() for s in sentences if s.strip()]
 
 raw = [
-
-" Hello World! ",
-
-"",
-
-" this is a small test ",
-
-" ",
-
-"AI changes everything"
-
+    "  Hello World!  ",
+    "",
+    "   this is a small test  ",
+    "   ",
+    "AI changes everything"
 ]
 
 clean = clean_sentences(raw)
-
 print(clean)
 
 # Output:
-
 # ['Hello World!', 'this is a small test', 'AI changes everything']
+```
 
 במספר שורות בלבד ניקינו רשימה של טקסטים, 
 הסרנו רווחים, סיננו שורות ריקות, 
@@ -685,9 +658,10 @@ print(clean)
 
 אם נרצה לסנן גם משפטים קצרים מדי, נוכל להוסיף תנאי נוסף:
 
+```python
 def clean_sentences(sentences: list[str]) -> list[str]:
-
-return [s.strip() for s in sentences if s.strip() and len(s.strip()) > 5]
+    return [s.strip() for s in sentences if s.strip() and len(s.strip()) > 5]
+```
 
 כעת כל משפט קצר מדי פשוט ייעלם מהפלט. 
 זו בדיוק הגמישות שהופכת את פייתון לשפה “חושבת”: 

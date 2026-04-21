@@ -785,27 +785,98 @@ def _append_footnote_refs(para, markdown_text: str, footnotes: Dict[str, str]) -
     return markdown_text
 
 
+def _detect_code_style_language(style_name: str) -> Optional[str]:
+    """
+    If a paragraph is explicitly marked with a Word style named
+    "Code <Language>" (e.g., "Code Python", "Code Bash", "Code Yaml"),
+    return the language portion in lowercase.
+
+    This supports the recommended authoring workflow: authors create
+    paragraph styles per language in Word and apply them to each code
+    paragraph. ingest then does not need to guess language from content
+    or font heuristics - the author has told it directly.
+
+    Matching is case-insensitive and tolerant of common style-naming
+    variants Word allows ("Code Python", "code python", "Code-Python",
+    "Code_Python", "CodePython"). Returns None if the style is not a
+    Code-* style, so callers can fall through to the font-based
+    detection for legacy content.
+
+    The returned language is lowercased and mapped to its canonical
+    form where the author used a short name ("yaml" -> "yaml",
+    "sh" -> "bash"). This keeps the fenced-code output consistent
+    regardless of how the style was named.
+    """
+    if not style_name:
+        return None
+
+    s = style_name.strip().lower()
+
+    # Accept "Code X", "Code-X", "Code_X", or single-token "CodeX".
+    lang = None
+    for prefix in ("code ", "code-", "code_"):
+        if s.startswith(prefix):
+            lang = s[len(prefix):].strip()
+            break
+
+    # Single-token form ("codepython", "codeyaml") - catches authors
+    # who created styles without a separator. Very rare.
+    if lang is None and s.startswith("code") and len(s) > 4 and s[4].isalpha():
+        lang = s[4:].strip()
+
+    if not lang:
+        return None
+
+    # Normalize common language aliases to the form consumers expect
+    # in a markdown code fence (```python, ```bash, ```yaml, ...).
+    aliases = {
+        "py": "python",
+        "sh": "bash",
+        "shell": "bash",
+        "yml": "yaml",
+        "js": "javascript",
+        "ts": "typescript",
+        "md": "markdown",
+    }
+    return aliases.get(lang, lang)
+
+
 def _classify_paragraph_block(style_name: str, runs_data: List[dict], markdown_text: str) -> str:
+    """
+    Classify a paragraph as heading / code / paragraph based on its
+    Word paragraph style.
+
+    Rules (in order):
+      1. Heading styles ("Heading 1", "Heading 2", or "כותרת") -> heading
+      2. Code-* styles ("Code Python", "Code Bash", "Code Yaml",
+         etc.) -> code. The language is recovered later from the
+         same style name.
+      3. Everything else -> paragraph.
+
+    Note on what is NOT a rule:
+    We do not promote a paragraph to "code" based on its content
+    (keywords like "if", "False", "print") or its run fonts
+    (Consolas/Courier on some runs). Content-based detection is
+    fragile: Hebrew prose that references a Python identifier
+    inline ("name מתפרש כ-False") would otherwise be wrongly
+    swept into a code block. Font-based detection is also
+    unreliable because Word can insert monospace fonts by auto-
+    correct or paste-formatting in places the author did not
+    intend.
+
+    The authoring convention is: if something is code, the author
+    assigns it a Code-* paragraph style. That single signal is
+    authoritative. Inline code spans inside prose are still
+    handled through per-run code flags by _apply_markdown_format,
+    independently of this classification.
+    """
     style_lower = (style_name or "").lower()
 
     if style_lower.startswith("heading") or "כותרת" in style_lower:
         return "heading"
 
-    if markdown_text.count("\n") >= 2:
-        code_ratio = 0
-        if runs_data:
-            # r["format"] is now a dict of flags, not a string.
-            # A run is "code" when its code flag is True.
-            code_runs = sum(
-                1
-                for r in runs_data
-                if isinstance(r.get("format"), dict) and r["format"].get("code")
-            )
-            code_ratio = code_runs / max(1, len(runs_data))
-
-        detected_lang = _detect_code_language(markdown_text)
-        if code_ratio >= 0.4 or detected_lang:
-            return "code"
+    if _detect_code_style_language(style_name):
+        return "code"
 
     return "paragraph"
 
@@ -1170,10 +1241,27 @@ def _ingest_docx(path: Path, language: str = "he") -> dict:
             images.extend(para_images)
 
             if raw_text.strip() or runs_data:
+                # For code paragraphs, use the raw text rather than the
+                # markdown-formatted text. Two reasons:
+                #   1. _apply_markdown_format wraps code runs in
+                #      backticks (`foo`), which is correct for inline
+                #      code but wrong when the whole paragraph is code
+                #      that parse.py will fence with ```...```
+                #      - we'd end up with `foo` *inside* a ``` block.
+                #   2. _apply_markdown_format strips leading/trailing
+                #      whitespace from each run before wrapping. In
+                #      Python code, that destroys significant
+                #      indentation ("    def foo():" becomes
+                #      "def foo():" with the indent sitting outside
+                #      the wrapper and then being lost when runs join).
+                # raw_text preserves spaces exactly as the author wrote
+                # them in Word, which is what a code block needs.
+                block_text = raw_text if block_type == "code" else markdown_text
+
                 block = {
                     "id": f"p-{doc_index}",
                     "type": block_type,
-                    "text": markdown_text,
+                    "text": block_text,
                     "raw_text": raw_text,
                     "style": style_name,
                     "doc_index": doc_index,
@@ -1183,9 +1271,38 @@ def _ingest_docx(path: Path, language: str = "he") -> dict:
                 }
 
                 if block_type == "code":
-                    block["language"] = _detect_code_language(raw_text)
+                    # Prefer the language declared by the Code-* style
+                    # (author-authoritative) over language detection from
+                    # content. Fall back to heuristic detection only when
+                    # the block was classified as code via the legacy
+                    # Consolas-font path and the style provides no hint.
+                    style_lang = _detect_code_style_language(style_name)
+                    if style_lang:
+                        block["language"] = style_lang
+                    else:
+                        block["language"] = _detect_code_language(raw_text)
 
                 blocks.append(block)
+            elif _detect_code_style_language(style_name):
+                # Empty paragraph inside a Code-* style. Authors leave
+                # blank lines between functions, imports, and logical
+                # groups. Without this branch those blank lines would
+                # be skipped, collapsing the code block into one dense
+                # wall of text. We emit a minimal code block with
+                # empty text so parse.py can preserve the blank line
+                # when it assembles the fenced block.
+                blocks.append({
+                    "id": f"p-{doc_index}",
+                    "type": "code",
+                    "text": "",
+                    "raw_text": "",
+                    "style": style_name,
+                    "doc_index": doc_index,
+                    "runs": [],
+                    "layout": layout,
+                    "list": list_data,
+                    "language": _detect_code_style_language(style_name),
+                })
             elif para_images:
                 # Empty paragraph that holds an image. Emit a minimal
                 # block so that parse.py sees a content item at this
