@@ -137,70 +137,220 @@ def _extract_paragraph_layout(para) -> dict:
     return layout
 
 
+def _extract_sdt_cover_fields(doc) -> dict:
+    """
+    Extract title/subtitle/author from a Word cover-page block.
+
+    Word's built-in cover templates insert a Structured Document Tag
+    (SDT) as the first body element. Inside the SDT, the author fills
+    in a title line, an optional subtitle, and an author name.
+
+    Two extraction strategies are tried in order:
+
+      1. Alias-based. If an inner SDT carries <w:alias w:val="כותרת">
+         (or the English "Title"), we trust that mapping and read
+         the text directly. Modern Word templates set these aliases.
+      2. Order-based. Older templates (and the one the current book
+         uses) leave the aliases empty. In that case we walk the
+         paragraphs inside the top-level SDT and pick the first
+         three non-empty, non-placeholder paragraphs:
+            first  -> title
+            second -> subtitle
+            third  -> author
+
+    Placeholder text like "[שנה]" or "[Year]" is skipped. Duplicate
+    blocks (Word often mirrors the cover card on front and back)
+    are deduplicated by value.
+
+    Returns a dict with whichever of {title, subtitle, author} were
+    found; missing fields are simply absent from the result.
+    """
+    found: dict = {}
+
+    alias_map = {
+        # Hebrew
+        "כותרת": "title",
+        "כותרת משנה": "subtitle",
+        "כותרת-משנה": "subtitle",
+        "תת-כותרת": "subtitle",
+        "מחבר": "author",
+        # English (Word UI in English)
+        "title": "title",
+        "subtitle": "subtitle",
+        "author": "author",
+    }
+
+    def _is_placeholder(text: str) -> bool:
+        # "[שנה]" / "[Year]" and similar square-bracketed Word
+        # placeholders that the author never replaced with real content.
+        if not text:
+            return True
+        t = text.strip()
+        return t.startswith("[") and t.endswith("]")
+
+    try:
+        body = doc._element.body
+
+        # Strategy 1: alias-based. Walk every SDT (including nested
+        # ones) and honour any alias that points at title/subtitle/
+        # author. This is the most reliable path when it works.
+        #
+        # Word's built-in Cover Pages gallery wraps the visible cover
+        # card in an outer SDT whose alias is ALSO "כותרת"/"Title"
+        # (the gallery name). That outer SDT's sdtContent contains
+        # the entire cover - title, subtitle, author, all concatenated
+        # - so if we read it we get garbage. We avoid it by preferring
+        # LEAF SDTs: an SDT is a leaf only when it contains no other
+        # SDTs inside its sdtContent. The real title/subtitle/author
+        # are always leaves.
+        for sdt in body.findall(f".//{W_NS}sdt"):
+            alias_elem = sdt.find(f".//{W_NS}sdtPr/{W_NS}alias")
+            if alias_elem is None:
+                continue
+
+            alias = (alias_elem.get(f"{W_NS}val") or "").strip().lower()
+            field = alias_map.get(alias)
+            if not field or field in found:
+                continue
+
+            content = sdt.find(f"{W_NS}sdtContent")
+            if content is None:
+                continue
+
+            # Skip container SDTs - those that contain other SDTs. The
+            # real leaf SDT with the same alias (or sibling aliases)
+            # will be processed in a later iteration.
+            if content.find(f".//{W_NS}sdt") is not None:
+                continue
+
+            texts = content.findall(f".//{W_NS}t")
+            value = "".join(t.text or "" for t in texts).strip()
+            if value and not _is_placeholder(value):
+                found[field] = value
+
+        # Strategy 2: order-based, only for fields the aliases
+        # didn't supply. We look at the FIRST top-level SDT
+        # (typically the cover page) and harvest paragraph text
+        # from its sdtContent, keeping duplicates out and dropping
+        # Word's unfilled [placeholder] items.
+        if "title" in found and "subtitle" in found and "author" in found:
+            return found
+
+        first_sdt = None
+        for child in body:
+            tag = child.tag.split("}")[-1] if "}" in child.tag else child.tag
+            if tag == "sdt":
+                first_sdt = child
+                break
+
+        if first_sdt is None:
+            return found
+
+        # Collect paragraph texts in document order, skipping the
+        # synthetic "concatenated" paragraph that some templates
+        # emit (recognisable because it contains every cover string
+        # run together with no separators).
+        ordered: list = []
+        seen: set = set()
+
+        for p in first_sdt.findall(f".//{W_NS}p"):
+            texts = p.findall(f".//{W_NS}t")
+            text = "".join(t.text or "" for t in texts).strip()
+            if not text or _is_placeholder(text):
+                continue
+
+            # The concatenated placeholder paragraph repeats every
+            # visible cover string with no separator; skip it by
+            # recognising the repetition signature (same substring
+            # appears twice).
+            if len(text) > 40:
+                half = len(text) // 2
+                if text[:half] == text[half:half * 2]:
+                    continue
+
+            if text in seen:
+                continue
+            seen.add(text)
+            ordered.append(text)
+
+        slots = ("title", "subtitle", "author")
+        for slot, value in zip(slots, ordered):
+            if slot not in found:
+                found[slot] = value
+
+    except Exception:
+        pass
+
+    return found
+
+
 def _extract_document_metadata(doc, path: Path) -> dict:
     """
-    Read title/author from the document's core properties. Falls
-    back to the file stem when the title property is missing; this
-    gives a usable default for files exported without metadata.
+    Read title / subtitle / author from the document.
+
+    Lookup order (most reliable first):
+      1. SDT cover-page placeholders - these carry the values the
+         author typed into the visible cover card and are the best
+         source.
+      2. core.xml (.core_properties.title / .subject / .author) -
+         Word keeps these in sync with some cover placeholders but
+         not all, and many documents have them empty.
+      3. File stem for the title, when neither source provides one.
+
+    Subtitle falls back to core.xml's `subject` because Word's
+    "כותרת משנה" cover placeholder writes there on some templates.
     """
+    sdt_fields = _extract_sdt_cover_fields(doc)
+
     props = None
     try:
         props = doc.core_properties
     except Exception:
         props = None
 
-    title = None
-    author = None
+    core_title = None
+    core_author = None
+    core_subject = None
 
     try:
-        title = props.title if props and props.title else None
+        core_title = props.title if props and props.title else None
     except Exception:
-        title = None
+        pass
 
     try:
-        author = props.author if props and props.author else None
+        core_author = props.author if props and props.author else None
     except Exception:
-        author = None
+        pass
 
-    if not title:
-        title = path.stem
+    try:
+        core_subject = props.subject if props and props.subject else None
+    except Exception:
+        pass
+
+    title = sdt_fields.get("title") or core_title or path.stem
+    subtitle = sdt_fields.get("subtitle") or core_subject or None
+    author = sdt_fields.get("author") or core_author or None
 
     return {
         "title": title,
+        "subtitle": subtitle,
         "author": author,
     }
 
 
 # ── Block classification ───────────────────────────────────────────
 
+def _is_book_description_style(style_name: str) -> bool:
+    """True when the paragraph is styled as the book-level blurb."""
+    s = (style_name or "").strip().lower()
+    return s in {"book description", "book-description", "book_description", "bookdescription"}
+
+
 def _classify_paragraph_block(style_name: str, runs_data: List[dict], markdown_text: str) -> str:
     """
-    Classify a paragraph as heading / code / paragraph based on its
-    Word paragraph style.
-
-    Rules (in order):
-      1. Heading styles ("Heading 1", "Heading 2", or "כותרת") -> heading
-      2. Code-* styles ("Code Python", "Code Bash", "Code Yaml",
-         etc.) -> code. The language is recovered later from the
-         same style name via _detect_code_style_language.
-      3. Everything else -> paragraph.
-
-    Note on what is NOT a rule:
-    We do not promote a paragraph to "code" based on its content
-    (keywords like "if", "False", "print") or its run fonts
-    (Consolas/Courier on some runs). Content-based detection is
-    fragile: Hebrew prose that references a Python identifier
-    inline ("name מתפרש כ-False") would otherwise be wrongly
-    swept into a code block. Font-based detection is also
-    unreliable because Word can insert monospace fonts by auto-
-    correct or paste-formatting in places the author did not
-    intend.
-
-    The authoring convention is: if something is code, the author
-    assigns it a Code-* paragraph style. That single signal is
-    authoritative. Inline code spans inside prose are still
-    handled through per-run code flags by _apply_markdown_format,
-    independently of this classification.
+    Classify a paragraph as heading / code / book_description / paragraph
+    based on its Word paragraph style. Content heuristics are NOT used -
+    style is the single signal.
     """
     style_lower = (style_name or "").lower()
 
@@ -209,6 +359,9 @@ def _classify_paragraph_block(style_name: str, runs_data: List[dict], markdown_t
 
     if _detect_code_style_language(style_name):
         return "code"
+
+    if _is_book_description_style(style_name):
+        return "book_description"
 
     return "paragraph"
 
@@ -231,6 +384,9 @@ def _ingest_docx(path: Path, language: str = "he") -> dict:
     # separately over doc.paragraphs, which skipped SDT and table
     # elements and drifted out of sync with the block indexing.
     images: List[dict] = []
+    # Book-level description: accumulates all consecutive paragraphs
+    # styled "Book Description". Joined with blank lines at the end.
+    book_description_parts: List[str] = []
     body = doc._element.body
     doc_index = 0
 
@@ -263,6 +419,14 @@ def _ingest_docx(path: Path, language: str = "he") -> dict:
             # place the image in the output at the right point.
             para_images = _extract_images_from_paragraph(element, doc_index)
             images.extend(para_images)
+
+            # Book description: lift text out of the flow. Accumulates
+            # all Book Description paragraphs; joined at the end.
+            if block_type == "book_description":
+                if raw_text.strip():
+                    book_description_parts.append(markdown_text.strip())
+                doc_index += 1
+                continue
 
             if raw_text.strip() or runs_data:
                 # For code paragraphs, use the raw text rather than the
@@ -372,6 +536,7 @@ def _ingest_docx(path: Path, language: str = "he") -> dict:
         "format": "docx",
         "language": language,
         "metadata": metadata,
+        "book_description": "\n\n".join(book_description_parts) if book_description_parts else None,
         "blocks": blocks,
         "images": images,
         "footnotes": footnotes,

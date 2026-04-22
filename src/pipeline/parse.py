@@ -75,25 +75,24 @@ def _clean_title(text: str) -> str:
 
 def extract_book_info(ingested: dict) -> dict:
     """
-    Return empty book title and subtitle.
+    Return the book's title, subtitle, and author.
 
-    Book-level metadata (title, subtitle) should be provided via the
-    --title CLI argument, not auto-detected from the Word document.
-    Auto-detection was unreliable because:
-    - Some books use a Word SDT (cover page) element which python-docx
-      does not expose as a regular paragraph
-    - Some books have no cover page at all and start directly with
-      a Heading 1 that is a chapter title, not the book title
-    - The previous heuristic (collect paragraphs before first Heading 1)
-      grabbed arbitrary content from inside the first chapter when no
-      cover existed
+    The values come from ingest.py's metadata extraction, which
+    reads the cover-page SDT placeholders ("כותרת", "כותרת משנה",
+    "מחבר" in Word's Hebrew UI; "title", "subtitle", "author" in
+    the English UI). ingest falls back to core.xml properties and
+    then to the file stem when a placeholder is missing.
 
-    This function is kept as a stub so that call sites in build.py
-    and elsewhere continue to work unchanged. The returned values
-    are empty, and build.py already falls back to the --title CLI
-    argument and to the book slug when title/subtitle are empty.
+    Returned keys are always present; missing values are empty
+    strings so callers can treat them uniformly. build.py lets
+    the --title CLI flag override title when given.
     """
-    return {"title": "", "subtitle": ""}
+    metadata = ingested.get("metadata") or {}
+    return {
+        "title": metadata.get("title") or "",
+        "subtitle": metadata.get("subtitle") or "",
+        "author": metadata.get("author") or "",
+    }
 
 
 def _clean_heading(text: str) -> str:

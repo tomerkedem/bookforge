@@ -1,0 +1,239 @@
+{
+  "book": {
+    "titles": {
+      "he": "פייתון מעשית למהנדסי AI"
+    },
+    "subtitles": {
+      "he": "מיומנויות פייתון לעבודה עם AI"
+    },
+    "descriptions": {
+      "he": "הספר הזה ילמד אותך פייתון, אבל בדרך שונה לגמרי ממה שאתה מכיר.\n\nאם כבר כתבת קוד בעבר, אתה לא צריך עוד מדריך שמסביר מה זה משתנה או לולאה. מה שאתה כן צריך, זה להבין איך פייתון הופכת לכלי שבאמצעותו בונים מערכות AI אמיתיות. כאלה שעובדות בפרודקשן, מחזיקות עומס, ונשארות קריאות גם אחרי חודשים.\n\nכאן תתחיל לחשוב אחרת: לא רק איך לכתוב קוד, אלא איך לתכנן אותו. איך לפרק בעיה למודולים, איך לנהל נתונים בצורה נכונה, ואיך לחבר בין מודלים, ספריות ותהליכים למערכת אחת יציבה.\n\nתראה איך פייתון משתלבת מאחורי הקלעים עם מנועים חזקים כמו GPU וספריות מתקדמות, בלי לוותר על פשטות וקריאות. תלמד לכתוב קוד שלא רק עובד, אלא כזה שאפשר לבנות עליו.\n\nזה הרגע שבו פייתון מפסיקה להיות כלי לניסויים והופכת לתשתית.\n\nאם אתה רוצה לקחת את היכולות שלך צעד קדימה ולהתחיל לבנות מערכות AI אמיתיות, זה בדיוק המקום להתחיל."
+    },
+    "chapters": [
+      {
+        "id": 1,
+        "file_slug": "chapter-01",
+        "type": "content",
+        "titles": {
+          "he": "למה פייתון היא שפה חשובה בעידן ה-AI"
+        },
+        "sections": 6,
+        "has_images": false,
+        "word_count": 1653,
+        "topics": []
+      },
+      {
+        "id": 2,
+        "file_slug": "chapter-02",
+        "type": "content",
+        "titles": {
+          "he": "יסודות פייתון למתכנתים מנוסים תחביר בסיסי"
+        },
+        "sections": 8,
+        "has_images": false,
+        "word_count": 3001,
+        "topics": []
+      },
+      {
+        "id": 3,
+        "file_slug": "chapter-03",
+        "type": "content",
+        "titles": {
+          "he": "מבני נתונים שימושיים"
+        },
+        "sections": 8,
+        "has_images": false,
+        "word_count": 3412,
+        "topics": []
+      },
+      {
+        "id": 4,
+        "file_slug": "chapter-04",
+        "type": "content",
+        "titles": {
+          "he": "פונקציות בפייתון"
+        },
+        "sections": 10,
+        "has_images": false,
+        "word_count": 4062,
+        "topics": []
+      },
+      {
+        "id": 5,
+        "file_slug": "chapter-05",
+        "type": "content",
+        "titles": {
+          "he": "מודולים, חבילות וארגון פרויקט"
+        },
+        "sections": 10,
+        "has_images": false,
+        "word_count": 2054,
+        "topics": []
+      },
+      {
+        "id": 6,
+        "file_slug": "chapter-06",
+        "type": "content",
+        "titles": {
+          "he": "סביבות עבודה ותלויות"
+        },
+        "sections": 8,
+        "has_images": false,
+        "word_count": 2409,
+        "topics": []
+      },
+      {
+        "id": 7,
+        "file_slug": "chapter-07",
+        "type": "content",
+        "titles": {
+          "he": "קבצים, נתיבים וקונפיגורציה"
+        },
+        "sections": 9,
+        "has_images": false,
+        "word_count": 1284,
+        "topics": []
+      },
+      {
+        "id": 8,
+        "file_slug": "chapter-08",
+        "type": "content",
+        "titles": {
+          "he": "חריגות, לוגים ואבחון"
+        },
+        "sections": 8,
+        "has_images": true,
+        "word_count": 825,
+        "topics": []
+      },
+      {
+        "id": 9,
+        "file_slug": "chapter-09",
+        "type": "content",
+        "titles": {
+          "he": "תכנות מונחה עצמים בסיסי"
+        },
+        "sections": 9,
+        "has_images": false,
+        "word_count": 1956,
+        "topics": []
+      },
+      {
+        "id": 10,
+        "file_slug": "chapter-10",
+        "type": "content",
+        "titles": {
+          "he": "טיפוסיות סטטית עם typing"
+        },
+        "sections": 8,
+        "has_images": false,
+        "word_count": 1358,
+        "topics": []
+      },
+      {
+        "id": 11,
+        "file_slug": "chapter-11",
+        "type": "content",
+        "titles": {
+          "he": "דקורטורים, Context Managers ו-dataclass"
+        },
+        "sections": 9,
+        "has_images": false,
+        "word_count": 1130,
+        "topics": []
+      },
+      {
+        "id": 12,
+        "file_slug": "chapter-12",
+        "type": "content",
+        "titles": {
+          "he": "בדיקות אוטומטיות וארגונומיה למפתח"
+        },
+        "sections": 9,
+        "has_images": false,
+        "word_count": 730,
+        "topics": []
+      },
+      {
+        "id": 13,
+        "file_slug": "chapter-13",
+        "type": "content",
+        "titles": {
+          "he": "ביצועים, זיכרון וקצת NumPy"
+        },
+        "sections": 6,
+        "has_images": false,
+        "word_count": 1136,
+        "topics": []
+      },
+      {
+        "id": 14,
+        "file_slug": "chapter-14",
+        "type": "content",
+        "titles": {
+          "he": "Pandas למהנדסי AI"
+        },
+        "sections": 10,
+        "has_images": false,
+        "word_count": 3355,
+        "topics": []
+      },
+      {
+        "id": 15,
+        "file_slug": "chapter-15",
+        "type": "content",
+        "titles": {
+          "he": "אסינכרוניות בסיסית וממשקי רשת"
+        },
+        "sections": 9,
+        "has_images": false,
+        "word_count": 2041,
+        "topics": []
+      },
+      {
+        "id": 16,
+        "file_slug": "chapter-16",
+        "type": "content",
+        "titles": {
+          "he": "ממשק שורת פקודה (CLI)"
+        },
+        "sections": 7,
+        "has_images": false,
+        "word_count": 2157,
+        "topics": []
+      },
+      {
+        "id": 17,
+        "file_slug": "chapter-17",
+        "type": "content",
+        "titles": {
+          "he": "תרגול מאוחד: בניית mini_text_analyzer"
+        },
+        "sections": 12,
+        "has_images": false,
+        "word_count": 568,
+        "topics": []
+      },
+      {
+        "id": 18,
+        "file_slug": "chapter-18",
+        "type": "content",
+        "titles": {
+          "he": "(בונוס) תבנית פרויקט למתכנת AI"
+        },
+        "sections": 9,
+        "has_images": false,
+        "word_count": 1076,
+        "topics": []
+      }
+    ],
+    "languages": [
+      "he"
+    ],
+    "credits": {
+      "author": {
+        "he": "תומר קדם"
+      }
+    }
+  }
+}

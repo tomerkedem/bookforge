@@ -26,7 +26,7 @@ export default {
         },
       },
       fontFamily: {
-        heading: ["'Frank Ruhl Libre'", 'Georgia', 'serif'],
+        heading: ["'IBM Plex Sans Hebrew'", 'system-ui', 'sans-serif'],
         body: ["'Heebo'", 'system-ui', 'sans-serif'],
       },
       maxWidth: {

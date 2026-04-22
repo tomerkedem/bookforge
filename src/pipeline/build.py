@@ -102,20 +102,26 @@ def run_pipeline(docx_path: str, book_name: str,
 
     print(f"  Blocks: {ingested.get('total_blocks', 0)}")
     
-    # Extract book info from cover page (title + subtitle)
+    # Extract book info from cover page (title + subtitle + author)
     book_info = extract_book_info(ingested)
     if book_info["title"]:
         print(f"  כותרת: {book_info['title']}")
     if book_info["subtitle"]:
         print(f"  תת-כותרת: {book_info['subtitle']}")
+    if book_info["author"]:
+        print(f"  מחבר: {book_info['author']}")
     
     # Use extracted title if not provided via CLI
     source_title = title or book_info.get("title", "")
     source_subtitle = book_info.get("subtitle", "")
-    
-    # Build titles/subtitles dicts for all languages
+    source_author = book_info.get("author", "")
+    source_description = (ingested.get("book_description") or "").strip()
+
+    # Build titles/subtitles/authors/descriptions dicts for all languages
     book_titles = {SOURCE_LANGUAGE: source_title} if source_title else {}
     book_subtitles = {SOURCE_LANGUAGE: source_subtitle} if source_subtitle else {}
+    book_authors = {SOURCE_LANGUAGE: source_author} if source_author else {}
+    book_descriptions = {SOURCE_LANGUAGE: source_description} if source_description else {}
 
     # Step 2: Parse chapters
     print("\n[2/7] Parse chapters...")
@@ -156,7 +162,9 @@ def run_pipeline(docx_path: str, book_name: str,
     created = organize(book_name, chapters_md, output_dir,
                        languages=languages,
                        book_titles=book_titles,
-                       book_subtitles=book_subtitles)
+                       book_subtitles=book_subtitles,
+                       book_authors=book_authors,
+                       book_descriptions=book_descriptions)
     print(f"  Source files: {len(created)}")
     print(f"  Languages: {', '.join(languages)}")
     

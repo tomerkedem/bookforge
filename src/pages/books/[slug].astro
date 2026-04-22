@@ -46,11 +46,20 @@ function formatWordCount(count: number, lang: string): string {
   return t('book.words', lang, { n: count.toString() });
 }
 
-function getChapterMetaText(chapter: Chapter, lang: string): string {
-  const sections = chapter.sections ?? 0;
-  const wordCount = chapter.word_count ?? 0;
-  const sectionLabel = sections === 1 ? t('book.sectionOne', lang) : t('book.sections', lang, { n: sections.toString() });
-  return `${sectionLabel} • ${formatWordCount(wordCount, lang)}`;
+// Reading time estimate: 200 words per minute is a common average for
+// Hebrew technical reading. We round up so a 10-word chapter still
+// shows ">= 1 min" rather than "0 min".
+function formatReadingTime(wordCount: number, lang: string): string {
+  const minutes = Math.max(1, Math.ceil(wordCount / 200));
+  if (lang === 'he') return `${minutes} דקות קריאה`;
+  if (lang === 'es') return `${minutes} min de lectura`;
+  return `${minutes} min read`;
+}
+
+function formatSectionsLabel(sections: number, lang: string): string {
+  return sections === 1
+    ? t('book.sectionOne', lang)
+    : t('book.sections', lang, { n: sections.toString() });
 }
 
 export async function getStaticPaths() {
@@ -117,13 +126,20 @@ const totalWords = book.chapters.reduce((sum: number, ch: Chapter) => sum + (ch.
   language={language}
   availableLanguages={book.languages}
 >
+  <!--
+    Page layout:
+    - Breadcrumbs sit at the very top, flush with the header (pt-2 only).
+      They are navigation chrome, not part of the book content, so they
+      belong near the site header rather than near the book title.
+    - A big gap (mt-8 / sm:mt-10 / lg:mt-12) separates the breadcrumbs from
+      the actual book content below.
+  -->
   <div
     class:list={[
       'min-h-screen',
       'bg-yuval-bg',
-      'pt-4',
-      'sm:pt-6',
-      'lg:pt-8',
+      'pt-2',
+      'sm:pt-3',
       'pb-12',
       'sm:pb-16',
       'lg:pb-20',
@@ -132,29 +148,43 @@ const totalWords = book.chapters.reduce((sum: number, ch: Chapter) => sum + (ch.
       'lg:px-8',
     ]}
   >
-    <div class="max-w-4xl mx-auto">
+    <div class="w-full mx-auto">
       <Breadcrumbs
         language={language}
         items={[
           { key: 'breadcrumb.books', href: '/' },
           { label: book.titles },
         ]}
-        class="mb-4 sm:mb-5"
       />
 
+      <!--
+        Layout strategy:
+        - Mobile (default): stacked — cover, info, chapters
+        - Desktop (lg+): 3 columns — cover | info | chapters, all side-by-side
+        - XL screens: even more space for the description, which is the
+          primary reading content at this stage. No max-width cap; the
+          layout scales with the viewport.
+      -->
       <div
         class:list={[
           'grid',
           'grid-cols-1',
-          'md:grid-cols-3',
+          'md:grid-cols-[260px_1fr]',
+          'lg:grid-cols-[280px_minmax(0,2fr)_minmax(0,1.2fr)]',
           'gap-6',
           'sm:gap-8',
-          'mb-8',
-          'sm:mb-10',
+          'lg:gap-10',
+          'xl:gap-14',
+          'mt-8',
+          'sm:mt-10',
+          'lg:mt-12',
+          'mb-6',
+          'sm:mb-8',
           'items-start',
         ]}
       >
-        <div class="md:col-span-1">
+        <!-- Column 1: cover + credits -->
+        <div>
           <img
             src={book.coverImage}
             alt={title}
@@ -191,22 +221,27 @@ const totalWords = book.chapters.reduce((sum: number, ch: Chapter) => sum + (ch.
           )}
         </div>
 
-        <div class:list={['md:col-span-2', isRtl && 'text-right']}>
-          <h1 class="font-heading font-bold text-xl sm:text-3xl lg:text-4xl leading-tight mb-3 sm:mb-4 text-yuval-text">
+        <!-- Column 2: title, subtitle, description, meta -->
+        <div class:list={[isRtl && 'text-right']}>
+          <h1 class="font-heading font-bold text-2xl sm:text-3xl lg:text-4xl leading-tight mb-4 sm:mb-5 text-yuval-text">
             {title}
           </h1>
 
           {getLocalizedText(book.subtitles, language) && (
-            <p class="text-sm sm:text-base text-yuval-text-tertiary leading-relaxed mb-3">
+            <p class="text-sm sm:text-base text-yuval-text-tertiary leading-relaxed mb-4 sm:mb-5">
               {getLocalizedText(book.subtitles, language)}
             </p>
           )}
 
-          <p class="text-base sm:text-lg text-yuval-text-secondary leading-relaxed mb-4 sm:mb-6">
-            {description}
-          </p>
+          <div class="space-y-2 sm:space-y-2.5 mb-3 sm:mb-4">
+            {description.split(/\n\s*\n/).filter((p: string) => p.trim()).map((para: string) => (
+              <p class="text-base sm:text-lg text-yuval-text-secondary leading-relaxed">
+                {para.trim()}
+              </p>
+            ))}
+          </div>
 
-          <div class="space-y-2 mb-6">
+          <div class="space-y-2">
             <p class="text-sm text-yuval-text-tertiary">
               {formatChapterCount(book.chapters.length, language)}
             </p>
@@ -216,90 +251,134 @@ const totalWords = book.chapters.reduce((sum: number, ch: Chapter) => sum + (ch.
             </p>
           </div>
         </div>
-      </div>
 
-      <div class="border-t border-yuval-border pt-8 sm:pt-10">
-        <h2 class="font-heading font-bold text-2xl mb-6 text-yuval-text">
-          {t('sidebar.chapters', language)}
-        </h2>
+        <!-- Column 3: chapters list (desktop only; stacks below on mobile/tablet) -->
+        <div class:list={['lg:sticky', 'lg:top-4', isRtl && 'text-right']}>
+          <h2 class="font-heading font-bold text-xl sm:text-2xl mb-3 sm:mb-4 text-yuval-text">
+            {t('sidebar.chapters', language)}
+          </h2>
 
-        <div class="space-y-3">
-          {
-            book.chapters.map((chapter: Chapter) => {
-              const chapterTitle = getLocalizedText(chapter.titles, language);
+          <div class="space-y-2 lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto lg:pr-1">
+            {
+              book.chapters.map((chapter: Chapter, idx: number) => {
+                const chapterTitle = getLocalizedText(chapter.titles, language);
+                // Use the position in the chapters array for the display
+                // number. This is independent of chapter.id so intro/cover
+                // chapters don't break the sequence.
+                const chapterNum = idx + 1;
 
-              return (
-                <a
-                  href={`/read/${slug}/${chapter.id}`}
-                  class:list={[
-                    'chapter-link',
-                    `chapter-link-${chapter.id}`,
-                    'block',
-                    'p-4',
-                    'rounded-lg',
-                    'border',
-                    'border-yuval-border',
-                    'hover:bg-yuval-bg-secondary',
-                    'hover:border-yuval-border-secondary',
-                    'transition-all',
-                    'duration-200',
-                    'focus:outline-none',
-                    'focus:ring-2',
-                    'focus:ring-offset-2',
-                    'focus:ring-yuval-highlight',
-                    'relative',
-                    'overflow-hidden',
-                  ]}
-                  data-chapter-id={chapter.id}
-                  data-book-slug={slug}
-                >
-                  <div class="chapter-progress-bar absolute bottom-0 left-0 right-0 h-0.5 bg-yuval-border">
-                    <div
-                      class="chapter-progress-fill h-full bg-green-500 w-0 transition-all duration-700"
-                      style="border-radius: 0 2px 2px 0"
-                    ></div>
-                  </div>
-
-                  <div
+                return (
+                  <a
+                    href={`/read/${slug}/${chapter.id}`}
                     class:list={[
-                      'flex',
-                      'items-center',
-                      'justify-between',
-                      'gap-4',
-                      isRtl && 'flex-row-reverse',
+                      'chapter-link',
+                      `chapter-link-${chapter.id}`,
+                      'block',
+                      'p-3',
+                      'rounded-lg',
+                      'border',
+                      'border-yuval-border',
+                      'hover:bg-yuval-bg-secondary',
+                      'hover:border-yuval-border-secondary',
+                      'transition-all',
+                      'duration-200',
+                      'focus:outline-none',
+                      'focus:ring-2',
+                      'focus:ring-offset-2',
+                      'focus:ring-yuval-highlight',
+                      'relative',
+                      'overflow-hidden',
                     ]}
+                    data-chapter-id={chapter.id}
+                    data-book-slug={slug}
                   >
-                    <div class:list={[isRtl && 'text-right', 'flex-1', 'min-w-0']}>
-                      <div class="flex items-center gap-2">
-                        <span class="chapter-status-icon text-base hidden" aria-hidden="true"></span>
-                        <h3 class="font-heading font-semibold text-base sm:text-lg text-yuval-text line-clamp-2">
-                          {chapterTitle}
-                        </h3>
-                      </div>
-
-                      <p class="text-sm text-yuval-text-tertiary mt-1">
-                        {getChapterMetaText(chapter, language)}
-                      </p>
+                    <div class="chapter-progress-bar absolute bottom-0 left-0 right-0 h-0.5 bg-yuval-border">
+                      <div
+                        class="chapter-progress-fill h-full bg-green-500 w-0 transition-all duration-700"
+                        style="border-radius: 0 2px 2px 0"
+                      ></div>
                     </div>
 
-                    <svg
-                      class="w-5 h-5 text-yuval-text-tertiary flex-shrink-0"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
+                    <div
+                      class:list={[
+                        'flex',
+                        'items-center',
+                        'justify-between',
+                        'gap-3',
+                        isRtl && 'flex-row-reverse',
+                      ]}
                     >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width={2}
-                        d={isRtl ? 'M15 19l-7-7 7-7' : 'M9 5l7 7-7 7'}
-                      />
-                    </svg>
-                  </div>
-                </a>
-              );
-            })
-          }
+                      <div class:list={[isRtl && 'text-right', 'flex-1', 'min-w-0', 'flex', 'items-start', 'gap-3']}>
+                        <!-- Chapter number badge (#N) — sits on the text side
+                             before the title, shrinks only on very narrow cards. -->
+                        <span
+                          class="chapter-number-badge flex-shrink-0 inline-flex items-center justify-center min-w-[36px] h-7 px-2 rounded-md bg-yuval-bg-secondary text-yuval-text-tertiary font-semibold text-xs tabular-nums"
+                          aria-hidden="true"
+                        >
+                          #{chapterNum}
+                        </span>
+
+                        <div class="flex-1 min-w-0">
+                          <div class="flex items-center gap-2">
+                            <span class="chapter-status-icon text-base hidden" aria-hidden="true"></span>
+                            <h3 class="font-heading font-semibold text-sm sm:text-base text-yuval-text line-clamp-2">
+                              {chapterTitle}
+                            </h3>
+                          </div>
+
+                          <p class="text-xs text-yuval-text-tertiary mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+                            <!-- Reading time -->
+                            <span class="inline-flex items-center gap-1">
+                              <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <circle cx="12" cy="12" r="9" stroke-width="1.8" />
+                                <path stroke-linecap="round" stroke-width="1.8" d="M12 7v5l3 2" />
+                              </svg>
+                              <span>{formatReadingTime(chapter.word_count ?? 0, language)}</span>
+                            </span>
+
+                            <span class="text-yuval-text-muted" aria-hidden="true">·</span>
+
+                            <!-- Word count -->
+                            <span class="inline-flex items-center gap-1">
+                              <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 5h16M4 9h16M4 13h10M4 17h7" />
+                              </svg>
+                              <span>{formatWordCount(chapter.word_count ?? 0, language)}</span>
+                            </span>
+
+                            <span class="text-yuval-text-muted" aria-hidden="true">·</span>
+
+                            <!-- Sections -->
+                            <span class="inline-flex items-center gap-1">
+                              <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <rect x="4" y="4" width="16" height="16" rx="2" stroke-width="1.8" />
+                                <path stroke-width="1.8" d="M4 10h16M4 15h16M10 4v16" />
+                              </svg>
+                              <span>{formatSectionsLabel(chapter.sections ?? 0, language)}</span>
+                            </span>
+                          </p>
+                        </div>
+                      </div>
+
+                      <svg
+                        class="w-4 h-4 text-yuval-text-tertiary flex-shrink-0"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width={2}
+                          d={isRtl ? 'M15 19l-7-7 7-7' : 'M9 5l7 7-7 7'}
+                        />
+                      </svg>
+                    </div>
+                  </a>
+                );
+              })
+            }
+          </div>
         </div>
       </div>
     </div>

@@ -6,6 +6,7 @@ interface Props {
   titles: Record<string, string>;        // { he: '...', en: '...', fr: '...' }
   subtitles?: Record<string, string>;
   descriptions?: Record<string, string>;
+  authors?: Record<string, string> | string;
   coverImage: string;
   dominantColor?: string;
   category?: Record<string, string> | string;
@@ -27,6 +28,7 @@ const {
   titles = {},
   subtitles = {},
   descriptions = {},
+  authors,
   coverImage,
   dominantColor = '#888888',
   category: categoryProp = { he: 'כללי', en: 'General', es: 'General' },
@@ -42,6 +44,14 @@ const {
   description_en,
   description_es,
 } = Astro.props;
+
+// Normalize authors to Record<string, string> | null so the template
+// can treat single-string authors and per-language objects uniformly.
+const allAuthors: Record<string, string> | null = authors
+  ? (typeof authors === 'string'
+      ? { he: authors, en: authors, es: authors }
+      : authors)
+  : null;
 
 // Build unified records from both new and legacy props
 const allTitles = { ...titles };
@@ -74,6 +84,9 @@ const categoryAttrs = Object.fromEntries(
 const displayTitle = allTitles[DEFAULT_LANGUAGE] || Object.values(allTitles)[0] || '';
 const displaySubtitle = allSubtitles[DEFAULT_LANGUAGE] || Object.values(allSubtitles)[0] || '';
 const displayDescription = allDescriptions[DEFAULT_LANGUAGE] || Object.values(allDescriptions)[0] || '';
+const displayAuthor = allAuthors
+  ? (allAuthors[DEFAULT_LANGUAGE] || Object.values(allAuthors).find(Boolean) || '')
+  : '';
 
 // Generate data attributes for all supported languages
 const titleAttrs = Object.fromEntries(
@@ -85,6 +98,11 @@ const subtitleAttrs = Object.fromEntries(
 const descAttrs = Object.fromEntries(
   SUPPORTED_LANGUAGES.map(l => [`data-${l.code}`, allDescriptions[l.code] || displayDescription])
 );
+const authorAttrs = allAuthors
+  ? Object.fromEntries(
+      SUPPORTED_LANGUAGES.map(l => [`data-${l.code}`, allAuthors[l.code] || displayAuthor])
+    )
+  : {};
 
 const hasSubtitle = Object.values(allSubtitles).some(v => v);
 const bookUrl = `/books/${slug}`;
@@ -136,6 +154,16 @@ const bookUrl = `/books/${slug}`;
         {...subtitleAttrs}
       >
         {displaySubtitle}
+      </p>
+    )}
+
+    {displayAuthor && (
+      <p
+        class="text-[11px] text-yuval-text-tertiary leading-snug line-clamp-1 mt-1 italic"
+        data-book-author
+        {...authorAttrs}
+      >
+        {displayAuthor}
       </p>
     )}
   </div>
@@ -214,6 +242,11 @@ const bookUrl = `/books/${slug}`;
     });
 
     document.querySelectorAll<HTMLElement>('[data-book-subtitle]').forEach(el => {
+      const localized = el.dataset[lang as keyof typeof el.dataset];
+      if (localized) el.textContent = localized;
+    });
+
+    document.querySelectorAll<HTMLElement>('[data-book-author]').forEach(el => {
       const localized = el.dataset[lang as keyof typeof el.dataset];
       if (localized) el.textContent = localized;
     });

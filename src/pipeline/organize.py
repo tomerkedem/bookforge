@@ -70,6 +70,7 @@ def organize(book_name: str, chapters_md: list[dict], output_dir: str = "output"
              languages: list[str] = None,
              book_titles: dict[str, str] = None,
              book_subtitles: dict[str, str] = None,
+             book_authors: dict[str, str] = None,
              book_descriptions: dict[str, str] = None) -> list[str]:
     """
     Organize chapter files into output directory.
@@ -81,6 +82,7 @@ def organize(book_name: str, chapters_md: list[dict], output_dir: str = "output"
         languages: List of language codes to support (default: all from config)
         book_titles: Dict of {lang: title} for book titles
         book_subtitles: Dict of {lang: subtitle} for book subtitles
+        book_authors: Dict of {lang: author} for book author/credits
         book_descriptions: Dict of {lang: description} for book descriptions
     """
     if languages is None:
@@ -89,6 +91,8 @@ def organize(book_name: str, chapters_md: list[dict], output_dir: str = "output"
         book_titles = {}
     if book_subtitles is None:
         book_subtitles = {}
+    if book_authors is None:
+        book_authors = {}
     if book_descriptions is None:
         book_descriptions = {}
         
@@ -124,7 +128,7 @@ def organize(book_name: str, chapters_md: list[dict], output_dir: str = "output"
         created.append(str(he_file))
 
     # Generate book-manifest.json with dynamic language support
-    _generate_content_structure(book_dir, chapters_md, languages, book_titles, book_subtitles, book_descriptions)
+    _generate_content_structure(book_dir, chapters_md, languages, book_titles, book_subtitles, book_authors, book_descriptions)
 
     return created
 
@@ -172,6 +176,7 @@ def _generate_content_structure(book_dir: Path, chapters_md: list[dict],
                                  languages: list[str],
                                  book_titles: dict[str, str],
                                  book_subtitles: dict[str, str],
+                                 book_authors: dict[str, str],
                                  book_descriptions: dict[str, str]):
     """Generate book-manifest.json from chapter markdown content with dynamic language support."""
     chapters_json = []
@@ -222,21 +227,27 @@ def _generate_content_structure(book_dir: Path, chapters_md: list[dict],
     titles = {}
     subtitles = {}
     descriptions = {}
+    authors = {}
 
     for lang in languages:
         titles[lang] = book_titles.get(lang) or book_titles.get(SOURCE_LANGUAGE) or default_title
         subtitles[lang] = book_subtitles.get(lang) or book_subtitles.get(SOURCE_LANGUAGE) or ""
         descriptions[lang] = book_descriptions.get(lang) or book_descriptions.get(SOURCE_LANGUAGE) or ""
+        authors[lang] = book_authors.get(lang) or book_authors.get(SOURCE_LANGUAGE) or ""
 
-    data = {
-        "book": {
-            "titles": titles,
-            "subtitles": subtitles,
-            "descriptions": descriptions,
-            "chapters": chapters_json,
-            "languages": languages
-        }
+    book_data = {
+        "titles": titles,
+        "subtitles": subtitles,
+        "descriptions": descriptions,
+        "chapters": chapters_json,
+        "languages": languages
     }
+
+    # Only add credits when there's an author; Astro reads book.credits.author
+    if any(authors.values()):
+        book_data["credits"] = {"author": authors}
+
+    data = {"book": book_data}
 
     json_path = book_dir / "book-manifest.json"
     json_path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
