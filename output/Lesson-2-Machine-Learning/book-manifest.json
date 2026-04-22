@@ -1,0 +1,371 @@
+{
+  "book": {
+    "titles": {
+      "he": "AI Engineering - שיעור שני"
+    },
+    "subtitles": {
+      "he": "Machine learning"
+    },
+    "descriptions": {
+      "he": "השיעור הזה יכניס לך סדר בראש בעולם של Machine Learning.\n\nלא עוד אוסף מושגים מבלבל, אלא תמונה אחת ברורה: מה זה באמת AI, איפה Machine Learning נכנס לתמונה, ואיך משתמשים בו כדי לפתור בעיות אמיתיות.\n\nלא תלמד כאן רק “אלגוריתמים”. אתה תלמד איך לחשוב נכון. מתי צריך מודל חיזוי פשוט, מתי כדאי לזהות דפוסים, ומתי בכלל לא צריך מודל יוצר. פתאום הדברים מתחילים להתחבר: זיהוי, חיזוי, דירוג, התאמה אישית. אתה מתחיל לראות שכל מערכת חכמה בנויה מאותם עקרונות חוזרים.\n\nבהמשך תבין איך מודלים באמת לומדים: לא מקבלים חוקים, אלא מגלים אותם מתוך נתונים. תראה איך טעויות הופכות לשיפור, איך רשתות נוירונים בונות הבנה שכבה אחרי שכבה, ואיך מודל הופך מרעיון למשהו שעובד.\n\nאבל החלק החשוב באמת מגיע בסוף: להבין שהמודל הוא רק מנוע.\n\nהערך האמיתי הוא היכולת שלך לקחת אותו, לחבר נתונים, למדוד תוצאות, ולבנות מערכת שעובדת בעולם האמיתי.\n\nאם אתה רוצה להפסיק “ללמוד AI” ולהתחיל לחשוב כמו AI Engineer, זה בדיוק השלב שבו הכול מתחיל להתחבר.\n\nמרצה: ערן סלע\n\nתאריך: 31/03/2026"
+    },
+    "chapters": [
+      {
+        "id": "intro",
+        "file_slug": "intro",
+        "type": "intro",
+        "titles": {
+          "he": "מבוא"
+        },
+        "sections": 0,
+        "has_images": false,
+        "word_count": 102,
+        "topics": []
+      },
+      {
+        "id": 1,
+        "file_slug": "chapter-01",
+        "type": "content",
+        "titles": {
+          "he": "מהי בינה מלאכותית (AI)?"
+        },
+        "sections": 0,
+        "has_images": true,
+        "word_count": 39,
+        "topics": []
+      },
+      {
+        "id": 2,
+        "file_slug": "chapter-02",
+        "type": "content",
+        "titles": {
+          "he": "מה זה Machine Learning"
+        },
+        "sections": 0,
+        "has_images": true,
+        "word_count": 55,
+        "topics": []
+      },
+      {
+        "id": 3,
+        "file_slug": "chapter-03",
+        "type": "content",
+        "titles": {
+          "he": "למה משתמשים ב-Machine Learning"
+        },
+        "sections": 0,
+        "has_images": true,
+        "word_count": 106,
+        "topics": []
+      },
+      {
+        "id": 4,
+        "file_slug": "chapter-04",
+        "type": "content",
+        "titles": {
+          "he": "דוגמאות לשימושים קלאסיים של Machine Learning"
+        },
+        "sections": 0,
+        "has_images": true,
+        "word_count": 234,
+        "topics": []
+      },
+      {
+        "id": 5,
+        "file_slug": "chapter-05",
+        "type": "content",
+        "titles": {
+          "he": "מתי משתמשים ב-Machine Learning קלאסי"
+        },
+        "sections": 0,
+        "has_images": true,
+        "word_count": 138,
+        "topics": []
+      },
+      {
+        "id": 6,
+        "file_slug": "chapter-06",
+        "type": "content",
+        "titles": {
+          "he": "איך עובד תהליך Machine Learning בפועל"
+        },
+        "sections": 0,
+        "has_images": true,
+        "word_count": 75,
+        "topics": []
+      },
+      {
+        "id": 7,
+        "file_slug": "chapter-07",
+        "type": "content",
+        "titles": {
+          "he": "סוגי למידה ב-Machine Learning"
+        },
+        "sections": 0,
+        "has_images": true,
+        "word_count": 163,
+        "topics": []
+      },
+      {
+        "id": 8,
+        "file_slug": "chapter-08",
+        "type": "content",
+        "titles": {
+          "he": "למידה מונחית (Supervisred Learning)"
+        },
+        "sections": 0,
+        "has_images": true,
+        "word_count": 97,
+        "topics": []
+      },
+      {
+        "id": 9,
+        "file_slug": "chapter-09",
+        "type": "content",
+        "titles": {
+          "he": "סוגי בעיות בלמידה מונחית"
+        },
+        "sections": 0,
+        "has_images": true,
+        "word_count": 66,
+        "topics": []
+      },
+      {
+        "id": 10,
+        "file_slug": "chapter-10",
+        "type": "content",
+        "titles": {
+          "he": "רגרסיה ליניארית (Linear Regression)"
+        },
+        "sections": 0,
+        "has_images": true,
+        "word_count": 71,
+        "topics": []
+      },
+      {
+        "id": 11,
+        "file_slug": "chapter-11",
+        "type": "content",
+        "titles": {
+          "he": "רגרסיה לוגיסטית (Logistic Regression)"
+        },
+        "sections": 0,
+        "has_images": true,
+        "word_count": 87,
+        "topics": []
+      },
+      {
+        "id": 12,
+        "file_slug": "chapter-12",
+        "type": "content",
+        "titles": {
+          "he": "עץ החלטה (Decision Tree)"
+        },
+        "sections": 0,
+        "has_images": true,
+        "word_count": 43,
+        "topics": []
+      },
+      {
+        "id": 13,
+        "file_slug": "chapter-13",
+        "type": "content",
+        "titles": {
+          "he": "יער אקראי (Random Forest)"
+        },
+        "sections": 0,
+        "has_images": true,
+        "word_count": 69,
+        "topics": []
+      },
+      {
+        "id": 14,
+        "file_slug": "chapter-14",
+        "type": "content",
+        "titles": {
+          "he": "חיזוק הדרגתי (XGBoost)"
+        },
+        "sections": 0,
+        "has_images": true,
+        "word_count": 51,
+        "topics": []
+      },
+      {
+        "id": 15,
+        "file_slug": "chapter-15",
+        "type": "content",
+        "titles": {
+          "he": "למידה לא מונחית (Unsupervised Learning) - אינטואיציה"
+        },
+        "sections": 0,
+        "has_images": true,
+        "word_count": 50,
+        "topics": []
+      },
+      {
+        "id": 16,
+        "file_slug": "chapter-16",
+        "type": "content",
+        "titles": {
+          "he": "למידה לא מונחית (Unsupervised Learning) - תהליך"
+        },
+        "sections": 0,
+        "has_images": true,
+        "word_count": 120,
+        "topics": []
+      },
+      {
+        "id": 17,
+        "file_slug": "chapter-17",
+        "type": "content",
+        "titles": {
+          "he": "למידה מונחית מול למידה לא מונחית (Supervised vs Unsupervised Learning)"
+        },
+        "sections": 0,
+        "has_images": true,
+        "word_count": 351,
+        "topics": []
+      },
+      {
+        "id": 18,
+        "file_slug": "chapter-18",
+        "type": "content",
+        "titles": {
+          "he": "למידה חצי מונחית (Semi-supervised Learning)"
+        },
+        "sections": 0,
+        "has_images": true,
+        "word_count": 152,
+        "topics": []
+      },
+      {
+        "id": 19,
+        "file_slug": "chapter-19",
+        "type": "content",
+        "titles": {
+          "he": "למידת חיזוק (Reinforcement Learning)"
+        },
+        "sections": 0,
+        "has_images": true,
+        "word_count": 113,
+        "topics": []
+      },
+      {
+        "id": 20,
+        "file_slug": "chapter-20",
+        "type": "content",
+        "titles": {
+          "he": "רשתות נוירונים (Neural Networks)"
+        },
+        "sections": 0,
+        "has_images": true,
+        "word_count": 124,
+        "topics": []
+      },
+      {
+        "id": 21,
+        "file_slug": "chapter-21",
+        "type": "content",
+        "titles": {
+          "he": "נוירון (Neuron)"
+        },
+        "sections": 0,
+        "has_images": true,
+        "word_count": 75,
+        "topics": []
+      },
+      {
+        "id": 22,
+        "file_slug": "chapter-22",
+        "type": "content",
+        "titles": {
+          "he": "פרספטורון (Perceptron)"
+        },
+        "sections": 0,
+        "has_images": true,
+        "word_count": 111,
+        "topics": []
+      },
+      {
+        "id": 23,
+        "file_slug": "chapter-23",
+        "type": "content",
+        "titles": {
+          "he": "Forward and Backward Propagation"
+        },
+        "sections": 0,
+        "has_images": true,
+        "word_count": 371,
+        "topics": []
+      },
+      {
+        "id": 24,
+        "file_slug": "chapter-24",
+        "type": "content",
+        "titles": {
+          "he": "טבלת בילבול (Confusion Matrix)"
+        },
+        "sections": 0,
+        "has_images": true,
+        "word_count": 207,
+        "topics": []
+      },
+      {
+        "id": 25,
+        "file_slug": "chapter-25",
+        "type": "content",
+        "titles": {
+          "he": "מדד F1 והבנת ביצועי המודל"
+        },
+        "sections": 0,
+        "has_images": true,
+        "word_count": 199,
+        "topics": []
+      },
+      {
+        "id": 26,
+        "file_slug": "chapter-26",
+        "type": "content",
+        "titles": {
+          "he": "מה צריך לדעת כ-AI Engineer"
+        },
+        "sections": 0,
+        "has_images": true,
+        "word_count": 93,
+        "topics": []
+      },
+      {
+        "id": 27,
+        "file_slug": "chapter-27",
+        "type": "content",
+        "titles": {
+          "he": "NumPy: עבודה יעילה עם נתונים מספריים"
+        },
+        "sections": 0,
+        "has_images": true,
+        "word_count": 131,
+        "topics": []
+      },
+      {
+        "id": 28,
+        "file_slug": "chapter-28",
+        "type": "content",
+        "titles": {
+          "he": "Pandas: השער לעיבוד נתונים ב-Machine Learning"
+        },
+        "sections": 0,
+        "has_images": true,
+        "word_count": 288,
+        "topics": []
+      }
+    ],
+    "languages": [
+      "he"
+    ],
+    "credits": {
+      "author": {
+        "he": "תומר קדם"
+      }
+    }
+  }
+}

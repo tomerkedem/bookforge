@@ -1,0 +1,503 @@
+{
+  "book": {
+    "titles": {
+      "he": "AI Engineering שיעור ראשון מבוא"
+    },
+    "subtitles": {
+      "he": "AI Engineering and Generative AI"
+    },
+    "descriptions": {
+      "he": ""
+    },
+    "chapters": [
+      {
+        "id": 1,
+        "file_slug": "chapter-01",
+        "type": "content",
+        "titles": {
+          "he": "ניתוח נתוני מוקד שירות"
+        },
+        "sections": 0,
+        "has_images": true,
+        "word_count": 281,
+        "topics": []
+      },
+      {
+        "id": 2,
+        "file_slug": "chapter-02",
+        "type": "content",
+        "titles": {
+          "he": "דוגמאות למאפייני ML (או פיצ'רים של ML)"
+        },
+        "sections": 0,
+        "has_images": false,
+        "word_count": 334,
+        "topics": []
+      },
+      {
+        "id": 3,
+        "file_slug": "chapter-03",
+        "type": "content",
+        "titles": {
+          "he": "תרחישי שימוש נפוצים"
+        },
+        "sections": 0,
+        "has_images": false,
+        "word_count": 266,
+        "topics": []
+      },
+      {
+        "id": 4,
+        "file_slug": "chapter-04",
+        "type": "content",
+        "titles": {
+          "he": "דוגמה לממשק חדש פיצ'ר חדש של - Verint AI Insights (תובנות בינה מלאכותית)"
+        },
+        "sections": 0,
+        "has_images": true,
+        "word_count": 384,
+        "topics": []
+      },
+      {
+        "id": 5,
+        "file_slug": "chapter-05",
+        "type": "content",
+        "titles": {
+          "he": "רשימת נושאי הקורס (Course Topic List)"
+        },
+        "sections": 0,
+        "has_images": false,
+        "word_count": 814,
+        "topics": []
+      },
+      {
+        "id": 6,
+        "file_slug": "chapter-06",
+        "type": "content",
+        "titles": {
+          "he": "ניתוח לוגיסטיקת הקורס (Course Logistics)"
+        },
+        "sections": 0,
+        "has_images": false,
+        "word_count": 546,
+        "topics": []
+      },
+      {
+        "id": 7,
+        "file_slug": "chapter-07",
+        "type": "content",
+        "titles": {
+          "he": "Is AI just a hype?"
+        },
+        "sections": 0,
+        "has_images": true,
+        "word_count": 150,
+        "topics": []
+      },
+      {
+        "id": 8,
+        "file_slug": "chapter-08",
+        "type": "content",
+        "titles": {
+          "he": "מה זה AI Engineering? (ההגדרה של המקצוע החדש)"
+        },
+        "sections": 0,
+        "has_images": false,
+        "word_count": 160,
+        "topics": []
+      },
+      {
+        "id": 9,
+        "file_slug": "chapter-09",
+        "type": "content",
+        "titles": {
+          "he": "ארגז הכלים של מהנדס ה-AI"
+        },
+        "sections": 0,
+        "has_images": false,
+        "word_count": 228,
+        "topics": []
+      },
+      {
+        "id": 10,
+        "file_slug": "chapter-10",
+        "type": "content",
+        "titles": {
+          "he": "מיומנויות מהנדס AI חלק ב'"
+        },
+        "sections": 0,
+        "has_images": false,
+        "word_count": 228,
+        "topics": []
+      },
+      {
+        "id": 11,
+        "file_slug": "chapter-11",
+        "type": "content",
+        "titles": {
+          "he": "מהי בינה מלאכותית (AI)? הגדרת היסוד"
+        },
+        "sections": 0,
+        "has_images": true,
+        "word_count": 84,
+        "topics": []
+      },
+      {
+        "id": 12,
+        "file_slug": "chapter-12",
+        "type": "content",
+        "titles": {
+          "he": "למידת מכונה (Machine Learning)"
+        },
+        "sections": 0,
+        "has_images": true,
+        "word_count": 264,
+        "topics": []
+      },
+      {
+        "id": 13,
+        "file_slug": "chapter-13",
+        "type": "content",
+        "titles": {
+          "he": "מה זה Generative AI? (מעבר להגדרה המילונית)"
+        },
+        "sections": 0,
+        "has_images": true,
+        "word_count": 63,
+        "topics": []
+      },
+      {
+        "id": 14,
+        "file_slug": "chapter-14",
+        "type": "content",
+        "titles": {
+          "he": "מה הופך את מהפכת ה-AI לשונה? (The AI Revolution)"
+        },
+        "sections": 0,
+        "has_images": false,
+        "word_count": 181,
+        "topics": []
+      },
+      {
+        "id": 15,
+        "file_slug": "chapter-15",
+        "type": "content",
+        "titles": {
+          "he": "מפת ההתפתחות של AI: מהיסטוריה להנדסה"
+        },
+        "sections": 0,
+        "has_images": true,
+        "word_count": 415,
+        "topics": []
+      },
+      {
+        "id": 16,
+        "file_slug": "chapter-16",
+        "type": "content",
+        "titles": {
+          "he": "Generative AI is just a glorified autocomplete (?)"
+        },
+        "sections": 0,
+        "has_images": false,
+        "word_count": 236,
+        "topics": []
+      },
+      {
+        "id": 17,
+        "file_slug": "chapter-17",
+        "type": "content",
+        "titles": {
+          "he": "LLM = Large Language Model"
+        },
+        "sections": 0,
+        "has_images": false,
+        "word_count": 202,
+        "topics": []
+      },
+      {
+        "id": 18,
+        "file_slug": "chapter-18",
+        "type": "content",
+        "titles": {
+          "he": "LLM Tokens: היחידות היסודיות של השפה (והמכניקה שמאחוריהן)"
+        },
+        "sections": 0,
+        "has_images": true,
+        "word_count": 226,
+        "topics": []
+      },
+      {
+        "id": 19,
+        "file_slug": "chapter-19",
+        "type": "content",
+        "titles": {
+          "he": "LLM: ה\"קופסה השחורה\" של הפרמטרים"
+        },
+        "sections": 0,
+        "has_images": true,
+        "word_count": 152,
+        "topics": []
+      },
+      {
+        "id": 20,
+        "file_slug": "chapter-20",
+        "type": "content",
+        "titles": {
+          "he": "The Inference Pipeline: איך נוצרת תשובה?"
+        },
+        "sections": 0,
+        "has_images": true,
+        "word_count": 429,
+        "topics": []
+      },
+      {
+        "id": 21,
+        "file_slug": "chapter-21",
+        "type": "content",
+        "titles": {
+          "he": "LLMs are like autocomplete with PHD in everything"
+        },
+        "sections": 0,
+        "has_images": true,
+        "word_count": 231,
+        "topics": []
+      },
+      {
+        "id": 22,
+        "file_slug": "chapter-22",
+        "type": "content",
+        "titles": {
+          "he": "בינה מלאכותית - 1,000 דוקטורים אצלך בכיס."
+        },
+        "sections": 0,
+        "has_images": true,
+        "word_count": 119,
+        "topics": []
+      },
+      {
+        "id": 23,
+        "file_slug": "chapter-23",
+        "type": "content",
+        "titles": {
+          "he": "מגבלות ה-LLM: מעבר לרהיטות השפתית"
+        },
+        "sections": 0,
+        "has_images": false,
+        "word_count": 394,
+        "topics": []
+      },
+      {
+        "id": 24,
+        "file_slug": "chapter-24",
+        "type": "content",
+        "titles": {
+          "he": "LLM לפעמים הוזים (Hallucinate):"
+        },
+        "sections": 0,
+        "has_images": false,
+        "word_count": 184,
+        "topics": []
+      },
+      {
+        "id": 25,
+        "file_slug": "chapter-25",
+        "type": "content",
+        "titles": {
+          "he": "LLMs מוגבלים לנתונים עליהם התאמנו: אפקט \"ממנטו\""
+        },
+        "sections": 0,
+        "has_images": true,
+        "word_count": 273,
+        "topics": []
+      },
+      {
+        "id": 26,
+        "file_slug": "chapter-26",
+        "type": "content",
+        "titles": {
+          "he": "L0LMs מנותקים מהעולם: המומחה בבידוד"
+        },
+        "sections": 0,
+        "has_images": true,
+        "word_count": 263,
+        "topics": []
+      },
+      {
+        "id": 27,
+        "file_slug": "chapter-27",
+        "type": "content",
+        "titles": {
+          "he": "הטיה במודלי שפה זה לא באג, אלא מציאות סטטיסטית"
+        },
+        "sections": 0,
+        "has_images": true,
+        "word_count": 299,
+        "topics": []
+      },
+      {
+        "id": 28,
+        "file_slug": "chapter-28",
+        "type": "content",
+        "titles": {
+          "he": "הגדרת זרימת העבודה (The Flow)"
+        },
+        "sections": 0,
+        "has_images": true,
+        "word_count": 244,
+        "topics": []
+      },
+      {
+        "id": 29,
+        "file_slug": "chapter-29",
+        "type": "content",
+        "titles": {
+          "he": "מבנה חלון ההקשר המפורט (Context Window Structure)"
+        },
+        "sections": 0,
+        "has_images": true,
+        "word_count": 241,
+        "topics": []
+      },
+      {
+        "id": 30,
+        "file_slug": "chapter-30",
+        "type": "content",
+        "titles": {
+          "he": "הגדרת הדיסציפלינה הנדסת הקשר (Context Engineering)"
+        },
+        "sections": 0,
+        "has_images": true,
+        "word_count": 251,
+        "topics": []
+      },
+      {
+        "id": 31,
+        "file_slug": "chapter-31",
+        "type": "content",
+        "titles": {
+          "he": "משוואת איכות התוצאה"
+        },
+        "sections": 0,
+        "has_images": true,
+        "word_count": 228,
+        "topics": []
+      },
+      {
+        "id": 32,
+        "file_slug": "chapter-32",
+        "type": "content",
+        "titles": {
+          "he": "RAG (Retrieval-Augmented Generation)"
+        },
+        "sections": 0,
+        "has_images": true,
+        "word_count": 241,
+        "topics": []
+      },
+      {
+        "id": 33,
+        "file_slug": "chapter-33",
+        "type": "content",
+        "titles": {
+          "he": "ארכיטקטורת RAG"
+        },
+        "sections": 0,
+        "has_images": true,
+        "word_count": 308,
+        "topics": []
+      },
+      {
+        "id": 34,
+        "file_slug": "chapter-34",
+        "type": "content",
+        "titles": {
+          "he": "סוכני בינה מלאכותית (AI Agents)"
+        },
+        "sections": 0,
+        "has_images": true,
+        "word_count": 294,
+        "topics": []
+      },
+      {
+        "id": 35,
+        "file_slug": "chapter-35",
+        "type": "content",
+        "titles": {
+          "he": "תכונות מפתח של סוכני בינה מלאכותית"
+        },
+        "sections": 0,
+        "has_images": true,
+        "word_count": 349,
+        "topics": []
+      },
+      {
+        "id": 36,
+        "file_slug": "chapter-36",
+        "type": "content",
+        "titles": {
+          "he": "מבנה זרימת העבודה של הסוכן (Agentic Workflow)"
+        },
+        "sections": 0,
+        "has_images": true,
+        "word_count": 248,
+        "topics": []
+      },
+      {
+        "id": 37,
+        "file_slug": "chapter-37",
+        "type": "content",
+        "titles": {
+          "he": "תוכנה מסורתית מול יישומי AI"
+        },
+        "sections": 0,
+        "has_images": true,
+        "word_count": 323,
+        "topics": []
+      },
+      {
+        "id": 38,
+        "file_slug": "chapter-38",
+        "type": "content",
+        "titles": {
+          "he": "תחומי האימוץ של סוכני AI בארגונים (2026)"
+        },
+        "sections": 0,
+        "has_images": true,
+        "word_count": 301,
+        "topics": []
+      },
+      {
+        "id": 39,
+        "file_slug": "chapter-39",
+        "type": "content",
+        "titles": {
+          "he": "אתגרי האימוץ של בינה מלאכותית בארגון"
+        },
+        "sections": 0,
+        "has_images": true,
+        "word_count": 284,
+        "topics": []
+      },
+      {
+        "id": 40,
+        "file_slug": "chapter-40",
+        "type": "content",
+        "titles": {
+          "he": "עתיד ה-AI מכאן לאן"
+        },
+        "sections": 0,
+        "has_images": true,
+        "word_count": 300,
+        "topics": []
+      }
+    ],
+    "languages": [
+      "he"
+    ],
+    "credits": {
+      "author": {
+        "he": "תומר קדם"
+      }
+    }
+  }
+}
