@@ -19,15 +19,22 @@ import { initOnboardingTour } from './onboarding-tour';
 import { initTextToSpeech } from './text-to-speech';
 import { initChapterTitleTap } from './chapter-title-tap';
 
+let currentController: AbortController | null = null;
+let currentProgressCleanup: (() => void) | null = null;
+
 /**
  * Main initialization - wires up all reading-page modules.
- * Each module handles a single responsibility.
+ * Safe to call repeatedly: aborts the previous controller and rebinds.
  */
 function initializeReadingPage() {
+  currentController?.abort();
+  currentProgressCleanup?.();
+
   const controller = new AbortController();
+  currentController = controller;
 
   initLanguageSwitcher(controller);
-  const progressCleanup = initProgressTracker(controller);
+  currentProgressCleanup = initProgressTracker(controller);
   initStickyHeader(controller);
   initKeyboardNav(controller.signal);
   initHighlighter(controller.signal);
@@ -48,12 +55,12 @@ function initializeReadingPage() {
   initChapterTitleTap(controller.signal);
 
   const cleanup = () => {
-    progressCleanup();
+    currentProgressCleanup?.();
     controller.abort();
   };
 
-  document.addEventListener('astro:before-unmount', cleanup);
-  window.addEventListener('unload', cleanup);
+  document.addEventListener('astro:before-unmount', cleanup, { once: true, signal: controller.signal });
+  window.addEventListener('unload', cleanup, { once: true, signal: controller.signal });
 }
 
 if (document.readyState === 'loading') {
@@ -63,3 +70,4 @@ if (document.readyState === 'loading') {
 }
 
 document.addEventListener('astro:after-swap', initializeReadingPage);
+window.addEventListener('chapter-content-swapped', initializeReadingPage);

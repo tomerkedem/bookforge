@@ -1,0 +1,517 @@
+/*
+ * CodeRunner styles — GitHub Dark + Light themes.
+ *
+ * Applies to:
+ *   .coderunner             — Python blocks with a Run button
+ *   .coderunner.codeblock   — other languages (YAML, JSON, JS, TS...)
+ *                             same chrome, no Run button
+ *
+ * Theme selection: a global [data-code-theme="dark"|"light"] attribute
+ * on the root <html> element. All blocks on the page switch together
+ * when the user hits the theme toggle in ReadingControls. The default
+ * is "dark" to match most developers' preference.
+ *
+ * Syntax highlighting: highlight.js generates markup with .hljs-keyword,
+ * .hljs-string, etc. We provide dark + light color values for each class.
+ */
+
+/* ═══════════════════════════════════════════════════════════════════
+   CodeRunner — GitHub Dark (default)
+   ═══════════════════════════════════════════════════════════════════ */
+
+:root,
+[data-code-theme="dark"] {
+  --cr-bg: #0d1117;
+  --cr-header-bg: #161b22;
+  --cr-border: #30363d;
+  --cr-border-soft: #21262d;
+  --cr-text: #c9d1d9;
+  --cr-dim: #8b949e;
+  --cr-gutter-color: #484f58;
+  --cr-active-line: rgba(56, 139, 253, 0.05);
+  --cr-badge-bg: rgba(56, 139, 253, 0.15);
+  --cr-badge-color: #79c0ff;
+  --cr-badge-border: rgba(56, 139, 253, 0.3);
+  --cr-btn-bg: rgba(255, 255, 255, 0.05);
+  --cr-btn-border: #30363d;
+  --cr-btn-bg-hover: rgba(255, 255, 255, 0.1);
+  --cr-btn-primary-bg: #238636;
+  --cr-btn-primary-bg-hover: #2ea043;
+  --cr-btn-primary-color: #ffffff;
+  --cr-copied: #7ee787;
+
+  --hl-keyword: #ff7b72;
+  --hl-function: #d2a8ff;
+  --hl-string: #a5d6ff;
+  --hl-number: #79c0ff;
+  --hl-comment: #8b949e;
+  --hl-variable: #ffa657;
+  --hl-builtin: #ffa657;
+  --hl-operator: #ff7b72;
+  --hl-title: #d2a8ff;
+  --hl-attr: #79c0ff;
+  --hl-meta: #7ee787;
+}
+
+[data-code-theme="light"] {
+  --cr-bg: #ffffff;
+  --cr-header-bg: #f6f8fa;
+  --cr-border: #d0d7de;
+  --cr-border-soft: #eaeef2;
+  --cr-text: #1f2328;
+  --cr-dim: #656d76;
+  --cr-gutter-color: #8c959f;
+  --cr-active-line: rgba(9, 105, 218, 0.04);
+  --cr-badge-bg: #ddf4ff;
+  --cr-badge-color: #0969da;
+  --cr-badge-border: rgba(84, 174, 255, 0.4);
+  --cr-btn-bg: #f6f8fa;
+  --cr-btn-border: #d0d7de;
+  --cr-btn-bg-hover: #eaeef2;
+  --cr-btn-primary-bg: #1f883d;
+  --cr-btn-primary-bg-hover: #1a7f37;
+  --cr-btn-primary-color: #ffffff;
+  --cr-copied: #1a7f37;
+
+  --hl-keyword: #cf222e;
+  --hl-function: #8250df;
+  --hl-string: #0a3069;
+  --hl-number: #0550ae;
+  --hl-comment: #6e7781;
+  --hl-variable: #953800;
+  --hl-builtin: #953800;
+  --hl-operator: #cf222e;
+  --hl-title: #8250df;
+  --hl-attr: #0550ae;
+  --hl-meta: #116329;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   Container
+   ═══════════════════════════════════════════════════════════════════ */
+
+.coderunner {
+  margin: 1.5rem 0;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--cr-bg);
+  border: 1px solid var(--cr-border);
+  font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', 'Consolas', monospace !important;
+  direction: ltr !important;
+  text-align: left !important;
+  unicode-bidi: isolate;
+  transition: background 200ms ease, border-color 200ms ease;
+}
+
+/*
+ * Force our font, sizing, and direction on every descendant.
+ * reading-typography.css applies font-family/font-size with !important
+ * to .reading-content descendants, which would otherwise override our
+ * gutter, badges, and button typography and inflate line-number sizing.
+ *
+ * NOTE: We deliberately do NOT include the gutter or its spans in the
+ * text-align: left rule — line numbers must stay right-aligned so they
+ * sit flush against the code column, like every IDE does.
+ */
+.coderunner *:not(.cr-gutter):not(.cr-gutter span) {
+  direction: ltr !important;
+  text-align: left !important;
+  unicode-bidi: isolate;
+  font-family: inherit !important;
+  letter-spacing: normal !important;
+}
+
+/* Gutter: LTR direction, but text aligned to the right (flush with code) */
+.coderunner .cr-gutter,
+.coderunner .cr-gutter span {
+  direction: ltr !important;
+  text-align: right !important;
+  unicode-bidi: isolate;
+  font-family: 'JetBrains Mono', monospace !important;
+  letter-spacing: normal !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   Header
+   ═══════════════════════════════════════════════════════════════════ */
+
+.coderunner .cr-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  background: var(--cr-header-bg);
+  border-bottom: 1px solid var(--cr-border);
+}
+
+.coderunner .cr-label {
+  font-family: 'Inter', 'IBM Plex Sans Hebrew', system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--cr-dim);
+  letter-spacing: 0.01em;
+}
+
+.coderunner .cr-lang-badge {
+  font-family: 'Inter', 'IBM Plex Sans Hebrew', system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--cr-badge-color);
+  background: var(--cr-badge-bg);
+  padding: 2px 9px;
+  border-radius: 4px;
+  border: 1px solid var(--cr-badge-border);
+  letter-spacing: 0.02em;
+}
+
+.coderunner .cr-spacer {
+  flex: 1 1 auto !important;
+  margin-left: auto !important;
+  margin-right: 0 !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   Buttons
+   ═══════════════════════════════════════════════════════════════════ */
+
+.coderunner .cr-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--cr-btn-bg);
+  color: var(--cr-text);
+  border: 1px solid var(--cr-btn-border);
+  padding: 5px 12px;
+  border-radius: 5px;
+  font-family: 'Inter', 'IBM Plex Sans Hebrew', system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.coderunner .cr-btn:hover {
+  background: var(--cr-btn-bg-hover);
+}
+
+.coderunner .cr-btn svg {
+  flex-shrink: 0;
+}
+
+.coderunner .cr-btn-primary {
+  background: var(--cr-btn-primary-bg);
+  color: var(--cr-btn-primary-color);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.coderunner .cr-btn-primary:hover {
+  background: var(--cr-btn-primary-bg-hover);
+}
+
+.coderunner .cr-btn-primary:disabled,
+.coderunner .cr-btn-primary.running {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+/* Copy feedback */
+.coderunner .cr-copied-label,
+.coderunner .cr-running-label {
+  display: none;
+}
+
+.coderunner .cr-copy-btn.copied {
+  color: var(--cr-copied);
+}
+
+.coderunner .cr-copy-btn.copied .cr-copy-label {
+  display: none;
+}
+
+.coderunner .cr-copy-btn.copied .cr-copied-label {
+  display: inline;
+}
+
+.coderunner .cr-run-btn.running .cr-run-label {
+  display: none;
+}
+
+.coderunner .cr-run-btn.running .cr-running-label {
+  display: inline;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   Body — gutter + code
+   ═══════════════════════════════════════════════════════════════════ */
+
+.coderunner .cr-body {
+  display: grid;
+  grid-template-columns: 52px 1fr;
+  background: var(--cr-bg);
+}
+
+.coderunner .cr-gutter {
+  padding: 14px 0;
+  font-family: 'JetBrains Mono', monospace !important;
+  font-size: 14px !important;
+  line-height: 1.75 !important;
+  text-align: right !important;
+  color: var(--cr-gutter-color);
+  background: var(--cr-bg);
+  border-right: 1px solid var(--cr-border-soft);
+  user-select: none;
+}
+
+.coderunner .cr-gutter span {
+  display: block !important;
+  padding-right: 14px;
+  font-size: 14px !important;
+  line-height: 1.75 !important;
+}
+
+.coderunner .cr-code {
+  margin: 0;
+  padding: 14px 20px;
+  font-size: 15px !important;
+  line-height: 1.75 !important;
+  color: var(--cr-text);
+  background: transparent;
+  overflow-x: auto;
+  font-family: inherit;
+  border: none;
+}
+
+.coderunner .cr-code code,
+.coderunner .cr-code code.hljs {
+  background: transparent !important;
+  color: inherit !important;
+  padding: 0;
+  font-family: inherit;
+  font-size: inherit !important;
+  line-height: inherit !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   Syntax highlighting (highlight.js class names → our CSS vars)
+   ═══════════════════════════════════════════════════════════════════ */
+
+.coderunner .hljs-keyword,
+.coderunner .hljs-selector-tag,
+.coderunner .hljs-literal,
+.coderunner .hljs-section,
+.coderunner .hljs-link { color: var(--hl-keyword); }
+
+.coderunner .hljs-function .hljs-title,
+.coderunner .hljs-title,
+.coderunner .hljs-title.function_,
+.coderunner .hljs-title.class_ { color: var(--hl-function); }
+
+.coderunner .hljs-string,
+.coderunner .hljs-regexp,
+.coderunner .hljs-addition,
+.coderunner .hljs-attribute,
+.coderunner .hljs-meta-string { color: var(--hl-string); }
+
+.coderunner .hljs-number,
+.coderunner .hljs-symbol,
+.coderunner .hljs-bullet,
+.coderunner .hljs-subst,
+.coderunner .hljs-meta,
+.coderunner .hljs-deletion,
+.coderunner .hljs-selector-attr,
+.coderunner .hljs-selector-pseudo { color: var(--hl-number); }
+
+.coderunner .hljs-comment,
+.coderunner .hljs-quote { color: var(--hl-comment); font-style: italic; }
+
+.coderunner .hljs-variable,
+.coderunner .hljs-template-variable,
+.coderunner .hljs-params { color: var(--hl-variable); }
+
+.coderunner .hljs-built_in,
+.coderunner .hljs-type,
+.coderunner .hljs-class .hljs-title { color: var(--hl-builtin); }
+
+.coderunner .hljs-operator,
+.coderunner .hljs-punctuation { color: var(--hl-operator); }
+
+.coderunner .hljs-attr { color: var(--hl-attr); }
+
+.coderunner .hljs-emphasis { font-style: italic; }
+.coderunner .hljs-strong { font-weight: 600; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   Status bar
+   ═══════════════════════════════════════════════════════════════════ */
+
+.coderunner .cr-statusbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 6px 16px;
+  background: var(--cr-header-bg);
+  border-top: 1px solid var(--cr-border);
+  font-family: 'Inter', 'IBM Plex Sans Hebrew', system-ui, sans-serif;
+  font-size: 11px;
+  color: var(--cr-dim);
+  letter-spacing: 0.02em;
+}
+
+.coderunner .cr-status-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.coderunner .cr-status-right {
+  margin-left: auto !important;
+  margin-right: 0 !important;
+}
+
+.coderunner .cr-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.5;
+  display: inline-block;
+}
+
+.coderunner .cr-run-status.error {
+  color: #f85149;
+}
+
+[data-code-theme="light"] .coderunner .cr-run-status.error {
+  color: #cf222e;
+}
+
+.coderunner .cr-run-status.success {
+  color: #7ee787;
+}
+
+[data-code-theme="light"] .coderunner .cr-run-status.success {
+  color: #1a7f37;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   Output panel
+   ═══════════════════════════════════════════════════════════════════ */
+
+.coderunner .cr-output {
+  border-top: 1px solid var(--cr-border);
+  background: var(--cr-bg);
+}
+
+.coderunner .cr-output[hidden] {
+  display: none !important;
+}
+
+.coderunner .cr-output-header {
+  display: flex;
+  align-items: center;
+  padding: 7px 16px;
+  background: var(--cr-header-bg);
+  border-bottom: 1px solid var(--cr-border-soft);
+  font-family: 'Inter', 'IBM Plex Sans Hebrew', system-ui, sans-serif;
+  font-size: 12px;
+  color: var(--cr-dim);
+}
+
+.coderunner .cr-output-label {
+  font-weight: 500;
+}
+
+.coderunner .cr-output-clear {
+  margin-left: auto !important;
+  margin-right: 0 !important;
+  background: transparent;
+  border: none;
+  color: var(--cr-dim);
+  font-family: inherit;
+  font-size: 11px;
+  cursor: pointer;
+  padding: 3px 8px;
+  border-radius: 3px;
+  transition: background 150ms ease;
+}
+
+.coderunner .cr-output-clear:hover {
+  background: var(--cr-btn-bg-hover);
+}
+
+.coderunner .cr-output-text {
+  margin: 0;
+  padding: 14px 20px;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.75;
+  color: var(--cr-text);
+  background: transparent;
+  white-space: pre-wrap;
+  overflow-x: auto;
+  min-height: 44px;
+}
+
+.coderunner .cr-output-text .error {
+  color: #f85149;
+}
+
+[data-code-theme="light"] .coderunner .cr-output-text .error {
+  color: #cf222e;
+}
+
+.coderunner .cr-output-text .success {
+  color: var(--cr-text);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   Responsive
+   ═══════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 640px) {
+  .coderunner .cr-header {
+    padding: 7px 12px;
+    gap: 8px;
+  }
+  .coderunner .cr-label { font-size: 12px; }
+  .coderunner .cr-lang-badge { font-size: 10px; padding: 1px 7px; }
+  .coderunner .cr-btn { font-size: 11px; padding: 4px 10px; }
+  .coderunner .cr-body { grid-template-columns: 44px 1fr; }
+  .coderunner .cr-gutter { font-size: 12px !important; padding: 12px 0; }
+  .coderunner .cr-gutter span { font-size: 12px !important; padding-right: 10px; }
+  .coderunner .cr-code { font-size: 13px !important; padding: 12px 16px; }
+  .coderunner .cr-statusbar { font-size: 10px; gap: 12px; padding: 5px 12px; }
+  .coderunner .cr-output-text { font-size: 12px; padding: 12px 16px; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   Print — always render light theme for print regardless of setting
+   ═══════════════════════════════════════════════════════════════════ */
+
+@media print {
+  .coderunner {
+    background: #ffffff !important;
+    border: 1px solid #d0d7de !important;
+    box-shadow: none;
+    break-inside: avoid;
+  }
+  .coderunner .cr-header,
+  .coderunner .cr-statusbar,
+  .coderunner .cr-output { display: none; }
+  .coderunner .cr-body { background: #ffffff !important; }
+  .coderunner .cr-gutter { color: #8c959f !important; background: #ffffff !important; }
+  .coderunner .cr-code { color: #1f2328 !important; }
+  .coderunner .hljs-keyword { color: #cf222e !important; }
+  .coderunner .hljs-string { color: #0a3069 !important; }
+  .coderunner .hljs-comment { color: #6e7781 !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .coderunner,
+  .coderunner .cr-btn,
+  .coderunner .cr-output-clear {
+    transition: none;
+  }
+}

@@ -10,7 +10,7 @@
   --font-reading: 'Heebo', sans-serif;
 }
 
-.reading-content, .reading-content *:not(code):not(pre):not(.hljs):not(.code-block-pro):not(.code-runner-wrapper) {
+.reading-content, .reading-content *:not(code):not(pre):not(.hljs):not(.code-block-pro):not(.code-runner-wrapper):not(.coderunner):not(.coderunner *):not(.bash-block):not(.bash-block *) {
   font-family: var(--font-reading) !important;
   font-size: var(--reading-font-size, 18px);
   line-height: var(--reading-line-height, 1.7);

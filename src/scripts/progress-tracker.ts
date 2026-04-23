@@ -1,4 +1,5 @@
 import { ReadingProgressManager } from '../utils/reading-progress';
+import { parseChapterKey, type ChapterKey } from './reading-location';
 
 const MIN_RESTORE_PX = 150; // Don't restore if near the top
 
@@ -34,11 +35,11 @@ function showResumeToast(lang: string) {
   setTimeout(() => toast.remove(), 2200);
 }
 
-function getChapterInfo() {
+function getChapterInfo(): { bookId: string; chapterId: ChapterKey } {
   const parts = window.location.pathname.split('/').filter(Boolean);
   return {
     bookId:    parts[1] || 'unknown',
-    chapterId: parseInt(parts[2] || '0', 10),
+    chapterId: parseChapterKey(parts[2] || '0'),
   };
 }
 
@@ -52,7 +53,7 @@ function getLang() {
  * Try to restore scroll for the current chapter.
  * Returns true if a restore happened.
  */
-function tryRestore(bookId: string, chapterId: number, silent = false): boolean {
+function tryRestore(bookId: string, chapterId: ChapterKey, silent = false): boolean {
   const progress = ReadingProgressManager.getProgress(bookId, chapterId);
   if (!progress || progress.scrollPosition < MIN_RESTORE_PX) return false;
 

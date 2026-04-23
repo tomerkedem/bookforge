@@ -13,6 +13,7 @@ import {
   resolveChapterTitleByTitles,
   nearestSectionHeading,
   waitForContentReady,
+  type ChapterKey,
 } from './reading-location';
 
 // ── Language ────────────────────────────────────────────────────────────────
@@ -30,7 +31,7 @@ function getDir(): 'rtl' | 'ltr' {
 interface Bookmark {
   id: string;
   book: string;
-  chapterId: number;
+  chapterId: ChapterKey;
   chapterTitles: Record<string, string>;
   lang: string;
   anchor: string;
@@ -357,7 +358,7 @@ function consumePendingBookmark(): void {
   });
 }
 
-function removeBookmarkByHash(textHash: string, chapterId: number): void {
+function removeBookmarkByHash(textHash: string, chapterId: ChapterKey): void {
   const book = getCurrentBook();
   const list = loadBookmarks(book).filter(
     b => !(b.chapterId === chapterId && b.textHash === textHash)

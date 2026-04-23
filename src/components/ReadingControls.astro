@@ -28,6 +28,23 @@
       </button>
     </div>
 
+    <!-- Code theme (Dark / Light) -->
+    <div class="fab-item">
+      <span class="fab-label" data-i18n="fab.codeTheme">Code Theme</span>
+      <button class="fab-sub-btn" data-code-theme-toggle aria-label="Toggle code theme" aria-pressed="false" title="Code theme (Dark / Light)">
+        <!-- Terminal / code frame icon with sun/moon accent shown per theme -->
+        <svg class="code-theme-icon code-theme-icon-dark w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75"
+            d="M8 9l3 3-3 3m5 0h3M5 5h14a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2z" />
+        </svg>
+        <svg class="code-theme-icon code-theme-icon-light w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75"
+            d="M8 9l3 3-3 3m5 0h3M5 5h14a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2z" />
+          <circle cx="18" cy="7" r="2.5" fill="currentColor" stroke="none"/>
+        </svg>
+      </button>
+    </div>
+
     <!-- Typography -->
     <div class="fab-item">
       <span class="fab-label" data-i18n="fab.typography">Typography</span>
@@ -306,6 +323,15 @@
   :global(.dark) .theme-icon-dark { display: block; }
   :global(.sepia) .theme-icon-light { display: none; }
   :global(.sepia) .theme-icon-sepia { display: block; }
+
+  /* Code theme icons — independent from the page theme.
+     Drives off <html data-code-theme="dark|light">. The icon you see
+     represents the CURRENT state (terminal icon alone = Dark, terminal
+     with small yellow accent = Light). */
+  .code-theme-icon { display: none; }
+  :global(html[data-code-theme="dark"]) .code-theme-icon-dark { display: block; }
+  :global(html[data-code-theme="light"]) .code-theme-icon-light { display: block; }
+  :global(html[data-code-theme="light"]) .code-theme-icon-light circle { color: #eac54f; }
 
   /* Sub-actions container */
   .fab-actions {

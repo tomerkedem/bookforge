@@ -198,7 +198,7 @@ export interface LanguageContext {
 
 export interface ReadingProgress {
   bookId: string;
-  chapterId: number;
+  chapterId: number | string;
   scrollPosition: number;
   lastUpdated: number;
 }

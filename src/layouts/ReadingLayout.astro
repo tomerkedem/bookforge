@@ -3,6 +3,8 @@ import type { Language } from '../types/index';
 import BaseLayout from './BaseLayout.astro';
 import ReadingControls from '../components/ReadingControls.astro';
 import '../styles/reading-typography.css';
+import '../styles/bash-block.css';
+import '../styles/code-runner.css';
 import { SOURCE_LANGUAGE, getLanguageDirection } from '../utils/language';
 
 interface Props {
@@ -588,43 +590,38 @@ const COPY_SUCCESS_MESSAGE = 'Code copied!';
       :global([data-lang] .chapter-content code),
       :global([data-lang] .chapter-content figure),
       :global([data-lang] .chapter-content table),
-      :global([data-lang] .chapter-content .code-runner-wrapper),
-      :global([data-lang] .chapter-content .code-block-wrapper) {
+      :global([data-lang] .chapter-content .coderunner),
+      :global([data-lang] .chapter-content .bash-block) {
         text-align: initial !important;
       }
 
       /* Code components must always render LTR, even inside an RTL page.
          Overrides the wildcard direction:rtl rule above for code wrappers
          and every descendant (gutter, toolbar, buttons, line numbers, pre, code). */
-      :global([data-lang][dir="rtl"] .chapter-content .code-block-pro),
-      :global([data-lang][dir="rtl"] .chapter-content .code-block-pro *),
-      :global([data-lang][dir="rtl"] .chapter-content .code-runner-wrapper),
-      :global([data-lang][dir="rtl"] .chapter-content .code-runner-wrapper *),
-      :global([data-lang][dir="rtl"] .chapter-content .code-block-wrapper),
-      :global([data-lang][dir="rtl"] .chapter-content .code-block-wrapper *) {
+     
+      :global([data-lang][dir="rtl"] .chapter-content .coderunner),
+      :global([data-lang][dir="rtl"] .chapter-content .coderunner *:not(.cr-gutter):not(.cr-gutter span)),
+      :global([data-lang][dir="rtl"] .chapter-content .bash-block),
+      :global([data-lang][dir="rtl"] .chapter-content .bash-block *) {
         direction: ltr !important;
         text-align: left !important;
         unicode-bidi: isolate;
       }
       /* Keep line-number gutter right-aligned (numbers flush to code) */
-      :global([data-lang][dir="rtl"] .chapter-content .code-block-pro .line-number),
-      :global([data-lang][dir="rtl"] .chapter-content .code-runner-wrapper .line-num) {
+      :global([data-lang][dir="rtl"] .chapter-content .coderunner .cr-gutter),
+      :global([data-lang][dir="rtl"] .chapter-content .coderunner .cr-gutter span) {
+        direction: ltr !important;
         text-align: right !important;
+        unicode-bidi: isolate;
       }
-
+      
       @media (min-width: 1024px) {
         .reading-article {
           margin-left: 320px;
           margin-right: 320px;
-          transition: margin 0.35s cubic-bezier(0.4, 0, 0.2, 1),
-                      max-width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
         }
-
-        /* Immersive: article expands to full width */
-        :global(body.reading-immersive) .reading-article {
-          margin-left: 0;
-          margin-right: 0;
-        }
+        /* Both sidebars stay pinned during scroll, so the article width
+           stays constant — no reflow on immersive toggle. */
       }
 
 
@@ -648,353 +645,9 @@ const COPY_SUCCESS_MESSAGE = 'Code copied!';
         transition: background-color 0.3s, border-color 0.3s;
       }
 
-      /* ═══════════════════════════════════════════════════════════════════════
-         CodeRunner & CodeBlock styles (VS Code dark theme)
-         ═══════════════════════════════════════════════════════════════════════ */
-
-      /* Shared CSS variables */
-      :global(.code-runner-wrapper),
-      :global(.code-block-wrapper) {
-        --cr-bg-primary: #1e1e2e;
-        --cr-bg-secondary: #181825;
-        --cr-bg-tertiary: #11111b;
-        --cr-border-color: #313244;
-        --cr-bg-hover: rgba(69, 71, 90, 0.5);
-        --cr-text-primary: #cdd6f4;
-        --cr-text-secondary: #a6adc8;
-        --cr-text-muted: #6c7086;
-        --cr-accent-green: #a6e3a1;
-        --cr-accent-blue: #89b4fa;
-        --cr-accent-red: #f38ba8;
-        --cr-accent-yellow: #f9e2af;
-        --cr-accent-purple: #cba6f7;
-        
-        margin: 1.5rem 0;
-        border-radius: 12px;
-        overflow: hidden;
-        background: var(--cr-bg-primary);
-        border: 1px solid var(--cr-border-color);
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-        font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
-        direction: ltr;
-        text-align: left;
-      }
-
-      /* Runner Header (Python) */
-      :global(.code-runner-wrapper .runner-header),
-      :global(.code-block-wrapper .block-header) {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 0.625rem 1rem;
-        background: var(--cr-bg-tertiary);
-        border-bottom: 1px solid var(--cr-border-color);
-      }
-
-      :global(.code-runner-wrapper .header-left),
-      :global(.code-block-wrapper .header-left) {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-      }
-
-      :global(.code-runner-wrapper .window-controls),
-      :global(.code-block-wrapper .window-controls) {
-        display: flex;
-        gap: 6px;
-      }
-
-      :global(.code-runner-wrapper .control),
-      :global(.code-block-wrapper .control) {
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
-      }
-
-      :global(.code-runner-wrapper .control.red),
-      :global(.code-block-wrapper .control.red) { background: #ff5f57; }
-      :global(.code-runner-wrapper .control.yellow),
-      :global(.code-block-wrapper .control.yellow) { background: #febc2e; }
-      :global(.code-runner-wrapper .control.green),
-      :global(.code-block-wrapper .control.green) { background: #28c840; }
-
-      :global(.code-runner-wrapper .file-name) {
-        font-size: 0.8rem;
-        color: var(--cr-text-secondary);
-      }
-
-      :global(.code-runner-wrapper .language-tag),
-      :global(.code-block-wrapper .language-tag) {
-        font-size: 0.7rem;
-        padding: 2px 8px;
-        background: var(--cr-accent-purple);
-        color: var(--cr-bg-tertiary);
-        border-radius: 4px;
-        font-weight: 600;
-        text-transform: uppercase;
-      }
-
-      /* Toolbar */
-      :global(.code-runner-wrapper .toolbar) {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 0.5rem 0.75rem;
-        background: var(--cr-bg-secondary);
-        border-bottom: 1px solid var(--cr-border-color);
-      }
-
-      :global(.code-runner-wrapper .toolbar-left),
-      :global(.code-runner-wrapper .toolbar-right),
-      :global(.code-block-wrapper .header-right) {
-        display: flex;
-        align-items: center;
-        gap: 0.25rem;
-      }
-
-      :global(.code-runner-wrapper .tool-btn),
-      :global(.code-block-wrapper .btn-copy) {
-        display: flex;
-        align-items: center;
-        gap: 0.375rem;
-        padding: 0.375rem 0.625rem;
-        background: transparent;
-        border: none;
-        color: var(--cr-text-secondary);
-        font-size: 0.75rem;
-        font-family: inherit;
-        border-radius: 6px;
-        cursor: pointer;
-        transition:
-          background 150ms cubic-bezier(0.2, 0, 0, 1),
-          color 150ms cubic-bezier(0.2, 0, 0, 1),
-          transform 150ms cubic-bezier(0.2, 0, 0, 1),
-          filter 150ms cubic-bezier(0.2, 0, 0, 1);
-      }
-
-      :global(.code-runner-wrapper .tool-btn:hover),
-      :global(.code-block-wrapper .btn-copy:hover) {
-        background: var(--cr-bg-hover);
-        color: var(--cr-text-primary);
-      }
-
-      :global(.code-runner-wrapper .tool-btn.icon-only),
-      :global(.code-block-wrapper .btn-copy) {
-        padding: 0.375rem;
-      }
-
-      :global(.code-runner-wrapper .tool-btn.btn-run) {
-        background: linear-gradient(135deg, var(--cr-accent-green), #73deb1);
-        color: var(--cr-bg-tertiary);
-        font-weight: 600;
-      }
-
-      :global(.code-runner-wrapper .tool-btn.btn-run:hover) {
-        filter: brightness(1.1);
-        transform: translateY(-1px);
-      }
-
-      :global(.code-runner-wrapper .tool-btn.btn-run:disabled) {
-        opacity: 0.6;
-        cursor: not-allowed;
-        transform: none;
-      }
-
-      :global(.code-runner-wrapper .tool-btn.btn-run.loading svg) {
-        animation: cr-spin 1s linear infinite;
-      }
-
-      @keyframes cr-spin {
-        100% { transform: rotate(360deg); }
-      }
-
-      /* Editor Container */
-      :global(.code-runner-wrapper .editor-container),
-      :global(.code-block-wrapper .code-content) {
-        display: flex;
-        align-items: stretch;
-        max-height: 400px;
-        overflow: hidden;
-      }
-
-      :global(.code-runner-wrapper .line-numbers),
-      :global(.code-block-wrapper .line-numbers) {
-        flex: 0 0 auto;
-        display: flex;
-        flex-direction: column;
-        padding: 1rem 0;
-        background: var(--cr-bg-tertiary);
-        border-right: 1px solid var(--cr-border-color);
-        user-select: none;
-        min-width: 3rem;
-        text-align: right;
-        overflow: hidden;
-      }
-
-      :global(.code-runner-wrapper .line-num),
-      :global(.code-block-wrapper .line-num) {
-        padding: 0 0.75rem;
-        font-size: 0.8rem;
-        line-height: 1.6;
-        color: var(--cr-text-muted);
-      }
-
-      :global(.code-runner-wrapper .code-display) {
-        flex: 1 1 auto;
-        min-width: 0;
-        margin: 0;
-        padding: 1rem;
-        background: transparent;
-        overflow: auto;
-      }
-
-      :global(.code-runner-wrapper .code-display code) {
-        font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
-        font-size: 0.875rem;
-        line-height: 1.6;
-        color: var(--cr-text-primary);
-        background: transparent;
-        border: none;
-        padding: 0;
-      }
-
-      /* Code Block content */
-      :global(.code-block-wrapper .code-content pre) {
-        flex: 1 1 auto;
-        min-width: 0;
-        margin: 0;
-        padding: 1rem;
-        background: transparent;
-        border: none;
-        overflow: auto;
-      }
-
-      :global(.code-block-wrapper .code-content pre code) {
-        font-size: 0.875rem;
-        line-height: 1.6;
-        font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
-        background: transparent;
-        border: none;
-        padding: 0;
-      }
-
-      /* Status Bar */
-      :global(.code-runner-wrapper .status-bar) {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 0.375rem 1rem;
-        background: var(--cr-accent-blue);
-        color: var(--cr-bg-tertiary);
-        font-size: 0.7rem;
-        font-weight: 500;
-      }
-
-      :global(.code-runner-wrapper .status-left),
-      :global(.code-runner-wrapper .status-right) {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-      }
-
-      :global(.code-runner-wrapper .run-status.success) { color: var(--cr-bg-tertiary); }
-      :global(.code-runner-wrapper .run-status.error) { color: var(--cr-accent-red); font-weight: 600; }
-      :global(.code-runner-wrapper .run-status.loading)::after {
-        content: '';
-        display: inline-block;
-        width: 10px;
-        height: 10px;
-        margin-left: 6px;
-        border: 2px solid var(--cr-bg-tertiary);
-        border-top-color: transparent;
-        border-radius: 50%;
-        animation: cr-spin 0.8s linear infinite;
-      }
-
-      /* Output Panel */
-      :global(.code-runner-wrapper .output-panel) {
-        border-top: 1px solid var(--cr-border-color);
-        animation: cr-slideUp 200ms var(--ease-standard);
-      }
-
-      @keyframes cr-slideUp {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-      }
-
-      :global(.code-runner-wrapper .output-header) {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 0.5rem 1rem;
-        background: var(--cr-bg-tertiary);
-        border-bottom: 1px solid var(--cr-border-color);
-        font-size: 0.8rem;
-        color: var(--cr-text-secondary);
-      }
-
-      :global(.code-runner-wrapper .btn-clear-output) {
-        background: transparent;
-        border: none;
-        color: var(--cr-text-muted);
-        cursor: pointer;
-        padding: 0.375rem;
-        border-radius: 4px;
-      }
-
-      :global(.code-runner-wrapper .btn-clear-output:hover) {
-        color: var(--cr-accent-red);
-        background: var(--cr-bg-hover);
-      }
-
-      :global(.code-runner-wrapper .output-content) {
-        max-height: 200px;
-        overflow: auto;
-        background: var(--cr-bg-secondary);
-      }
-
-      :global(.code-runner-wrapper .output-text) {
-        margin: 0;
-        padding: 1rem;
-        font-size: 0.8rem;
-        line-height: 1.5;
-        color: var(--cr-text-primary);
-        white-space: pre-wrap;
-        word-break: break-word;
-      }
-
-      :global(.code-runner-wrapper .output-text .error) {
-        color: var(--cr-accent-red);
-      }
-
-      :global(.code-runner-wrapper .output-text .success) {
-        color: var(--cr-accent-green);
-      }
-
-      /* Mobile responsive */
-      @media (max-width: 640px) {
-        :global(.code-runner-wrapper .code-display code) {
-          font-size: 0.8rem;
-        }
-
-        :global(.code-runner-wrapper .tool-btn span:not(.sr-only)) {
-          display: none;
-        }
-
-        :global(.code-runner-wrapper .tool-btn.btn-run span) {
-          display: inline;
-        }
-
-        :global(.code-runner-wrapper .toolbar) {
-          flex-wrap: wrap;
-          gap: 0.5rem;
-        }
-
-        :global(.code-runner-wrapper .status-bar) {
-          flex-wrap: wrap;
-          gap: 0.25rem;
-        }
-      }
+      /* CodeRunner styles live in src/styles/code-runner.css.
+         They support a global dark/light theme toggle via
+         [data-code-theme] on <html>, set by ReadingControls. */
 
       /* Copy feedback animation */
       @keyframes fadeInOut {
@@ -1013,6 +666,12 @@ const COPY_SUCCESS_MESSAGE = 'Code copied!';
     // Inject copy buttons into all code blocks
     function addCopyButtons() {
       document.querySelectorAll('article pre').forEach((pre) => {
+        // Skip <pre> elements inside styled block wrappers — they already
+        // have their own Copy buttons (BashBlock, CodeBlock, CodeRunner).
+        // Adding the generic floating Copy button on top would double up
+        // and confuse readers.
+        if (pre.closest('.bash-block') ||
+            pre.closest('.coderunner')) return;
         if (pre.querySelector('.code-copy-btn')) return;
         const btn = document.createElement('button');
         btn.type = 'button';
@@ -1238,17 +897,72 @@ const COPY_SUCCESS_MESSAGE = 'Code copied!';
     }
 
     function reinitAll() {
+      applyStoredCodeTheme();
+      initCodeThemeToggle();
       addCopyButtons();
       lazyLoadImages();
       addMarkdownPreview();
-
-      if (document.querySelector('.code-runner-wrapper')) {
+      if (document.querySelector('.coderunner')) {
         initCodeRunners();
       }
-
-      if (document.querySelector('.code-block-wrapper')) {
-        initCodeBlocks();
+      if (document.querySelector('.bash-block')) {
+        initBashBlocks();
       }
+    }
+
+    // Code theme picker — syncs [data-code-theme] on <html> and toggle button.
+    // Default is 'dark'. Stored in localStorage under 'code-theme'.
+    function applyStoredCodeTheme() {
+      let saved;
+      try { saved = localStorage.getItem('code-theme'); } catch { saved = null; }
+      const theme = saved === 'light' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-code-theme', theme);
+    }
+
+    function initCodeThemeToggle() {
+      const btn = document.querySelector('[data-code-theme-toggle]');
+      if (!btn || btn.dataset.initialized) return;
+      btn.dataset.initialized = 'true';
+
+      const syncLabel = () => {
+        const current = document.documentElement.getAttribute('data-code-theme') || 'dark';
+        btn.setAttribute('aria-pressed', current === 'light' ? 'true' : 'false');
+        btn.dataset.theme = current;
+      };
+      syncLabel();
+
+      btn.addEventListener('click', () => {
+        const current = document.documentElement.getAttribute('data-code-theme') || 'dark';
+        const next = current === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-code-theme', next);
+        try { localStorage.setItem('code-theme', next); } catch {}
+        syncLabel();
+      });
+    }
+    function initBashBlocks() {
+      document.querySelectorAll('.bash-block').forEach((block) => {
+        if (block.dataset.initialized) return;
+        block.dataset.initialized = 'true';
+
+        const copyBtn = block.querySelector('.bash-copy-btn');
+        const body = block.querySelector('.bash-body');
+        if (!copyBtn || !body) return;
+
+        copyBtn.addEventListener('click', async () => {
+          // Prefer the encoded code on the button's data-code; fall
+          // back to body.dataset.code; last resort use text content.
+          const codeData = copyBtn.dataset.code || body.dataset.code;
+          const text = codeData ? decodeURIComponent(codeData) : (body.textContent || '');
+
+          try {
+            await navigator.clipboard.writeText(text);
+            copyBtn.classList.add('copied');
+            setTimeout(() => copyBtn.classList.remove('copied'), 1800);
+          } catch (err) {
+            console.error('Failed to copy bash command:', err);
+          }
+        });
+      });
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -1352,132 +1066,89 @@ _output_capture = OutputCapture()
       }
     }
 
+    // Unified init for Python runners + view-only code blocks.
+    // Both share .coderunner; the Run button is absent for view-only.
     function initCodeRunners() {
-      document.querySelectorAll('.code-runner-wrapper').forEach((wrapper) => {
-        if (wrapper.dataset.initialized) return;
-        wrapper.dataset.initialized = 'true';
-        
-        const runBtn = wrapper.querySelector('.btn-run');
-        const copyBtn = wrapper.querySelector('.btn-copy');
-        const codeEl = wrapper.querySelector('.code-display code');
-        const codeDisplay = wrapper.querySelector('.code-display');
-        const lineNumbers = wrapper.querySelector('.line-numbers');
-        const outputPanel = wrapper.querySelector('.output-panel');
-        const outputText = wrapper.querySelector('.output-text');
-        const statusEl = wrapper.querySelector('.run-status');
-        const clearBtn = wrapper.querySelector('.btn-clear-output');
+      document.querySelectorAll('.coderunner').forEach((block) => {
+        if (block.dataset.initialized) return;
+        block.dataset.initialized = 'true';
 
-        // Sync vertical scroll between code and line numbers
-        if (codeDisplay && lineNumbers) {
-          codeDisplay.addEventListener('scroll', () => {
-            lineNumbers.scrollTop = codeDisplay.scrollTop;
+        const copyBtn = block.querySelector('.cr-copy-btn');
+        const runBtn  = block.querySelector('.cr-run-btn');
+        const gutter  = block.querySelector('.cr-gutter');
+        const codeEl  = block.querySelector('.cr-code');
+        const status  = block.querySelector('.cr-run-status');
+        const outPanel = block.querySelector('.cr-output');
+        const outText  = block.querySelector('.cr-output-text');
+        const clearBtn = block.querySelector('.cr-output-clear');
+
+        const encodedCode = block.dataset.code || '';
+        const code = encodedCode ? decodeURIComponent(encodedCode) : '';
+
+        // Keep line-number gutter in vertical sync with code scroll.
+        if (codeEl && gutter) {
+          codeEl.addEventListener('scroll', () => {
+            gutter.scrollTop = codeEl.scrollTop;
           });
         }
 
-        // Get code from data attribute
-        const code = wrapper.dataset.code ? decodeURIComponent(wrapper.dataset.code) : '';
-        
-        // Run button
-        runBtn?.addEventListener('click', async () => {
-          if (!outputPanel || !outputText || !statusEl || !code) return;
-          
-          runBtn.disabled = true;
-          runBtn.classList.add('loading');
-          statusEl.textContent = 'מריץ...';
-          statusEl.className = 'status-item run-status loading';
-          
-          outputPanel.hidden = false;
-          outputText.textContent = 'טוען Python...';
-          
-          try {
-            const result = await runPythonCode(code);
-            
-            if (result.error) {
-              outputText.innerHTML = `<span class="error">${escapeHtml(result.error)}</span>`;
-              statusEl.textContent = 'שגיאה';
-              statusEl.className = 'status-item run-status error';
-            } else {
-              outputText.innerHTML = `<span class="success">${escapeHtml(result.output)}</span>`;
-              statusEl.textContent = `הסתיים ב-${Math.round(result.time)}ms`;
-              statusEl.className = 'status-item run-status success';
-            }
-          } catch (error) {
-            outputText.innerHTML = `<span class="error">${escapeHtml(error.message || 'שגיאה לא ידועה')}</span>`;
-            statusEl.textContent = 'שגיאה בטעינת Pyodide';
-            statusEl.className = 'status-item run-status error';
-          }
-          
-          runBtn.disabled = false;
-          runBtn.classList.remove('loading');
-        });
-        
         // Copy button
         copyBtn?.addEventListener('click', async () => {
-          if (!code) return;
           try {
             await navigator.clipboard.writeText(code);
-            showCopyFeedback(COPY_SUCCESS_MESSAGE);
-          } catch {
-            // Fallback - select code text
-            if (codeEl) {
-              const range = document.createRange();
-              range.selectNodeContents(codeEl);
-              const sel = window.getSelection();
-              sel?.removeAllRanges();
-              sel?.addRange(range);
-              document.execCommand('copy');
-            }
+            copyBtn.classList.add('copied');
+            setTimeout(() => copyBtn.classList.remove('copied'), 1800);
+          } catch (err) {
+            console.error('Failed to copy code:', err);
           }
         });
-        
+
+        // Run button (Python only — absent on view-only blocks)
+        runBtn?.addEventListener('click', async () => {
+          if (!code || !outPanel || !outText || !status) return;
+
+          runBtn.disabled = true;
+          runBtn.classList.add('running');
+          status.textContent = 'Running';
+          status.className = 'cr-status-item cr-status-right cr-run-status';
+          outPanel.hidden = false;
+          outText.textContent = 'Loading Python...';
+
+          try {
+            const result = await runPythonCode(code);
+            if (result.error) {
+              outText.innerHTML = `<span class="error">${escapeHtml(result.error)}</span>`;
+              status.textContent = 'Error';
+              status.className = 'cr-status-item cr-status-right cr-run-status error';
+            } else {
+              outText.innerHTML = `<span class="success">${escapeHtml(result.output)}</span>`;
+              status.textContent = `Done in ${Math.round(result.time)}ms`;
+              status.className = 'cr-status-item cr-status-right cr-run-status success';
+            }
+          } catch (err) {
+            outText.innerHTML = `<span class="error">${escapeHtml(err.message || 'Unknown error')}</span>`;
+            status.textContent = 'Pyodide error';
+            status.className = 'cr-status-item cr-status-right cr-run-status error';
+          } finally {
+            runBtn.disabled = false;
+            runBtn.classList.remove('running');
+          }
+        });
+
         // Clear output
         clearBtn?.addEventListener('click', () => {
-          if (outputPanel && outputText) {
-            outputPanel.hidden = true;
-            outputText.textContent = '';
+          if (outPanel && outText) {
+            outPanel.hidden = true;
+            outText.textContent = '';
+          }
+          if (status) {
+            status.textContent = 'Ready';
+            status.className = 'cr-status-item cr-status-right cr-run-status';
           }
         });
       });
     }
 
-    function initCodeBlocks() {
-      document.querySelectorAll('.code-block-wrapper').forEach((wrapper) => {
-        if (wrapper.dataset.initialized) return;
-        wrapper.dataset.initialized = 'true';
-
-        const copyBtn = wrapper.querySelector('.btn-copy');
-        const codeEl = wrapper.querySelector('pre code');
-        const preEl = wrapper.querySelector('.code-content pre');
-        const lineNumbers = wrapper.querySelector('.line-numbers');
-
-        // Sync vertical scroll between code and line numbers
-        if (preEl && lineNumbers) {
-          preEl.addEventListener('scroll', () => {
-            lineNumbers.scrollTop = preEl.scrollTop;
-          });
-        }
-        
-        copyBtn?.addEventListener('click', async () => {
-          const codeData = copyBtn.dataset.code;
-          const text = codeData ? decodeURIComponent(codeData) : (codeEl?.textContent || '');
-          
-          try {
-            await navigator.clipboard.writeText(text);
-            showCopyFeedback(COPY_SUCCESS_MESSAGE);
-          } catch {
-            // Fallback
-            if (codeEl) {
-              const range = document.createRange();
-              range.selectNodeContents(codeEl);
-              const sel = window.getSelection();
-              sel?.removeAllRanges();
-              sel?.addRange(range);
-              document.execCommand('copy');
-            }
-          }
-        });
-      });
-    }
 
     function escapeHtml(text) {
       const div = document.createElement('div');

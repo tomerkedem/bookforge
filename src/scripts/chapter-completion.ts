@@ -100,9 +100,10 @@ function getLocalizedText(map: Record<string, string>, lang: string): string {
   return map[lang] ?? map[SOURCE_LANGUAGE] ?? Object.values(map)[0] ?? '';
 }
 
-function getChapterNumber(): number {
-  const match = window.location.pathname.match(/\/(\d+)/);
-  return match ? parseInt(match[1], 10) : 0;
+function getChapterNumber(): number | string {
+  const raw = document.getElementById('chapter-container')?.dataset.chapterId || '';
+  const n = parseInt(raw, 10);
+  return !Number.isNaN(n) && String(n) === raw ? n : raw;
 }
 
 function getNextChapterInfo(): { url: string; title: string } | null {

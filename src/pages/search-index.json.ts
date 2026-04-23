@@ -37,7 +37,7 @@ export const GET: APIRoute = () => {
   const index: {
     book: string;
     bookTitles: Record<string, string>;
-    chapterId: number;
+    chapterId: number | string;
     chapterTitles: Record<string, string>;
     url: string;
     texts: Record<string, string>;

@@ -6,6 +6,8 @@ import {
   getContentRoot,
   resolveChapterTitleByTitles,
   waitForContentReady,
+  parseChapterKey,
+  type ChapterKey,
 } from './reading-location';
 
 // ── Language ────────────────────────────────────────────────────────────────
@@ -39,7 +41,7 @@ interface HighlightData {
 }
 
 interface ChapterHighlights {
-  chapterId: number;
+  chapterId: ChapterKey;
   highlights: HighlightData[];
 }
 
@@ -141,8 +143,7 @@ function getAllHighlights(): ChapterHighlights[] {
     // If key is language-scoped, show only highlights for current language.
     if (keyLang && keyLang !== lang) continue;
 
-    const chapterId = parseInt(m[1], 10);
-    if (isNaN(chapterId)) continue;
+    const chapterId = parseChapterKey(m[1]);
 
     try {
       const list: HighlightData[] = JSON.parse(localStorage.getItem(key) || '[]');
@@ -150,13 +151,19 @@ function getAllHighlights(): ChapterHighlights[] {
     } catch {}
   }
 
-  return result.sort((a, b) => a.chapterId - b.chapterId);
+  return result.sort((a, b) => {
+    const an = typeof a.chapterId === 'number';
+    const bn = typeof b.chapterId === 'number';
+    if (an && bn) return (a.chapterId as number) - (b.chapterId as number);
+    if (an !== bn) return an ? 1 : -1; // non-numeric (e.g. "intro") first
+    return String(a.chapterId).localeCompare(String(b.chapterId));
+  });
 }
 
 // ── Chapter label ───────────────────────────────────────────────────────────
 
-function formatHighlightChapterLabel(chapterId: number): string {
-  if (!chapterId) return tr('bookmarks.chapterUnknown');
+function formatHighlightChapterLabel(chapterId: ChapterKey): string {
+  if (!chapterId && chapterId !== 0) return tr('bookmarks.chapterUnknown');
 
   const sameBook = !!getCurrentBook();
   const title = resolveChapterTitleByTitles(undefined, chapterId, sameBook);
@@ -200,9 +207,9 @@ function scrollToHighlightTarget(hl: HighlightData): boolean {
   return false;
 }
 
-async function navigateToHighlight(hl: HighlightData, chapterId: number): Promise<void> {
+async function navigateToHighlight(hl: HighlightData, chapterId: ChapterKey): Promise<void> {
   const book = getCurrentBook();
-  if (!chapterId) {
+  if (!chapterId && chapterId !== 0) {
     showHlToast(tr('bookmarks.chapterUnknown'));
     return;
   }
@@ -237,7 +244,7 @@ function consumePendingHighlight(): void {
   }
   if (!raw) return;
 
-  let pending: { id: string; anchor?: string; chapterId: number; book: string };
+  let pending: { id: string; anchor?: string; chapterId: ChapterKey; book: string };
   try {
     pending = JSON.parse(raw);
   } catch {

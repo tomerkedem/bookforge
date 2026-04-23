@@ -3,14 +3,12 @@ import ReadingLayout from '../../../layouts/ReadingLayout.astro';
 import ChapterNavigation from '../../../components/ChapterNavigation.astro';
 import ChapterSidebars from '../../../components/ChapterSidebars.astro';
 import ChapterMeta from '../../../components/ChapterMeta.astro';
-import Breadcrumbs from '../../../components/Breadcrumbs.astro';
 import type { Language, Chapter } from '../../../types/index';
 import { SUPPORTED_LANGUAGES, SOURCE_LANGUAGE } from '../../../utils/language';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import { marked } from '../../../utils/markdown';
 import { discoverAllBooks } from '../../../utils/book-discovery';
-import { t } from '../../../i18n';
 
 type LocalizedMap = Record<string, string | undefined>;
 
@@ -116,31 +114,10 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
     bookSlug={book || ''}
     language={language}
   />
-  {/* Region 1 - Top strip: full-width band between the two sidebars.
-      Independent from the chapter title. Contains meta, breadcrumb,
-      chapter number eyebrow, and progress. */}
+  {/* Region 1 - Top strip: slim band between the two sidebars.
+      Breadcrumb is intentionally hidden (readers arrive from TOC and
+      know the context). Only a lightweight meta row remains. */}
   <div id="chapter-top-strip" class="chapter-top-strip">
-    {/* 1. Breadcrumb row */}
-    <div id="breadcrumb-container" class="breadcrumb-container">
-      {langs.map(l => (
-        <div
-          data-lang={l}
-          class={l === language ? 'visible' : 'hidden'}
-          dir={SUPPORTED_LANGUAGES.find(x => x.code === l)?.dir || 'ltr'}
-        >
-          <Breadcrumbs
-            language={l}
-            items={[
-              { key: 'breadcrumb.books', href: '/' },
-              { label: bookData.titles, href: `/books/${book}` },
-              { label: current.titles }
-            ]}
-          />
-        </div>
-      ))}
-    </div>
-
-    {/* 2. Metadata / reading stats row - full-width, stats on start side, progress at end */}
     <div id="chapter-meta-bar" class="chapter-meta-bar">
       {langs.map(l => (
         <div
@@ -175,10 +152,7 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
       >
         <h1 class="chapter-title">
           {typeof chapterId === 'number' && (
-            <span class="chapter-number-stack" aria-hidden="true">
-              <span class="chapter-number-label">{t('chapter.label', l) || 'Chapter'}</span>
-              <span class="chapter-number-badge">{chapterId}</span>
-            </span>
+            <span class="chapter-number-badge" aria-hidden="true">{chapterId}</span>
           )}
           <span class="chapter-title-text">{getLocalized(current.titles, l)}</span>
         </h1>
@@ -223,13 +197,18 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
    the article's inline padding with equal negative margins, then zero our
    own inline padding. */
 .chapter-top-strip {
+  /* Sticky so stats + progress badge stay on-screen while the reader
+     scrolls. Stack above the title block (z-index 46 > title's 45) so
+     the strip wins the overlap zone. No negative inline margin — the
+     strip stays inside the article's padded area, which already sits
+     between the fixed sidebars, so the progress badge can't slip
+     under the outline card. */
   position: sticky;
   top: var(--reading-sticky-top, 4rem);
-  z-index: 40;
-  width: auto;
-  max-width: none;
-  margin-inline: -1rem;
-  margin-bottom: 0;
+  z-index: 46;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
   padding: 0.35rem 0 0.5rem;
   background:
     linear-gradient(to bottom,
@@ -239,19 +218,11 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
   border-bottom: 1px solid color-mix(in srgb, var(--gold-500) 12%, var(--yuval-border));
 }
 
-@media (min-width: 640px) {
-  .chapter-top-strip { margin-inline: -1.5rem; }
-}
-@media (min-width: 1024px) {
-  .chapter-top-strip { margin-inline: -2rem; }
-}
-
 .chapter-top-strip.scrolled {
   box-shadow: 0 8px 20px rgba(17, 24, 39, 0.06);
 }
 
-.chapter-meta-bar,
-.breadcrumb-container {
+.chapter-meta-bar {
   width: 100%;
   margin: 0;
   padding: 0;
@@ -287,9 +258,10 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
    framing. Only the title lives here.
    ───────────────────────────────────────────────────────────── */
 .chapter-title-block {
-  position: sticky;
-  top: calc(var(--reading-sticky-top, 4rem) + var(--top-strip-h, 0px));
-  z-index: 39;
+  /* Title scrolls away with the content. The top strip above it (stats
+     + progress) remains sticky as the reader's permanent reference. */
+  position: relative;
+  z-index: 45;
   width: 100%;
   max-width: 100%;
   margin: 0 0 1.25rem;
@@ -327,21 +299,22 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
   }
 }
 
-/* Chapter title - lives only inside .chapter-title-block.
-   Number stack + title sit in the same flow as one unified
-   heading group, aligned to the content container's start edge. */
+/* Chapter title - the page's single visual anchor.
+   Large, confident, with generous breathing room on either side.
+   The number badge is a slim gold monogram to the side of the text. */
 .chapter-title {
   margin: 0;
   display: flex;
-  align-items: center;
-  gap: 0.75em;
+  align-items: baseline;
+  gap: 0.55em;
   font-family: var(--reading-font-family);
-  font-size: clamp(1.6rem, 1.2rem + 1.6vw, 2.4rem);
+  font-size: clamp(1.85rem, 1.3rem + 2vw, 2.85rem);
   font-weight: 600;
-  line-height: 1.2;
-  letter-spacing: -0.015em;
+  line-height: 1.18;
+  letter-spacing: -0.018em;
   color: var(--yuval-chapter-title);
   text-align: start;
+  text-wrap: balance;
 }
 
 .chapter-title-text {
@@ -349,51 +322,23 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
   min-width: 0;
 }
 
-/* Vertical micro-component: small label above the gold number
-   badge. Tight, compact, aligned with the title as one group. */
-.chapter-number-stack {
+.chapter-number-badge {
   flex: 0 0 auto;
   display: inline-flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.15em;
-  line-height: 1;
-}
-
-.chapter-number-label {
-  font-size: 0.32em;
-  font-weight: 500;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: color-mix(in srgb, var(--gold-700) 75%, var(--yuval-text-tertiary));
-  line-height: 1;
-  white-space: nowrap;
-}
-
-.chapter-number-badge {
-  display: inline-flex;
-  align-items: center;
+  align-items: baseline;
   justify-content: center;
-  width: 1.55em;
-  height: 1.55em;
-  font-size: 0.6em;
-  font-weight: 700;
+  font-size: 0.62em;
+  font-weight: 500;
   line-height: 1;
   font-variant-numeric: tabular-nums;
-  color: var(--gold-700);
-  background:
-    linear-gradient(155deg,
-      color-mix(in srgb, var(--gold-300) 18%, var(--yuval-bg)) 0%,
-      color-mix(in srgb, var(--gold-500) 14%, var(--yuval-bg)) 55%,
-      color-mix(in srgb, var(--gold-600) 12%, var(--yuval-bg)) 100%);
-  border: 1px solid color-mix(in srgb, var(--gold-600) 40%, var(--yuval-border));
-  border-radius: 3px;
-  letter-spacing: 0;
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, var(--gold-300) 55%, transparent),
-    inset 0 -1px 0 color-mix(in srgb, var(--gold-700) 18%, transparent),
-    0 1px 1px rgba(15, 23, 42, 0.04);
-  text-shadow: 0 1px 0 color-mix(in srgb, var(--gold-300) 45%, transparent);
+  color: color-mix(in srgb, var(--gold-700) 70%, var(--yuval-text-tertiary));
+  letter-spacing: 0.02em;
+}
+
+.chapter-number-badge::after {
+  content: "·";
+  margin-inline-start: 0.35em;
+  color: color-mix(in srgb, var(--gold-500) 45%, var(--yuval-text-tertiary));
 }
 
 /* Progress chip - sits in the top strip eyebrow row */
@@ -425,15 +370,6 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
   border: 0;
   justify-content: center;
   flex-wrap: nowrap;
-}
-
-/* Breadcrumb row - full width, edge-flush */
-#breadcrumb-container :global(.breadcrumbs),
-#breadcrumb-container :global(.breadcrumbs-nav) {
-  margin: 0 !important;
-  padding: 0 !important;
-  max-width: none !important;
-  width: 100%;
 }
 
 @media (min-width: 1024px) {
@@ -496,10 +432,6 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
     padding: 0.3rem 0 0.4rem;
   }
 
-  .breadcrumb-container {
-    display: none !important;
-  }
-
   .meta-bar-row {
     gap: 0.5rem;
   }
@@ -524,24 +456,17 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
 
   .chapter-title-block {
     margin: 0 0 0.85rem;
-    padding: 0.45rem 0 0.55rem;
+    padding: 0.5rem 0 0.6rem;
   }
 
   .chapter-title {
-    gap: 0.6em;
-    font-size: clamp(1.25rem, 0.9rem + 2vw, 1.6rem);
-    line-height: 1.25;
-  }
-
-  .chapter-number-label {
-    font-size: 0.36em;
-    letter-spacing: 0.14em;
+    gap: 0.45em;
+    font-size: clamp(1.45rem, 1rem + 2.2vw, 1.85rem);
+    line-height: 1.22;
   }
 
   .chapter-number-badge {
-    width: 1.5em;
-    height: 1.5em;
-    font-size: 0.64em;
+    font-size: 0.68em;
   }
 }
 </style>

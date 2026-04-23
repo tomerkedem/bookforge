@@ -1,0 +1,204 @@
+/*
+ * BashBlock styles — Stripe-docs inspired terminal.
+ *
+ * Applied to .bash-block elements that the markdown renderer produces
+ * for shell/bash/powershell/cmd code blocks. The chrome is deliberately
+ * distinct from the IDE look used by .code-block-wrapper and
+ * .code-runner-wrapper so readers can tell "this is a command you run"
+ * at a glance vs "this is source code you read."
+ *
+ * Coloring: deep navy background (#0a2540), soft white text, a cyan
+ * prompt character, subtle glass-like Copy button.
+ */
+
+.bash-block {
+  --bash-bg: #0a2540;
+  --bash-header-bg: rgba(255, 255, 255, 0.04);
+  --bash-border: rgba(255, 255, 255, 0.08);
+  --bash-text: #ffffff;
+  --bash-dim: #8fb3d9;
+  --bash-prompt: #00d4ff;
+  --bash-btn-bg: rgba(255, 255, 255, 0.06);
+  --bash-btn-bg-hover: rgba(255, 255, 255, 0.12);
+  --bash-copied: #5eead4;
+
+  margin: 1.5rem 0;
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--bash-bg);
+  font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', 'Consolas', monospace;
+  box-shadow: 0 4px 14px rgba(10, 37, 64, 0.25);
+
+  /*
+   * Force LTR on terminal blocks even inside an RTL article.
+   * Shell commands are inherently left-to-right — the prompt starts
+   * at the left, arguments flow left-to-right, pipes and redirects
+   * chain rightward. We override any inherited direction with
+   * !important because the parent article in Hebrew books explicitly
+   * sets dir="rtl" and text-align: right on descendants.
+   */
+  direction: ltr !important;
+  text-align: left !important;
+  unicode-bidi: isolate;
+}
+
+.bash-block * {
+  direction: ltr !important;
+  text-align: left !important;
+  unicode-bidi: isolate;
+}
+
+/* ─── Header ─── */
+.bash-block .bash-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  background: var(--bash-header-bg);
+  border-bottom: 1px solid var(--bash-border);
+}
+
+.bash-block .bash-label {
+  font-family: 'Inter', 'IBM Plex Sans Hebrew', system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--bash-dim);
+  letter-spacing: 0.01em;
+}
+
+.bash-block .bash-lang-badge {
+  font-family: 'Inter', 'IBM Plex Sans Hebrew', system-ui, sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--bash-dim);
+  background: rgba(255, 255, 255, 0.08);
+  padding: 2px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.02em;
+}
+
+.bash-block .bash-copy-btn {
+  /*
+   * Pin Copy button to the right edge of the header. Using margin-inline-start
+   * with !important ensures it works against RTL ancestors — without this,
+   * in a Hebrew article, the button would float to the left edge instead.
+   */
+  margin-left: auto !important;
+  margin-right: 0 !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--bash-btn-bg);
+  border: none;
+  color: #e0ecf7;
+  padding: 5px 11px;
+  border-radius: 5px;
+  font-family: 'Inter', 'IBM Plex Sans Hebrew', system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 150ms ease, color 150ms ease;
+  user-select: none;
+}
+
+.bash-block .bash-copy-btn:hover {
+  background: var(--bash-btn-bg-hover);
+}
+
+.bash-block .bash-copy-btn svg {
+  flex-shrink: 0;
+}
+
+.bash-block .bash-copied-label {
+  display: none;
+}
+
+.bash-block .bash-copy-btn.copied {
+  color: var(--bash-copied);
+}
+
+.bash-block .bash-copy-btn.copied .bash-copy-label {
+  display: none;
+}
+
+.bash-block .bash-copy-btn.copied .bash-copied-label {
+  display: inline;
+}
+
+/* ─── Body ─── */
+.bash-block .bash-body {
+  margin: 0;
+  padding: 16px 18px;
+  font-size: 13px;
+  line-height: 1.75;
+  color: var(--bash-text);
+  overflow-x: auto;
+  white-space: pre;
+  font-family: inherit;
+  background: transparent;
+  border: none;
+}
+
+.bash-block .bash-line {
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+}
+
+.bash-block .bash-prompt {
+  color: var(--bash-prompt);
+  font-weight: 500;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.bash-block .bash-text {
+  color: var(--bash-text);
+  white-space: pre;
+}
+
+/* ─── Responsive ─── */
+@media (max-width: 640px) {
+  .bash-block .bash-body {
+    font-size: 12px;
+    padding: 14px;
+  }
+  .bash-block .bash-header {
+    padding: 8px 12px;
+  }
+  .bash-block .bash-label {
+    font-size: 11px;
+  }
+  .bash-block .bash-lang-badge {
+    font-size: 9px;
+  }
+}
+
+/* ─── Print ─── */
+@media print {
+  .bash-block {
+    background: #f6f8fa;
+    box-shadow: none;
+    break-inside: avoid;
+    border: 1px solid #d0d7de;
+  }
+  .bash-block .bash-header,
+  .bash-block .bash-copy-btn {
+    display: none;
+  }
+  .bash-block .bash-body {
+    color: #24292f;
+  }
+  .bash-block .bash-prompt {
+    color: #0969da;
+  }
+}
+
+/* ─── Reduced motion ─── */
+@media (prefers-reduced-motion: reduce) {
+  .bash-block .bash-copy-btn,
+  .bash-block .bash-copy-label,
+  .bash-block .bash-copied-label {
+    transition: none;
+  }
+}

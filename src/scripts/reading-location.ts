@@ -23,10 +23,16 @@ export function getCurrentBook(): string {
   return document.getElementById('chapter-container')?.dataset.book || '';
 }
 
-export function getCurrentChapter(): number {
-  return parseInt(
-    document.getElementById('chapter-container')?.dataset.chapterId || '0', 10
-  );
+export type ChapterKey = number | string;
+
+export function parseChapterKey(raw: string): ChapterKey {
+  const n = parseInt(raw, 10);
+  return !Number.isNaN(n) && String(n) === raw ? n : raw;
+}
+
+export function getCurrentChapter(): ChapterKey {
+  const raw = document.getElementById('chapter-container')?.dataset.chapterId || '';
+  return parseChapterKey(raw);
 }
 
 export function getContentRoot(): HTMLElement | null {
@@ -36,7 +42,7 @@ export function getContentRoot(): HTMLElement | null {
   return (container.querySelector<HTMLElement>(`[data-lang="${lang}"]`) || container) as HTMLElement;
 }
 
-export function getChapterTitlesForId(chapterId: number): Record<string, string> {
+export function getChapterTitlesForId(chapterId: ChapterKey): Record<string, string> {
   const tocEl = document.querySelector<HTMLElement>(
     `#toc-sidebar li[data-chapter-id="${chapterId}"] .toc-chapter-title-text`
   );
@@ -52,7 +58,7 @@ export function getChapterTitlesForId(chapterId: number): Record<string, string>
 
 export function resolveChapterTitleByTitles(
   titles: Record<string, string> | undefined,
-  chapterId: number,
+  chapterId: ChapterKey,
   sameBook: boolean,
 ): string {
   const lang = getLang();

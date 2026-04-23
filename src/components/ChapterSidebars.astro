@@ -549,22 +549,25 @@ function serializeTitles(chapter: Chapter): string {
     right: 0;
     left: auto;
     width: 320px;
-    height: calc(100vh - 68px);
+    /* Height hugs content (sections are usually only a handful of rows);
+       cap at viewport so very-long outlines still scroll. */
+    height: auto;
+    max-height: calc(100vh - 88px);
     background: var(--yuval-surface);
-    border-left: 1px solid var(--yuval-border);
-    border-right: none;
-    padding: 24px 16px;
+    border: 1px solid var(--yuval-border);
+    border-radius: 12px;
+    margin: 12px;
+    padding: 18px 16px;
     overflow-y: auto;
     z-index: 30;
     font-size: 13px;
     line-height: 1.5;
+    box-shadow: 0 4px 14px rgba(17, 24, 39, 0.04);
   }
 
   .outline-sidebar-rtl {
     right: auto;
     left: 0;
-    border-left: none;
-    border-right: 1px solid var(--yuval-border);
   }
 
   .outline-title {
@@ -811,31 +814,10 @@ function serializeTitles(chapter: Chapter): string {
                 opacity 350ms var(--ease-standard);
   }
 
-  :global(body.reading-immersive) .toc-sidebar:not(.toc-sidebar-rtl) {
-    transform: translateX(-100%);
-    pointer-events: none;
-  }
-  :global(body.reading-immersive) .toc-sidebar-rtl {
-    transform: translateX(100%);
-    pointer-events: none;
-  }
-  :global(body.reading-immersive) .outline-sidebar:not(.outline-sidebar-rtl) {
-    transform: translateX(100%);
-    pointer-events: none;
-  }
-  :global(body.reading-immersive) .outline-sidebar-rtl {
-    transform: translateX(-100%);
-    pointer-events: none;
-  }
-
-  :global(body.reading-immersive) .toc-sidebar:not(.toc-sidebar-rtl):hover,
-  :global(body.reading-immersive) .toc-sidebar-rtl:hover,
-  :global(body.reading-immersive) .outline-sidebar:not(.outline-sidebar-rtl):hover,
-  :global(body.reading-immersive) .outline-sidebar-rtl:hover {
-    transform: translateX(0);
-    pointer-events: auto;
-    opacity: 1;
-  }
+  /* Outline sidebar stays visible in immersive mode too — the outline
+     card hugs content height, so it doesn't consume real estate, and
+     keeping it on screen lets readers jump between sections without
+     chasing the cursor into a hover zone. */
 
   .toc-sidebar::before,
   .outline-sidebar::before {
@@ -1060,8 +1042,8 @@ function serializeTitles(chapter: Chapter): string {
   }
 
   function getCurrentChapterId() {
-    const match = window.location.pathname.match(/\/read\/[^/]+\/(\d+)/);
-    return match ? parseInt(match[1], 10) : null;
+    const match = window.location.pathname.match(/\/read\/[^/]+\/([^/?#]+)/);
+    return match ? match[1] : null;
   }
 
   function getSourceLanguage() {
@@ -1084,10 +1066,10 @@ function serializeTitles(chapter: Chapter): string {
     if (currentId === null) return;
 
     document.querySelectorAll('.toc-item').forEach(item => {
-      const chapterId = parseInt(item.dataset.chapterId || '0', 10);
+      const chapterId = item.dataset.chapterId || '';
       const link = item.querySelector('.toc-link');
 
-      if (chapterId === currentId) {
+      if (chapterId === String(currentId)) {
         item.classList.add('toc-item-active');
         link?.classList.add('toc-link-active');
         link?.setAttribute('aria-current', 'page');
@@ -1100,11 +1082,11 @@ function serializeTitles(chapter: Chapter): string {
 
     document.querySelectorAll('.mobile-toc-link').forEach(link => {
       const href = link.getAttribute('href') || '';
-      const match = href.match(/\/read\/[^/]+\/(\d+)/);
-      const chapterId = match ? parseInt(match[1], 10) : 0;
+      const match = href.match(/\/read\/[^/]+\/([^/?#]+)/);
+      const chapterId = match ? match[1] : '';
 
       const item = link.closest('.toc-item');
-      if (chapterId === currentId) {
+      if (chapterId === String(currentId)) {
         item?.classList.add('toc-item-active');
         link.classList.add('toc-link-active');
       } else {
@@ -1128,7 +1110,13 @@ function serializeTitles(chapter: Chapter): string {
     container.style.opacity = '0';
 
     try {
-      const response = await fetch(url);
+      // Cache-bust aggressively. Unique URL defeats any Cache API
+      // (service worker) match, and `cache: 'reload'` bypasses the
+      // HTTP cache. Combined they guarantee a fresh render every swap,
+      // which is what we need while chapter content is actively edited.
+      const bust = `_swbust=${Date.now()}`;
+      const fetchUrl = url + (url.includes('?') ? '&' : '?') + bust;
+      const response = await fetch(fetchUrl, { cache: 'reload' });
       if (!response.ok) throw new Error('Failed to fetch chapter');
 
       const html = await response.text();
@@ -1138,13 +1126,20 @@ function serializeTitles(chapter: Chapter): string {
       const newHeader = doc.getElementById('chapter-header');
       const newTopStrip = doc.getElementById('chapter-top-strip');
 
+      // If the fetched page doesn't contain the chapter scaffolding we
+      // expect, the soft-nav is unsafe — fall back to a full load so the
+      // user always sees a correct chapter instead of a half-swapped one.
+      if (!newContainer) {
+        console.warn('[chapter-swap] fetched page missing #chapter-container; falling back to full navigation');
+        window.location.href = url;
+        return;
+      }
+
       window.scrollTo({ top: 0, behavior: 'instant' });
 
-      if (newContainer) {
-        container.innerHTML = newContainer.innerHTML;
-        container.dataset.chapterId = newContainer.dataset.chapterId || '';
-        container.dataset.book = newContainer.dataset.book || '';
-      }
+      container.innerHTML = newContainer.innerHTML;
+      container.dataset.chapterId = newContainer.dataset.chapterId || '';
+      container.dataset.book = newContainer.dataset.book || '';
 
       if (newHeader && header) {
         header.innerHTML = newHeader.innerHTML;
@@ -1158,6 +1153,13 @@ function serializeTitles(chapter: Chapter): string {
       history.pushState({}, '', url);
       updateActiveChapter();
       buildChapterOutline();
+
+      try {
+        const { applyTranslations } = await import('../i18n');
+        applyTranslations(container, getCurrentLang());
+      } catch (e) {
+        console.warn('[chapter-swap] applyTranslations failed', e);
+      }
 
       window.dispatchEvent(new CustomEvent('chapter-content-swapped'));
 
@@ -1189,15 +1191,21 @@ function serializeTitles(chapter: Chapter): string {
     if (!tocSidebar || tocSidebar.dataset.navInit === 'true') return;
     tocSidebar.dataset.navInit = 'true';
 
+    // Capture phase + stopImmediatePropagation prevents Astro's ClientRouter
+    // (from BaseLayout) from racing us with its own view-transition swap.
+    // Both handlers would otherwise fetch and swap the same URL, leaving
+    // the DOM in a mixed state where code-block chrome (.coderunner,
+    // .bash-block) renders only after a hard refresh.
     tocSidebar.addEventListener('click', async (e) => {
       const target = e.target.closest('a.toc-link');
       if (!target) return;
 
       e.preventDefault();
+      e.stopImmediatePropagation();
 
       const url = target.getAttribute('href')?.split('?')[0] || '';
       await loadChapterContent(url);
-    });
+    }, true);
   }
 
   window.addEventListener('popstate', async () => {
@@ -1208,6 +1216,17 @@ function serializeTitles(chapter: Chapter): string {
     document.querySelectorAll('.toc-chapter-title-text[data-titles]').forEach((span) => {
       span.textContent = getTitleFromDataset(span, lang);
     });
+    // Also translate the sidebar's own chrome (titles like "Chapters" /
+    // "In This Chapter"), which lives in data-i18n spans that the
+    // chapter-title pass above doesn't touch.
+    import('../i18n').then(({ applyTranslations }) => {
+      const toc = document.getElementById('toc-sidebar');
+      const outline = document.getElementById('outline-sidebar');
+      const mobile = document.querySelector('.mobile-drawer');
+      if (toc) applyTranslations(toc, lang);
+      if (outline) applyTranslations(outline, lang);
+      if (mobile) applyTranslations(mobile, lang);
+    }).catch(() => {});
   }
 
   function getVisibleContentDiv() {
@@ -1481,6 +1500,12 @@ function serializeTitles(chapter: Chapter): string {
   setTimeout(updateTocProgress, 200);
   window.addEventListener('chapter-content-swapped', () => setTimeout(updateTocProgress, 400));
 
+  function updateProgressBadges(pct) {
+    document.querySelectorAll('[id^="progress-badge-"]').forEach(el => {
+      el.textContent = pct + '%';
+    });
+  }
+
   let scrollTimeout;
   window.addEventListener('scroll', () => {
     clearTimeout(scrollTimeout);
@@ -1492,11 +1517,13 @@ function serializeTitles(chapter: Chapter): string {
       const scrollable = containerHeight - window.innerHeight;
       if (scrollable <= 0) {
         updateTocProgress(100);
+        updateProgressBadges(100);
         return;
       }
       const scrolledInto = window.scrollY - containerTop;
       const pct = scrolledInto <= 0 ? 0 : Math.min(100, Math.round((scrolledInto / scrollable) * 100));
       updateTocProgress(pct);
+      updateProgressBadges(pct);
     }, 100);
   }, { passive: true });
 

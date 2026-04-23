@@ -3,7 +3,7 @@
  * Version bump triggers cache refresh.
  */
 
-const VERSION = 'yuval-v2';
+const VERSION = 'yuval-v3';
 const STATIC_CACHE = `${VERSION}-static`;
 const PAGES_CACHE  = `${VERSION}-pages`;
 const PYODIDE_CACHE = `${VERSION}-pyodide`;
@@ -58,8 +58,17 @@ self.addEventListener('fetch', (e) => {
   // Skip search-index and API calls - network only
   if (url.pathname.includes('search-index') || url.pathname.startsWith('/api/')) return;
 
-  // Reading pages and book pages - cache-first with network fallback
-  if (url.pathname.startsWith('/read/') || url.pathname.startsWith('/books/')) {
+  // Reading pages - network-first: chapter HTML is actively updated
+  // during authoring, so prefer fresh. Fall back to cache only offline.
+  // Fixes the symptom where soft-navigating to another chapter showed
+  // a stale HTML missing newly-added code blocks until a hard refresh.
+  if (url.pathname.startsWith('/read/')) {
+    e.respondWith(networkFirst(request, PAGES_CACHE));
+    return;
+  }
+
+  // Book index pages - cache-first is still fine; they change rarely.
+  if (url.pathname.startsWith('/books/')) {
     e.respondWith(cacheFirst(request, PAGES_CACHE));
     return;
   }
@@ -107,3 +116,4 @@ async function networkFirst(request, cacheName) {
     return cached || new Response('Offline', { status: 503 });
   }
 }
+

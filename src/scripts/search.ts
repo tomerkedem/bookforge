@@ -287,7 +287,7 @@ let mode: 'chapter' | 'book' = 'chapter';
 type IndexEntry = {
   book: string;
   bookTitles: Record<string, string>;
-  chapterId: number;
+  chapterId: number | string;
   chapterTitles: Record<string, string>;
   url: string;
   texts: Record<string, string>;
