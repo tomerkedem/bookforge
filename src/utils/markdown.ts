@@ -108,6 +108,10 @@ function renderBashBlock(text: string, lang: string, encodedCode: string): strin
   <div class="bash-header">
     <span class="bash-label">Terminal</span>
     <span class="bash-lang-badge">${badgeLabel}</span>
+    <button class="bash-theme-btn" type="button" title="Toggle code theme" data-code-theme-toggle aria-label="Toggle code theme">
+      <svg class="bash-theme-icon-sun" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><use href="#cr-sun"/></svg>
+      <svg class="bash-theme-icon-moon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><use href="#cr-moon"/></svg>
+    </button>
     <button class="bash-copy-btn btn-copy" type="button" title="Copy" data-code="${encodedCode}">
       <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
         <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>

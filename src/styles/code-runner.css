@@ -233,6 +233,19 @@
   width: 14px;
   height: 14px;
   display: block;
+  border-radius: 50%;
+}
+
+/* Whenever the moon is showing, paint the whole button pitch-black so the
+   night-sky icon blends edge-to-edge with the button chrome. */
+html[data-code-theme="light"] .coderunner .cr-theme-btn {
+  background: #000000 !important;
+  border-color: #000000 !important;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+}
+
+html[data-code-theme="light"] .coderunner .cr-theme-btn:hover {
+  background: #0a0f24 !important;
 }
 
 /*

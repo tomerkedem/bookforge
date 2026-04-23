@@ -59,18 +59,31 @@ const COPY_SUCCESS_MESSAGE = 'Code copied!';
           <stop offset="0%" stop-color="#ffdd55" stop-opacity="0.55"/>
           <stop offset="100%" stop-color="#ffdd55" stop-opacity="0"/>
         </radialGradient>
-        <radialGradient id="cr-moon-body" cx="35%" cy="35%" r="80%">
-          <stop offset="0%" stop-color="#fffef8"/>
-          <stop offset="50%" stop-color="#e8e4d0"/>
-          <stop offset="100%" stop-color="#a8a495"/>
+        <!-- Night-sky background: full black with a hint of midnight blue -->
+        <radialGradient id="cr-moon-sky" cx="30%" cy="30%" r="95%">
+          <stop offset="0%" stop-color="#0b1128"/>
+          <stop offset="55%" stop-color="#04060f"/>
+          <stop offset="100%" stop-color="#000000"/>
         </radialGradient>
-        <radialGradient id="cr-moon-glow" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stop-color="#d4d0b8" stop-opacity="0.35"/>
-          <stop offset="100%" stop-color="#d4d0b8" stop-opacity="0"/>
+        <!-- Glowing crescent: warm ivory fading to amber -->
+        <radialGradient id="cr-moon-body" cx="40%" cy="35%" r="80%">
+          <stop offset="0%" stop-color="#fffbe0"/>
+          <stop offset="55%" stop-color="#f6dc8a"/>
+          <stop offset="100%" stop-color="#d9a84a"/>
         </radialGradient>
-        <mask id="cr-moon-shadow">
-          <rect width="24" height="24" fill="white"/>
-          <circle cx="16" cy="9" r="8" fill="black"/>
+        <!-- Soft halo around the crescent -->
+        <radialGradient id="cr-moon-halo" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#ffe79a" stop-opacity="0.55"/>
+          <stop offset="55%" stop-color="#ffe79a" stop-opacity="0.12"/>
+          <stop offset="100%" stop-color="#ffe79a" stop-opacity="0"/>
+        </radialGradient>
+        <!-- Mask that bites a circular chunk out of the moon to form a
+             fat-banana crescent. The bite is fully offset so a thick C
+             remains visible. -->
+        <mask id="cr-crescent-mask">
+          <rect width="24" height="24" fill="black"/>
+          <circle cx="10" cy="12" r="9" fill="white"/>
+          <circle cx="14.8" cy="10.5" r="8" fill="black"/>
         </mask>
         <symbol id="cr-sun" viewBox="0 0 24 24">
           <circle cx="12" cy="12" r="11" fill="url(#cr-sun-glow)"/>
@@ -88,12 +101,22 @@ const COPY_SUCCESS_MESSAGE = 'Code copied!';
           <circle cx="10.5" cy="10.5" r="1.2" fill="#fff8b0" opacity="0.8"/>
         </symbol>
         <symbol id="cr-moon" viewBox="0 0 24 24">
-          <circle cx="12" cy="12" r="11" fill="url(#cr-moon-glow)"/>
-          <circle cx="12" cy="12" r="9" fill="url(#cr-moon-body)" mask="url(#cr-moon-shadow)"/>
-          <circle cx="8.5" cy="14" r="0.9" fill="#9a9685" opacity="0.5"/>
-          <circle cx="7" cy="11" r="0.6" fill="#9a9685" opacity="0.4"/>
-          <circle cx="10" cy="16.5" r="0.5" fill="#9a9685" opacity="0.4"/>
-          <circle cx="11.5" cy="10" r="0.7" fill="#9a9685" opacity="0.5"/>
+          <!-- Pitch-black night-sky disc (full button background) -->
+          <circle cx="12" cy="12" r="12" fill="url(#cr-moon-sky)"/>
+          <!-- Tiny stars scattered across the sky -->
+          <circle cx="4.5" cy="6" r="0.35" fill="#ffffff" opacity="0.9"/>
+          <circle cx="19.5" cy="5.5" r="0.45" fill="#ffffff" opacity="0.95"/>
+          <circle cx="20.5" cy="15" r="0.3" fill="#ffffff" opacity="0.8"/>
+          <circle cx="3.5" cy="17" r="0.3" fill="#ffffff" opacity="0.8"/>
+          <circle cx="7" cy="3.2" r="0.25" fill="#ffffff" opacity="0.75"/>
+          <circle cx="17" cy="20.5" r="0.25" fill="#ffffff" opacity="0.75"/>
+          <circle cx="22" cy="9" r="0.22" fill="#ffffff" opacity="0.7"/>
+          <!-- Halo glow around the crescent -->
+          <circle cx="10" cy="12" r="10.5" fill="url(#cr-moon-halo)"/>
+          <!-- Crescent moon — a bright disc with a circular bite taken out
+               of it. Body radius 9, bite radius 8, offset ~5 → visible
+               banana-shaped C opening to the right. -->
+          <circle cx="10" cy="12" r="9" fill="url(#cr-moon-body)" mask="url(#cr-crescent-mask)"/>
         </symbol>
       </defs>
     </svg>
@@ -1017,28 +1040,6 @@ const COPY_SUCCESS_MESSAGE = 'Code copied!';
       });
     }
 
-    function initBashBlocks() {
-      document.querySelectorAll('.bash-block').forEach((block) => {
-        if (block.dataset.initialized) return;
-        block.dataset.initialized = 'true';
-
-        const copyBtn = block.querySelector('.bash-copy-btn');
-        const body = block.querySelector('.bash-body');
-        if (!copyBtn || !body) return;
-
-        copyBtn.addEventListener('click', async () => {
-          const codeData = copyBtn.dataset.code || body.dataset.code;
-          const text = codeData ? decodeURIComponent(codeData) : (body.textContent || '');
-          try {
-            await navigator.clipboard.writeText(text);
-            copyBtn.classList.add('copied');
-            setTimeout(() => copyBtn.classList.remove('copied'), 1800);
-          } catch (err) {
-            console.error('Failed to copy bash command:', err);
-          }
-        });
-      });
-    }
     function initBashBlocks() {
       document.querySelectorAll('.bash-block').forEach((block) => {
         if (block.dataset.initialized) return;

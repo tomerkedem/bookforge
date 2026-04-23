@@ -77,13 +77,93 @@
   letter-spacing: 0.02em;
 }
 
+/* Theme toggle button (sun/moon) — shares the global [data-code-theme] state */
+.bash-block .bash-theme-btn {
+  margin-left: auto !important;
+  margin-right: 0 !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bash-btn-bg);
+  border: none;
+  color: #e0ecf7;
+  padding: 5px 8px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 150ms ease;
+}
+
+.bash-block .bash-theme-btn:hover {
+  background: var(--bash-btn-bg-hover);
+}
+
+.bash-block .bash-theme-btn svg {
+  width: 14px;
+  height: 14px;
+  display: block;
+  border-radius: 50%;
+}
+
+/* When the moon is showing, paint the whole button pitch-black so the
+   night-sky icon blends edge-to-edge with the button. */
+html[data-code-theme="light"] .bash-block .bash-theme-btn {
+  background: #000000 !important;
+  border-color: #000000 !important;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+}
+
+html[data-code-theme="light"] .bash-block .bash-theme-btn:hover {
+  background: #0a0f24 !important;
+}
+
+/* Hide both icons by default; theme rules below re-enable the correct one */
+.bash-block .bash-theme-btn svg.bash-theme-icon-sun,
+.bash-block .bash-theme-btn svg.bash-theme-icon-moon {
+  display: none !important;
+}
+
+html[data-code-theme="dark"] .bash-block .bash-theme-btn svg.bash-theme-icon-sun {
+  display: inline-block !important;
+}
+
+html[data-code-theme="light"] .bash-block .bash-theme-btn svg.bash-theme-icon-moon {
+  display: inline-block !important;
+}
+
+html:not([data-code-theme]) .bash-block .bash-theme-btn svg.bash-theme-icon-sun {
+  display: inline-block !important;
+}
+
+/* Light code theme: swap the bash block palette to a parchment/paper look */
+html[data-code-theme="light"] .bash-block {
+  --bash-bg: #f6f8fa;
+  --bash-header-bg: rgba(10, 37, 64, 0.04);
+  --bash-border: rgba(10, 37, 64, 0.12);
+  --bash-text: #1f2933;
+  --bash-dim: #4a5c73;
+  --bash-prompt: #0969da;
+  --bash-btn-bg: rgba(10, 37, 64, 0.06);
+  --bash-btn-bg-hover: rgba(10, 37, 64, 0.12);
+  --bash-copied: #1f8a6f;
+  box-shadow: 0 2px 8px rgba(10, 37, 64, 0.1);
+}
+
+html[data-code-theme="light"] .bash-block .bash-theme-btn,
+html[data-code-theme="light"] .bash-block .bash-copy-btn {
+  color: #2a3442;
+}
+
+html[data-code-theme="light"] .bash-block .bash-lang-badge {
+  background: rgba(10, 37, 64, 0.08);
+}
+
 .bash-block .bash-copy-btn {
   /*
-   * Pin Copy button to the right edge of the header. Using margin-inline-start
-   * with !important ensures it works against RTL ancestors — without this,
-   * in a Hebrew article, the button would float to the left edge instead.
+   * Copy button sits next to the theme toggle on the right edge of the
+   * header. When the theme toggle is present, margin-left: auto on .bash-theme-btn
+   * pushes the pair to the right together.
    */
-  margin-left: auto !important;
+  margin-left: 0 !important;
   margin-right: 0 !important;
   display: inline-flex;
   align-items: center;

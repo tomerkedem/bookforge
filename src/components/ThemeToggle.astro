@@ -25,39 +25,62 @@ const { class: className } = Astro.props;
       <div class="galaxy-layer galaxy-nebula"></div>
       <div class="galaxy-layer galaxy-dust"></div>
     </div>
-    
-    <!-- Stars (night only) - galaxy field -->
-    <div class="stars">
-      <span class="star star-1"></span>
-      <span class="star star-2"></span>
-      <span class="star star-3"></span>
-      <span class="star star-4"></span>
-      <span class="star star-5"></span>
-      <span class="star star-6"></span>
-      <span class="star star-7"></span>
-      <span class="star star-8"></span>
-      <span class="star star-9"></span>
-      <span class="star star-10"></span>
-      <span class="star star-11"></span>
-      <span class="star star-12"></span>
+
+    <!--
+      Stars — positions, sizes and colors are randomized at mount via
+      CSS variables set by the init script. Keeping twelve span elements
+      lets the CSS keyframes stagger the twinkle cleanly.
+    -->
+    <div class="stars" data-sky-stars>
+      <span class="star"></span>
+      <span class="star"></span>
+      <span class="star"></span>
+      <span class="star"></span>
+      <span class="star"></span>
+      <span class="star"></span>
+      <span class="star"></span>
+      <span class="star"></span>
+      <span class="star"></span>
+      <span class="star"></span>
+      <span class="star"></span>
+      <span class="star"></span>
     </div>
-    
-    <!-- Sun -->
+
+    <!--
+      Planets — three distinct bodies (Mars / Neptune / Saturn-with-ring).
+      Positions are randomized at mount but constrained to the right half
+      of the window so they never collide with the moon on the left.
+    -->
+    <div class="planets" data-sky-planets>
+      <span class="planet planet-mars"></span>
+      <span class="planet planet-neptune"></span>
+      <span class="planet planet-saturn"><span class="saturn-ring"></span></span>
+    </div>
+
+    <!-- Shooting stars container — populated dynamically by script -->
+    <div class="shooters" data-sky-shooters aria-hidden="true"></div>
+
+    <!-- Sun (visible in dark theme as a preview of light theme) -->
     <div class="celestial sun">
       <div class="sun-core"></div>
       <div class="sun-rays"></div>
       <div class="sun-glow"></div>
     </div>
-    
-    <!-- Moon -->
-    <div class="celestial moon">
-      <div class="moon-surface"></div>
-      <div class="moon-crater moon-crater-1"></div>
-      <div class="moon-crater moon-crater-2"></div>
-      <div class="moon-crater moon-crater-3"></div>
+
+    <!--
+      Moon — now on the LEFT of the window (same side as the sun), and its
+      crescent shape is driven by the real lunar phase for today. The body
+      is a warm circle; a dark "terminator" circle slides across it to mask
+      out the unlit portion. The sparkle anchors to the lit cusp.
+    -->
+    <div class="celestial moon" data-sky-moon>
       <div class="moon-glow"></div>
+      <div class="moon-body">
+        <div class="moon-terminator"></div>
+      </div>
+      <div class="moon-sparkle"></div>
     </div>
-    
+
     <!-- Clouds - continuous drift -->
     <div class="clouds">
       <div class="cloud-track">
@@ -69,7 +92,7 @@ const { class: className } = Astro.props;
       </div>
     </div>
   </div>
-  
+
   <!-- Glass frame overlay -->
   <div class="window-frame"></div>
 </button>
@@ -91,15 +114,15 @@ const { class: className } = Astro.props;
   .sky-window:hover {
     transform: scale(1.05);
   }
-  
+
   .sky-window:active {
     transform: scale(0.98);
   }
-  
+
   .sky-window:focus {
     outline: none;
   }
-  
+
   .sky-window:focus .window-frame {
     box-shadow:
       0 0 0 2px var(--yuval-highlight),
@@ -107,7 +130,7 @@ const { class: className } = Astro.props;
       inset 0 1px 2px rgba(255, 255, 255, 0.5),
       inset 0 -1px 2px rgba(0, 0, 0, 0.2);
   }
-  
+
   .sky-scene {
     position: absolute;
     inset: 0;
@@ -115,7 +138,7 @@ const { class: className } = Astro.props;
     border-radius: 12px;
     z-index: 2;
   }
-  
+
   /* Sky backgrounds */
   .sky-layer {
     position: absolute;
@@ -123,8 +146,6 @@ const { class: className } = Astro.props;
     transition: opacity 600ms var(--ease-standard);
   }
 
-  /* In LIGHT mode: show night sky (preview of what you'll get) */
-  /* In DARK mode: show day sky (preview of what you'll get) */
   .sky-day {
     background: linear-gradient(
       180deg,
@@ -134,7 +155,7 @@ const { class: className } = Astro.props;
     );
     opacity: 0;
   }
-  
+
   .sky-night {
     background: #050510;
     opacity: 1;
@@ -148,7 +169,6 @@ const { class: className } = Astro.props;
     height: 200%;
   }
 
-  /* Deep space base with cosmic colors */
   .galaxy-base {
     background: radial-gradient(
       ellipse at 30% 40%,
@@ -159,9 +179,8 @@ const { class: className } = Astro.props;
     animation: galaxy-drift 60s linear infinite;
   }
 
-  /* Nebula clouds - purples, blues, pinks */
   .galaxy-nebula {
-    background: 
+    background:
       radial-gradient(ellipse at 20% 30%, rgba(99, 66, 153, 0.4) 0%, transparent 50%),
       radial-gradient(ellipse at 70% 60%, rgba(45, 85, 150, 0.35) 0%, transparent 45%),
       radial-gradient(ellipse at 50% 80%, rgba(150, 70, 120, 0.3) 0%, transparent 40%),
@@ -170,9 +189,8 @@ const { class: className } = Astro.props;
     mix-blend-mode: screen;
   }
 
-  /* Cosmic dust and glow */
   .galaxy-dust {
-    background: 
+    background:
       radial-gradient(ellipse at 40% 50%, rgba(255, 200, 150, 0.08) 0%, transparent 30%),
       radial-gradient(ellipse at 60% 30%, rgba(200, 180, 255, 0.06) 0%, transparent 25%);
     animation: dust-shimmer 30s var(--ease-standard) infinite alternate-reverse;
@@ -208,56 +226,182 @@ const { class: className } = Astro.props;
   :global(.dark) .galaxy-dust {
     animation-play-state: paused;
   }
-  
-  /* Stars - visible in light mode (preview of dark) */
+
+  /* Stars — each star reads position/size/hue from CSS vars the script sets */
   .stars {
     position: absolute;
     inset: 0;
     opacity: 1;
     transition: opacity 600ms var(--ease-standard) 200ms;
   }
-  
+
   :global(.dark) .stars {
     opacity: 0;
   }
-  
+
   .star {
     position: absolute;
-    width: 2px;
-    height: 2px;
-    background: white;
+    top: var(--star-y, 10px);
+    left: var(--star-x, 10px);
+    width: var(--star-size, 1.5px);
+    height: var(--star-size, 1.5px);
+    background: var(--star-tint, #ffffff);
     border-radius: 50%;
-    animation: twinkle 2s var(--ease-standard) infinite;
-    box-shadow: 0 0 3px rgba(255, 255, 255, 0.8), 0 0 6px rgba(200, 180, 255, 0.4);
+    animation: twinkle var(--star-dur, 2s) var(--ease-standard) infinite;
+    animation-delay: var(--star-delay, 0s);
+    box-shadow:
+      0 0 3px var(--star-glow, rgba(255, 255, 255, 0.8)),
+      0 0 6px rgba(200, 180, 255, 0.4);
+    pointer-events: none;
   }
-  
-  .star-1 { top: 5px; left: 8px; animation-delay: 0s; box-shadow: 0 0 4px rgba(255, 200, 150, 0.9); }
-  .star-2 { top: 8px; left: 44px; animation-delay: 0.3s; width: 1.5px; height: 1.5px; }
-  .star-3 { top: 15px; left: 6px; animation-delay: 0.6s; width: 1px; height: 1px; }
-  .star-4 { top: 4px; left: 24px; animation-delay: 0.9s; width: 1.5px; height: 1.5px; box-shadow: 0 0 4px rgba(180, 200, 255, 0.9); }
-  .star-5 { top: 18px; left: 50px; animation-delay: 1.2s; width: 1px; height: 1px; }
-  .star-6 { top: 22px; left: 14px; animation-delay: 0.4s; width: 1px; height: 1px; }
-  .star-7 { top: 10px; left: 54px; animation-delay: 0.8s; width: 1.5px; height: 1.5px; }
-  .star-8 { top: 3px; left: 36px; animation-delay: 1.5s; width: 1px; height: 1px; }
-  .star-9 { top: 20px; left: 30px; animation-delay: 0.2s; width: 1.5px; height: 1.5px; box-shadow: 0 0 4px rgba(255, 180, 200, 0.8); }
-  .star-10 { top: 12px; left: 18px; animation-delay: 1.1s; width: 1px; height: 1px; }
-  .star-11 { top: 7px; left: 56px; animation-delay: 0.7s; width: 1px; height: 1px; }
-  .star-12 { top: 24px; left: 42px; animation-delay: 1.4s; width: 1px; height: 1px; }
-  
+
   @keyframes twinkle {
     0%, 100% { opacity: 0.4; transform: scale(1); filter: brightness(0.8); }
     25% { opacity: 0.8; }
     50% { opacity: 1; transform: scale(1.3); filter: brightness(1.3); }
     75% { opacity: 0.7; }
   }
-  
+
+  /* Planets — randomized x/y on mount, distinct palettes per body */
+  .planets {
+    position: absolute;
+    inset: 0;
+    opacity: 1;
+    transition: opacity 600ms var(--ease-standard) 200ms;
+    pointer-events: none;
+  }
+
+  :global(.dark) .planets {
+    opacity: 0;
+  }
+
+  .planet {
+    position: absolute;
+    top: var(--planet-y, 10px);
+    left: var(--planet-x, 10px);
+    width: var(--planet-size, 2.4px);
+    height: var(--planet-size, 2.4px);
+    border-radius: 50%;
+    animation: planet-drift var(--planet-dur, 80s) linear infinite;
+    animation-delay: var(--planet-delay, 0s);
+  }
+
+  .planet-mars {
+    background: radial-gradient(
+      circle at 35% 30%,
+      #ffb08a 0%,
+      #d25a3a 55%,
+      #7a2615 100%
+    );
+    box-shadow: 0 0 3px rgba(210, 90, 58, 0.5);
+  }
+
+  .planet-neptune {
+    background: radial-gradient(
+      circle at 35% 30%,
+      #a8d8ff 0%,
+      #4a6ed3 55%,
+      #1e2a78 100%
+    );
+    box-shadow: 0 0 3px rgba(74, 110, 211, 0.5);
+  }
+
+  .planet-saturn {
+    background: radial-gradient(
+      circle at 35% 30%,
+      #ffe6a8 0%,
+      #d9a84a 55%,
+      #8b6914 100%
+    );
+    box-shadow: 0 0 3px rgba(217, 168, 74, 0.55);
+  }
+
+  /*
+    Saturn's ring — a flat ellipse rotated slightly, anchored to the
+    planet center. Uses a transparent fill with a light outline so it
+    reads as a ring even at ~4px wide.
+  */
+  .saturn-ring {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 250%;
+    height: 70%;
+    transform: translate(-50%, -50%) rotate(-18deg);
+    border: 0.5px solid rgba(255, 230, 168, 0.7);
+    border-radius: 50%;
+    background: transparent;
+    pointer-events: none;
+  }
+
+  @keyframes planet-drift {
+    0% { transform: translate(0, 0); }
+    50% { transform: translate(var(--planet-drift-x, 2px), var(--planet-drift-y, -1px)); }
+    100% { transform: translate(0, 0); }
+  }
+
+  /* Shooting stars — a 1px head with a gradient trail behind it */
+  .shooters {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+  }
+
+  :global(.dark) .shooters {
+    opacity: 0;
+  }
+
+  .shooter {
+    position: absolute;
+    top: var(--shoot-start-y, 4px);
+    left: var(--shoot-start-x, 60px);
+    width: 2px;
+    height: 1px;
+    background: #ffffff;
+    border-radius: 1px;
+    box-shadow: 0 0 3px rgba(255, 255, 255, 0.9);
+    transform-origin: center;
+    animation: shoot var(--shoot-dur, 1.4s) linear forwards;
+  }
+
+  .shooter::before {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 16px;
+    height: 1px;
+    background: linear-gradient(
+      -90deg,
+      rgba(255, 255, 255, 0.95),
+      rgba(220, 220, 255, 0.5) 40%,
+      transparent 100%
+    );
+  }
+
+  @keyframes shoot {
+    0% {
+      transform: translate(0, 0) rotate(var(--shoot-angle, 20deg));
+      opacity: 0;
+    }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% {
+      transform:
+        translate(var(--shoot-dx, -50px), var(--shoot-dy, 18px))
+        rotate(var(--shoot-angle, 20deg));
+      opacity: 0;
+    }
+  }
+
   /* Celestial bodies positioning */
   .celestial {
     position: absolute;
     transition: transform 600ms var(--ease-emphasized);
   }
-  
-  /* Sun - hidden in light mode, visible in dark (preview of light) */
+
+  /* Sun - visible in dark theme */
   .sun {
     width: 18px;
     height: 18px;
@@ -265,11 +409,11 @@ const { class: className } = Astro.props;
     left: 6px;
     transform: translateY(30px) scale(0.5);
   }
-  
+
   :global(.dark) .sun {
     transform: translateY(0) scale(1);
   }
-  
+
   .sun-core {
     position: absolute;
     width: 14px;
@@ -280,7 +424,7 @@ const { class: className } = Astro.props;
     border-radius: 50%;
     box-shadow: 0 0 8px #ffeb3b;
   }
-  
+
   .sun-rays {
     position: absolute;
     width: 18px;
@@ -315,12 +459,12 @@ const { class: className } = Astro.props;
     border-radius: 50%;
     animation: rotate-rays 20s linear infinite;
   }
-  
+
   @keyframes rotate-rays {
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
   }
-  
+
   .sun-glow {
     position: absolute;
     width: 22px;
@@ -335,66 +479,127 @@ const { class: className } = Astro.props;
     border-radius: 50%;
     animation: pulse-glow 3s var(--ease-standard) infinite;
   }
-  
+
   @keyframes pulse-glow {
     0%, 100% { transform: scale(1); opacity: 0.5; }
     50% { transform: scale(1.1); opacity: 0.8; }
   }
-  
-  /* Moon - visible in light mode (preview of dark), hidden in dark */
+
+  /*
+    Moon — LEFT-anchored, same edge as the sun. The moon-body is a warm
+    cream circle; the moon-terminator is a dark circle of equal size that
+    slides horizontally to eclipse a fraction of the body. The offset and
+    sparkle position are controlled by CSS variables that the init script
+    computes from today's lunar phase.
+
+    --moon-shadow-x:   horizontal offset of the terminator (-14..+14)
+                       negative = shadow on left  (waxing / right-lit)
+                       positive = shadow on right (waning / left-lit)
+    --moon-sparkle-x:  left position of the sparkle in px (cusp tip)
+    --moon-sparkle-opacity: 0..1, fades sparkle near full moon
+  */
   .moon {
     width: 16px;
     height: 16px;
     top: 6px;
-    right: 6px;
-    left: auto;
+    left: 6px;
+    right: auto;
     transform: translateY(0) scale(1);
+    --moon-shadow-x: -5px;
+    --moon-sparkle-x: 12px;
+    --moon-sparkle-opacity: 1;
   }
-  
+
   :global(.dark) .moon {
     transform: translateY(30px) scale(0.5);
   }
-  
-  .moon-surface {
+
+  .moon-body {
     position: absolute;
     width: 14px;
     height: 14px;
     top: 1px;
     left: 1px;
-    background: linear-gradient(135deg, #eceff1 0%, #cfd8dc 50%, #b0bec5 100%);
     border-radius: 50%;
-    box-shadow: 
-      inset -2px -2px 4px rgba(0, 0, 0, 0.1),
-      0 0 12px rgba(255, 255, 255, 0.3);
+    overflow: hidden;
+    background:
+      radial-gradient(
+        circle at 35% 30%,
+        #fffbe0 0%,
+        #f9e4a4 45%,
+        #d9a84a 90%,
+        #a67a2c 100%
+      );
+    box-shadow:
+      inset -1.5px -1.5px 2.5px rgba(90, 70, 40, 0.35),
+      0 0 8px rgba(255, 231, 154, 0.5);
+    animation: moon-breath 5s var(--ease-standard) infinite;
   }
-  
-  .moon-crater {
+
+  @keyframes moon-breath {
+    0%, 100% {
+      box-shadow:
+        inset -1.5px -1.5px 2.5px rgba(90, 70, 40, 0.35),
+        0 0 8px rgba(255, 231, 154, 0.5);
+    }
+    50% {
+      box-shadow:
+        inset -1.5px -1.5px 2.5px rgba(90, 70, 40, 0.25),
+        0 0 14px rgba(255, 231, 154, 0.85);
+    }
+  }
+
+  /*
+    Terminator — a dark circle equal in size to the body. Translating it
+    horizontally carves the moon into the correct phase geometry (lune
+    intersection). The fill blends with the night sky behind the body so
+    the covered portion appears as deep shadow.
+  */
+  .moon-terminator {
     position: absolute;
-    background: rgba(176, 190, 197, 0.6);
+    width: 14px;
+    height: 14px;
+    top: 0;
+    left: var(--moon-shadow-x, -5px);
     border-radius: 50%;
+    background:
+      radial-gradient(
+        circle at 50% 50%,
+        #0a0a1e 0%,
+        #050510 70%,
+        #020208 100%
+      );
+    box-shadow: inset 1px 0 2px rgba(30, 25, 55, 0.6);
+    transition: left 900ms var(--ease-standard);
   }
-  
-  .moon-crater-1 {
+
+  .moon-sparkle {
+    position: absolute;
+    top: 0px;
+    left: var(--moon-sparkle-x, 12px);
     width: 3px;
     height: 3px;
-    top: 4px;
-    left: 4px;
+    background: radial-gradient(
+      circle,
+      #ffffff 0%,
+      #fff6d5 45%,
+      rgba(255, 246, 213, 0) 80%
+    );
+    border-radius: 50%;
+    box-shadow:
+      0 0 3px rgba(255, 255, 255, 0.9),
+      0 0 6px rgba(255, 231, 154, 0.6);
+    opacity: var(--moon-sparkle-opacity, 1);
+    animation: moon-sparkle-twinkle 2.6s var(--ease-standard) infinite;
+    pointer-events: none;
+    transition: left 900ms var(--ease-standard), opacity 900ms var(--ease-standard);
   }
-  
-  .moon-crater-2 {
-    width: 2px;
-    height: 2px;
-    top: 8px;
-    left: 8px;
+
+  @keyframes moon-sparkle-twinkle {
+    0%, 100% { transform: scale(0.7); }
+    45%, 55% { transform: scale(1.15); }
   }
-  
-  .moon-crater-3 {
-    width: 2px;
-    height: 2px;
-    top: 5px;
-    left: 10px;
-  }
-  
+
   .moon-glow {
     position: absolute;
     width: 20px;
@@ -408,8 +613,8 @@ const { class: className } = Astro.props;
     );
     border-radius: 50%;
   }
-  
-  /* Clouds - hidden in light mode, visible in dark (preview of light) */
+
+  /* Clouds */
   .clouds {
     position: absolute;
     inset: 0;
@@ -417,30 +622,29 @@ const { class: className } = Astro.props;
     transition: opacity 600ms var(--ease-standard);
     overflow: hidden;
   }
-  
+
   :global(.dark) .clouds {
     opacity: 1;
   }
-  
-  /* Cloud track - infinite scroll container */
+
   .cloud-track {
     position: absolute;
     width: 200%;
     height: 100%;
     animation: drift-clouds 25s linear infinite;
   }
-  
+
   @keyframes drift-clouds {
     0% { transform: translateX(0); }
     100% { transform: translateX(-50%); }
   }
-  
+
   .cloud {
     position: absolute;
     background: rgba(255, 255, 255, 0.85);
     border-radius: 10px;
   }
-  
+
   .cloud::before,
   .cloud::after {
     content: '';
@@ -448,116 +652,33 @@ const { class: className } = Astro.props;
     background: inherit;
     border-radius: 50%;
   }
-  
-  /* Cloud A - fluffy cumulus */
-  .cloud-a {
-    width: 14px;
-    height: 5px;
-    bottom: 8px;
-    left: 5px;
-  }
-  .cloud-a::before {
-    width: 7px;
-    height: 7px;
-    top: -4px;
-    left: 2px;
-  }
-  .cloud-a::after {
-    width: 6px;
-    height: 6px;
-    top: -3px;
-    left: 7px;
-  }
-  
-  /* Cloud B - small wisp */
-  .cloud-b {
-    width: 8px;
-    height: 3px;
-    bottom: 14px;
-    left: 28px;
-    opacity: 0.7;
-  }
-  .cloud-b::before {
-    width: 4px;
-    height: 4px;
-    top: -2px;
-    left: 1px;
-  }
-  .cloud-b::after {
-    width: 3px;
-    height: 3px;
-    top: -1px;
-    left: 4px;
-  }
-  
-  /* Cloud C - tall puffy */
-  .cloud-c {
-    width: 11px;
-    height: 4px;
-    bottom: 5px;
-    left: 45px;
-  }
-  .cloud-c::before {
-    width: 8px;
-    height: 8px;
-    top: -5px;
-    left: 1px;
-  }
-  .cloud-c::after {
-    width: 5px;
-    height: 5px;
-    top: -2px;
-    left: 5px;
-  }
-  
-  /* Cloud D - stretched cirrus (duplicate of A for seamless loop) */
-  .cloud-d {
-    width: 14px;
-    height: 5px;
-    bottom: 8px;
-    left: 57px;
-  }
-  .cloud-d::before {
-    width: 7px;
-    height: 7px;
-    top: -4px;
-    left: 2px;
-  }
-  .cloud-d::after {
-    width: 6px;
-    height: 6px;
-    top: -3px;
-    left: 7px;
-  }
-  
-  /* Cloud E - small wisp (duplicate of B for seamless loop) */
-  .cloud-e {
-    width: 8px;
-    height: 3px;
-    bottom: 14px;
-    left: 80px;
-    opacity: 0.7;
-  }
-  .cloud-e::before {
-    width: 4px;
-    height: 4px;
-    top: -2px;
-    left: 1px;
-  }
-  .cloud-e::after {
-    width: 3px;
-    height: 3px;
-    top: -1px;
-    left: 4px;
-  }
 
-  /* Window frame - metallic with animated shine */
+  .cloud-a { width: 14px; height: 5px; bottom: 8px; left: 5px; }
+  .cloud-a::before { width: 7px; height: 7px; top: -4px; left: 2px; }
+  .cloud-a::after { width: 6px; height: 6px; top: -3px; left: 7px; }
+
+  .cloud-b { width: 8px; height: 3px; bottom: 14px; left: 28px; opacity: 0.7; }
+  .cloud-b::before { width: 4px; height: 4px; top: -2px; left: 1px; }
+  .cloud-b::after { width: 3px; height: 3px; top: -1px; left: 4px; }
+
+  .cloud-c { width: 11px; height: 4px; bottom: 5px; left: 45px; }
+  .cloud-c::before { width: 8px; height: 8px; top: -5px; left: 1px; }
+  .cloud-c::after { width: 5px; height: 5px; top: -2px; left: 5px; }
+
+  .cloud-d { width: 14px; height: 5px; bottom: 8px; left: 57px; }
+  .cloud-d::before { width: 7px; height: 7px; top: -4px; left: 2px; }
+  .cloud-d::after { width: 6px; height: 6px; top: -3px; left: 7px; }
+
+  .cloud-e { width: 8px; height: 3px; bottom: 14px; left: 80px; opacity: 0.7; }
+  .cloud-e::before { width: 4px; height: 4px; top: -2px; left: 1px; }
+  .cloud-e::after { width: 3px; height: 3px; top: -1px; left: 4px; }
+
+  /* Window frame */
   .window-frame {
     position: absolute;
     inset: -2px;
     border-radius: 16px;
     pointer-events: none;
-    /* Light mode: silver/purple frame (matches moon preview) */
     background: linear-gradient(
       135deg,
       #7c8ba1 0%,
@@ -577,8 +698,7 @@ const { class: className } = Astro.props;
       inset 0 -1px 2px rgba(0, 0, 0, 0.3);
     transition: all 600ms var(--ease-standard);
   }
-  
-  /* Inner frame edge */
+
   .window-frame::before {
     content: '';
     position: absolute;
@@ -587,8 +707,7 @@ const { class: className } = Astro.props;
     border: 1px solid rgba(196, 181, 216, 0.3);
     background: transparent;
   }
-  
-  /* Dark mode: gold frame (matches sun preview) */
+
   :global(.dark) .window-frame {
     background: linear-gradient(
       135deg,
@@ -605,17 +724,33 @@ const { class: className } = Astro.props;
       inset 0 1px 2px rgba(255, 255, 255, 0.5),
       inset 0 -1px 2px rgba(0, 0, 0, 0.2);
   }
-  
+
   :global(.dark) .window-frame::before {
     border-color: rgba(255, 255, 255, 0.3);
   }
-  
+
   :global(.dark) .sky-window:focus .window-frame {
     box-shadow:
       0 0 0 2px var(--yuval-highlight),
       0 2px 8px rgba(139, 105, 20, 0.3),
       inset 0 1px 2px rgba(255, 255, 255, 0.5),
       inset 0 -1px 2px rgba(0, 0, 0, 0.2);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .galaxy-base,
+    .galaxy-nebula,
+    .galaxy-dust,
+    .star,
+    .planet,
+    .moon-body,
+    .moon-sparkle,
+    .sun-rays,
+    .sun-glow,
+    .cloud-track,
+    .shooter {
+      animation: none !important;
+    }
   }
 </style>
 
@@ -644,6 +779,178 @@ const { class: className } = Astro.props;
     }
   }
 
+  /*
+    Moon phase — returns a fraction 0..1 of the synodic lunar cycle, where
+    0 = new moon, 0.25 = first quarter (waxing), 0.5 = full, 0.75 = last
+    quarter (waning), back to 1 = new. Reference new moon is 2000-01-06
+    18:14 UTC, a canonical epoch for this kind of calculation.
+  */
+  function computeMoonPhase(date = new Date()): number {
+    const LUNAR_CYCLE_DAYS = 29.53058867;
+    const KNOWN_NEW_MOON_MS = Date.UTC(2000, 0, 6, 18, 14, 0);
+    const daysSince = (date.getTime() - KNOWN_NEW_MOON_MS) / 86400000;
+    let phase = (daysSince % LUNAR_CYCLE_DAYS) / LUNAR_CYCLE_DAYS;
+    if (phase < 0) phase += 1;
+    return phase;
+  }
+
+  /*
+    Apply lunar phase to the moon element. The body is 14px wide; shifting
+    the terminator by ±14px fully un-eclipses or re-eclipses the body. We
+    treat 0..0.5 as waxing (shadow slides LEFT, right side lit) and
+    0.5..1 as waning (shadow slides RIGHT, left side lit). Near full moon
+    the sparkle fades out — there's no single cusp to anchor on.
+  */
+  function applyMoonPhase(moonEl: HTMLElement) {
+    const phase = computeMoonPhase();
+    const MOON_W = 14;
+    let shadowX: number;
+    let sparkleX: number;
+    let sparkleOpacity: number;
+
+    if (phase < 0.5) {
+      // Waxing: illum grows 0 → 1
+      const illum = phase * 2;
+      shadowX = -illum * MOON_W;
+      sparkleX = 12;
+      sparkleOpacity = illum < 0.85 ? 1 : Math.max(0, 1 - (illum - 0.85) * 6);
+    } else {
+      // Waning: illum shrinks 1 → 0
+      const illum = (1 - phase) * 2;
+      shadowX = illum * MOON_W;
+      sparkleX = 1;
+      sparkleOpacity = illum < 0.85 ? 1 : Math.max(0, 1 - (illum - 0.85) * 6);
+    }
+
+    moonEl.style.setProperty('--moon-shadow-x', `${shadowX.toFixed(2)}px`);
+    moonEl.style.setProperty('--moon-sparkle-x', `${sparkleX}px`);
+    moonEl.style.setProperty('--moon-sparkle-opacity', sparkleOpacity.toFixed(2));
+    moonEl.setAttribute('data-moon-phase', phase.toFixed(3));
+  }
+
+  /*
+    Randomize star positions and sizes on mount. We keep them spread over
+    the full window but skip the 18px-wide zone where the moon sits so
+    they don't bleed into its glow. Twinkle hue alternates between warm
+    (cream/amber) and cool (pale blue / pink) so the field feels varied.
+  */
+  const STAR_TINTS: Array<{ body: string; glow: string }> = [
+    { body: '#ffffff', glow: 'rgba(255, 255, 255, 0.85)' },
+    { body: '#fff2c0', glow: 'rgba(255, 200, 150, 0.9)' },
+    { body: '#d0d8ff', glow: 'rgba(180, 200, 255, 0.9)' },
+    { body: '#ffd0e0', glow: 'rgba(255, 180, 200, 0.85)' },
+  ];
+
+  function randomInRange(min: number, max: number): number {
+    return min + Math.random() * (max - min);
+  }
+
+  function randomizeStars(root: HTMLElement) {
+    const stars = root.querySelectorAll<HTMLElement>('[data-sky-stars] .star');
+    stars.forEach((star, i) => {
+      // Avoid the moon zone (left 0-22px) for roughly half the stars so
+      // the other half can sit behind the moon halo without harm.
+      const avoidMoon = i % 2 === 0;
+      const x = avoidMoon ? randomInRange(22, 60) : randomInRange(2, 60);
+      const y = randomInRange(2, 24);
+      const size = Math.random() < 0.3 ? 2 : Math.random() < 0.6 ? 1.5 : 1;
+      const tint = STAR_TINTS[Math.floor(Math.random() * STAR_TINTS.length)];
+      const dur = randomInRange(1.6, 2.8);
+      const delay = randomInRange(0, 2);
+
+      star.style.setProperty('--star-x', `${x.toFixed(1)}px`);
+      star.style.setProperty('--star-y', `${y.toFixed(1)}px`);
+      star.style.setProperty('--star-size', `${size}px`);
+      star.style.setProperty('--star-tint', tint.body);
+      star.style.setProperty('--star-glow', tint.glow);
+      star.style.setProperty('--star-dur', `${dur.toFixed(2)}s`);
+      star.style.setProperty('--star-delay', `${delay.toFixed(2)}s`);
+    });
+  }
+
+  /*
+    Randomize planet positions. Planets sit in the right half of the
+    window (x: 24..58) to stay clear of the moon. Each gets a small drift
+    range so the slow orbital animation doesn't go out of bounds.
+  */
+  function randomizePlanets(root: HTMLElement) {
+    const planets = root.querySelectorAll<HTMLElement>('[data-sky-planets] .planet');
+    planets.forEach((p) => {
+      const x = randomInRange(26, 56);
+      const y = randomInRange(4, 22);
+      const dx = randomInRange(-2.5, 2.5);
+      const dy = randomInRange(-1.5, 1.5);
+      const dur = randomInRange(60, 120);
+      const delay = randomInRange(0, 10);
+
+      p.style.setProperty('--planet-x', `${x.toFixed(1)}px`);
+      p.style.setProperty('--planet-y', `${y.toFixed(1)}px`);
+      p.style.setProperty('--planet-drift-x', `${dx.toFixed(2)}px`);
+      p.style.setProperty('--planet-drift-y', `${dy.toFixed(2)}px`);
+      p.style.setProperty('--planet-dur', `${dur.toFixed(1)}s`);
+      p.style.setProperty('--planet-delay', `${delay.toFixed(1)}s`);
+    });
+  }
+
+  /*
+    Shooting star scheduler — fires a meteor at a random interval in the
+    range [MIN, MAX] seconds. Each meteor spawns with a random start
+    position on the top/right edge and travels down-left at a shallow
+    angle. The element self-removes via animationend.
+  */
+  const METEOR_MIN_INTERVAL_S = 6;
+  const METEOR_MAX_INTERVAL_S = 16;
+
+  function spawnShootingStar(host: HTMLElement) {
+    // Don't animate if window is hidden or user prefers reduced motion.
+    if (document.hidden) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    // Don't animate in dark mode — the night sky with meteors is for
+    // the light theme preview only.
+    if (document.documentElement.classList.contains('dark')) return;
+
+    const el = document.createElement('span');
+    el.className = 'shooter';
+
+    // Start position: right edge, upper half of the window
+    const startX = randomInRange(50, 62);
+    const startY = randomInRange(0, 10);
+    // Travel: down-left diagonal across the window
+    const dx = randomInRange(-55, -35);
+    const dy = randomInRange(14, 22);
+    const dur = randomInRange(1.1, 1.7);
+    // Rotation to align trail with travel direction
+    const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+
+    el.style.setProperty('--shoot-start-x', `${startX.toFixed(1)}px`);
+    el.style.setProperty('--shoot-start-y', `${startY.toFixed(1)}px`);
+    el.style.setProperty('--shoot-dx', `${dx.toFixed(1)}px`);
+    el.style.setProperty('--shoot-dy', `${dy.toFixed(1)}px`);
+    el.style.setProperty('--shoot-dur', `${dur.toFixed(2)}s`);
+    el.style.setProperty('--shoot-angle', `${angle.toFixed(1)}deg`);
+
+    el.addEventListener('animationend', () => el.remove(), { once: true });
+    host.appendChild(el);
+  }
+
+  // Track scheduler so we don't leak timers across Astro swaps.
+  let meteorTimer: number | undefined;
+
+  function scheduleNextMeteor(host: HTMLElement) {
+    const wait = randomInRange(METEOR_MIN_INTERVAL_S, METEOR_MAX_INTERVAL_S) * 1000;
+    meteorTimer = window.setTimeout(() => {
+      spawnShootingStar(host);
+      scheduleNextMeteor(host);
+    }, wait);
+  }
+
+  function stopMeteors() {
+    if (meteorTimer !== undefined) {
+      clearTimeout(meteorTimer);
+      meteorTimer = undefined;
+    }
+  }
+
   function initThemeToggle() {
     const toggle = document.getElementById('theme-toggle');
     if (!toggle) return;
@@ -651,6 +958,20 @@ const { class: className } = Astro.props;
     // Apply current theme
     const current = getEffectiveTheme();
     applyTheme(current);
+
+    // Randomize star / planet positions for this page load so the sky
+    // never looks identical twice in a row.
+    randomizeStars(toggle);
+    randomizePlanets(toggle);
+
+    // Compute and apply today's lunar phase.
+    const moonEl = toggle.querySelector<HTMLElement>('[data-sky-moon]');
+    if (moonEl) applyMoonPhase(moonEl);
+
+    // Kick off the shooting-star loop.
+    const shooterHost = toggle.querySelector<HTMLElement>('[data-sky-shooters]');
+    stopMeteors();
+    if (shooterHost) scheduleNextMeteor(shooterHost);
 
     // Toggle on click
     toggle.addEventListener('click', () => {
@@ -661,7 +982,7 @@ const { class: className } = Astro.props;
     });
   }
 
-  // Listen for system preference changes
+  // System preference change — only follow if user hasn't made a choice
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
     if (!getStoredTheme()) {
       applyTheme(e.matches ? 'dark' : 'light');
@@ -675,6 +996,7 @@ const { class: className } = Astro.props;
     initThemeToggle();
   }
 
-  // Re-init on Astro navigation
+  // Re-init on Astro navigation (and clean up the old meteor scheduler)
+  document.addEventListener('astro:before-swap', stopMeteors);
   document.addEventListener('astro:after-swap', initThemeToggle);
 </script>
