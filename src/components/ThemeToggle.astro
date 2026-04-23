@@ -60,6 +60,10 @@ const { class: className } = Astro.props;
     <!-- Shooting stars container — populated dynamically by script -->
     <div class="shooters" data-sky-shooters aria-hidden="true"></div>
 
+    <!-- Birds container — spawned dynamically. Four species cycle through
+         at random intervals, only in the light (day-sky) theme. -->
+    <div class="birds" data-sky-birds aria-hidden="true"></div>
+
     <!-- Sun (visible in dark theme as a preview of light theme) -->
     <div class="celestial sun">
       <div class="sun-core"></div>
@@ -393,6 +397,48 @@ const { class: className } = Astro.props;
         rotate(var(--shoot-angle, 20deg));
       opacity: 0;
     }
+  }
+
+  /* ─── Birds ─────────────────────────────────────────────────────────
+     Birds appear only in the day (light) sky. Each bird is a single
+     emoji span that flies across the window — emoji rendering is
+     guaranteed on every OS, so we avoid the fragile SVG-mask approach
+     and Astro's scoped-class issue for JS-created nodes. */
+  .birds {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+  }
+
+  :global(.dark) .birds { opacity: 0; }
+
+  :global(.bird) {
+    position: absolute;
+    top: var(--bird-y, 8px);
+    left: var(--bird-start-x, -20px);
+    font-size: var(--bird-size, 11px);
+    line-height: 1;
+    opacity: var(--bird-opacity, 0.9);
+    pointer-events: none;
+    will-change: transform;
+    animation: bird-fly var(--bird-dur, 8s) linear forwards;
+    /* Make emoji render as plain silhouettes on systems that support
+       it — preserves the natural shape but keeps the tone consistent
+       with the day sky. Falls back to full-color emoji elsewhere. */
+    filter: saturate(0.92);
+  }
+
+  @keyframes bird-fly {
+    0%   { transform: translate(0, 0) scaleX(var(--bird-dir, 1)); }
+    25%  { transform: translate(var(--bird-x-25, 0), -2.2px) scaleX(var(--bird-dir, 1)); }
+    50%  { transform: translate(var(--bird-x-50, 0), 1.5px)  scaleX(var(--bird-dir, 1)); }
+    75%  { transform: translate(var(--bird-x-75, 0), -1.5px) scaleX(var(--bird-dir, 1)); }
+    100% { transform: translate(var(--bird-x-100, 0), 0)    scaleX(var(--bird-dir, 1)); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .birds { display: none; }
   }
 
   /* Celestial bodies positioning */
@@ -951,6 +997,97 @@ const { class: className } = Astro.props;
     }
   }
 
+  /*
+    Birds — four species (crow, seagull, dove, sparrow) drift across the
+    day sky at irregular intervals. Each spawn picks a random species,
+    direction, altitude, speed and flap rate, then self-removes when its
+    flight animation ends. Birds are skipped in dark mode or under
+    prefers-reduced-motion, mirroring the meteor scheduler.
+  */
+  type BirdSpecies = {
+    name: string;
+    glyph: string;
+    size: [number, number];
+    opacity: [number, number];
+    altitude: [number, number];
+    duration: [number, number];
+  };
+
+  // Four common silhouettes, each a single emoji:
+  //   🦅 eagle (the closest thing to "crow" in Unicode)
+  //   🕊️ dove
+  //   🐦 generic small songbird (sparrow)
+  //   🦆 duck (stands in for the seagull — a broad-winged water bird)
+  const BIRD_SPECIES: BirdSpecies[] = [
+    { name: 'eagle',   glyph: '🦅', size: [11, 14], opacity: [0.85, 0.95], altitude: [2, 10], duration: [6.5, 9.5] },
+    { name: 'dove',    glyph: '🕊️', size: [10, 13], opacity: [0.88, 0.98], altitude: [3, 12], duration: [5.5, 8.5] },
+    { name: 'sparrow', glyph: '🐦', size: [9,  12], opacity: [0.8,  0.92], altitude: [4, 14], duration: [5.0, 7.5] },
+    { name: 'duck',    glyph: '🦆', size: [11, 14], opacity: [0.85, 0.95], altitude: [3, 11], duration: [7.0, 10.0] },
+  ];
+
+  function spawnBird(host: HTMLElement) {
+    if (document.hidden) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (document.documentElement.classList.contains('dark')) return;
+
+    const species = BIRD_SPECIES[Math.floor(Math.random() * BIRD_SPECIES.length)];
+    const dir = Math.random() < 0.5 ? 1 : -1; // 1 = L→R, -1 = R→L
+    const size = randomInRange(species.size[0], species.size[1]);
+    // Start just outside the window and fly all the way across to the other
+    // edge (+/- a bit of overscan so the bird doesn't pop in/out visibly).
+    const overscan = size + 6;
+    const startX = dir === 1 ? -overscan : (64 + overscan);
+    const endX   = dir === 1 ? (64 + overscan) : -overscan;
+    const dx = endX - startX;
+
+    const bird = document.createElement('span');
+    bird.className = `bird bird-${species.name}`;
+    bird.textContent = species.glyph;
+
+    bird.style.setProperty('--bird-size', `${size.toFixed(1)}px`);
+    bird.style.setProperty('--bird-y', `${randomInRange(species.altitude[0], species.altitude[1]).toFixed(1)}px`);
+    bird.style.setProperty('--bird-start-x', `${startX.toFixed(1)}px`);
+    // Precomputed X offsets relative to start position for each keyframe,
+    // because calc() inside @keyframes with nested var() can fail to
+    // resolve in some engines. Pure numeric px values sidestep that.
+    bird.style.setProperty('--bird-x-25',  `${(dx * 0.25).toFixed(1)}px`);
+    bird.style.setProperty('--bird-x-50',  `${(dx * 0.50).toFixed(1)}px`);
+    bird.style.setProperty('--bird-x-75',  `${(dx * 0.75).toFixed(1)}px`);
+    bird.style.setProperty('--bird-x-100', `${dx.toFixed(1)}px`);
+    bird.style.setProperty('--bird-dur', `${randomInRange(species.duration[0], species.duration[1]).toFixed(2)}s`);
+    bird.style.setProperty('--bird-opacity', randomInRange(species.opacity[0], species.opacity[1]).toFixed(2));
+    // Emoji glyphs typically face right. Flip only when flying R→L.
+    bird.style.setProperty('--bird-dir', dir === 1 ? '1' : '-1');
+
+    bird.addEventListener('animationend', () => bird.remove(), { once: true });
+    host.appendChild(bird);
+  }
+
+  const BIRD_MIN_INTERVAL_S = 4;
+  const BIRD_MAX_INTERVAL_S = 12;
+
+  let birdTimer: number | undefined;
+
+  function scheduleNextBird(host: HTMLElement) {
+    const wait = randomInRange(BIRD_MIN_INTERVAL_S, BIRD_MAX_INTERVAL_S) * 1000;
+    birdTimer = window.setTimeout(() => {
+      // Occasionally send a small flock (2–3 of the same species in a row)
+      const flockSize = Math.random() < 0.22 ? 2 + Math.floor(Math.random() * 2) : 1;
+      spawnBird(host);
+      for (let i = 1; i < flockSize; i++) {
+        window.setTimeout(() => spawnBird(host), i * randomInRange(220, 520));
+      }
+      scheduleNextBird(host);
+    }, wait);
+  }
+
+  function stopBirds() {
+    if (birdTimer !== undefined) {
+      clearTimeout(birdTimer);
+      birdTimer = undefined;
+    }
+  }
+
   function initThemeToggle() {
     const toggle = document.getElementById('theme-toggle');
     if (!toggle) return;
@@ -972,6 +1109,16 @@ const { class: className } = Astro.props;
     const shooterHost = toggle.querySelector<HTMLElement>('[data-sky-shooters]');
     stopMeteors();
     if (shooterHost) scheduleNextMeteor(shooterHost);
+
+    // Kick off the bird loop (day-sky only; the spawn function gates itself).
+    // First bird spawns almost immediately (800–1800ms) so the user sees
+    // one quickly on page load; subsequent birds follow the random cadence.
+    const birdHost = toggle.querySelector<HTMLElement>('[data-sky-birds]');
+    stopBirds();
+    if (birdHost) {
+      window.setTimeout(() => spawnBird(birdHost), randomInRange(800, 1800));
+      scheduleNextBird(birdHost);
+    }
 
     // Toggle on click
     toggle.addEventListener('click', () => {
@@ -996,7 +1143,10 @@ const { class: className } = Astro.props;
     initThemeToggle();
   }
 
-  // Re-init on Astro navigation (and clean up the old meteor scheduler)
-  document.addEventListener('astro:before-swap', stopMeteors);
+  // Re-init on Astro navigation (and clean up the old schedulers)
+  document.addEventListener('astro:before-swap', () => {
+    stopMeteors();
+    stopBirds();
+  });
   document.addEventListener('astro:after-swap', initThemeToggle);
 </script>

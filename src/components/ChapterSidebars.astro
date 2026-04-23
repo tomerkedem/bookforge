@@ -1468,7 +1468,10 @@ function serializeTitles(chapter: Chapter): string {
             }
           } catch {}
         }
+        if (pct >= 95) done = true;
       }
+
+      applyCompletionMark(li, done);
 
       if (pct < 3) return;
 
@@ -1492,6 +1495,58 @@ function serializeTitles(chapter: Chapter): string {
       li.style.position = 'relative';
       li.appendChild(bar);
     });
+
+    // Mirror completion marks onto the mobile chapter list (no data-chapter-id there)
+    document.querySelectorAll('#mobile-chapters-panel .toc-item').forEach(li => {
+      const link = li.querySelector('a.mobile-toc-link');
+      const href = link?.getAttribute('href') || '';
+      const match = href.match(/\/read\/[^/]+\/([^/?#]+)/);
+      const chId = match ? match[1] : '';
+      if (!chId) return;
+
+      let done = completedChapters.includes(chId) || completedChapters.includes(String(chId));
+      if (!done) {
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i);
+          if (!k?.includes(`_${book}_ch${chId}`)) continue;
+          try {
+            const d = JSON.parse(localStorage.getItem(k) || '{}');
+            if (typeof d.percentage === 'number' && d.percentage >= 95) {
+              done = true;
+              break;
+            }
+          } catch {}
+        }
+      }
+
+      applyCompletionMark(li, done);
+    });
+  }
+
+  function applyCompletionMark(li, done) {
+    const link = li.querySelector('a.toc-link, a.mobile-toc-link');
+    if (!link) return;
+    const existing = link.querySelector('.chapter-complete-check');
+
+    if (done) {
+      li.classList.add('toc-item-completed');
+      if (!existing) {
+        const check = document.createElement('span');
+        check.className = 'chapter-complete-check';
+        check.setAttribute('aria-label', 'Completed');
+        check.setAttribute('title', 'Completed');
+        check.innerHTML = `
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.5"
+               stroke-linecap="round" stroke-linejoin="round" width="12" height="12" aria-hidden="true">
+            <path d="M4 10.5l3.5 3.5L16 6" />
+          </svg>
+        `;
+        link.appendChild(check);
+      }
+    } else {
+      li.classList.remove('toc-item-completed');
+      existing?.remove();
+    }
   }
 
   setTimeout(updateTocProgress, 200);
