@@ -411,8 +411,10 @@ const { class: className } = Astro.props;
     overflow: hidden;
   }
 
-  :global(html.dark) .birds,
-  :global(.dark) .birds {
+  /* The toggle shows the DAY sky (sun + clouds) only when the site is in
+     dark mode — it's a preview-of-the-opposite design. Birds belong in
+     that day sky, so we hide them whenever the site is NOT dark. */
+  :global(html:not(.dark)) .birds {
     display: none !important;
   }
 
@@ -1031,7 +1033,10 @@ const { class: className } = Astro.props;
   function spawnBird(host: HTMLElement) {
     if (document.hidden) return;
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    if (document.documentElement.classList.contains('dark')) return;
+    // The toggle's day sky only renders while the site theme is dark
+    // (preview-of-the-opposite design). Skip spawning otherwise —
+    // birds have no business flying across a night sky.
+    if (!document.documentElement.classList.contains('dark')) return;
 
     const species = BIRD_SPECIES[Math.floor(Math.random() * BIRD_SPECIES.length)];
     const dir = Math.random() < 0.5 ? 1 : -1; // 1 = L→R, -1 = R→L
@@ -1130,16 +1135,17 @@ const { class: className } = Astro.props;
       try { localStorage.setItem('yuval-theme', newTheme); } catch { /* */ }
       applyTheme(newTheme);
 
-      // When switching to dark, immediately clear any birds mid-flight so
-      // they don't linger as silhouettes in the night sky. When coming
-      // back to light, kick off a quick first bird so the day sky feels
-      // populated again right away.
+      // Birds live in the toggle's day sky, which is only visible while
+      // the site is in dark mode. When switching to dark, kick off a
+      // quick first bird so the freshly-revealed day sky feels alive.
+      // When switching to light, clear any mid-flight birds so they
+      // don't linger behind the night-sky scene.
       if (newTheme === 'dark') {
-        if (birdHost) birdHost.replaceChildren();
-      } else {
         if (birdHost) {
           window.setTimeout(() => spawnBird(birdHost), randomInRange(600, 1400));
         }
+      } else {
+        if (birdHost) birdHost.replaceChildren();
       }
     });
   }
