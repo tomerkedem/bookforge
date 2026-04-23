@@ -1131,9 +1131,16 @@ function serializeTitles(chapter: Chapter): string {
     }
   }
 
+  // Only toggle wrappers whose data-lang is an actual UI language code.
+  // Code blocks (.bash-block, .coderunner) also carry data-lang with
+  // values like "bash" / "python" — if we touched those, they'd get
+  // .hidden after every chapter swap and disappear until a full reload.
+  const KNOWN_UI_LANGS = new Set(['he', 'en', 'es']);
+
   function applyLanguageVisibility(lang) {
     document.querySelectorAll('[data-lang]').forEach(el => {
       const elLang = el.dataset.lang;
+      if (!elLang || !KNOWN_UI_LANGS.has(elLang)) return;
       if (elLang === lang) {
         el.classList.remove('hidden');
         el.classList.add('visible');
