@@ -148,10 +148,10 @@ function injectStyles(): void {
   s.textContent = `
     #goal-indicator {
       position: fixed;
-      bottom: 316px;
-      right: 20px;
+      bottom: 15.9rem;
+      inset-inline-end: 1rem;
       z-index: 9980;
-      width: 44px; height: 44px;
+      width: 2.5rem; height: 2.5rem;
       border-radius: 50%;
       background: var(--yuval-surface, #fff);
       border: 1px solid var(--yuval-border, #e5e7eb);
@@ -165,7 +165,6 @@ function injectStyles(): void {
       box-shadow: 0 4px 16px rgba(0,0,0,0.14);
     }
     :is(.dark) #goal-indicator { background: #2a2a2a; border-color: rgba(255,255,255,0.1); }
-    [dir="rtl"] #goal-indicator { right: auto; left: 20px; }
     @media (max-width: 1023px) {
       #goal-indicator { display: none !important; }
     }

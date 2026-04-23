@@ -161,7 +161,7 @@ function cleanVoiceName(name: string): string {
   // Drop leading vendor prefix (Microsoft, Google, Apple)
   out = out.replace(/^\s*(Microsoft|Google|Apple)\s+/iu, '');
   // Drop anything after " - " or " – " (em-dash variants) - typically the language tail
-  out = out.replace(/\s*[–--]\s*.*$/u, '');
+  out = out.replace(/\s*[-–—]\s*.*$/u, '');
   // Drop trailing parenthesized language/region tag, e.g. "Samantha (English US)"
   out = out.replace(/\s*\([^)]*\)\s*$/u, '');
   // Drop common language words if they're what's left
