@@ -51,8 +51,8 @@
       </button>
     </div>
 
-    <!-- Navigation (mobile only) -->
-    <div class="fab-item fab-item-mobile-only">
+    <!-- Navigation -->
+    <div class="fab-item">
       <span class="fab-label" data-i18n="fab.navigation">Navigation</span>
       <button id="fab-nav-btn" class="fab-sub-btn" aria-label="Open navigation" title="Navigation">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -61,8 +61,8 @@
       </button>
     </div>
 
-    <!-- Highlights (mobile only) -->
-    <div class="fab-item fab-item-mobile-only">
+    <!-- Highlights -->
+    <div class="fab-item">
       <span class="fab-label" data-i18n="fab.highlights">Highlights</span>
       <button id="fab-highlights-btn" class="fab-sub-btn" aria-label="Open highlights" title="Highlights">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -72,8 +72,19 @@
       </button>
     </div>
 
-    <!-- Read aloud (mobile only) -->
-    <div class="fab-item fab-item-mobile-only">
+    <!-- Bookmarks -->
+    <div class="fab-item">
+      <span class="fab-label" data-i18n="bookmarks.title">Bookmarks</span>
+      <button id="fab-bookmarks-btn" class="fab-sub-btn" aria-label="Open bookmarks" title="Bookmarks">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75"
+            d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+        </svg>
+      </button>
+    </div>
+
+    <!-- Read aloud -->
+    <div class="fab-item">
       <span class="fab-label" data-i18n="tts.panelTitle">Read aloud</span>
       <button id="fab-tts-btn" class="fab-sub-btn" aria-label="Read aloud" title="Read aloud">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -390,10 +401,12 @@
 
   /* Stagger animation for sub-items */
   .fab-actions.open .fab-item:nth-child(1) { transition-delay: 0ms; }
-  .fab-actions.open .fab-item:nth-child(2) { transition-delay: 40ms; }
-  .fab-actions.open .fab-item:nth-child(3) { transition-delay: 80ms; }
-  .fab-actions.open .fab-item:nth-child(4) { transition-delay: 120ms; }
-  .fab-actions.open .fab-item:nth-child(5) { transition-delay: 160ms; }
+  .fab-actions.open .fab-item:nth-child(2) { transition-delay: 35ms; }
+  .fab-actions.open .fab-item:nth-child(3) { transition-delay: 70ms; }
+  .fab-actions.open .fab-item:nth-child(4) { transition-delay: 105ms; }
+  .fab-actions.open .fab-item:nth-child(5) { transition-delay: 140ms; }
+  .fab-actions.open .fab-item:nth-child(6) { transition-delay: 175ms; }
+  .fab-actions.open .fab-item:nth-child(7) { transition-delay: 210ms; }
 
   /* Mobile-only sub-items (Navigation): hidden on desktop */
   @media (min-width: 1024px) {
@@ -830,10 +843,16 @@
       $('mobile-toc-toggle')?.click();
     });
 
-    /* Highlights (mobile-only): delegate to the hidden highlights FAB */
+    /* Highlights: delegate to the hidden highlights FAB */
     $('fab-highlights-btn')?.addEventListener('click', () => {
       toggleFab(false);
       $('highlights-fab')?.click();
+    });
+
+    /* Bookmarks: delegate to the floating bookmarks FAB created by bookmarks.ts */
+    $('fab-bookmarks-btn')?.addEventListener('click', () => {
+      toggleFab(false);
+      $('bm-fab-btn')?.click();
     });
 
     /* Read aloud (mobile-only): open the TTS panel via global hook */
