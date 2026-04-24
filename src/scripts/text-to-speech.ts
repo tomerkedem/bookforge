@@ -501,6 +501,13 @@ function speakParagraph(pIdx: number, startCharOffset = 0): void {
 
   u.onboundary = (ev: SpeechSynthesisEvent) => {
     if (state.status !== 'playing') return;
+    // Fire a lightweight event on every word boundary so UI surfaces (like
+    // the mini-player's equalizer) can react to real speech rhythm rather
+    // than looping a decorative animation.
+    if (ev.name === 'word') {
+      const len = (ev as SpeechSynthesisEvent & { charLength?: number }).charLength ?? 0;
+      document.dispatchEvent(new CustomEvent('tts:word', { detail: { length: len } }));
+    }
     const absChar = startCharOffset + ev.charIndex;
     const hit = sentenceForParagraphBoundary(pIdx, absChar);
     if (!hit) return;

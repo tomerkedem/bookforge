@@ -615,17 +615,12 @@ const description = getLocalizedText(book.descriptions, language);
 </script>
 
 <style is:global>
-  /* Book cover blends into the page background: the common white/cream
-     padding around cover artwork disappears against the reading bg.
-     Matches the treatment applied to article images in ReadingLayout. */
+  /* Book cover on the landing page: render the image as-is with a
+     transparent background, keeping any alpha in the source PNG intact.
+     No mix-blend-mode — the cover should look identical in light/dark
+     instead of multiplying/screening against the page background. */
   .book-cover-img {
     background-color: transparent;
-  }
-  html:not(.dark) .book-cover-img {
-    mix-blend-mode: multiply;
-  }
-  html.dark .book-cover-img {
-    mix-blend-mode: screen;
   }
 
   /* Inline TTS trigger — gold pill that sits beside the title.

@@ -414,7 +414,9 @@ export function mountMiniPlayer(): void {
   miniEl.setAttribute('aria-label', tr('tts.miniPlayer'));
   miniEl.innerHTML = `
     <div class="tts-mini-meta">
-      <span class="tts-mini-pulse" aria-hidden="true"></span>
+      <span class="tts-mini-eq" aria-hidden="true">
+        <span></span><span></span><span></span><span></span>
+      </span>
       <span class="tts-mini-label">${tr('tts.panelTitle')}</span>
       <span class="tts-mini-counter" aria-live="polite">0 / 0</span>
     </div>
@@ -566,6 +568,36 @@ export function mountMiniPlayer(): void {
 
   requestAnimationFrame(() => miniEl?.classList.add('is-mounted'));
 
+  // Speech-rhythm equalizer — each real word-boundary event from the
+  // speech engine drives a fresh height on the 4 bars. Longer words
+  // raise the peak amplitude, so short function words look small and
+  // content words look tall — the bars visibly "ride" the voice instead
+  // of looping a fake animation.
+  const onWordBoundary = (ev: Event) => {
+    if (!miniEl) return;
+    const detail = (ev as CustomEvent<{ length: number }>).detail;
+    const len = detail?.length ?? 5;
+    // Map word length (1..~12 chars) to amplitude (0.35..1.0)
+    const amplitude = Math.min(1, 0.35 + len / 14);
+    const bars = miniEl.querySelectorAll<HTMLElement>('.tts-mini-eq > span');
+    bars.forEach(bar => {
+      const base = 3;
+      const peak = base + amplitude * 11; // up to ~14px
+      const h = base + Math.random() * (peak - base);
+      bar.style.height = `${h.toFixed(1)}px`;
+    });
+  };
+  if (wordBoundaryHandler) document.removeEventListener('tts:word', wordBoundaryHandler);
+  wordBoundaryHandler = onWordBoundary;
+  document.addEventListener('tts:word', onWordBoundary);
+
+  // Reset bars to baseline when playback stops/pauses
+  const resetEqBars = () => {
+    if (!miniEl) return;
+    miniEl.querySelectorAll<HTMLElement>('.tts-mini-eq > span')
+      .forEach(bar => { bar.style.height = ''; });
+  };
+
   void getApi().then(ttsApi => {
     unsubscribeMini = ttsApi.subscribe(s => {
       if (!miniEl) return;
@@ -623,7 +655,9 @@ export function mountMiniPlayer(): void {
       }
 
       // Playing state (drives pulse animation + accent color)
+      const prevStatus = miniEl.dataset.status;
       miniEl.dataset.status = s.status;
+      if (prevStatus === 'playing' && s.status !== 'playing') resetEqBars();
 
       // Prev/Next disabled at bounds
       const prev = miniEl.querySelector<HTMLButtonElement>('[data-act="prev"]');
@@ -634,12 +668,18 @@ export function mountMiniPlayer(): void {
   });
 }
 
+let wordBoundaryHandler: ((ev: Event) => void) | null = null;
+
 export function unmountMiniPlayer(): void {
   if (!miniEl) return;
   closeVoicePop();
   miniEl.classList.remove('is-mounted');
   unsubscribeMini?.();
   unsubscribeMini = null;
+  if (wordBoundaryHandler) {
+    document.removeEventListener('tts:word', wordBoundaryHandler);
+    wordBoundaryHandler = null;
+  }
   setTimeout(() => {
     miniEl?.remove();
     miniEl = null;

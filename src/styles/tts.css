@@ -398,6 +398,54 @@
     0 0 28px -4px var(--tts-gold-amber);
 }
 
+/* ── Aurora — gold light sweeping around the bar's edge while playing ────
+   Mirrors the sentence shimmer so the bar feels "connected" to the text.
+   Rendered via a ::before pseudo with a linear-gradient masked to the
+   border ring only (the inner content-box is masked out), so interactive
+   children stay untouched. */
+#tts-mini::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.5px;
+  background-image: linear-gradient(
+    120deg,
+    transparent 0%,
+    transparent 30%,
+    color-mix(in srgb, var(--tts-gold-warm) 80%, transparent) 46%,
+    color-mix(in srgb, var(--tts-gold-deep) 90%, transparent) 50%,
+    color-mix(in srgb, var(--tts-gold-warm) 80%, transparent) 54%,
+    transparent 70%,
+    transparent 100%
+  );
+  background-size: 300% 100%;
+  background-repeat: no-repeat;
+  background-position: -60% center;
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 1;
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--tts-gold-warm) 55%, transparent));
+  transition: opacity var(--tts-dur) var(--tts-ease);
+}
+#tts-mini[data-status="playing"]::before {
+  opacity: 1;
+  animation: ttsBarAurora 3.2s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+[dir="rtl"] #tts-mini[data-status="playing"]::before {
+  animation-direction: reverse;
+}
+@keyframes ttsBarAurora {
+  0%   { background-position: -60% center; }
+  100% { background-position: 160% center; }
+}
+
+
 /* ── Meta (label + counter + pulse) ── */
 .tts-mini-meta {
   display: flex;
@@ -407,24 +455,36 @@
   padding-inline-end: 4px;
 }
 
-.tts-mini-pulse {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--tts-accent-gradient);
-  opacity: 0.45;
+/* Speech-driven equalizer — 4 bars glide to a fresh height on every
+   word-boundary event dispatched by the TTS engine (see tts-panel.ts
+   onWordBoundary). Idle/paused: baseline 3px, dim. Each bar has a
+   slightly different transition duration so peaks shimmer across the
+   group rather than move in lockstep. */
+.tts-mini-eq {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 2px;
+  width: 18px;
+  height: 14px;
   flex-shrink: 0;
-  transition: opacity var(--tts-dur) var(--tts-ease);
-  box-shadow: 0 0 4px color-mix(in srgb, var(--tts-gold-warm) 70%, transparent);
 }
-#tts-mini[data-status="playing"] .tts-mini-pulse {
-  opacity: 1;
-  animation: tts-mini-pulse 1.6s ease-in-out infinite;
+.tts-mini-eq > span {
+  display: block;
+  width: 3px;
+  height: 3px;
+  border-radius: 1.5px;
+  background: var(--tts-accent-gradient);
+  box-shadow: 0 0 3px color-mix(in srgb, var(--tts-gold-warm) 55%, transparent);
+  transform-origin: bottom center;
+  opacity: 0.55;
+  transition: height 160ms cubic-bezier(0.2, 0.9, 0.3, 1),
+              opacity var(--tts-dur) var(--tts-ease);
 }
-@keyframes tts-mini-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--tts-gold-warm) 75%, transparent); }
-  50%      { box-shadow: 0 0 0 10px color-mix(in srgb, var(--tts-gold-warm) 0%, transparent); }
-}
+.tts-mini-eq > span:nth-child(1) { transition-duration: 140ms; }
+.tts-mini-eq > span:nth-child(2) { transition-duration: 200ms; }
+.tts-mini-eq > span:nth-child(3) { transition-duration: 120ms; }
+.tts-mini-eq > span:nth-child(4) { transition-duration: 180ms; }
+#tts-mini[data-status="playing"] .tts-mini-eq > span { opacity: 1; }
 
 .tts-mini-label {
   font-family: 'Inter', 'IBM Plex Sans Hebrew', system-ui, sans-serif;
@@ -821,20 +881,109 @@
   }
 }
 
-/* ── Active reading highlights (injected into chapter content) ───────────── */
+/* ─────────────────────────────────────────────────────────────────────────
+   Active reading highlights — "AI read-along aura"
+   (1) Sentence shimmer: a soft gold light sweeps across the active sentence,
+       giving the feel of an AI gaze flowing through the words.
+   (2) Word ink-bleed: each word blooms a quick golden halo the moment it's
+       spoken, then dissolves — a micro-moment of magic per word.
+   ───────────────────────────────────────────────────────────────────────── */
 .tts-sentence-active {
-  background: color-mix(in srgb, var(--tts-accent) 8%, transparent);
-  border-inline-start: 2px solid var(--tts-accent);
-  padding: 0 4px;
+  position: relative;
+  display: inline;
+  padding: 2px 6px;
   margin-inline-start: -4px;
-  border-radius: 4px;
-  transition: background var(--tts-dur) var(--tts-ease);
+  border-radius: 6px;
+  border-inline-start: 2px solid var(--tts-gold-deep);
+  background-image:
+    linear-gradient(
+      90deg,
+      transparent 0%,
+      transparent 28%,
+      color-mix(in srgb, var(--tts-gold-warm) 38%, transparent) 48%,
+      color-mix(in srgb, var(--tts-gold-mid) 28%, transparent) 52%,
+      transparent 72%,
+      transparent 100%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--tts-gold-warm) 12%, transparent) 0%,
+      color-mix(in srgb, var(--tts-gold-warm) 7%, transparent) 100%
+    );
+  background-size: 220% 100%, 100% 100%;
+  background-repeat: no-repeat;
+  background-position: -60% center, 0 0;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--tts-gold-mid) 18%, transparent),
+    0 0 22px -6px color-mix(in srgb, var(--tts-gold-warm) 35%, transparent);
+  animation: ttsSentenceShimmer 2.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
+[dir="rtl"] .tts-sentence-active {
+  animation-direction: reverse;
+}
+
+@keyframes ttsSentenceShimmer {
+  0%   { background-position: -90% center, 0 0; }
+  100% { background-position: 190% center, 0 0; }
+}
+
 .tts-word {
-  transition: box-shadow var(--tts-dur-fast) var(--tts-ease);
+  position: relative;
+  isolation: isolate;
+  transition: color var(--tts-dur-fast) var(--tts-ease);
 }
 .tts-word-active {
-  box-shadow: inset 0 -2px 0 0 var(--tts-accent);
+  color: var(--tts-gold-deep);
+  text-shadow: 0 0 1px color-mix(in srgb, var(--tts-gold-warm) 45%, transparent);
+}
+.tts-word-active::before {
+  content: '';
+  position: absolute;
+  inset: -4px -8px -6px -8px;
+  border-radius: 10px;
+  background: radial-gradient(
+    ellipse at center,
+    color-mix(in srgb, var(--tts-gold-warm) 55%, transparent) 0%,
+    color-mix(in srgb, var(--tts-gold-mid) 32%, transparent) 42%,
+    transparent 72%
+  );
+  filter: blur(2px);
+  pointer-events: none;
+  z-index: -1;
+  animation: ttsInkBleed 650ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.tts-word-active::after {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  bottom: -2px;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--tts-gold-warm) 20%,
+    var(--tts-gold-deep) 50%,
+    var(--tts-gold-warm) 80%,
+    transparent 100%
+  );
+  box-shadow: 0 0 6px color-mix(in srgb, var(--tts-gold-warm) 60%, transparent);
+  transform-origin: left center;
+  animation: ttsWordUnderline 500ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+[dir="rtl"] .tts-word-active::after {
+  transform-origin: right center;
+}
+
+@keyframes ttsInkBleed {
+  0%   { opacity: 0;   transform: scale(0.55); }
+  25%  { opacity: 1;   transform: scale(1.08); }
+  100% { opacity: 0;   transform: scale(1.25); }
+}
+@keyframes ttsWordUnderline {
+  0%   { opacity: 0; transform: scaleX(0); }
+  50%  { opacity: 1; transform: scaleX(1); }
+  100% { opacity: 0.35; transform: scaleX(1); }
 }
 
 /* ── Reduced motion ──────────────────────────────────────────────────────── */
@@ -848,5 +997,18 @@
   .tts-voice-row,
   .tts-voice-preview {
     transition-duration: 0ms !important;
+  }
+  .tts-sentence-active,
+  .tts-word-active::before,
+  .tts-word-active::after,
+  #tts-mini::before,
+  #tts-mini[data-status="playing"]::before {
+    animation: none !important;
+  }
+  .tts-mini-eq > span { transition: opacity var(--tts-dur) var(--tts-ease) !important; }
+  .tts-sentence-active {
+    background-image: linear-gradient(180deg,
+      color-mix(in srgb, var(--tts-gold-warm) 12%, transparent) 0%,
+      color-mix(in srgb, var(--tts-gold-warm) 7%, transparent) 100%);
   }
 }
