@@ -15,7 +15,10 @@ export type IconName =
   | 'selectionStart'
   | 'close'
   | 'check'
-  | 'preview';
+  | 'preview'
+  | 'prev'
+  | 'next'
+  | 'expand';
 
 /**
  * Icon path definitions. Each string is the inner SVG path markup
@@ -80,6 +83,23 @@ export const ICON_PATHS: Record<IconName, string> = {
   preview: `
     <circle cx="12" cy="12" r="8" />
     <path d="M10.5 9.5v5l4-2.5-4-2.5z" />
+  `,
+  // Previous: bar + triangle pointing left
+  prev: `
+    <path d="M6 5.5v13" />
+    <path d="M19 5.5l-10 6.5 10 6.5v-13z" />
+  `,
+  // Next: triangle pointing right + bar
+  next: `
+    <path d="M5 5.5l10 6.5-10 6.5v-13z" />
+    <path d="M18 5.5v13" />
+  `,
+  // Expand: diagonal arrows outward (open full panel)
+  expand: `
+    <path d="M4 10V4h6" />
+    <path d="M20 14v6h-6" />
+    <path d="M4 4l7 7" />
+    <path d="M20 20l-7-7" />
   `,
 };
 

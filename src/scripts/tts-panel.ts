@@ -340,6 +340,8 @@ function updatePanelState(s: TtsState): void {
 let miniEl: HTMLElement | null = null;
 let unsubscribeMini: (() => void) | null = null;
 
+const RATE_CYCLE: TtsRate[] = [0.8, 1, 1.3];
+
 export function mountMiniPlayer(): void {
   if (miniEl) return;
   miniEl = document.createElement('div');
@@ -347,29 +349,107 @@ export function mountMiniPlayer(): void {
   miniEl.setAttribute('role', 'region');
   miniEl.setAttribute('aria-label', tr('tts.miniPlayer'));
   miniEl.innerHTML = `
-    <button type="button" class="tts-mini-btn" data-act="play-toggle" aria-label="${tr('tts.pause')}">
-      ${icon('pause', 16)}
-    </button>
-    <div class="tts-mini-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-      <div class="tts-mini-progress-fill"></div>
+    <div class="tts-mini-meta">
+      <span class="tts-mini-pulse" aria-hidden="true"></span>
+      <span class="tts-mini-label">${tr('tts.panelTitle')}</span>
+      <span class="tts-mini-counter" aria-live="polite">0 / 0</span>
     </div>
-    <button type="button" class="tts-mini-btn" data-act="stop" aria-label="${tr('tts.stop')}">
-      ${icon('stop', 16)}
-    </button>
+    <div class="tts-mini-transport">
+      <button type="button" class="tts-mini-btn tts-mini-btn-sm" data-act="prev" aria-label="${tr('tts.previous')}">
+        ${icon('prev', 18)}
+      </button>
+      <button type="button" class="tts-mini-btn tts-mini-btn-primary" data-act="play-toggle" aria-label="${tr('tts.pause')}">
+        ${icon('pause', 22)}
+      </button>
+      <button type="button" class="tts-mini-btn tts-mini-btn-sm" data-act="next" aria-label="${tr('tts.next')}">
+        ${icon('next', 18)}
+      </button>
+    </div>
+    <div class="tts-mini-progress" role="progressbar"
+         aria-label="${tr('tts.progress')}"
+         aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"
+         tabindex="0"
+         data-act="seek">
+      <div class="tts-mini-progress-track"></div>
+      <div class="tts-mini-progress-fill"></div>
+      <div class="tts-mini-progress-thumb" aria-hidden="true"></div>
+    </div>
+    <div class="tts-mini-actions">
+      <button type="button" class="tts-mini-rate" data-act="rate-cycle" aria-label="${tr('tts.rateCycle')}">
+        <span class="tts-mini-rate-value">1.0×</span>
+      </button>
+      <button type="button" class="tts-mini-btn tts-mini-btn-sm" data-act="expand" aria-label="${tr('tts.expand')}">
+        ${icon('expand', 18)}
+      </button>
+      <button type="button" class="tts-mini-btn tts-mini-btn-sm" data-act="stop" aria-label="${tr('tts.stop')}">
+        ${icon('close', 18)}
+      </button>
+    </div>
   `;
   document.body.appendChild(miniEl);
 
   miniEl.querySelectorAll<HTMLElement>('[data-act]').forEach(b => {
-    b.addEventListener('click', async () => {
+    b.addEventListener('click', async (ev) => {
       const ttsApi = await getApi();
-      if (b.dataset.act === 'play-toggle') {
-        const s = ttsApi.getState();
-        if (s.status === 'playing') ttsApi.pause();
-        else ttsApi.play();
-      } else if (b.dataset.act === 'stop') {
-        ttsApi.stop();
+      const s = ttsApi.getState();
+      const act = b.dataset.act;
+      switch (act) {
+        case 'play-toggle': {
+          if (s.status === 'playing') ttsApi.pause();
+          else ttsApi.play();
+          break;
+        }
+        case 'stop': ttsApi.stop(); break;
+        case 'prev': {
+          const target = Math.max(0, s.sentenceIdx - 1);
+          ttsApi.play({ fromSentence: target });
+          break;
+        }
+        case 'next': {
+          const total = s.totalSentences || 1;
+          const target = Math.min(total - 1, s.sentenceIdx + 1);
+          ttsApi.play({ fromSentence: target });
+          break;
+        }
+        case 'rate-cycle': {
+          const i = RATE_CYCLE.indexOf(s.rate);
+          const next = RATE_CYCLE[(i + 1) % RATE_CYCLE.length];
+          ttsApi.setRate(next);
+          break;
+        }
+        case 'expand': ttsApi.openPanel(); break;
+        case 'seek': {
+          if (!(ev instanceof MouseEvent)) break;
+          const bar = b.getBoundingClientRect();
+          const isRtl = document.documentElement.dir === 'rtl';
+          let ratio = (ev.clientX - bar.left) / bar.width;
+          if (isRtl) ratio = 1 - ratio;
+          ratio = Math.max(0, Math.min(1, ratio));
+          const total = s.totalSentences || 1;
+          const target = Math.max(0, Math.min(total - 1, Math.round(ratio * total)));
+          ttsApi.play({ fromSentence: target });
+          break;
+        }
       }
     });
+  });
+
+  // Keyboard seek on progress bar
+  const progressBar = miniEl.querySelector<HTMLElement>('.tts-mini-progress');
+  progressBar?.addEventListener('keydown', async (e: KeyboardEvent) => {
+    const ttsApi = await getApi();
+    const s = ttsApi.getState();
+    const total = s.totalSentences || 1;
+    if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+      e.preventDefault();
+      const dir = e.key === 'ArrowRight' ? 1 : -1;
+      const target = Math.max(0, Math.min(total - 1, s.sentenceIdx + dir));
+      ttsApi.play({ fromSentence: target });
+    } else if (e.key === 'Home') {
+      e.preventDefault(); ttsApi.play({ fromSentence: 0 });
+    } else if (e.key === 'End') {
+      e.preventDefault(); ttsApi.play({ fromSentence: total - 1 });
+    }
   });
 
   requestAnimationFrame(() => miniEl?.classList.add('is-mounted'));
@@ -377,15 +457,41 @@ export function mountMiniPlayer(): void {
   void getApi().then(ttsApi => {
     unsubscribeMini = ttsApi.subscribe(s => {
       if (!miniEl) return;
+
+      // Progress fill + thumb
       const fill = miniEl.querySelector<HTMLElement>('.tts-mini-progress-fill');
       if (fill) fill.style.transform = `scaleX(${s.progressPct})`;
+      const thumb = miniEl.querySelector<HTMLElement>('.tts-mini-progress-thumb');
+      if (thumb) thumb.style.insetInlineStart = `${s.progressPct * 100}%`;
       miniEl.querySelector<HTMLElement>('.tts-mini-progress')
         ?.setAttribute('aria-valuenow', String(Math.round(s.progressPct * 100)));
+
+      // Play/pause
       const toggle = miniEl.querySelector<HTMLElement>('[data-act="play-toggle"]');
       if (toggle) {
-        toggle.innerHTML = icon(s.status === 'playing' ? 'pause' : 'play', 16);
+        toggle.innerHTML = icon(s.status === 'playing' ? 'pause' : 'play', 22);
         toggle.setAttribute('aria-label', s.status === 'playing' ? tr('tts.pause') : tr('tts.play'));
       }
+
+      // Rate
+      const rateVal = miniEl.querySelector<HTMLElement>('.tts-mini-rate-value');
+      if (rateVal) rateVal.textContent = `${s.rate.toFixed(1)}×`;
+
+      // Counter (sentence position)
+      const counter = miniEl.querySelector<HTMLElement>('.tts-mini-counter');
+      if (counter) {
+        const cur = s.totalSentences ? Math.min(s.sentenceIdx + 1, s.totalSentences) : 0;
+        counter.textContent = `${cur} / ${s.totalSentences}`;
+      }
+
+      // Playing state (drives pulse animation + accent color)
+      miniEl.dataset.status = s.status;
+
+      // Prev/Next disabled at bounds
+      const prev = miniEl.querySelector<HTMLButtonElement>('[data-act="prev"]');
+      const next = miniEl.querySelector<HTMLButtonElement>('[data-act="next"]');
+      if (prev) prev.disabled = s.sentenceIdx <= 0;
+      if (next) next.disabled = s.totalSentences === 0 || s.sentenceIdx >= s.totalSentences - 1;
     });
   });
 }

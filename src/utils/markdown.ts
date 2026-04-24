@@ -155,6 +155,21 @@ function renderCodeRunner(text: string, lang: string, encodedCode: string, highl
       <span class="cr-copy-label">Copy</span>
       <span class="cr-copied-label">Copied</span>
     </button>
+    <button class="cr-btn cr-edit-btn" type="button" title="Edit code">
+      <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 20h9"></path>
+        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+      </svg>
+      <span class="cr-edit-label">Edit</span>
+      <span class="cr-editing-label">Done</span>
+    </button>
+    <button class="cr-btn cr-reset-btn" type="button" title="Reset to original">
+      <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="1 4 1 10 7 10"></polyline>
+        <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+      </svg>
+      <span>Reset</span>
+    </button>
     <button class="cr-btn cr-btn-primary cr-run-btn" type="button" title="Run">
       <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
         <polygon points="5 3 19 12 5 21"></polygon>
@@ -166,6 +181,7 @@ function renderCodeRunner(text: string, lang: string, encodedCode: string, highl
   <div class="cr-body">
     <div class="cr-gutter" aria-hidden="true">${lineNumbers}</div>
     <pre class="cr-code"><code class="hljs language-${lang}">${highlightedCode}</code></pre>
+    <textarea class="cr-editor" spellcheck="false" autocorrect="off" autocapitalize="off" aria-label="Editable code"></textarea>
   </div>
   <div class="cr-statusbar">
     <span class="cr-status-item"><span class="cr-dot"></span>${label}</span>

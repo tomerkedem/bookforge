@@ -304,6 +304,39 @@ html:not([data-code-theme]) .coderunner .cr-theme-btn svg.cr-theme-icon-sun {
   display: inline;
 }
 
+/* ─── Edit / Reset state ─── */
+.coderunner .cr-editing-label { display: none; }
+
+.coderunner[data-editing="true"] .cr-edit-btn {
+  background: var(--cr-badge-bg);
+  border-color: var(--cr-badge-border);
+  color: var(--cr-badge-color);
+}
+
+.coderunner[data-editing="true"] .cr-edit-btn .cr-edit-label { display: none; }
+.coderunner[data-editing="true"] .cr-edit-btn .cr-editing-label { display: inline; }
+
+.coderunner:not([data-editing="true"]) .cr-reset-btn { display: none; }
+.coderunner[data-editing="true"] .cr-reset-btn {
+  color: var(--cr-dim);
+}
+
+.coderunner[data-editing="true"] .cr-reset-btn:hover {
+  color: var(--cr-text);
+}
+
+.coderunner[data-editing="true"] .cr-code { display: none; }
+.coderunner:not([data-editing="true"]) .cr-editor { display: none; }
+
+/* Dirty indicator — dot next to the filename when user has unsaved edits */
+.coderunner[data-dirty="true"] .cr-label::after {
+  content: '●';
+  margin-inline-start: 6px;
+  color: var(--cr-badge-color);
+  font-size: 10px;
+  vertical-align: middle;
+}
+
 /* ═══════════════════════════════════════════════════════════════════
    Body — gutter + code
    ═══════════════════════════════════════════════════════════════════ */
@@ -334,6 +367,8 @@ html:not([data-code-theme]) .coderunner .cr-theme-btn svg.cr-theme-icon-sun {
 }
 
 .coderunner .cr-code {
+  grid-column: 2;
+  grid-row: 1;
   margin: 0;
   padding: 14px 20px;
   font-size: 15px !important;
@@ -354,6 +389,44 @@ html:not([data-code-theme]) .coderunner .cr-theme-btn svg.cr-theme-icon-sun {
   font-size: inherit !important;
   line-height: inherit !important;
 }
+
+/* Textarea editor — visually identical to .cr-code so toggling is seamless.
+   Pinned to the same grid cell as .cr-code (column 2) so the gutter lines up. */
+.coderunner .cr-editor {
+  grid-column: 2;
+  grid-row: 1;
+  margin: 0;
+  padding: 14px 20px;
+  font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', 'Consolas', monospace !important;
+  font-size: 15px !important;
+  line-height: 1.75 !important;
+  color: var(--cr-text);
+  background: transparent;
+  border: none;
+  outline: none;
+  resize: vertical;
+  width: 100%;
+  box-sizing: border-box;
+  white-space: pre;
+  tab-size: 4;
+  -moz-tab-size: 4;
+  caret-color: var(--cr-badge-color);
+  overflow: auto;
+  min-height: 3em;
+  scrollbar-width: thin;
+  scrollbar-color: var(--cr-border) transparent;
+}
+
+.coderunner .cr-editor:focus {
+  box-shadow: inset 2px 0 0 var(--cr-badge-color);
+}
+
+.coderunner .cr-editor::-webkit-scrollbar { width: 8px; height: 8px; }
+.coderunner .cr-editor::-webkit-scrollbar-thumb {
+  background: var(--cr-border);
+  border-radius: 4px;
+}
+.coderunner .cr-editor::-webkit-scrollbar-track { background: transparent; }
 
 /* ═══════════════════════════════════════════════════════════════════
    Syntax highlighting (highlight.js class names → our CSS vars)
@@ -544,6 +617,7 @@ html:not([data-code-theme]) .coderunner .cr-theme-btn svg.cr-theme-icon-sun {
   .coderunner .cr-gutter { font-size: 12px !important; padding: 12px 0; }
   .coderunner .cr-gutter span { font-size: 12px !important; padding-right: 10px; }
   .coderunner .cr-code { font-size: 13px !important; padding: 12px 16px; }
+  .coderunner .cr-editor { font-size: 13px !important; padding: 12px 16px; }
   .coderunner .cr-statusbar { font-size: 10px; gap: 12px; padding: 5px 12px; }
   .coderunner .cr-output-text { font-size: 12px; padding: 12px 16px; }
 }

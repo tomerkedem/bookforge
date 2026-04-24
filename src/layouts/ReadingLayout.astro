@@ -1176,15 +1176,73 @@ _output_capture = OutputCapture()
 
         const copyBtn = block.querySelector('.cr-copy-btn');
         const runBtn  = block.querySelector('.cr-run-btn');
+        const editBtn = block.querySelector('.cr-edit-btn');
+        const resetBtn = block.querySelector('.cr-reset-btn');
+        const editor = block.querySelector('.cr-editor');
         const gutter  = block.querySelector('.cr-gutter');
         const codeEl  = block.querySelector('.cr-code');
         const status  = block.querySelector('.cr-run-status');
         const outPanel = block.querySelector('.cr-output');
         const outText  = block.querySelector('.cr-output-text');
         const clearBtn = block.querySelector('.cr-output-clear');
+        const linesStatus = block.querySelectorAll('.cr-status-item')[1];
 
         const encodedCode = block.dataset.code || '';
-        const code = encodedCode ? decodeURIComponent(encodedCode) : '';
+        const originalCode = encodedCode ? decodeURIComponent(encodedCode) : '';
+
+        function getCurrentCode() {
+          if (block.dataset.editing === 'true' && editor) return editor.value;
+          return originalCode;
+        }
+
+        function renderGutter(lineCount) {
+          if (!gutter) return;
+          let html = '';
+          for (let i = 1; i <= Math.max(lineCount, 1); i++) html += `<span>${i}</span>`;
+          gutter.innerHTML = html;
+        }
+
+        function updateLineStatus(lineCount) {
+          if (linesStatus) linesStatus.textContent = `${lineCount} lines`;
+        }
+
+        function refreshMetrics(code) {
+          const lines = code.split('\n').length;
+          renderGutter(lines);
+          updateLineStatus(lines);
+        }
+
+        if (editor) {
+          editor.value = originalCode;
+
+          editor.addEventListener('input', () => {
+            const val = editor.value;
+            refreshMetrics(val);
+            block.dataset.dirty = val !== originalCode ? 'true' : 'false';
+            // auto-grow: expand to content height
+            editor.style.height = 'auto';
+            editor.style.height = editor.scrollHeight + 'px';
+          });
+
+          editor.addEventListener('keydown', (e) => {
+            if (e.key === 'Tab') {
+              e.preventDefault();
+              const start = editor.selectionStart;
+              const end = editor.selectionEnd;
+              const insert = '    ';
+              editor.value = editor.value.substring(0, start) + insert + editor.value.substring(end);
+              editor.selectionStart = editor.selectionEnd = start + insert.length;
+              editor.dispatchEvent(new Event('input'));
+            } else if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+              e.preventDefault();
+              runBtn?.click();
+            }
+          });
+
+          editor.addEventListener('scroll', () => {
+            if (gutter) gutter.scrollTop = editor.scrollTop;
+          });
+        }
 
         if (codeEl && gutter) {
           codeEl.addEventListener('scroll', () => {
@@ -1194,7 +1252,7 @@ _output_capture = OutputCapture()
 
         copyBtn?.addEventListener('click', async () => {
           try {
-            await navigator.clipboard.writeText(code);
+            await navigator.clipboard.writeText(getCurrentCode());
             copyBtn.classList.add('copied');
             setTimeout(() => copyBtn.classList.remove('copied'), 1800);
           } catch (err) {
@@ -1202,7 +1260,32 @@ _output_capture = OutputCapture()
           }
         });
 
+        editBtn?.addEventListener('click', () => {
+          const editing = block.dataset.editing === 'true';
+          block.dataset.editing = editing ? 'false' : 'true';
+          if (!editing && editor) {
+            // entering edit mode — size textarea to content
+            editor.style.height = 'auto';
+            editor.style.height = editor.scrollHeight + 'px';
+            editor.focus();
+            // place caret at end
+            const len = editor.value.length;
+            editor.setSelectionRange(len, len);
+          }
+        });
+
+        resetBtn?.addEventListener('click', () => {
+          if (!editor) return;
+          editor.value = originalCode;
+          refreshMetrics(originalCode);
+          block.dataset.dirty = 'false';
+          editor.style.height = 'auto';
+          editor.style.height = editor.scrollHeight + 'px';
+          editor.focus();
+        });
+
         runBtn?.addEventListener('click', async () => {
+          const code = getCurrentCode();
           if (!code || !outPanel || !outText || !status) return;
           runBtn.disabled = true;
           runBtn.classList.add('running');

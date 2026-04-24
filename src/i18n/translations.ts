@@ -128,6 +128,11 @@ export const translations: Translations = {
   'tts.close':             { he: 'סגור',             en: 'Close',            es: 'Cerrar' },
   'tts.noVoices':          { he: 'לא נמצאו קולות',   en: 'No voices found',  es: 'No se encontraron voces' },
   'tts.miniPlayer':        { he: 'נגן הקראה',        en: 'Read-aloud player', es: 'Reproductor de lectura' },
+  'tts.previous':          { he: 'משפט קודם',        en: 'Previous sentence', es: 'Oración anterior' },
+  'tts.next':              { he: 'משפט הבא',         en: 'Next sentence',    es: 'Siguiente oración' },
+  'tts.expand':            { he: 'פתח הגדרות',       en: 'Open settings',    es: 'Abrir ajustes' },
+  'tts.rateCycle':         { he: 'שנה מהירות',       en: 'Change speed',     es: 'Cambiar velocidad' },
+  'tts.seek':              { he: 'קפוץ לנקודה',      en: 'Seek',             es: 'Buscar' },
 
   // ── Bookmarks ───────────────────────────────────────────────────────────────
   'bookmarks.title':       { he: 'סימניות',        en: 'Bookmarks',        es: 'Marcadores' },
