@@ -157,7 +157,13 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
                   language={l}
                 />
               </div>
-              <span class="progress-badge" id={`progress-badge-${l}`}>0%</span>
+              <div class="progress-badge" id={`progress-badge-${l}`} role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                <svg class="progress-ring" viewBox="0 0 40 40" aria-hidden="true">
+                  <circle class="ring-track" cx="20" cy="20" r="17"></circle>
+                  <circle class="ring-fill" cx="20" cy="20" r="17"></circle>
+                </svg>
+                <span class="progress-label">0%</span>
+              </div>
             </div>
           );
         })}
@@ -165,7 +171,7 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
     </div>
   </div>
 
-  <div id="chapter-container" data-book={book} data-chapter-id={chapterId}>
+  <div id="chapter-container" data-book={book} data-chapter-id={chapterId} data-word-count={current.word_count}>
     {langs.map(l => (
       <div
         data-lang={l}
@@ -205,6 +211,7 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
   max-width: 100%;
   margin: 0 0 1.25rem;
   padding: 0.4rem 0 0.5rem;
+
   background:
     linear-gradient(to bottom,
       color-mix(in srgb, var(--yuval-reading-bg) 96%, transparent),
@@ -399,29 +406,158 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
   opacity: 0.7;
 }
 
-/* Progress chip — pinned to the trailing edge of the strip row. */
+/* Progress ring — pinned to the trailing edge of the strip row.
+   Apple-Activity-ring style gold ring that fills as you scroll; the
+   center label shows minutes remaining (e.g. "7'") with a % fallback
+   if word_count isn't available. Filled state shows a ✓ mark.
+   The SVG ring references #ring-gold-gradient from the global <defs>
+   in ReadingLayout.astro so all three language-row rings share one gradient. */
 .progress-badge {
+  position: relative;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 2.4rem;
-  height: 1.4rem;
-  padding-inline: 0.5rem;
-  flex-shrink: 0;
-  border-radius: 3px;
-  background: transparent;
-  border: 1px solid color-mix(in srgb, var(--gold-500) 25%, var(--yuval-border));
-  color: var(--gold-700);
-  font-size: 0.7rem;
-  font-weight: 600;
-  letter-spacing: 0.03em;
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
+  filter: drop-shadow(0 1px 3px rgba(201, 162, 39, 0.22));
 }
 
-:global(.dark) .progress-badge {
-  border-color: color-mix(in srgb, #a8956d 40%, var(--yuval-border));
+.progress-ring {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  /* Start the arc from 12 o'clock instead of 3 o'clock. */
+  transform: rotate(-90deg);
+  overflow: visible;
+}
+
+.ring-track {
+  fill: transparent;
+  stroke: color-mix(in srgb, var(--gold-500) 18%, transparent);
+  stroke-width: 2.5;
+}
+
+.ring-fill {
+  fill: transparent;
+  stroke: url(#ring-gold-gradient);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  /* 2πr for r=17 → 106.814… — refreshed on scroll via stroke-dashoffset. */
+  stroke-dasharray: 106.814;
+  stroke-dashoffset: 106.814;
+  transition: stroke-dashoffset 320ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.progress-label {
+  position: relative;
+  z-index: 1;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--gold-700);
+  letter-spacing: 0.01em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  /* Keep the apostrophe/suffix visually LTR even on RTL pages so
+     "7'" doesn't become "'7". */
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+.progress-badge.is-complete .progress-label {
+  font-size: 0.9rem;
+  color: #22c55e;
+}
+.progress-badge.is-complete .ring-fill {
+  stroke: #22c55e;
+}
+
+:global(.dark) .ring-track {
+  stroke: color-mix(in srgb, #a8956d 25%, transparent);
+}
+:global(.dark) .ring-fill {
+  stroke: url(#ring-gold-gradient-dark);
+}
+:global(.dark) .progress-label {
   color: #d4c098;
+}
+:global(.dark) .progress-badge.is-complete .progress-label {
+  color: #4ade80;
+}
+:global(.dark) .progress-badge.is-complete .ring-fill {
+  stroke: #4ade80;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ring-fill {
+    transition: none;
+  }
+}
+
+/* Resume bookmark — when progress-tracker restores the scroll position
+   after returning to a chapter, the paragraph nearest the viewport
+   center gets this class for ~2.6s. A warm gold halo lands on it so
+   the eye finds the resume point without needing to read the toast.
+   Global selector because the class is applied to <p>/<h2> inside the
+   reading content, which doesn't share this file's scoped cid. */
+:global(.resume-pulse) {
+  position: relative;
+  border-radius: 6px;
+  animation: resumeGoldPulse 2.6s cubic-bezier(0.2, 0, 0, 1) forwards;
+}
+@keyframes resumeGoldPulse {
+  0% {
+    background-color: color-mix(in srgb, var(--gold-500) 22%, transparent);
+    box-shadow:
+      0 0 0 6px color-mix(in srgb, var(--gold-500) 10%, transparent),
+      0 0 22px color-mix(in srgb, var(--gold-500) 28%, transparent);
+  }
+  60% {
+    background-color: color-mix(in srgb, var(--gold-500) 10%, transparent);
+    box-shadow:
+      0 0 0 4px color-mix(in srgb, var(--gold-500) 5%, transparent),
+      0 0 14px color-mix(in srgb, var(--gold-500) 12%, transparent);
+  }
+  100% {
+    background-color: transparent;
+    box-shadow:
+      0 0 0 0 transparent,
+      0 0 0 0 transparent;
+  }
+}
+:global(.dark .resume-pulse) {
+  animation-name: resumeGoldPulseDark;
+}
+@keyframes resumeGoldPulseDark {
+  0% {
+    background-color: color-mix(in srgb, #a8956d 26%, transparent);
+    box-shadow:
+      0 0 0 6px color-mix(in srgb, #a8956d 12%, transparent),
+      0 0 22px color-mix(in srgb, #a8956d 32%, transparent);
+  }
+  60% {
+    background-color: color-mix(in srgb, #a8956d 12%, transparent);
+    box-shadow:
+      0 0 0 4px color-mix(in srgb, #a8956d 6%, transparent),
+      0 0 14px color-mix(in srgb, #a8956d 14%, transparent);
+  }
+  100% {
+    background-color: transparent;
+    box-shadow:
+      0 0 0 0 transparent,
+      0 0 0 0 transparent;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  :global(.resume-pulse) {
+    animation: none;
+    background-color: color-mix(in srgb, var(--gold-500) 14%, transparent);
+    transition: background-color 1200ms ease-out;
+  }
+  :global(.dark .resume-pulse) {
+    background-color: color-mix(in srgb, #a8956d 16%, transparent);
+  }
 }
 
 @media (min-width: 1024px) {
@@ -513,10 +649,14 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
 
   .progress-badge {
     order: 3;
-    min-width: 2.2rem;
-    height: 1.25rem;
-    padding-inline: 0.4rem;
-    font-size: 0.64rem;
+    width: 34px;
+    height: 34px;
+  }
+  .progress-badge .progress-label {
+    font-size: 0.6rem;
+  }
+  .progress-badge.is-complete .progress-label {
+    font-size: 0.75rem;
   }
 
   #chapter-meta-bar :global(.chapter-meta),

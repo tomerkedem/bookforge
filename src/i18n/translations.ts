@@ -285,4 +285,10 @@ export const translations: Translations = {
 
   'empty.library.title':   { he: 'הספרייה ריקה',     en: 'Library is empty', es: 'La biblioteca está vacía' },
   'empty.library.body':    { he: 'עוד לא נוספו ספרים. הוסף קובצי MD לתיקיית output/ כדי להתחיל.', en: 'No books added yet. Drop MD files into the output/ folder to get started.', es: 'Aún no se han añadido libros. Coloca archivos MD en la carpeta output/ para empezar.' },
+
+  // ── Image Lightbox ──────────────────────────────────────────────────────────
+  'lightbox.close':        { he: 'סגור',              en: 'Close',            es: 'Cerrar' },
+  'lightbox.prev':         { he: 'תמונה קודמת',       en: 'Previous image',   es: 'Imagen anterior' },
+  'lightbox.next':         { he: 'תמונה הבאה',        en: 'Next image',       es: 'Imagen siguiente' },
+  'lightbox.zoomHint':     { he: 'לחץ על תמונה להגדלה', en: 'Click any image to enlarge', es: 'Haz clic en una imagen para ampliar' },
 };

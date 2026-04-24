@@ -1412,9 +1412,45 @@ function serializeTitles(chapter: Chapter): string {
   setTimeout(updateTocProgress, 200);
   window.addEventListener('chapter-content-swapped', () => setTimeout(updateTocProgress, 400));
 
+  // 2πr for r=17 — must match the stroke-dasharray baked into the SVG ring.
+  const RING_CIRCUMFERENCE = 106.814;
+  // Average reading speed. 200 WPM is a common Hebrew/English mid-point;
+  // Hebrew readers trend a touch slower, English a touch faster, so 200
+  // is a reasonable default until we track per-user velocity.
+  const WPM = 200;
+
   function updateProgressBadges(pct) {
+    const container = document.getElementById('chapter-container');
+    const wc = parseInt(container?.dataset.wordCount || '0', 10);
+    const minutesLeft = wc > 0
+      ? Math.max(0, Math.ceil((wc * (100 - pct) / 100) / WPM))
+      : null;
+
+    const offset = RING_CIRCUMFERENCE * (1 - pct / 100);
+    const complete = pct >= 99;
+
     document.querySelectorAll('[id^="progress-badge-"]').forEach(el => {
-      el.textContent = pct + '%';
+      const label = el.querySelector('.progress-label');
+      const fill = el.querySelector('.ring-fill');
+
+      if (label) {
+        if (complete) {
+          label.textContent = '✓';
+        } else if (minutesLeft !== null) {
+          // Apostrophe is a universal minutes abbreviation (e.g. 7').
+          // Works in both Hebrew and English without a translation key.
+          label.textContent = minutesLeft === 0 ? '<1\'' : `${minutesLeft}'`;
+        } else {
+          label.textContent = `${pct}%`;
+        }
+      }
+
+      if (fill) {
+        fill.style.strokeDashoffset = String(offset);
+      }
+
+      el.classList.toggle('is-complete', complete);
+      el.setAttribute('aria-valuenow', String(Math.round(pct)));
     });
   }
 

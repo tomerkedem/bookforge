@@ -12,6 +12,23 @@ html {
   scrollbar-gutter: stable;
 }
 
+/* Respect the OS-level reduced-motion preference across the whole app.
+   Readers with vestibular sensitivity (or simply long reading sessions
+   where the pulsing TOC dot and conic-gradient glows grow tiring) can
+   flip this at the OS level and get a calm UI everywhere at once.
+   Short but non-zero durations keep state changes perceptible; a pure 0
+   would make "copied!" feedback and focus transitions invisible. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 :root {
   /* ── Page backgrounds ── */
   --yuval-bg: #f5f0e8;

@@ -77,6 +77,19 @@ const COPY_SUCCESS_MESSAGE = 'Code copied!';
           <stop offset="55%" stop-color="#ffe79a" stop-opacity="0.12"/>
           <stop offset="100%" stop-color="#ffe79a" stop-opacity="0"/>
         </radialGradient>
+        <!-- Gold progress-ring gradient (used by the per-chapter
+             minutes-remaining ring in the sticky top strip). Shared
+             across all three language rows so SVG refs don't duplicate. -->
+        <linearGradient id="ring-gold-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#e8c547"/>
+          <stop offset="55%" stop-color="#c9a227"/>
+          <stop offset="100%" stop-color="#a8852a"/>
+        </linearGradient>
+        <linearGradient id="ring-gold-gradient-dark" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#d4c098"/>
+          <stop offset="55%" stop-color="#a8956d"/>
+          <stop offset="100%" stop-color="#7a6b56"/>
+        </linearGradient>
         <!-- Mask that bites a circular chunk out of the moon to form a
              fat-banana crescent. The bite is fully offset so a thick C
              remains visible. -->

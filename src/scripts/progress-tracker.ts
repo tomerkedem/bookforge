@@ -49,6 +49,37 @@ function getLang() {
     || 'en';
 }
 
+/** Tags we'll accept as the resume anchor (block-level content). */
+const PULSE_TAGS = new Set(['P', 'H1', 'H2', 'H3', 'H4', 'LI', 'BLOCKQUOTE', 'FIGURE']);
+
+/**
+ * After scroll restore settles, add a temporary .resume-pulse class to the
+ * block-level element closest to the vertical center of the viewport so the
+ * reader's eye lands on the resume point. Auto-removes after the animation.
+ */
+function pulseResumePoint() {
+  const cx = window.innerWidth / 2;
+  const cy = window.innerHeight / 2;
+  const hit = document.elementFromPoint(cx, cy) as HTMLElement | null;
+  if (!hit) return;
+
+  let target: HTMLElement | null = hit;
+  while (target && !PULSE_TAGS.has(target.tagName)) {
+    if (target.id === 'chapter-container') { target = null; break; }
+    target = target.parentElement;
+  }
+  if (!target) return;
+
+  // If a pulse is already running on this element (rapid re-restores),
+  // reset the animation so it starts from frame 0.
+  target.classList.remove('resume-pulse');
+  // Force reflow so re-adding the class restarts the animation.
+  void target.offsetWidth;
+  target.classList.add('resume-pulse');
+
+  window.setTimeout(() => target?.classList.remove('resume-pulse'), 2800);
+}
+
 /**
  * Try to restore scroll for the current chapter.
  * Returns true if a restore happened.
@@ -60,6 +91,9 @@ function tryRestore(bookId: string, chapterId: ChapterKey, silent = false): bool
   setTimeout(() => {
     window.scrollTo({ top: progress.scrollPosition, behavior: 'instant' });
     if (!silent) showResumeToast(getLang());
+    // One more frame to let layout settle after the scroll jump, then
+    // spotlight the paragraph where the reader left off.
+    requestAnimationFrame(() => requestAnimationFrame(pulseResumePoint));
   }, 120);
 
   return true;

@@ -1,8 +1,8 @@
 {
-  "total_substitutions": 664,
+  "total_substitutions": 667,
   "rules_fired": 6,
   "by_rule": {
-    "09_multiple_spaces": 577,
+    "09_multiple_spaces": 580,
     "08_close_trailing_unbalanced": 35,
     "04_bold_dot_eol": 32,
     "06_hebrew_prefix_before_bold": 10,

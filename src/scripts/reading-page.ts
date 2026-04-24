@@ -18,6 +18,7 @@ import { initHighlightReplay } from './highlight-replay';
 import { initOnboardingTour } from './onboarding-tour';
 import { initTextToSpeech } from './text-to-speech';
 import { initChapterTitleTap } from './chapter-title-tap';
+import { initImageLightbox } from './image-lightbox';
 
 let currentController: AbortController | null = null;
 let currentProgressCleanup: (() => void) | null = null;
@@ -53,6 +54,7 @@ function initializeReadingPage() {
   initTextToSpeech(controller.signal);
   initOnboardingTour();
   initChapterTitleTap(controller.signal);
+  initImageLightbox(controller);
 
   const cleanup = () => {
     currentProgressCleanup?.();

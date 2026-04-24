@@ -15,5 +15,32 @@
   font-size: var(--reading-font-size, 18px);
   line-height: var(--reading-line-height, 1.7);
   letter-spacing: 0.01em;
+  padding-bottom: 0;
   transition: font-family 0.2s ease;
+}
+
+/* Chapter images — blend into the reading surface so diagrams and
+   illustrations sit on the paper instead of floating as bright
+   rectangles. In light/sepia modes mix-blend-mode: multiply dissolves
+   white image backgrounds into the paper tint while keeping rich
+   colors rich. In dark mode we skip the blend (multiply on black
+   destroys the image) and instead frame the image with a soft gold
+   vitrine so it reads as intentionally displayed on the dark surface. */
+.reading-content img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 1.5rem auto;
+  border-radius: 10px;
+  background: var(--yuval-reading-bg);
+  mix-blend-mode: multiply;
+}
+
+html.dark .reading-content img {
+  mix-blend-mode: normal;
+  filter: brightness(0.95) saturate(0.96);
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.5),
+    0 10px 28px rgba(0, 0, 0, 0.55),
+    0 0 0 1px rgba(168, 149, 109, 0.28);
 }
