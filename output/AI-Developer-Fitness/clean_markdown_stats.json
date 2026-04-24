@@ -1,0 +1,8 @@
+{
+  "total_substitutions": 114,
+  "rules_fired": 2,
+  "by_rule": {
+    "09_multiple_spaces": 113,
+    "06_hebrew_prefix_before_bold": 1
+  }
+}

@@ -1,0 +1,155 @@
+{
+  "book": {
+    "titles": {
+      "he": "AI Developer Fitness"
+    },
+    "subtitles": {
+      "he": "אימון הנדסי למתכנתים בעולם של מערכות הסתברותיות"
+    },
+    "descriptions": {
+      "he": "אתה כבר משתמש במודלים. אולי הם עוזרים לך לכתוב קוד, אולי לענות מהר יותר, אולי לבנות משהו חדש. אבל בשלב מסוים מגיע הרגע שבו זה כבר לא מספיק.\n\nכי לענות זה קל. לפעול בתוך מערכת אמיתית, זה סיפור אחר לגמרי.\n\nכאן מתחיל המעבר האמיתי: ממודל שמייצר טקסט למערכת שמבצעת פעולות. גישה למסדי נתונים, קריאה ל-API, עדכון רשומות, שליחת הודעות. פתאום כל טעות כבר לא נשארת על המסך, היא משנה משהו בעולם האמיתי.\n\nופה אתה מגלה את הבעיה האמיתית: לא המודל, אלא כל מה שמסביבו. אינטגרציות שמתפזרות, הרשאות שלא מוגדרות נכון, קוד שקשה להבין, ובעיקר מערכת שאי אפשר לסמוך עליה.\n\nזה בדיוק המקום שבו נכנס MCP.\n\nלא כטריק טכנולוגי, אלא כהחלטה הנדסית. איך מחברים מודלים לכלים בצורה מסודרת. איך מגדירים חוזים ברורים. איך אוכפים גבולות לפני שפעולה מתבצעת. ואיך בונים מערכת שאפשר להרחיב בלי לפחד לגעת בה.\n\nלאורך הדרך אתה מתחיל לראות דברים אחרת:\n\n- המודל לא מבין, הוא מנחש.\n\n- פרומפטים לא מספיקים, צריך ולידציה.\n\n- Tool הוא לא פונקציה, הוא אחריות.\n\nזה השלב שבו AI מפסיק להיות מרשים, ומתחיל להיות אמין.\n\nאם אתה רוצה לעבור מהתלהבות ליכולת אמיתית לבנות מערכות שעובדות, כאן הכל מתחבר."
+    },
+    "chapters": [
+      {
+        "id": "intro",
+        "file_slug": "intro",
+        "type": "intro",
+        "titles": {
+          "he": "מבוא"
+        },
+        "sections": 0,
+        "has_images": false,
+        "word_count": 269,
+        "topics": []
+      },
+      {
+        "id": 1,
+        "file_slug": "chapter-01",
+        "type": "content",
+        "titles": {
+          "he": "פירוק בעיות לפני שמפעילים Agent"
+        },
+        "sections": 6,
+        "has_images": true,
+        "word_count": 2620,
+        "topics": []
+      },
+      {
+        "id": 2,
+        "file_slug": "chapter-02",
+        "type": "content",
+        "titles": {
+          "he": "קריאת קוד שנכתב בידי אדם ובידי Agent"
+        },
+        "sections": 6,
+        "has_images": true,
+        "word_count": 2409,
+        "topics": []
+      },
+      {
+        "id": 3,
+        "file_slug": "chapter-03",
+        "type": "content",
+        "titles": {
+          "he": "Debugging מנטלי למערכת שחלקים ממנה נכתבו אוטומטית"
+        },
+        "sections": 7,
+        "has_images": false,
+        "word_count": 2327,
+        "topics": []
+      },
+      {
+        "id": 4,
+        "file_slug": "chapter-04",
+        "type": "content",
+        "titles": {
+          "he": "השקר האלגנטי של פתרונות AI"
+        },
+        "sections": 8,
+        "has_images": false,
+        "word_count": 3331,
+        "topics": []
+      },
+      {
+        "id": 5,
+        "file_slug": "chapter-05",
+        "type": "content",
+        "titles": {
+          "he": "הנדסת דיאלוג הגנתית - לעצור את הכשל בשלב הפרומפט"
+        },
+        "sections": 6,
+        "has_images": true,
+        "word_count": 2467,
+        "topics": []
+      },
+      {
+        "id": 6,
+        "file_slug": "chapter-06",
+        "type": "content",
+        "titles": {
+          "he": "קבלת החלטות כאשר ה-Agent מציע חלופות, אבל לא נושא באחריות"
+        },
+        "sections": 13,
+        "has_images": false,
+        "word_count": 3448,
+        "topics": []
+      },
+      {
+        "id": 7,
+        "file_slug": "chapter-07",
+        "type": "content",
+        "titles": {
+          "he": "AI כשותף מקצועי ולא כתחליף לשיפוט מקצועי"
+        },
+        "sections": 12,
+        "has_images": false,
+        "word_count": 2994,
+        "topics": []
+      },
+      {
+        "id": 8,
+        "file_slug": "chapter-08",
+        "type": "content",
+        "titles": {
+          "he": "קוד מאובטח מול Agent עיוור"
+        },
+        "sections": 5,
+        "has_images": false,
+        "word_count": 1797,
+        "topics": []
+      },
+      {
+        "id": 9,
+        "file_slug": "chapter-09",
+        "type": "content",
+        "titles": {
+          "he": "סיכום ואחרית דבר"
+        },
+        "sections": 1,
+        "has_images": false,
+        "word_count": 348,
+        "topics": []
+      },
+      {
+        "id": 10,
+        "file_slug": "chapter-10",
+        "type": "content",
+        "titles": {
+          "he": "הפרויקט המסכם: Lomda Engineering Journey"
+        },
+        "sections": 5,
+        "has_images": false,
+        "word_count": 642,
+        "topics": []
+      }
+    ],
+    "languages": [
+      "he"
+    ],
+    "credits": {
+      "author": {
+        "he": "תומר קדם"
+      }
+    }
+  }
+}

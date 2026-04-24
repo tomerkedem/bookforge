@@ -732,6 +732,25 @@ function serializeTitles(chapter: Chapter): string {
     background: #a8956d;
   }
 
+  :global(.outline-list li.active) {
+    background: linear-gradient(90deg, rgba(201, 162, 39, 0.14), rgba(201, 162, 39, 0.02) 80%);
+    border-radius: 6px;
+  }
+
+  :global([dir="rtl"] .outline-list li.active),
+  :global(.outline-sidebar-rtl .outline-list li.active) {
+    background: linear-gradient(270deg, rgba(201, 162, 39, 0.14), rgba(201, 162, 39, 0.02) 80%);
+  }
+
+  :global(.dark .outline-list li.active) {
+    background: linear-gradient(90deg, rgba(168, 149, 109, 0.2), rgba(168, 149, 109, 0.02) 80%);
+  }
+
+  :global(.dark [dir="rtl"] .outline-list li.active),
+  :global(.dark .outline-sidebar-rtl .outline-list li.active) {
+    background: linear-gradient(270deg, rgba(168, 149, 109, 0.2), rgba(168, 149, 109, 0.02) 80%);
+  }
+
   :global(.outline-list li.active a::before) {
     background: #c9a227;
     width: 7px;
@@ -739,6 +758,7 @@ function serializeTitles(chapter: Chapter): string {
     box-shadow:
       0 0 0 3px var(--yuval-reading-bg, #fff),
       0 0 0 4px rgba(201, 162, 39, 0.3);
+    animation: outline-active-pulse 2.4s var(--ease-standard) infinite;
   }
 
   :global(.dark .outline-list li.active a::before) {
@@ -746,6 +766,19 @@ function serializeTitles(chapter: Chapter): string {
     box-shadow:
       0 0 0 3px var(--yuval-reading-bg, #1a1a1a),
       0 0 0 4px rgba(168, 149, 109, 0.35);
+  }
+
+  @keyframes outline-active-pulse {
+    0%, 100% {
+      box-shadow:
+        0 0 0 3px var(--yuval-reading-bg, #fff),
+        0 0 0 4px rgba(201, 162, 39, 0.35);
+    }
+    50% {
+      box-shadow:
+        0 0 0 3px var(--yuval-reading-bg, #fff),
+        0 0 0 8px rgba(201, 162, 39, 0);
+    }
   }
 
   /* H3 items: indented slightly, even smaller and lighter. */
@@ -1200,21 +1233,114 @@ function serializeTitles(chapter: Chapter): string {
     return document.querySelector('.chapter-content.visible') || document.querySelector('.chapter-content');
   }
 
+  let outlineSpyObserver = null;
+  let outlineHeadingOrder = [];
+  const outlineHeadingMap = new Map();
+  const outlineVisibleIds = new Set();
+  let activeOutlineId = null;
+
+  function setActiveOutlineItem(id) {
+    if (activeOutlineId === id) return;
+    activeOutlineId = id;
+
+    document.querySelectorAll('#chapter-outline li.active, #mobile-chapter-outline li.active')
+      .forEach(li => li.classList.remove('active'));
+
+    if (!id) return;
+
+    document.querySelectorAll(`#chapter-outline li[data-heading-id="${id}"], #mobile-chapter-outline li[data-heading-id="${id}"]`)
+      .forEach(li => li.classList.add('active'));
+
+    // Keep the active item in view inside the outline sidebar itself
+    // (not the whole page) so long chapters stay scannable.
+    const sidebar = document.getElementById('outline-sidebar');
+    const li = outlineHeadingMap.get(id);
+    if (sidebar && li && sidebar.scrollHeight > sidebar.clientHeight) {
+      const sRect = sidebar.getBoundingClientRect();
+      const lRect = li.getBoundingClientRect();
+      const margin = 24;
+      if (lRect.top < sRect.top + margin) {
+        sidebar.scrollTo({ top: sidebar.scrollTop + (lRect.top - sRect.top) - margin, behavior: 'smooth' });
+      } else if (lRect.bottom > sRect.bottom - margin) {
+        sidebar.scrollTo({ top: sidebar.scrollTop + (lRect.bottom - sRect.bottom) + margin, behavior: 'smooth' });
+      }
+    }
+  }
+
+  function recomputeActiveOutline() {
+    if (outlineHeadingOrder.length === 0) return;
+
+    // Prefer the first heading currently inside the "active zone"
+    // (top ~25% of viewport). If none is there, fall back to the last
+    // heading that scrolled past the trigger — that's the section the
+    // reader is currently inside.
+    const firstVisible = outlineHeadingOrder.find(h => outlineVisibleIds.has(h.id));
+    if (firstVisible) {
+      setActiveOutlineItem(firstVisible.id);
+      return;
+    }
+
+    const triggerY = window.innerHeight * 0.25;
+    let candidate = null;
+    for (const h of outlineHeadingOrder) {
+      const top = h.getBoundingClientRect().top;
+      if (top <= triggerY) candidate = h;
+      else break;
+    }
+    setActiveOutlineItem(candidate ? candidate.id : outlineHeadingOrder[0]?.id || null);
+  }
+
+  function setupOutlineScrollSpy(headings) {
+    if (outlineSpyObserver) {
+      outlineSpyObserver.disconnect();
+      outlineSpyObserver = null;
+    }
+    outlineVisibleIds.clear();
+    outlineHeadingOrder = headings;
+    activeOutlineId = null;
+
+    if (!('IntersectionObserver' in window) || headings.length === 0) return;
+
+    outlineSpyObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        const id = entry.target.id;
+        if (!id) return;
+        if (entry.isIntersecting) outlineVisibleIds.add(id);
+        else outlineVisibleIds.delete(id);
+      });
+      recomputeActiveOutline();
+    }, {
+      // Active zone is roughly the upper quarter of the viewport — a
+      // heading "activates" as it crosses ~25% from the top, and stays
+      // active until the next one arrives.
+      rootMargin: '-15% 0px -60% 0px',
+      threshold: 0,
+    });
+
+    headings.forEach(h => outlineSpyObserver.observe(h));
+    recomputeActiveOutline();
+  }
+
   function buildChapterOutline() {
     const outline = document.getElementById('chapter-outline');
     if (!outline) return;
 
     const ul = outline.querySelector('ul');
     if (ul) ul.innerHTML = '';
+    outlineHeadingMap.clear();
 
     const contentDiv = getVisibleContentDiv();
-    if (!contentDiv) return;
+    if (!contentDiv) {
+      setupOutlineScrollSpy([]);
+      return;
+    }
 
     const headings = Array.from(contentDiv.querySelectorAll('h2, h3'));
 
     const outlineSidebar = document.getElementById('outline-sidebar');
     if (headings.length === 0) {
       if (outlineSidebar) outlineSidebar.style.display = 'none';
+      setupOutlineScrollSpy([]);
       return;
     }
     if (outlineSidebar) outlineSidebar.style.display = '';
@@ -1228,6 +1354,7 @@ function serializeTitles(chapter: Chapter): string {
 
       const li = document.createElement('li');
       li.setAttribute('data-level', level);
+      li.setAttribute('data-heading-id', id);
 
       const link = document.createElement('a');
       link.href = `#${id}`;
@@ -1238,12 +1365,16 @@ function serializeTitles(chapter: Chapter): string {
         const target = document.getElementById(id);
         if (target) {
           target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          setActiveOutlineItem(id);
         }
       });
 
       li.appendChild(link);
       if (ul) ul.appendChild(li);
+      outlineHeadingMap.set(id, li);
     });
+
+    setupOutlineScrollSpy(headings);
   }
 
   function updateTocLinks() {
@@ -1524,6 +1655,8 @@ function serializeTitles(chapter: Chapter): string {
 
       const li = document.createElement('li');
       li.setAttribute('data-level', level);
+      li.setAttribute('data-heading-id', id);
+      if (id === activeOutlineId) li.classList.add('active');
 
       const link = document.createElement('a');
       link.href = `#${id}`;

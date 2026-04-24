@@ -1,0 +1,191 @@
+{
+  "book": {
+    "titles": {
+      "he": "בניית מערכות AI עם MCP"
+    },
+    "subtitles": {
+      "he": "ממודל שמגיב למערכת שפועלת"
+    },
+    "descriptions": {
+      "he": "אתה כבר יודע שמודלים יודעים לענות.\nהשאלה היא אם אתה יודע לגרום להם לעבוד בתוך מערכת אמיתית.\n\nכאן בדיוק מתחיל האתגר האמיתי.\n\nברגע שמודל צריך לגעת בדאטה, לקרוא ל-API, לעדכן רשומות או לשלוח פעולות, הכל משתנה. זה כבר לא משחק של תשובות נכונות או לא נכונות. זו מערכת עם השלכות אמיתיות, עם סיכונים, עם אחריות.\n\nואז אתה מגלה את האמת הפשוטה:\nהבעיה היא לא המודל.\nהבעיה היא איך אתה מחבר אותו לעולם.\n\nכאן נכנס MCP לא ככלי, אלא כשכבת חשיבה.\nאיך עוברים מכאוס של אינטגרציות לקונסיסטנטיות.\nאיך מונעים קוד ספגטי לפני שהוא נוצר.\nאיך מגדירים חוזים במקום להסתמך על ניחושים של מודל.\nואיך בונים מערכת שאפשר לסמוך עליה גם כשהמודל טועה.\n\nלאורך הדרך אתה מבין משהו עמוק יותר:\nמודל לא מבין, הוא מנבא.\nפרומפטים לא מספיקים, צריך אכיפה.\nAction הוא לא Answer, וההבדל ביניהם הוא כל ההבדל.\n\nזה לא עוד ספר על AI.\nזה המעבר מחשיבה של “איך להשתמש במודל”\nלחשיבה של “איך לבנות מערכת סביבו”.\n\nאם אתה רוצה להפסיק לאלתר ולהתחיל להנדס מערכות AI אמיתיות, זה בדיוק המקום שבו הדברים מתחילים להתחבר."
+    },
+    "chapters": [
+      {
+        "id": "intro",
+        "file_slug": "intro",
+        "type": "intro",
+        "titles": {
+          "he": "מבוא"
+        },
+        "sections": 0,
+        "has_images": false,
+        "word_count": 182,
+        "topics": []
+      },
+      {
+        "id": 1,
+        "file_slug": "chapter-01",
+        "type": "content",
+        "titles": {
+          "he": "למה בכלל צריך MCP"
+        },
+        "sections": 8,
+        "has_images": true,
+        "word_count": 1451,
+        "topics": []
+      },
+      {
+        "id": 2,
+        "file_slug": "chapter-02",
+        "type": "content",
+        "titles": {
+          "he": "להבין את הבעיה לפני שמבינים את הפתרון"
+        },
+        "sections": 9,
+        "has_images": false,
+        "word_count": 1893,
+        "topics": []
+      },
+      {
+        "id": 3,
+        "file_slug": "chapter-03",
+        "type": "content",
+        "titles": {
+          "he": "מהו MCP באמת"
+        },
+        "sections": 7,
+        "has_images": true,
+        "word_count": 1309,
+        "topics": []
+      },
+      {
+        "id": 4,
+        "file_slug": "chapter-04",
+        "type": "content",
+        "titles": {
+          "he": "רכיבי המערכת: Host, Client, Server, Model"
+        },
+        "sections": 10,
+        "has_images": true,
+        "word_count": 2074,
+        "topics": []
+      },
+      {
+        "id": 5,
+        "file_slug": "chapter-05",
+        "type": "content",
+        "titles": {
+          "he": "איך מעצבים יכולות נכון: Resources, Tools, Prompts"
+        },
+        "sections": 9,
+        "has_images": true,
+        "word_count": 1908,
+        "topics": []
+      },
+      {
+        "id": 6,
+        "file_slug": "chapter-06",
+        "type": "content",
+        "titles": {
+          "he": "בניית שרת MCP ראשון"
+        },
+        "sections": 9,
+        "has_images": true,
+        "word_count": 1573,
+        "topics": []
+      },
+      {
+        "id": 7,
+        "file_slug": "chapter-07",
+        "type": "content",
+        "titles": {
+          "he": "איך מתכננים Tools למערכות אמיתיות"
+        },
+        "sections": 9,
+        "has_images": false,
+        "word_count": 2659,
+        "topics": []
+      },
+      {
+        "id": 8,
+        "file_slug": "chapter-08",
+        "type": "content",
+        "titles": {
+          "he": "Context, State וזרימות עבודה"
+        },
+        "sections": 10,
+        "has_images": false,
+        "word_count": 2438,
+        "topics": []
+      },
+      {
+        "id": 9,
+        "file_slug": "chapter-09",
+        "type": "content",
+        "titles": {
+          "he": "אבטחה, הרשאות וגבולות אמון"
+        },
+        "sections": 12,
+        "has_images": false,
+        "word_count": 4457,
+        "topics": []
+      },
+      {
+        "id": 10,
+        "file_slug": "chapter-10",
+        "type": "content",
+        "titles": {
+          "he": "אמינות, תצפיתיות ו-Debugging"
+        },
+        "sections": 10,
+        "has_images": true,
+        "word_count": 3976,
+        "topics": []
+      },
+      {
+        "id": 11,
+        "file_slug": "chapter-11",
+        "type": "content",
+        "titles": {
+          "he": "דפוסים ארכיטקטוניים למערכות MCP"
+        },
+        "sections": 11,
+        "has_images": true,
+        "word_count": 3145,
+        "topics": []
+      },
+      {
+        "id": 12,
+        "file_slug": "chapter-12",
+        "type": "content",
+        "titles": {
+          "he": "מ-Prototype ל-Production"
+        },
+        "sections": 22,
+        "has_images": false,
+        "word_count": 4180,
+        "topics": []
+      },
+      {
+        "id": 13,
+        "file_slug": "chapter-13",
+        "type": "content",
+        "titles": {
+          "he": "סיכום: איך MCP משנה את צורת החשיבה של מתכנתים"
+        },
+        "sections": 7,
+        "has_images": false,
+        "word_count": 1169,
+        "topics": []
+      }
+    ],
+    "languages": [
+      "he"
+    ],
+    "credits": {
+      "author": {
+        "he": "תומר קדם"
+      }
+    }
+  }
+}

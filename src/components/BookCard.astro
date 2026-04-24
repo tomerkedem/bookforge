@@ -132,7 +132,7 @@ const bookUrl = `/books/${slug}`;
   </a>
 
   <!-- Content - compact -->
-  <div class="card-content p-3 flex flex-col justify-center">
+  <div class="card-content p-3 flex flex-col">
     <!-- Continue reading indicator -->
     <span class="card-continue hidden text-[10px] text-indigo-500 dark:text-indigo-400 font-semibold uppercase tracking-wide" data-slug={slug}>
       <span class="card-continue-label" data-i18n="home.continueShort">Continue</span>
@@ -158,12 +158,12 @@ const bookUrl = `/books/${slug}`;
     )}
 
     {displayAuthor && (
-      <p
-        class="text-[11px] text-yuval-text-tertiary leading-snug line-clamp-1 mt-1 italic"
-        data-book-author
-        {...authorAttrs}
-      >
-        {displayAuthor}
+      <p class="text-[11px] text-yuval-text-tertiary leading-snug mt-auto pt-2 italic flex items-center justify-center gap-1 min-w-0">
+        <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 opacity-70" aria-hidden="true">
+          <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
+          <circle cx="12" cy="7" r="4"/>
+        </svg>
+        <span class="truncate" data-book-author {...authorAttrs}>{displayAuthor}</span>
       </p>
     )}
   </div>
