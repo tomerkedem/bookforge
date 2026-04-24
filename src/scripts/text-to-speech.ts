@@ -849,6 +849,56 @@ export function initTextToSpeech(signal: AbortSignal, opts: TtsInitOptions = {})
     else togglePanel();
   }, { signal });
 
+  // Double-click-to-jump: while TTS is playing or paused, a dblclick on
+  // any word inside the reading content restarts playback from that
+  // sentence. Audiobook apps do this as a "tap-to-read-from-here"
+  // affordance; skipped entirely when idle so the browser's native
+  // word-selection for copy/highlight is preserved.
+  const onDblClick = (e: MouseEvent) => {
+    if (state.status !== 'playing' && state.status !== 'paused') return;
+    const target = e.target as HTMLElement | null;
+    if (!target) return;
+    const container = getContentContainer();
+    if (!container || !container.contains(target)) return;
+
+    // paragraphs[] is populated by buildIndex() in play(); if we're in
+    // playing/paused we know it's already built, but rebuild defensively
+    // in case the DOM was swapped (e.g. language switch mid-playback).
+    if (!paragraphs.length) buildIndex();
+    if (!paragraphs.length) return;
+
+    let el: HTMLElement | null = target;
+    while (el && !paragraphs.includes(el)) el = el.parentElement;
+    if (!el) return;
+    const pIdx = paragraphs.indexOf(el);
+    if (pIdx < 0) return;
+
+    // Prefer caretRangeFromPoint for pixel-accurate placement; fall back
+    // to the auto-selection the browser made on dblclick.
+    type CaretRangeFn = (x: number, y: number) => Range | null;
+    const caretFn = (document as unknown as { caretRangeFromPoint?: CaretRangeFn }).caretRangeFromPoint;
+    let charOffset: number | null = null;
+    const caretRange = typeof caretFn === 'function' ? caretFn.call(document, e.clientX, e.clientY) : null;
+    if (caretRange?.startContainer) {
+      charOffset = computeCharOffset(el, caretRange.startContainer, caretRange.startOffset);
+    } else {
+      const sel = window.getSelection();
+      if (sel && sel.rangeCount > 0) {
+        const range = sel.getRangeAt(0);
+        charOffset = computeCharOffset(el, range.startContainer, range.startOffset);
+      }
+    }
+    if (charOffset == null) return;
+
+    const hit = sentenceForParagraphBoundary(pIdx, charOffset);
+    if (!hit) return;
+
+    e.preventDefault();
+    window.getSelection()?.removeAllRanges();
+    play({ fromSentence: hit.sentenceIdxGlobal });
+  };
+  document.addEventListener('dblclick', onDblClick, { signal });
+
   // Panel + mini-player are mounted lazily on first open/play
   mountTtsPanel();
 
