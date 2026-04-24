@@ -618,6 +618,25 @@
   #tts-panel.is-open ~ #tts-mini { opacity: 0; pointer-events: none; }
 }
 
+/* ── Inline trigger mode (book landing page) ──────────────────────────────
+   Desktop popover normally anchors to the FAB corner. The landing page
+   has no FAB — the trigger is an inline pill and the expand action
+   lives on the mini-player at center-bottom. Keep the popover look
+   intact, just re-anchor it to sit directly above the mini-player so
+   it appears in the user's natural focus area. Mobile continues to use
+   the existing bottom-sheet rule unchanged. */
+@media (min-width: 1024px) {
+  html[data-tts-mode="inline"] #tts-panel {
+    inset-inline-end: auto;
+    inset-inline-start: 50%;
+    bottom: 6rem;
+    transform: translate3d(-50%, 8px, 0);
+  }
+  html[data-tts-mode="inline"] #tts-panel.is-open {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
 /* ── Active reading highlights (injected into chapter content) ───────────── */
 .tts-sentence-active {
   background: color-mix(in srgb, var(--tts-accent) 8%, transparent);

@@ -763,12 +763,47 @@ function syncFabState(btn: HTMLButtonElement): void {
   btn.title = label;
 }
 
+// Sync the inline pill button on the book landing page. Keeps the caller's
+// <span class="tts-inline-label"> intact so translated text isn't clobbered;
+// only the icon slot and state classes change.
+function syncInlineState(btn: HTMLElement): void {
+  let iconName: 'speaker' | 'play' | 'pause';
+  if (state.status === 'playing') {
+    iconName = 'pause';
+    btn.classList.add('is-active');
+  } else if (state.status === 'paused') {
+    iconName = 'play';
+    btn.classList.add('is-active');
+  } else {
+    iconName = 'speaker';
+    btn.classList.remove('is-active');
+  }
+  const iconSlot = btn.querySelector('.tts-inline-icon');
+  if (iconSlot) iconSlot.innerHTML = icon(iconName, 18);
+  btn.setAttribute('aria-pressed', state.status === 'playing' ? 'true' : 'false');
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // Init
 // ═══════════════════════════════════════════════════════════════════════════
 
-export function initTextToSpeech(signal: AbortSignal): void {
+export interface TtsInitOptions {
+  /** 'fab' = floating action button (reading view). 'inline' = bind to a
+   *  supplied pill button (book landing page — next to the title).    */
+  trigger?: 'fab' | 'inline';
+  /** Required when trigger === 'inline'. The button to bind clicks to. */
+  inlineEl?: HTMLElement | null;
+}
+
+export function initTextToSpeech(signal: AbortSignal, opts: TtsInitOptions = {}): void {
   if (!('speechSynthesis' in window)) return;
+
+  const mode = opts.trigger ?? 'fab';
+  const inlineEl = mode === 'inline' ? opts.inlineEl ?? null : null;
+  // If inline mode was requested but no element is present in the DOM,
+  // bail silently — there's nothing to wire the click to. This keeps the
+  // book landing page from falling back to creating a stray FAB.
+  if (mode === 'inline' && !inlineEl) return;
 
   state.rate = loadRate();
   state.hasResumePoint = loadLastPosition() > 0;
@@ -794,10 +829,22 @@ export function initTextToSpeech(signal: AbortSignal): void {
   (window as unknown as { __ttsState?: () => unknown }).__ttsState = getTextToSpeechState;
   (window as unknown as { __ttsOpenPanel?: () => void }).__ttsOpenPanel = openPanel;
 
-  // FAB button
-  const fab = buildFab();
-  syncFabState(fab);
-  fab.addEventListener('click', () => {
+  // Trigger — FAB (reading) or inline pill (landing page).
+  const trigger: HTMLElement = mode === 'inline' ? inlineEl! : buildFab();
+  const syncTriggerState = mode === 'inline'
+    ? () => syncInlineState(trigger)
+    : () => syncFabState(trigger as HTMLButtonElement);
+
+  // Tell CSS which layout we're in. The panel defaults to a popover
+  // anchored to the (absent) FAB corner on desktop — in 'inline' mode
+  // we want a bottom-sheet instead so it's actually visible next to the
+  // mini-player that triggered it.
+  if (mode === 'inline') {
+    document.documentElement.dataset.ttsMode = 'inline';
+  }
+
+  syncTriggerState();
+  trigger.addEventListener('click', () => {
     if (state.status === 'idle') openPanel();
     else togglePanel();
   }, { signal });
@@ -805,8 +852,8 @@ export function initTextToSpeech(signal: AbortSignal): void {
   // Panel + mini-player are mounted lazily on first open/play
   mountTtsPanel();
 
-  // Subscribe FAB + mini to state
-  const unsubscribeFab = subscribe(() => syncFabState(fab));
+  // Subscribe trigger + mini to state
+  const unsubscribeTrigger = subscribe(syncTriggerState);
   const unsubscribeMini = subscribe(s => {
     if (s.status === 'idle') unmountMiniPlayer();
     else mountMiniPlayer();
@@ -814,11 +861,18 @@ export function initTextToSpeech(signal: AbortSignal): void {
 
   signal.addEventListener('abort', () => {
     stop();
-    unsubscribeFab();
+    unsubscribeTrigger();
     unsubscribeMini();
     closePanel();
     unmountMiniPlayer();
-    document.getElementById('tts-fab')?.remove();
+    // Only the FAB is owned by this module — the inline button belongs
+    // to the page template and must stay in the DOM.
+    if (mode === 'fab') document.getElementById('tts-fab')?.remove();
+    else {
+      trigger.classList.remove('is-active');
+      trigger.setAttribute('aria-pressed', 'false');
+      delete document.documentElement.dataset.ttsMode;
+    }
     delete (window as unknown as { __ttsToggle?: () => void }).__ttsToggle;
     delete (window as unknown as { __ttsState?: () => unknown }).__ttsState;
     delete (window as unknown as { __ttsOpenPanel?: () => void }).__ttsOpenPanel;

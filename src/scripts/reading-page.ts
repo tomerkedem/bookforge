@@ -28,8 +28,19 @@ let currentProgressCleanup: (() => void) | null = null;
  * Safe to call repeatedly: aborts the previous controller and rebinds.
  */
 function initializeReadingPage() {
+  // Always tear down the previous init first. View Transitions keep
+  // <body>-level elements around (e.g. #tts-fab) between pages, so
+  // aborting the controller also lets each module remove its DOM.
   currentController?.abort();
   currentProgressCleanup?.();
+  currentController = null;
+  currentProgressCleanup = null;
+
+  // Only mount reading controls on actual chapter pages. Without this
+  // guard, navigating chapter → home via astro:after-swap would re-fire
+  // this initializer on a page with no #chapter-container and leave a
+  // stray speaker FAB / sidebars / hints on the home and landing pages.
+  if (!document.getElementById('chapter-container')) return;
 
   const controller = new AbortController();
   currentController = controller;

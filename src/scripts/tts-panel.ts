@@ -38,7 +38,15 @@ let outsideClickHandler: ((e: MouseEvent) => void) | null = null;
 let keydownHandler: ((e: KeyboardEvent) => void) | null = null;
 
 export function mountTtsPanel(): void {
-  if (panelEl) return;
+  // After an Astro view-transition, the body is swapped and any DOM we
+  // previously appended is gone — but the module-scope refs remain. Treat
+  // detached nodes as "not mounted" so we rebuild a fresh panel here
+  // instead of early-returning and leaving the next page panel-less.
+  if (panelEl && panelEl.isConnected) return;
+  panelEl = null;
+  backdropEl = null;
+  unsubscribePanel?.();
+  unsubscribePanel = null;
 
   backdropEl = document.createElement('div');
   backdropEl.id = 'tts-backdrop';
@@ -213,7 +221,7 @@ function wirePanelEvents(): void {
 }
 
 export function openTtsPanel(): void {
-  if (!panelEl) mountTtsPanel();
+  if (!panelEl || !panelEl.isConnected) mountTtsPanel();
   if (!panelEl) return;
 
   renderPanel();
@@ -236,12 +244,17 @@ export function openTtsPanel(): void {
     unsubscribePanel = ttsApi.subscribe(state => updatePanelState(state));
   });
 
-  // Outside click closes (desktop popover semantics)
+  // Outside click closes (desktop popover semantics). Exempt every TTS
+  // trigger — FAB, mini-player, and the inline pill — otherwise a click
+  // on e.g. the mini's expand button in capture phase closes the panel,
+  // and the same click in bubble phase tries to re-open it. The close's
+  // stale transitionend listener then hijacks the re-open animation and
+  // sets hidden=true, so the panel ends up invisible.
   outsideClickHandler = (e: MouseEvent) => {
     if (!panelEl) return;
     const target = e.target as Node;
     if (panelEl.contains(target)) return;
-    if ((target as HTMLElement).closest?.('#tts-fab')) return;
+    if ((target as HTMLElement).closest?.('#tts-fab, #tts-mini, #tts-inline-trigger')) return;
     void getApi().then(ttsApi => ttsApi.closePanel());
   };
   setTimeout(() => {
@@ -343,7 +356,10 @@ let unsubscribeMini: (() => void) | null = null;
 const RATE_CYCLE: TtsRate[] = [0.8, 1, 1.3];
 
 export function mountMiniPlayer(): void {
-  if (miniEl) return;
+  if (miniEl && miniEl.isConnected) return;
+  miniEl = null;
+  unsubscribeMini?.();
+  unsubscribeMini = null;
   miniEl = document.createElement('div');
   miniEl.id = 'tts-mini';
   miniEl.setAttribute('role', 'region');

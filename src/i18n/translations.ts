@@ -133,6 +133,7 @@ export const translations: Translations = {
   'tts.expand':            { he: 'פתח הגדרות',       en: 'Open settings',    es: 'Abrir ajustes' },
   'tts.rateCycle':         { he: 'שנה מהירות',       en: 'Change speed',     es: 'Cambiar velocidad' },
   'tts.seek':              { he: 'קפוץ לנקודה',      en: 'Seek',             es: 'Buscar' },
+  'tts.listenToDescription': { he: 'האזן לתיאור',    en: 'Listen to description', es: 'Escuchar descripción' },
 
   // ── Bookmarks ───────────────────────────────────────────────────────────────
   'bookmarks.title':       { he: 'סימניות',        en: 'Bookmarks',        es: 'Marcadores' },

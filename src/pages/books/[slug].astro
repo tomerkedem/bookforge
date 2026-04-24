@@ -282,7 +282,6 @@ const description = getLocalizedText(book.descriptions, language);
                              correctly in both light and dark themes. -->
                         <span
                           class="chapter-number-badge flex-shrink-0 inline-flex items-center justify-center min-w-[36px] h-7 px-2 rounded-md font-semibold text-xs tabular-nums"
-                          style="background-color: rgba(201, 162, 39, 0.12); color: #8a6a15; border: 1px solid rgba(201, 162, 39, 0.25);"
                           aria-hidden="true"
                         >
                           {chapterNum.toString().padStart(2, '0')}
@@ -290,7 +289,10 @@ const description = getLocalizedText(book.descriptions, language);
 
                         <div class="flex-1 min-w-0">
                           <div class="flex items-center gap-2">
-                            <span class="chapter-status-icon text-base hidden" aria-hidden="true"></span>
+                            <svg class="chapter-status-check w-4 h-4 flex-shrink-0 text-green-600 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                              <circle cx="12" cy="12" r="10" stroke-width="1.8" fill="rgba(34,197,94,0.12)" />
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M8 12.5l2.5 2.5L16 9.5" />
+                            </svg>
                             <h3 class="font-heading font-semibold text-sm sm:text-base text-yuval-text line-clamp-2">
                               {chapterTitle}
                             </h3>
@@ -309,15 +311,6 @@ const description = getLocalizedText(book.descriptions, language);
 
                             <span class="inline-flex items-center gap-1">
                               <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 5h16M4 9h16M4 13h10M4 17h7" />
-                              </svg>
-                              <span>{formatWordCount(chapter.word_count ?? 0, language)}</span>
-                            </span>
-
-                            <span class="text-yuval-text-muted" aria-hidden="true">·</span>
-
-                            <span class="inline-flex items-center gap-1">
-                              <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                 <rect x="4" y="4" width="16" height="16" rx="2" stroke-width="1.8" />
                                 <path stroke-width="1.8" d="M4 10h16M4 15h16M10 4v16" />
                               </svg>
@@ -326,20 +319,6 @@ const description = getLocalizedText(book.descriptions, language);
                           </p>
                         </div>
                       </div>
-
-                      <svg
-                        class="w-4 h-4 text-yuval-text-tertiary flex-shrink-0"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width={2}
-                          d={isRtl ? 'M15 19l-7-7 7-7' : 'M9 5l7 7-7 7'}
-                        />
-                      </svg>
                     </div>
                   </a>
                 );
@@ -350,9 +329,24 @@ const description = getLocalizedText(book.descriptions, language);
 
         <!-- Content column: title, subtitle, cover, description, meta -->
         <div class:list={[isRtl && 'text-right']}>
-          <h1 class="font-heading font-bold text-2xl sm:text-3xl lg:text-4xl leading-tight mb-4 sm:mb-5 text-yuval-text">
-            {title}
-          </h1>
+          <!-- Title row: heading + inline "listen to description" trigger.
+               Wired to the TTS engine by the page script. The icon is
+               injected at init; the label stays translated here. -->
+          <div class:list={['flex', 'items-start', 'gap-3', 'flex-wrap', 'mb-4', 'sm:mb-5']}>
+            <h1 class="font-heading font-bold text-2xl sm:text-3xl lg:text-4xl leading-tight text-yuval-text flex-1 min-w-0">
+              {title}
+            </h1>
+            <button
+              id="tts-inline-trigger"
+              class="tts-inline-btn"
+              type="button"
+              aria-label={t('tts.listenToDescription', language)}
+              aria-pressed="false"
+            >
+              <span class="tts-inline-icon" aria-hidden="true"></span>
+              <span class="tts-inline-label">{t('tts.listenToDescription', language)}</span>
+            </button>
+          </div>
 
           {getLocalizedText(book.subtitles, language) && (
             <p class="text-sm sm:text-base text-yuval-text-tertiary leading-relaxed mb-5 sm:mb-6">
@@ -369,16 +363,8 @@ const description = getLocalizedText(book.descriptions, language);
             'xl:max-w-[440px]',
             isRtl ? 'lg:float-left lg:mr-6 xl:mr-8' : 'lg:float-right lg:ml-6 xl:ml-8',
           ]}>
-            <img
-              src={book.coverImage}
-              alt={title}
-              loading="lazy"
-              decoding="async"
-              class="book-cover-img w-full h-auto rounded-lg shadow-lg object-contain"
-            />
-
             {book.credits && (
-              <figcaption class="mt-2 text-sm text-yuval-text-secondary">
+              <figcaption class="mb-2 text-sm text-yuval-text-secondary">
                 {book.credits.type === 'lecture_summary' ? (
                   <div class="space-y-1.5">
                     <!-- Lecturer — person-outline icon -->
@@ -418,17 +404,23 @@ const description = getLocalizedText(book.descriptions, language);
               </figcaption>
             )}
 
-            <!-- Chapter count with book icon — mirrors Goodreads/LeanPub
-                 style of placing book-level metadata right under the
-                 cover. Sits outside the credits conditional so it always
-                 appears, even for books without an author field. -->
-            <p class="mt-2 inline-flex items-center gap-1.5 text-sm text-yuval-text-tertiary">
+            <!-- Chapter count with book icon. Sits above the cover so the
+                 metadata reads like a caption/heading to the image. -->
+            <p class="mb-3 inline-flex items-center gap-1.5 text-sm text-yuval-text-tertiary">
               <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
               </svg>
               <span>{formatChapterCount(book.chapters.length, language)}</span>
             </p>
+
+            <img
+              src={book.coverImage}
+              alt={title}
+              loading="lazy"
+              decoding="async"
+              class="book-cover-img w-full h-auto rounded-lg shadow-lg object-contain"
+            />
           </figure>
 
           <div class="chapter-content space-y-2 sm:space-y-2.5 mb-3 sm:mb-4">
@@ -502,30 +494,52 @@ const description = getLocalizedText(book.descriptions, language);
       const bookSlug = link.dataset.bookSlug;
       if (!chapterId || !bookSlug) return;
 
+      // Reading progress is saved by src/scripts/progress-tracker.ts under
+      // the key `yuval_reading_progress_{slug}_ch{chapterId}`. It stores the
+      // real `percentage` (0–100) computed against the chapter container
+      // height, plus the raw scrollPosition as a fallback for old entries
+      // saved before the percentage field existed.
+      const keyFragment = `reading_progress_${bookSlug}_ch${chapterId}`;
+      let pct = 0;
       let scrollY = 0;
 
       for (let i = 0; i < localStorage.length; i++) {
         const k = localStorage.key(i);
-        if (k && k.includes(`_${bookSlug}_ch${chapterId}`)) {
+        if (k && k.includes(keyFragment)) {
           try {
             const d = JSON.parse(localStorage.getItem(k) || '{}');
-            if (d.scrollPosition > scrollY) scrollY = d.scrollPosition;
+            if (typeof d.percentage === 'number' && d.percentage > pct) {
+              pct = d.percentage;
+            }
+            if (typeof d.scrollPosition === 'number' && d.scrollPosition > scrollY) {
+              scrollY = d.scrollPosition;
+            }
           } catch {}
         }
       }
 
-      const fill = link.querySelector<HTMLElement>('.chapter-progress-fill');
-      const icon = link.querySelector<HTMLElement>('.chapter-status-icon');
+      // If we don't have a stored percentage yet (old entry), estimate from
+      // scroll pixels as a rough fallback.
+      if (pct === 0 && scrollY > 200) {
+        pct = Math.min(95, Math.round((scrollY / 3000) * 100));
+      }
 
-      if (scrollY > 200) {
-        const estPct = Math.min(95, Math.round((scrollY / 3000) * 100));
-        if (fill) {
-          fill.style.width = `${estPct}%`;
+      const fill = link.querySelector<HTMLElement>('.chapter-progress-fill');
+      const check = link.querySelector<HTMLElement>('.chapter-status-check');
+
+      if (pct > 0) {
+        if (fill) fill.style.width = `${pct}%`;
+        if (pct >= 85) {
+          link.dataset.readStatus = 'completed';
+          check?.classList.remove('hidden');
+        } else {
+          link.dataset.readStatus = 'in-progress';
+          check?.classList.add('hidden');
         }
-        if (icon) {
-          icon.textContent = estPct >= 85 ? '✅' : '📖';
-          icon.classList.remove('hidden');
-        }
+      } else {
+        if (fill) fill.style.width = '0%';
+        delete link.dataset.readStatus;
+        check?.classList.add('hidden');
       }
     });
   }
@@ -540,18 +554,32 @@ const description = getLocalizedText(book.descriptions, language);
     updateChapterProgress();
   });
 
+  // Re-read progress when returning to this page via SPA navigation, and
+  // when the tab regains focus after the user finished a chapter in another
+  // tab or after background progress saves settle.
+  document.addEventListener('astro:after-swap', () => {
+    updateChapterLinks();
+    updateChapterProgress();
+  });
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') updateChapterProgress();
+  });
+  window.addEventListener('pageshow', () => updateChapterProgress());
+
   // Text-to-Speech on the book landing page: reads the description
-  // aloud. The TTS module finds .chapter-content and collects its
-  // paragraphs; the landing page description block is marked with
-  // that class so the same engine works here without changes.
+  // aloud. We bind the engine to the inline pill button (#tts-inline-trigger)
+  // instead of the floating FAB — on a short landing page the FAB pattern
+  // is out of place, and users expect the control next to the title.
   import('../../scripts/text-to-speech').then(({ initTextToSpeech }) => {
     let currentController: AbortController | null = null;
 
     const boot = () => {
       currentController?.abort();
+      const inlineEl = document.getElementById('tts-inline-trigger');
+      if (!inlineEl) return;
       const ctrl = new AbortController();
       currentController = ctrl;
-      initTextToSpeech(ctrl.signal);
+      initTextToSpeech(ctrl.signal, { trigger: 'inline', inlineEl });
     };
 
     if (document.readyState === 'loading') {
@@ -598,5 +626,97 @@ const description = getLocalizedText(book.descriptions, language);
   }
   html.dark .book-cover-img {
     mix-blend-mode: screen;
+  }
+
+  /* Inline TTS trigger — gold pill that sits beside the title.
+     Replaces the floating FAB on the landing page: a short description
+     doesn't justify a persistent floating control, and the role is
+     clearer when the button is adjacent to what it reads. */
+  .tts-inline-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.55rem 1rem;
+    border-radius: 999px;
+    background: linear-gradient(145deg, #c9a227, #ddb52f);
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.9rem;
+    line-height: 1;
+    border: 0;
+    cursor: pointer;
+    box-shadow:
+      0 2px 8px rgba(0, 0, 0, 0.18),
+      0 0 0 1px rgba(232, 197, 71, 0.5),
+      inset 0 1px 1.5px rgba(255, 255, 255, 0.3);
+    transition: transform 160ms ease, box-shadow 160ms ease, filter 160ms ease;
+    white-space: nowrap;
+    align-self: flex-start;
+  }
+  .tts-inline-btn:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.06);
+    box-shadow:
+      0 4px 14px rgba(0, 0, 0, 0.22),
+      0 0 0 1px rgba(232, 197, 71, 0.65),
+      0 0 20px rgba(232, 197, 71, 0.35),
+      inset 0 1px 1.5px rgba(255, 255, 255, 0.4);
+  }
+  .tts-inline-btn:focus-visible {
+    outline: 2px solid #e8c547;
+    outline-offset: 3px;
+  }
+  .tts-inline-btn.is-active {
+    background: linear-gradient(145deg, #a8876b, #c9a227);
+    box-shadow:
+      0 2px 8px rgba(0, 0, 0, 0.25),
+      0 0 0 1px rgba(232, 197, 71, 0.7),
+      0 0 18px rgba(232, 197, 71, 0.4),
+      inset 0 1px 1.5px rgba(255, 255, 255, 0.3);
+  }
+  .tts-inline-btn .tts-inline-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+  }
+  .tts-inline-btn .tts-inline-icon svg {
+    width: 18px;
+    height: 18px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .tts-inline-btn,
+    .tts-inline-btn:hover {
+      transition: none;
+      transform: none;
+    }
+  }
+
+  /* Gold chapter-number badge — distinct light/dark palettes so the
+     numeral keeps strong contrast against the surface in both themes. */
+  .chapter-number-badge {
+    background-color: rgba(201, 162, 39, 0.12);
+    color: #8a6a15;
+    border: 1px solid rgba(201, 162, 39, 0.25);
+  }
+  html.dark .chapter-number-badge {
+    background-color: rgba(201, 162, 39, 0.18);
+    color: #e5c158;
+    border-color: rgba(201, 162, 39, 0.4);
+  }
+
+  /* Read-status signals: completed gets a soft green wash, in-progress
+     gets a gold border tint that pairs with the bottom progress fill. */
+  .chapter-link[data-read-status="completed"] {
+    background-color: rgba(34, 197, 94, 0.06);
+    border-color: rgba(34, 197, 94, 0.35);
+  }
+  html.dark .chapter-link[data-read-status="completed"] {
+    background-color: rgba(34, 197, 94, 0.09);
+    border-color: rgba(34, 197, 94, 0.4);
+  }
+  .chapter-link[data-read-status="in-progress"] {
+    border-color: rgba(201, 162, 39, 0.45);
   }
 </style>

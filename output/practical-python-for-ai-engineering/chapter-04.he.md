@@ -302,7 +302,7 @@ print(result)
 
 אחרי חודש מוסיפים תמיכה ב-top_p. הקריאות נשארות זהות.
 
-```yaml
+```python
 def run_inference(model, **config):
     temperature = config.get("temperature", 0.7)
     max_tokens = config.get("max_tokens", 256)
