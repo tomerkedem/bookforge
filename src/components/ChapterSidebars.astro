@@ -1,6 +1,24 @@
 ---
+/**
+ * Unified Chapter Sidebar (Yuval).
+ *
+ * Renders a fixed-position sidebar with:
+ *   - Header: title, completion counter, overall progress, time
+ *     remaining
+ *   - Vertical thread + chapter cards (one per chapter)
+ *   - Per-chapter expandable section list
+ *   - Mobile drawer (separate UI for narrow viewports)
+ *
+ * Behavior lives in src/utils/sidebar/* TypeScript modules.
+ * Styling lives in src/styles/chapter-sidebar.css.
+ *
+ * The .astro file holds only the server-rendered markup and the
+ * thin script glue that bootstraps the module graph.
+ */
+
 import type { Language, Chapter } from '../types/index';
 import { SOURCE_LANGUAGE, getLanguageDirection } from '../utils/language';
+import '../styles/chapter-sidebar.css';
 
 interface Props {
   chapters: Chapter[];
@@ -19,10 +37,19 @@ function getChapterTitle(chapter: Chapter, lang: Language): string {
 function serializeTitles(chapter: Chapter): string {
   return JSON.stringify(chapter.titles || {});
 }
+
+/** Pad chapter number to 2 digits for chapters 1-99, full number
+ *  for 100+. Keeps the visual rhythm consistent for normal-sized
+ *  books while not breaking on huge series. */
+function formatChapterNumber(id: number | string): string {
+  const n = typeof id === 'number' ? id : parseInt(String(id), 10);
+  if (Number.isNaN(n)) return String(id);
+  return n < 100 ? String(n).padStart(2, '0') : String(n);
+}
 ---
 
 <div class="sidebars-container" transition:persist="sidebars">
-  <!-- Mobile TOC toggle button (kept in DOM for FAB delegation; never visible) -->
+  <!-- Mobile TOC toggle button (kept in DOM for FAB delegation; never visible on desktop) -->
   <button
     id="mobile-toc-toggle"
     class="mobile-toc-btn"
@@ -42,9 +69,8 @@ function serializeTitles(chapter: Chapter): string {
   <!-- Mobile overlay -->
   <div id="mobile-sidebar-overlay" class="mobile-overlay"></div>
 
-  <!-- Mobile combined drawer (outline + TOC) -->
+  <!-- Mobile combined drawer (outline + chapter list) -->
   <div id="mobile-drawer" class="mobile-drawer">
-    <!-- Tab buttons -->
     <div class="mobile-drawer-tabs" role="tablist">
       <button class="mobile-tab active" data-tab="outline" role="tab" aria-selected="true" aria-controls="mobile-outline-panel">
         <span data-i18n="sidebar.inChapter">In This Chapter</span>
@@ -53,13 +79,11 @@ function serializeTitles(chapter: Chapter): string {
         <span data-i18n="sidebar.chapters">Chapters</span>
       </button>
     </div>
-    <!-- Outline panel -->
     <div class="mobile-panel active" id="mobile-outline-panel" role="tabpanel">
       <nav id="mobile-chapter-outline" class="outline-list">
         <ul></ul>
       </nav>
     </div>
-    <!-- Chapters panel -->
     <div class="mobile-panel" id="mobile-chapters-panel" role="tabpanel">
       <nav class="toc-list">
         <ul>
@@ -79,13 +103,10 @@ function serializeTitles(chapter: Chapter): string {
                 ]}
               >
                 <span class="toc-number">
-                  {String(chapter.id).padStart(2, '0')}
+                  {formatChapterNumber(chapter.id)}
                 </span>
                 <span class="toc-chapter-title">
-                  <span
-                    class="toc-chapter-title-text"
-                    data-titles={serializeTitles(chapter)}
-                  >
+                  <span class="toc-chapter-title-text" data-titles={serializeTitles(chapter)}>
                     {getChapterTitle(chapter, language)}
                   </span>
                 </span>
@@ -97,1661 +118,120 @@ function serializeTitles(chapter: Chapter): string {
     </div>
   </div>
 
-  <!-- Right Sidebar: Table of Contents -->
+  <!-- ─── Unified Sidebar (Desktop) ─────────────────────────────
+       Single sidebar on the inline-start edge (right in RTL, left
+       in LTR). Header + vertical timeline thread + per-chapter
+       cards + on-demand section lists. -->
   <aside
     class:list={[
-      'toc-sidebar',
-      'toc-sidebar-right',
-      isRtl && 'toc-sidebar-rtl',
+      'unified-sidebar',
+      isRtl && 'unified-sidebar-rtl',
     ]}
-    id="toc-sidebar"
+    id="unified-sidebar"
     data-rtl={isRtl}
+    data-book-slug={bookSlug}
   >
-    <h3 class="toc-title">
-      <span data-i18n="sidebar.chapters">Chapters</span>
-    </h3>
-    <nav class="toc-list">
-      <ul>
+    <header class="usb-header">
+      <div class="usb-header-row">
+        <span class="usb-title" data-i18n="sidebar.tableOfContents">תוכן העניינים</span>
+        <span class="usb-completion-count">
+          <span class="usb-completion-done" id="usb-completion-done">0</span><span class="usb-completion-sep">/</span><span class="usb-completion-total">{chapters.length}</span>
+          <span class="usb-completion-suffix" data-i18n="sidebar.completed">הושלמו</span>
+        </span>
+      </div>
+      <div class="usb-progress-track">
+        <div class="usb-progress-fill" id="usb-progress-fill" style="width: 0%"></div>
+      </div>
+      <div class="usb-header-row usb-header-meta">
+        <span class="usb-progress-percent" id="usb-progress-percent">0%</span>
+        <span class="usb-time-remaining" id="usb-time-remaining"></span>
+      </div>
+    </header>
+
+    <nav class="usb-timeline" aria-label="Chapter list">
+      <!-- Vertical thread runs continuously from first chapter to last -->
+      <div class="usb-thread" aria-hidden="true"></div>
+
+      <ol class="usb-chapter-list">
         {chapters.map((chapter) => (
           <li
             class:list={[
-              'toc-item',
-              chapter.id === currentChapterId && 'toc-item-active',
+              'usb-chapter',
+              chapter.id === currentChapterId && 'usb-chapter-active',
             ]}
             data-chapter-id={chapter.id}
+            data-word-count={chapter.word_count ?? 0}
+            data-section-count={chapter.sections ?? 0}
+            data-expanded={chapter.id === currentChapterId && (chapter.sections ?? 0) > 0 ? 'true' : 'false'}
           >
             <a
               href={`/read/${bookSlug}/${chapter.id}`}
               class:list={[
-                'toc-link',
-                chapter.id === currentChapterId && 'toc-link-active',
+                'usb-chapter-link',
+                chapter.id === currentChapterId && 'usb-chapter-link-active',
               ]}
               aria-current={chapter.id === currentChapterId ? 'page' : undefined}
               data-chapter-id={chapter.id}
             >
-              <span class="toc-number">
-                {String(chapter.id).padStart(2, '0')}
+              <span class="usb-node" aria-hidden="true">
+                <span class="usb-node-number">{formatChapterNumber(chapter.id)}</span>
               </span>
-              <span class="toc-chapter-title">
-                <span
-                  class="toc-chapter-title-text"
-                  data-titles={serializeTitles(chapter)}
-                >
-                  {getChapterTitle(chapter, language)}
+              <span class="usb-card">
+                <span class="usb-card-title">
+                  <span class="usb-card-title-text" data-titles={serializeTitles(chapter)}>
+                    {getChapterTitle(chapter, language)}
+                  </span>
+                </span>
+                <span class="usb-card-meta">
+                  <span class="usb-card-time" data-word-count={chapter.word_count ?? 0}></span>
+                </span>
+                <span class="usb-card-check" aria-hidden="true" title="Completed">
+                  <svg viewBox="0 0 16 16" width="12" height="12">
+                    <path d="M3.5 8.5l3 3L12.5 5" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
                 </span>
               </span>
+              <button
+                type="button"
+                class="usb-reset-btn"
+                data-action="reset-completion"
+                data-chapter-id={chapter.id}
+                aria-label="Reset completion"
+                title="Reset completion"
+              >
+                <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
+                  <path d="M3 8a5 5 0 0 1 8.5-3.5L13 3v4H9" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M13 8a5 5 0 0 1-8.5 3.5L3 13V9h4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </button>
             </a>
+
+            {(chapter.sections ?? 0) > 0 && (
+              <button
+                type="button"
+                class="usb-toggle-btn"
+                data-action="toggle-sections"
+                data-chapter-id={chapter.id}
+                aria-label="Toggle sections"
+                aria-expanded={chapter.id === currentChapterId ? 'true' : 'false'}
+                title="Show sections"
+              >
+                <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+                  <path d="M4 6.5l4 4 4-4" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </button>
+            )}
           </li>
         ))}
-      </ul>
-    </nav>
-  </aside>
-
-  <!-- Left Sidebar: Chapter Outline -->
-  <aside
-    class:list={[
-      'outline-sidebar',
-      'outline-sidebar-left',
-      isRtl && 'outline-sidebar-rtl',
-    ]}
-    id="outline-sidebar"
-    data-rtl={isRtl}
-  >
-    <h3 class="outline-title">
-      <span data-i18n="sidebar.inChapter">In This Chapter</span>
-    </h3>
-    <nav id="chapter-outline" class="outline-list">
-      <ul>
-        {/* Outline will be populated by JavaScript from h2/h3 tags */}
-      </ul>
+      </ol>
     </nav>
   </aside>
 </div>
 
-<style>
-  .sr-only {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border: 0;
-  }
-
-  .sidebars-container {
-    position: relative;
-    width: 100%;
-  }
-
-  /* TOC Sidebar - LEFT in English, RIGHT in Hebrew */
-  .toc-sidebar {
-    position: fixed;
-    top: 68px;
-    left: 0;
-    right: auto;
-    width: 320px;
-    height: calc(100vh - 68px);
-    background: var(--yuval-surface);
-    border-right: 1px solid var(--yuval-border);
-    border-left: none;
-    padding: 24px 16px;
-    overflow-y: auto;
-    z-index: 30;
-    font-size: 13px;
-    line-height: 1.4;
-  }
-
-  .toc-sidebar-rtl {
-    left: auto;
-    right: 0;
-    border-right: none;
-    border-left: 1px solid var(--yuval-border);
-  }
-
-  .toc-title {
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 0.16em;
-    color: var(--yuval-text-muted);
-    text-transform: uppercase;
-    margin-bottom: 16px;
-    padding: 0 4px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .toc-title::before {
-    content: '';
-    width: 16px;
-    height: 2px;
-    background: linear-gradient(to right, #c9a227, transparent);
-    border-radius: 1px;
-  }
-
-  :global(.dark) .toc-title::before {
-    background: linear-gradient(to right, #8b7355, transparent);
-  }
-
-  .toc-list ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .toc-item {
-    position: relative;
-    margin-bottom: 0;
-    border-radius: 12px;
-    overflow: hidden;
-    transition:
-      background 200ms var(--ease-standard),
-      border-color 200ms var(--ease-standard),
-      color 200ms var(--ease-standard),
-      transform 200ms var(--ease-standard),
-      box-shadow 200ms var(--ease-standard);
-    background: linear-gradient(145deg, #ffffff, #f8f8f8);
-    border: 1px solid rgba(0, 0, 0, 0.08);
-    box-shadow:
-      0 2px 4px rgba(0, 0, 0, 0.04),
-      0 1px 2px rgba(0, 0, 0, 0.02);
-    cursor: pointer;
-  }
-
-  :global(.dark) .toc-item {
-    background: linear-gradient(145deg, rgba(60, 60, 65, 0.8), rgba(45, 45, 50, 0.9));
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow:
-      0 2px 4px rgba(0, 0, 0, 0.2),
-      0 1px 2px rgba(0, 0, 0, 0.1);
-  }
-
-  .toc-item:hover {
-    background: linear-gradient(145deg, #fffdf5, #faf6e8);
-    border-color: rgba(201, 162, 39, 0.35);
-    transform: translateX(-2px) translateY(-1px);
-    box-shadow:
-      0 8px 20px rgba(201, 162, 39, 0.15),
-      0 4px 8px rgba(0, 0, 0, 0.06);
-  }
-
-  :global(.dark) .toc-item:hover {
-    background: linear-gradient(145deg, rgba(80, 75, 65, 0.9), rgba(60, 55, 50, 0.95));
-    border-color: rgba(139, 115, 85, 0.45);
-    box-shadow:
-      0 8px 20px rgba(139, 115, 85, 0.2),
-      0 4px 8px rgba(0, 0, 0, 0.15);
-  }
-
-  .toc-sidebar-rtl .toc-item:hover {
-    transform: translateX(2px) translateY(-1px);
-  }
-
-  .toc-item:active {
-    transform: translateY(0) scale(0.98);
-    box-shadow:
-      0 2px 4px rgba(201, 162, 39, 0.1),
-      inset 0 1px 3px rgba(0, 0, 0, 0.05);
-    transition: transform 80ms var(--ease-accelerated);
-  }
-
-  :global(.dark) .toc-item:active {
-    box-shadow:
-      0 2px 4px rgba(139, 115, 85, 0.15),
-      inset 0 1px 3px rgba(0, 0, 0, 0.15);
-  }
-
-  .toc-item-active {
-    background: linear-gradient(135deg,
-      rgba(201, 162, 39, 0.12) 0%,
-      rgba(201, 162, 39, 0.06) 100%
-    );
-    box-shadow:
-      0 2px 12px rgba(201, 162, 39, 0.15),
-      inset 0 0 0 1px rgba(201, 162, 39, 0.25);
-  }
-
-  .toc-item-active::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 3px;
-    background: linear-gradient(to bottom, #e8c547, #c9a227, #a8852a);
-    border-radius: 0 3px 3px 0;
-  }
-
-  .toc-sidebar-rtl .toc-item-active::before {
-    left: auto;
-    right: 0;
-    border-radius: 3px 0 0 3px;
-  }
-
-  .toc-item-active::after {
-    content: '';
-    position: absolute;
-    right: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 8px;
-    height: 8px;
-    background: #c9a227;
-    border-radius: 50%;
-    animation: reading-pulse 2s var(--ease-standard) infinite;
-    box-shadow: 0 0 8px rgba(201, 162, 39, 0.6);
-  }
-
-  .toc-sidebar-rtl .toc-item-active::after {
-    right: auto;
-    left: 12px;
-  }
-
-  @keyframes reading-pulse {
-    0%, 100% {
-      opacity: 1;
-      transform: translateY(-50%) scale(1);
-    }
-    50% {
-      opacity: 0.6;
-      transform: translateY(-50%) scale(0.85);
-    }
-  }
-
-  :global(.dark) .toc-item-active {
-    background: linear-gradient(145deg, rgba(90, 80, 65, 0.95), rgba(70, 60, 50, 0.98));
-    border: 2px solid #8b7355;
-    box-shadow:
-      0 4px 16px rgba(139, 115, 85, 0.3),
-      0 2px 6px rgba(139, 115, 85, 0.2);
-  }
-
-  :global(.dark) .toc-item-active::before {
-    background: linear-gradient(to bottom, #a8956d, #8b7355, #6d5a42);
-  }
-
-  :global(.dark) .toc-item-active::after {
-    background: #a8956d;
-    box-shadow: 0 0 8px rgba(168, 149, 109, 0.6);
-  }
-
-  .toc-link {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 14px 16px;
-    color: var(--yuval-text-secondary);
-    text-decoration: none;
-    transition: all 200ms var(--ease-standard);
-    border-radius: 10px;
-  }
-
-  .toc-link:hover {
-    color: var(--yuval-text);
-  }
-
-  .toc-item-active .toc-link {
-    color: var(--yuval-text);
-  }
-
-  .toc-link-active {
-    color: var(--yuval-text);
-    font-weight: 600;
-    padding-right: 28px;
-  }
-
-  .toc-sidebar-rtl .toc-link-active {
-    padding-right: 16px;
-    padding-left: 28px;
-  }
-
-  .toc-number {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    background: linear-gradient(145deg, #f0f0f0, #e0e0e0);
-    border-radius: 8px;
-    color: var(--yuval-text-muted);
-    font-size: 12px;
-    font-weight: 700;
-    flex-shrink: 0;
-    transition:
-      background 200ms var(--ease-standard),
-      border-color 200ms var(--ease-standard),
-      color 200ms var(--ease-standard),
-      transform 200ms var(--ease-standard),
-      box-shadow 200ms var(--ease-standard);
-    box-shadow:
-      inset 0 1px 2px rgba(255, 255, 255, 0.8),
-      0 1px 3px rgba(0, 0, 0, 0.08);
-  }
-
-  :global(.dark) .toc-number {
-    background: linear-gradient(145deg, rgba(80, 80, 85, 0.9), rgba(60, 60, 65, 0.95));
-    box-shadow:
-      inset 0 1px 2px rgba(255, 255, 255, 0.05),
-      0 1px 3px rgba(0, 0, 0, 0.2);
-  }
-
-  .toc-item:hover .toc-number {
-    transform: scale(1.08) rotate(-3deg);
-    background: linear-gradient(145deg, #c9a227, #b8921f);
-    color: #fff;
-    box-shadow: 0 3px 8px rgba(201, 162, 39, 0.35);
-  }
-
-  :global(.dark) .toc-item:hover .toc-number {
-    background: linear-gradient(145deg, #8b7355, #7a644a);
-    box-shadow: 0 3px 8px rgba(139, 115, 85, 0.4);
-  }
-
-  .toc-item-active .toc-number {
-    background: linear-gradient(145deg, #c9a227, #ddb52f);
-    color: #fff;
-    transform: scale(1.1);
-    box-shadow:
-      0 0 0 3px rgba(201, 162, 39, 0.2),
-      0 3px 10px rgba(201, 162, 39, 0.4);
-  }
-
-  :global(.dark) .toc-item-active .toc-number {
-    background: linear-gradient(145deg, #8b7355, #9d8463);
-    box-shadow:
-      0 0 0 3px rgba(139, 115, 85, 0.25),
-      0 3px 10px rgba(139, 115, 85, 0.45);
-  }
-
-  .toc-chapter-title {
-    flex: 1;
-    font-size: 13px;
-    font-weight: 480;
-    line-height: 1.4;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .toc-item-active .toc-chapter-title {
-    color: var(--yuval-chapter-title);
-    font-weight: 600;
-  }
-
-  .toc-item-completed .toc-number {
-    background: linear-gradient(135deg, #22c55e, #16a34a);
-    color: #fff;
-    box-shadow: 0 2px 6px rgba(34, 197, 94, 0.3);
-  }
-
-  :global(.dark) .toc-item-completed .toc-number {
-    background: linear-gradient(135deg, #4ade80, #22c55e);
-    box-shadow: 0 2px 6px rgba(74, 222, 128, 0.35);
-  }
-
-  .toc-item-completed .toc-link {
-    display: flex;
-    align-items: center;
-  }
-
-  .chapter-complete-check {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 20px;
-    height: 20px;
-    background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(34, 197, 94, 0.05));
-    border-radius: 50%;
-    color: #22c55e;
-    font-weight: 700;
-    font-size: 11px;
-    margin-inline-start: auto;
-    flex-shrink: 0;
-  }
-
-  :global(.dark) .chapter-complete-check {
-    background: linear-gradient(135deg, rgba(74, 222, 128, 0.2), rgba(74, 222, 128, 0.08));
-    color: #4ade80;
-  }
-
-  .toc-progress-bar {
-    position: absolute;
-    bottom: 0;
-    left: 12px;
-    right: 12px;
-    height: 2px;
-    background: var(--yuval-border);
-    border-radius: 1px;
-    overflow: hidden;
-    opacity: 0.6;
-  }
-
-  .toc-progress-fill {
-    height: 100%;
-    background: linear-gradient(to right, #c9a227, #e8c547);
-    border-radius: 1px;
-    transition: width 300ms var(--ease-standard);
-  }
-
-  :global(.dark) .toc-progress-fill {
-    background: linear-gradient(to right, #8b7355, #a8956d);
-  }
-
-  .outline-sidebar {
-    position: fixed;
-    top: 68px;
-    right: 0;
-    left: auto;
-    width: 320px;
-    /* Height hugs content (sections are usually only a handful of rows);
-       cap at viewport so very-long outlines still scroll. */
-    height: auto;
-    max-height: calc(100vh - 88px);
-    background: var(--yuval-surface);
-    border: 1px solid var(--yuval-border);
-    border-radius: 12px;
-    margin: 12px;
-    padding: 18px 16px;
-    overflow-y: auto;
-    z-index: 30;
-    font-size: 13px;
-    line-height: 1.5;
-    box-shadow: 0 4px 14px rgba(17, 24, 39, 0.04);
-  }
-
-  .outline-sidebar-rtl {
-    right: auto;
-    left: 0;
-  }
-
-  .outline-title {
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.12em;
-    color: var(--yuval-text-muted);
-    text-transform: uppercase;
-    margin-bottom: 20px;
-    padding: 0 0 12px 0;
-    position: relative;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .outline-title::before {
-    content: '';
-    width: 4px;
-    height: 4px;
-    background: linear-gradient(135deg, #c9a227, #e8c547);
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
-
-  :global(.dark) .outline-title::before {
-    background: linear-gradient(135deg, #8b7355, #a8956d);
-  }
-
-  .outline-title::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: linear-gradient(to right, rgba(201, 162, 39, 0.3), transparent 80%);
-  }
-
-  :global(.dark) .outline-title::after {
-    background: linear-gradient(to right, rgba(139, 115, 85, 0.4), transparent 80%);
-  }
-
-  /* ─── In-this-chapter outline — slim rail style ─────────────────────
-     Deliberately plain so it reads as a different kind of list from the
-     heavy gold "chapters" cards on the other side. The <li> elements are
-     created dynamically in JS at runtime, so they don't receive Astro's
-     data-astro-cid scope attribute — every rule that targets them must
-     be wrapped in :global() or it won't match. */
-  :global(.outline-list ul) {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
-    position: relative;
-  }
-
-  /* Vertical guide rail on the leading edge (flips with RTL). */
-  :global(.outline-list ul::before) {
-    content: '';
-    position: absolute;
-    top: 4px;
-    bottom: 4px;
-    inset-inline-start: 5px;
-    width: 1px;
-    background: rgba(0, 0, 0, 0.12);
-    opacity: 0.6;
-  }
-
-  :global(.dark .outline-list ul::before) {
-    background: rgba(255, 255, 255, 0.14);
-  }
-
-  :global(.outline-list li) {
-    margin: 0;
-    padding: 0;
-    border: 0;
-    background: transparent;
-    box-shadow: none;
-    border-radius: 0;
-    position: relative;
-    cursor: pointer;
-    transition: background 140ms ease;
-  }
-
-  :global(.outline-list li:hover) {
-    background: rgba(201, 162, 39, 0.06);
-    border-radius: 4px;
-  }
-
-  :global(.dark .outline-list li:hover) {
-    background: rgba(201, 162, 39, 0.08);
-  }
-
-  :global(.outline-list li.active) {
-    background: transparent;
-  }
-
-  :global(.outline-list a) {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 5px 10px 5px 14px;
-    color: #6b7280;
-    text-decoration: none;
-    font-size: 12px;
-    font-weight: 400;
-    line-height: 1.5;
-    word-break: break-word;
-    transition: color 140ms ease;
-  }
-
-  :global(.dark .outline-list a) {
-    color: rgba(255, 255, 255, 0.6);
-  }
-
-  /* RTL: flip the padding so the dot sits at the start. */
-  :global([dir="rtl"] .outline-list a),
-  :global(.outline-sidebar-rtl .outline-list a) {
-    padding: 5px 14px 5px 10px;
-  }
-
-  :global(.outline-list li:hover a) {
-    color: #111827;
-  }
-
-  :global(.dark .outline-list li:hover a) {
-    color: rgba(255, 255, 255, 0.95);
-  }
-
-  :global(.outline-list li.active a) {
-    color: #c9a227;
-    font-weight: 600;
-  }
-
-  :global(.outline-list a::before) {
-    content: '';
-    width: 5px;
-    height: 5px;
-    background: rgba(0, 0, 0, 0.28);
-    border-radius: 50%;
-    flex-shrink: 0;
-    box-shadow: 0 0 0 3px var(--yuval-reading-bg, #fff);
-    transition: background 140ms ease, transform 140ms ease;
-    position: relative;
-    z-index: 1;
-  }
-
-  :global(.dark .outline-list a::before) {
-    background: rgba(255, 255, 255, 0.28);
-    box-shadow: 0 0 0 3px var(--yuval-reading-bg, #1a1a1a);
-  }
-
-  :global(.outline-list li:hover a::before) {
-    background: #c9a227;
-    transform: scale(1.2);
-  }
-
-  :global(.dark .outline-list li:hover a::before) {
-    background: #a8956d;
-  }
-
-  :global(.outline-list li.active) {
-    background: linear-gradient(90deg, rgba(201, 162, 39, 0.14), rgba(201, 162, 39, 0.02) 80%);
-    border-radius: 6px;
-  }
-
-  :global([dir="rtl"] .outline-list li.active),
-  :global(.outline-sidebar-rtl .outline-list li.active) {
-    background: linear-gradient(270deg, rgba(201, 162, 39, 0.14), rgba(201, 162, 39, 0.02) 80%);
-  }
-
-  :global(.dark .outline-list li.active) {
-    background: linear-gradient(90deg, rgba(168, 149, 109, 0.2), rgba(168, 149, 109, 0.02) 80%);
-  }
-
-  :global(.dark [dir="rtl"] .outline-list li.active),
-  :global(.dark .outline-sidebar-rtl .outline-list li.active) {
-    background: linear-gradient(270deg, rgba(168, 149, 109, 0.2), rgba(168, 149, 109, 0.02) 80%);
-  }
-
-  :global(.outline-list li.active a::before) {
-    background: #c9a227;
-    width: 7px;
-    height: 7px;
-    box-shadow:
-      0 0 0 3px var(--yuval-reading-bg, #fff),
-      0 0 0 4px rgba(201, 162, 39, 0.3);
-    animation: outline-active-pulse 2.4s var(--ease-standard) infinite;
-  }
-
-  :global(.dark .outline-list li.active a::before) {
-    background: #a8956d;
-    box-shadow:
-      0 0 0 3px var(--yuval-reading-bg, #1a1a1a),
-      0 0 0 4px rgba(168, 149, 109, 0.35);
-  }
-
-  @keyframes outline-active-pulse {
-    0%, 100% {
-      box-shadow:
-        0 0 0 3px var(--yuval-reading-bg, #fff),
-        0 0 0 4px rgba(201, 162, 39, 0.35);
-    }
-    50% {
-      box-shadow:
-        0 0 0 3px var(--yuval-reading-bg, #fff),
-        0 0 0 8px rgba(201, 162, 39, 0);
-    }
-  }
-
-  /* H3 items: indented slightly, even smaller and lighter. */
-  :global(.outline-list li[data-level="h3"]) {
-    margin-inline-start: 14px;
-  }
-
-  :global(.outline-list li[data-level="h3"] a) {
-    padding-block: 4px;
-    font-size: 11.5px;
-    color: #9ca3af;
-    opacity: 0.9;
-  }
-
-  :global(.outline-list li[data-level="h3"] a::before) {
-    width: 3px;
-    height: 3px;
-  }
-
-  .toc-sidebar {
-    transition: transform 350ms var(--ease-standard),
-                opacity 350ms var(--ease-standard);
-  }
-  .outline-sidebar {
-    transition: transform 350ms var(--ease-standard),
-                opacity 350ms var(--ease-standard);
-  }
-
-  /* Outline sidebar stays visible in immersive mode too — the outline
-     card hugs content height, so it doesn't consume real estate, and
-     keeping it on screen lets readers jump between sections without
-     chasing the cursor into a hover zone. */
-
-  .toc-sidebar::before,
-  .outline-sidebar::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    width: 16px;
-    z-index: 1;
-  }
-  .toc-sidebar:not(.toc-sidebar-rtl)::before { right: -16px; }
-  .toc-sidebar-rtl::before { left: -16px; }
-  .outline-sidebar:not(.outline-sidebar-rtl)::before { left: -16px; }
-  .outline-sidebar-rtl::before { right: -16px; }
-
-  .toc-sidebar::-webkit-scrollbar,
-  .outline-sidebar::-webkit-scrollbar {
-    width: 4px;
-  }
-
-  .toc-sidebar::-webkit-scrollbar-track,
-  .outline-sidebar::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  .toc-sidebar::-webkit-scrollbar-thumb,
-  .outline-sidebar::-webkit-scrollbar-thumb {
-    background: #e0ddd8;
-    border-radius: 2px;
-  }
-
-  .toc-sidebar::-webkit-scrollbar-thumb:hover,
-  .outline-sidebar::-webkit-scrollbar-thumb:hover {
-    background: #c8c4bc;
-  }
-
-  @media (max-width: 1023px) {
-    .toc-sidebar,
-    .outline-sidebar {
-      display: none;
-    }
-  }
-
-  .mobile-drawer {
-    display: none;
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    max-height: 70vh;
-    background: var(--yuval-surface);
-    z-index: 60;
-    border-top-left-radius: 16px;
-    border-top-right-radius: 16px;
-    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.15);
-    overflow: hidden;
-    flex-direction: column;
-  }
-
-  .mobile-drawer.open {
-    display: flex;
-    animation: slideUp 250ms var(--ease-emphasized);
-  }
-
-  .mobile-drawer-tabs {
-    display: flex;
-    border-bottom: 1px solid var(--yuval-border);
-    flex-shrink: 0;
-  }
-
-  .mobile-tab {
-    flex: 1;
-    padding: 12px 8px;
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--yuval-text-tertiary);
-    background: none;
-    border: none;
-    border-bottom: 2px solid transparent;
-    cursor: pointer;
-    transition: color 0.2s, border-color 0.2s;
-  }
-
-  .mobile-tab.active {
-    color: var(--yuval-text);
-    border-bottom-color: var(--yuval-toc-active);
-  }
-
-  .mobile-panel {
-    display: none;
-    overflow-y: auto;
-    padding: 12px 16px;
-    flex: 1;
-  }
-
-  .mobile-panel.active {
-    display: block;
-  }
-
-  .mobile-toc-btn {
-    display: none;
-    position: fixed;
-    bottom: 24px;
-    right: 24px;
-    z-index: 50;
-    width: 56px;
-    height: 56px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #6366f1, #8b5cf6, #a78bfa);
-    color: #ffffff;
-    border: none;
-    cursor: pointer;
-    align-items: center;
-    justify-content: center;
-    box-shadow:
-      0 4px 15px rgba(99, 102, 241, 0.4),
-      0 8px 30px rgba(139, 92, 246, 0.25),
-      inset 0 1px 0 rgba(255, 255, 255, 0.2);
-    transition: transform 300ms var(--ease-emphasized), box-shadow 300ms var(--ease-standard);
-    overflow: visible;
-  }
-
-  .mobile-toc-btn:hover {
-    transform: translateY(-2px) scale(1.05);
-    box-shadow:
-      0 8px 25px rgba(99, 102, 241, 0.5),
-      0 12px 40px rgba(139, 92, 246, 0.3),
-      inset 0 1px 0 rgba(255, 255, 255, 0.25);
-  }
-
-  .mobile-toc-btn:active {
-    transform: scale(0.92);
-    box-shadow:
-      0 2px 8px rgba(99, 102, 241, 0.4),
-      inset 0 1px 0 rgba(255, 255, 255, 0.15);
-  }
-
-  .mobile-toc-btn-glow {
-    position: absolute;
-    inset: -3px;
-    border-radius: 50%;
-    background: conic-gradient(from 0deg, #6366f1, #a78bfa, #c4b5fd, #6366f1);
-    opacity: 0.5;
-    filter: blur(8px);
-    animation: btnGlowSpin 4s linear infinite;
-    z-index: -1;
-  }
-
-  .mobile-toc-btn-ring {
-    position: absolute;
-    inset: -8px;
-    border-radius: 50%;
-    border: 2px solid rgba(139, 92, 246, 0.3);
-    animation: btnRingPulse 2.5s var(--ease-standard) infinite;
-    pointer-events: none;
-  }
-
-  .mobile-toc-icon {
-    position: relative;
-    z-index: 1;
-    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
-  }
-
-  @keyframes btnGlowSpin {
-    to { transform: rotate(360deg); }
-  }
-
-  @keyframes btnRingPulse {
-    0%, 100% { transform: scale(1); opacity: 0.4; }
-    50% { transform: scale(1.15); opacity: 0; }
-  }
-
-  /* mobile-toc-btn is intentionally never displayed - the unified FAB's
-     Navigation sub-item delegates to this element's click handler. */
-
-  :global(.dark) .mobile-toc-btn {
-    background: linear-gradient(135deg, #7c3aed, #6366f1, #818cf8);
-    box-shadow:
-      0 4px 15px rgba(124, 58, 237, 0.45),
-      0 8px 30px rgba(99, 102, 241, 0.25),
-      inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  }
-
-  :global(.dark) .mobile-toc-btn:hover {
-    box-shadow:
-      0 8px 25px rgba(124, 58, 237, 0.55),
-      0 12px 40px rgba(99, 102, 241, 0.3),
-      inset 0 1px 0 rgba(255, 255, 255, 0.15);
-  }
-
-  .mobile-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.4);
-    z-index: 55;
-  }
-
-  .mobile-overlay.active {
-    display: block;
-  }
-
-  @keyframes slideUp {
-    from { transform: translateY(100%); }
-    to { transform: translateY(0); }
-  }
-
-  :global(.reading-page-with-sidebars) {
-    margin-left: 260px;
-    margin-right: 260px;
-  }
-
-  :global(.reading-page-with-sidebars[dir='rtl']) {
-    margin-left: 260px;
-    margin-right: 260px;
-  }
-</style>
-
 <script>
-  function getCurrentLang() {
-    return localStorage.getItem('yuval_language') || 'he';
-  }
-
-  function getCurrentChapterId() {
-    const match = window.location.pathname.match(/\/read\/[^/]+\/([^/?#]+)/);
-    return match ? match[1] : null;
-  }
-
-  function getSourceLanguage() {
-    return 'he';
-  }
-
-  function getTitleFromDataset(el, lang) {
-    const raw = el.dataset.titles || '{}';
-
-    try {
-      const titles = JSON.parse(raw);
-      return titles?.[lang] || titles?.[getSourceLanguage()] || '';
-    } catch {
-      return '';
-    }
-  }
-
-  function updateActiveChapter() {
-    const currentId = getCurrentChapterId();
-    if (currentId === null) return;
-
-    document.querySelectorAll('.toc-item').forEach(item => {
-      const chapterId = item.dataset.chapterId || '';
-      const link = item.querySelector('.toc-link');
-
-      if (chapterId === String(currentId)) {
-        item.classList.add('toc-item-active');
-        link?.classList.add('toc-link-active');
-        link?.setAttribute('aria-current', 'page');
-      } else {
-        item.classList.remove('toc-item-active');
-        link?.classList.remove('toc-link-active');
-        link?.removeAttribute('aria-current');
-      }
-    });
-
-    document.querySelectorAll('.mobile-toc-link').forEach(link => {
-      const href = link.getAttribute('href') || '';
-      const match = href.match(/\/read\/[^/]+\/([^/?#]+)/);
-      const chapterId = match ? match[1] : '';
-
-      const item = link.closest('.toc-item');
-      if (chapterId === String(currentId)) {
-        item?.classList.add('toc-item-active');
-        link.classList.add('toc-link-active');
-      } else {
-        item?.classList.remove('toc-item-active');
-        link.classList.remove('toc-link-active');
-      }
-    });
-  }
-
-  async function loadChapterContent(url) {
-    const container = document.getElementById('chapter-container');
-    const header = document.getElementById('chapter-header');
-    const topStrip = document.getElementById('chapter-top-strip');
-
-    if (!container) {
-      window.location.href = url;
-      return;
-    }
-
-    container.style.transition = 'opacity 100ms var(--ease-standard)';
-    container.style.opacity = '0';
-
-    try {
-      // Cache-bust aggressively. Unique URL defeats any Cache API
-      // (service worker) match, and `cache: 'reload'` bypasses the
-      // HTTP cache. Combined they guarantee a fresh render every swap,
-      // which is what we need while chapter content is actively edited.
-      const bust = `_swbust=${Date.now()}`;
-      const fetchUrl = url + (url.includes('?') ? '&' : '?') + bust;
-      const response = await fetch(fetchUrl, { cache: 'reload' });
-      if (!response.ok) throw new Error('Failed to fetch chapter');
-
-      const html = await response.text();
-      const doc = new DOMParser().parseFromString(html, 'text/html');
-
-      const newContainer = doc.getElementById('chapter-container');
-      const newHeader = doc.getElementById('chapter-header');
-      const newTopStrip = doc.getElementById('chapter-top-strip');
-
-      // If the fetched page doesn't contain the chapter scaffolding we
-      // expect, the soft-nav is unsafe — fall back to a full load so the
-      // user always sees a correct chapter instead of a half-swapped one.
-      if (!newContainer) {
-        console.warn('[chapter-swap] fetched page missing #chapter-container; falling back to full navigation');
-        window.location.href = url;
-        return;
-      }
-
-      window.scrollTo({ top: 0, behavior: 'instant' });
-
-      container.innerHTML = newContainer.innerHTML;
-      container.dataset.chapterId = newContainer.dataset.chapterId || '';
-      container.dataset.book = newContainer.dataset.book || '';
-
-      if (newHeader && header) {
-        header.innerHTML = newHeader.innerHTML;
-      }
-
-      if (newTopStrip && topStrip) {
-        topStrip.innerHTML = newTopStrip.innerHTML;
-      }
-
-      applyLanguageVisibility(getCurrentLang());
-      history.pushState({}, '', url);
-      updateActiveChapter();
-      buildChapterOutline();
-
-      try {
-        const { applyTranslations } = await import('../i18n');
-        applyTranslations(container, getCurrentLang());
-      } catch (e) {
-        console.warn('[chapter-swap] applyTranslations failed', e);
-      }
-
-      window.dispatchEvent(new CustomEvent('chapter-content-swapped'));
-
-      container.style.opacity = '1';
-    } catch (error) {
-      console.error('Error loading chapter:', error);
-      container.style.opacity = '1';
-      window.location.href = url;
-    }
-  }
-
-  // Only toggle wrappers whose data-lang is an actual UI language code.
-  // Code blocks (.bash-block, .coderunner) also carry data-lang with
-  // values like "bash" / "python" — if we touched those, they'd get
-  // .hidden after every chapter swap and disappear until a full reload.
-  const KNOWN_UI_LANGS = new Set(['he', 'en', 'es']);
-
-  function applyLanguageVisibility(lang) {
-    document.querySelectorAll('[data-lang]').forEach(el => {
-      const elLang = el.dataset.lang;
-      if (!elLang || !KNOWN_UI_LANGS.has(elLang)) return;
-      if (elLang === lang) {
-        el.classList.remove('hidden');
-        el.classList.add('visible');
-      } else {
-        el.classList.add('hidden');
-        el.classList.remove('visible');
-      }
-    });
-  }
-
-  window.yuvalLoadChapter = loadChapterContent;
-
-  function initTocNavigation() {
-    const tocSidebar = document.getElementById('toc-sidebar');
-    if (!tocSidebar || tocSidebar.dataset.navInit === 'true') return;
-    tocSidebar.dataset.navInit = 'true';
-
-    // Capture phase + stopImmediatePropagation prevents Astro's ClientRouter
-    // (from BaseLayout) from racing us with its own view-transition swap.
-    // Both handlers would otherwise fetch and swap the same URL, leaving
-    // the DOM in a mixed state where code-block chrome (.coderunner,
-    // .bash-block) renders only after a hard refresh.
-    tocSidebar.addEventListener('click', async (e) => {
-      const target = e.target.closest('a.toc-link');
-      if (!target) return;
-
-      e.preventDefault();
-      e.stopImmediatePropagation();
-
-      const url = target.getAttribute('href')?.split('?')[0] || '';
-      await loadChapterContent(url);
-    }, true);
-  }
-
-  window.addEventListener('popstate', async () => {
-    await loadChapterContent(window.location.href);
-  });
-
-  function updateSidebarText(lang) {
-    document.querySelectorAll('.toc-chapter-title-text[data-titles]').forEach((span) => {
-      span.textContent = getTitleFromDataset(span, lang);
-    });
-    // Also translate the sidebar's own chrome (titles like "Chapters" /
-    // "In This Chapter"), which lives in data-i18n spans that the
-    // chapter-title pass above doesn't touch.
-    import('../i18n').then(({ applyTranslations }) => {
-      const toc = document.getElementById('toc-sidebar');
-      const outline = document.getElementById('outline-sidebar');
-      const mobile = document.querySelector('.mobile-drawer');
-      if (toc) applyTranslations(toc, lang);
-      if (outline) applyTranslations(outline, lang);
-      if (mobile) applyTranslations(mobile, lang);
-    }).catch(() => {});
-  }
-
-  function getVisibleContentDiv() {
-    return document.querySelector('.chapter-content.visible') || document.querySelector('.chapter-content');
-  }
-
-  let outlineSpyObserver = null;
-  let outlineHeadingOrder = [];
-  const outlineHeadingMap = new Map();
-  const outlineVisibleIds = new Set();
-  let activeOutlineId = null;
-
-  function setActiveOutlineItem(id) {
-    if (activeOutlineId === id) return;
-    activeOutlineId = id;
-
-    document.querySelectorAll('#chapter-outline li.active, #mobile-chapter-outline li.active')
-      .forEach(li => li.classList.remove('active'));
-
-    if (!id) return;
-
-    document.querySelectorAll(`#chapter-outline li[data-heading-id="${id}"], #mobile-chapter-outline li[data-heading-id="${id}"]`)
-      .forEach(li => li.classList.add('active'));
-
-    // Keep the active item in view inside the outline sidebar itself
-    // (not the whole page) so long chapters stay scannable.
-    const sidebar = document.getElementById('outline-sidebar');
-    const li = outlineHeadingMap.get(id);
-    if (sidebar && li && sidebar.scrollHeight > sidebar.clientHeight) {
-      const sRect = sidebar.getBoundingClientRect();
-      const lRect = li.getBoundingClientRect();
-      const margin = 24;
-      if (lRect.top < sRect.top + margin) {
-        sidebar.scrollTo({ top: sidebar.scrollTop + (lRect.top - sRect.top) - margin, behavior: 'smooth' });
-      } else if (lRect.bottom > sRect.bottom - margin) {
-        sidebar.scrollTo({ top: sidebar.scrollTop + (lRect.bottom - sRect.bottom) + margin, behavior: 'smooth' });
-      }
-    }
-  }
-
-  function recomputeActiveOutline() {
-    if (outlineHeadingOrder.length === 0) return;
-
-    // Prefer the first heading currently inside the "active zone"
-    // (top ~25% of viewport). If none is there, fall back to the last
-    // heading that scrolled past the trigger — that's the section the
-    // reader is currently inside.
-    const firstVisible = outlineHeadingOrder.find(h => outlineVisibleIds.has(h.id));
-    if (firstVisible) {
-      setActiveOutlineItem(firstVisible.id);
-      return;
-    }
-
-    const triggerY = window.innerHeight * 0.25;
-    let candidate = null;
-    for (const h of outlineHeadingOrder) {
-      const top = h.getBoundingClientRect().top;
-      if (top <= triggerY) candidate = h;
-      else break;
-    }
-    setActiveOutlineItem(candidate ? candidate.id : outlineHeadingOrder[0]?.id || null);
-  }
-
-  function setupOutlineScrollSpy(headings) {
-    if (outlineSpyObserver) {
-      outlineSpyObserver.disconnect();
-      outlineSpyObserver = null;
-    }
-    outlineVisibleIds.clear();
-    outlineHeadingOrder = headings;
-    activeOutlineId = null;
-
-    if (!('IntersectionObserver' in window) || headings.length === 0) return;
-
-    outlineSpyObserver = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        const id = entry.target.id;
-        if (!id) return;
-        if (entry.isIntersecting) outlineVisibleIds.add(id);
-        else outlineVisibleIds.delete(id);
-      });
-      recomputeActiveOutline();
-    }, {
-      // Active zone is roughly the upper quarter of the viewport — a
-      // heading "activates" as it crosses ~25% from the top, and stays
-      // active until the next one arrives.
-      rootMargin: '-15% 0px -60% 0px',
-      threshold: 0,
-    });
-
-    headings.forEach(h => outlineSpyObserver.observe(h));
-    recomputeActiveOutline();
-  }
-
-  function buildChapterOutline() {
-    const outline = document.getElementById('chapter-outline');
-    if (!outline) return;
-
-    const ul = outline.querySelector('ul');
-    if (ul) ul.innerHTML = '';
-    outlineHeadingMap.clear();
-
-    const contentDiv = getVisibleContentDiv();
-    if (!contentDiv) {
-      setupOutlineScrollSpy([]);
-      return;
-    }
-
-    const headings = Array.from(contentDiv.querySelectorAll('h2, h3'));
-
-    const outlineSidebar = document.getElementById('outline-sidebar');
-    if (headings.length === 0) {
-      if (outlineSidebar) outlineSidebar.style.display = 'none';
-      setupOutlineScrollSpy([]);
-      return;
-    }
-    if (outlineSidebar) outlineSidebar.style.display = '';
-
-    headings.forEach((heading, index) => {
-      const level = heading.tagName.toLowerCase();
-      const text = heading.textContent?.trim() || `Section ${index + 1}`;
-      const id = heading.id || `section-${index}`;
-
-      heading.id = id;
-
-      const li = document.createElement('li');
-      li.setAttribute('data-level', level);
-      li.setAttribute('data-heading-id', id);
-
-      const link = document.createElement('a');
-      link.href = `#${id}`;
-      link.textContent = text;
-
-      link.addEventListener('click', (e) => {
-        e.preventDefault();
-        const target = document.getElementById(id);
-        if (target) {
-          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          setActiveOutlineItem(id);
-        }
-      });
-
-      li.appendChild(link);
-      if (ul) ul.appendChild(li);
-      outlineHeadingMap.set(id, li);
-    });
-
-    setupOutlineScrollSpy(headings);
-  }
-
-  function updateTocLinks() {
-    // clean URLs only
-  }
-
-  function updateSidebarPositions(lang) {
-    const toc = document.getElementById('toc-sidebar');
-    const outline = document.getElementById('outline-sidebar');
-    if (!toc || !outline) return;
-
-    if (lang === 'he') {
-      toc.classList.add('toc-sidebar-rtl');
-      outline.classList.add('outline-sidebar-rtl');
-    } else {
-      toc.classList.remove('toc-sidebar-rtl');
-      outline.classList.remove('outline-sidebar-rtl');
-    }
-  }
-
-  function initializeSidebars(lang) {
-    if (!lang) {
-      lang = localStorage.getItem('yuval_language') || 'he';
-    }
-
-    updateSidebarText(lang);
-    updateTocLinks();
-    updateSidebarPositions(lang);
-    initTocNavigation();
-    updateActiveChapter();
-
-    setTimeout(() => {
-      buildChapterOutline();
-    }, 150);
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-      initializeSidebars();
-    });
-  } else {
-    initializeSidebars();
-  }
-
-  function updateTocProgress(currentChapterPct) {
-    const bookEl = document.getElementById('chapter-container');
-    const book = bookEl?.dataset.book || '';
-    const currentChapterId = bookEl?.dataset.chapterId || '';
-    if (!book) return;
-
-    let completedChapters = [];
-    try {
-      completedChapters = JSON.parse(localStorage.getItem(`yuval_ch_complete_${book}`) || '[]');
-    } catch {}
-
-    document.querySelectorAll('#toc-sidebar li[data-chapter-id]').forEach(li => {
-      const chId = li.dataset.chapterId;
-      if (!chId) return;
-
-      li.querySelector('.toc-progress-bar-wrap')?.remove();
-
-      let pct = 0;
-      let done = false;
-
-      if (completedChapters.includes(chId) || completedChapters.includes(String(chId))) {
-        pct = 100;
-        done = true;
-      } else if (chId === currentChapterId && currentChapterPct !== undefined) {
-        pct = currentChapterPct;
-        done = pct >= 100;
-      } else {
-        for (let i = 0; i < localStorage.length; i++) {
-          const k = localStorage.key(i);
-          if (!k?.includes(`_${book}_ch${chId}`)) continue;
-          try {
-            const d = JSON.parse(localStorage.getItem(k) || '{}');
-            if (d.percentage !== undefined && d.percentage > pct) {
-              pct = d.percentage;
-            } else if (d.scrollPosition && d.scrollPosition > 50) {
-              const estimated = Math.min(95, Math.round((d.scrollPosition / 2500) * 100));
-              if (estimated > pct) pct = estimated;
-            }
-          } catch {}
-        }
-        if (pct >= 95) done = true;
-      }
-
-      applyCompletionMark(li, done);
-
-      if (pct < 3) return;
-
-      const bar = document.createElement('div');
-      bar.className = 'toc-progress-bar-wrap';
-      bar.style.cssText = `
-        position:absolute; bottom:0; left:8px; right:8px; height:2px;
-        border-radius:99px;
-        background:var(--yuval-border,#e5e7eb);
-        overflow:hidden;
-      `;
-
-      const fill = document.createElement('div');
-      fill.style.cssText = `
-        height:100%; width:${pct}%; border-radius:99px;
-        background:${done ? '#22c55e' : '#6366f1'};
-        transition:width 600ms var(--ease-standard);
-      `;
-
-      bar.appendChild(fill);
-      li.style.position = 'relative';
-      li.appendChild(bar);
-    });
-
-    // Mirror completion marks onto the mobile chapter list (no data-chapter-id there)
-    document.querySelectorAll('#mobile-chapters-panel .toc-item').forEach(li => {
-      const link = li.querySelector('a.mobile-toc-link');
-      const href = link?.getAttribute('href') || '';
-      const match = href.match(/\/read\/[^/]+\/([^/?#]+)/);
-      const chId = match ? match[1] : '';
-      if (!chId) return;
-
-      let done = completedChapters.includes(chId) || completedChapters.includes(String(chId));
-      if (!done) {
-        for (let i = 0; i < localStorage.length; i++) {
-          const k = localStorage.key(i);
-          if (!k?.includes(`_${book}_ch${chId}`)) continue;
-          try {
-            const d = JSON.parse(localStorage.getItem(k) || '{}');
-            if (typeof d.percentage === 'number' && d.percentage >= 95) {
-              done = true;
-              break;
-            }
-          } catch {}
-        }
-      }
-
-      applyCompletionMark(li, done);
-    });
-  }
-
-  function applyCompletionMark(li, done) {
-    const link = li.querySelector('a.toc-link, a.mobile-toc-link');
-    if (!link) return;
-    const existing = link.querySelector('.chapter-complete-check');
-
-    if (done) {
-      li.classList.add('toc-item-completed');
-      if (!existing) {
-        const check = document.createElement('span');
-        check.className = 'chapter-complete-check';
-        check.setAttribute('aria-label', 'Completed');
-        check.setAttribute('title', 'Completed');
-        check.innerHTML = `
-          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.5"
-               stroke-linecap="round" stroke-linejoin="round" width="12" height="12" aria-hidden="true">
-            <path d="M4 10.5l3.5 3.5L16 6" />
-          </svg>
-        `;
-        link.appendChild(check);
-      }
-    } else {
-      li.classList.remove('toc-item-completed');
-      existing?.remove();
-    }
-  }
-
-  setTimeout(updateTocProgress, 200);
-  window.addEventListener('chapter-content-swapped', () => setTimeout(updateTocProgress, 400));
-
-  // 2πr for r=17 — must match the stroke-dasharray baked into the SVG ring.
-  const RING_CIRCUMFERENCE = 106.814;
-  // Average reading speed. 200 WPM is a common Hebrew/English mid-point;
-  // Hebrew readers trend a touch slower, English a touch faster, so 200
-  // is a reasonable default until we track per-user velocity.
-  const WPM = 200;
-
-  function updateProgressBadges(pct) {
-    const container = document.getElementById('chapter-container');
-    const wc = parseInt(container?.dataset.wordCount || '0', 10);
-    const minutesLeft = wc > 0
-      ? Math.max(0, Math.ceil((wc * (100 - pct) / 100) / WPM))
-      : null;
-
-    const offset = RING_CIRCUMFERENCE * (1 - pct / 100);
-    const complete = pct >= 99;
-
-    document.querySelectorAll('[id^="progress-badge-"]').forEach(el => {
-      const label = el.querySelector('.progress-label');
-      const fill = el.querySelector('.ring-fill');
-
-      if (label) {
-        if (complete) {
-          label.textContent = '✓';
-        } else if (minutesLeft !== null) {
-          // Apostrophe is a universal minutes abbreviation (e.g. 7').
-          // Works in both Hebrew and English without a translation key.
-          label.textContent = minutesLeft === 0 ? '<1\'' : `${minutesLeft}'`;
-        } else {
-          label.textContent = `${pct}%`;
-        }
-      }
-
-      if (fill) {
-        fill.style.strokeDashoffset = String(offset);
-      }
-
-      el.classList.toggle('is-complete', complete);
-      el.setAttribute('aria-valuenow', String(Math.round(pct)));
-    });
-  }
-
-  let scrollTimeout;
-  window.addEventListener('scroll', () => {
-    clearTimeout(scrollTimeout);
-    scrollTimeout = setTimeout(() => {
-      const container = document.getElementById('chapter-container');
-      if (!container) return;
-      const containerTop = container.offsetTop;
-      const containerHeight = container.offsetHeight;
-      const scrollable = containerHeight - window.innerHeight;
-      if (scrollable <= 0) {
-        updateTocProgress(100);
-        updateProgressBadges(100);
-        return;
-      }
-      const scrolledInto = window.scrollY - containerTop;
-      const pct = scrolledInto <= 0 ? 0 : Math.min(100, Math.round((scrolledInto / scrollable) * 100));
-      updateTocProgress(pct);
-      updateProgressBadges(pct);
-    }, 100);
-  }, { passive: true });
-
-  window.addEventListener('chapter-completed', () => {
-    setTimeout(() => updateTocProgress(100), 100);
-  });
-
-  window.addEventListener('language-changed', (e) => {
-    const lang = e.detail?.language || 'he';
-    updateSidebarText(lang);
-    updateTocLinks();
-    updateSidebarPositions(lang);
-    setTimeout(() => {
-      buildChapterOutline();
-    }, 150);
-  });
-
-  document.addEventListener('astro:after-swap', () => {
-    initializeSidebars();
-    drawerInitialized = false;
-    initMobileToc();
-  });
-
-  function buildMobileOutline() {
-    const mobileOutline = document.getElementById('mobile-chapter-outline');
-    if (!mobileOutline) return;
-    const ul = mobileOutline.querySelector('ul');
-    if (!ul) return;
-    ul.innerHTML = '';
-
-    const contentDiv = getVisibleContentDiv();
-    if (!contentDiv) return;
-
-    const headings = Array.from(contentDiv.querySelectorAll('h2, h3'));
-    if (headings.length === 0) {
-      const li = document.createElement('li');
-      li.style.color = '#ccc';
-      li.style.fontSize = '12px';
-      li.setAttribute('data-i18n', 'sidebar.noSectionsFound');
-      li.textContent = 'No sections found';
-      ul.appendChild(li);
-      return;
-    }
-
-    headings.forEach((heading, i) => {
-      const level = heading.tagName.toLowerCase();
-      const text = heading.textContent?.trim() || `Section ${i + 1}`;
-      const id = heading.id || `section-${i}`;
-      if (!heading.id) heading.id = id;
-
-      const li = document.createElement('li');
-      li.setAttribute('data-level', level);
-      li.setAttribute('data-heading-id', id);
-      if (id === activeOutlineId) li.classList.add('active');
-
-      const link = document.createElement('a');
-      link.href = `#${id}`;
-      link.textContent = text;
-      link.addEventListener('click', (e) => {
-        e.preventDefault();
-        closeDrawer();
-        const target = document.getElementById(id);
-        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      });
-
-      li.appendChild(link);
-      ul.appendChild(li);
-    });
-  }
-
-  let drawerInitialized = false;
-
-  function closeDrawer() {
-    const drawer = document.getElementById('mobile-drawer');
-    const overlay = document.getElementById('mobile-sidebar-overlay');
-    const btn = document.getElementById('mobile-toc-toggle');
-    drawer?.classList.remove('open');
-    overlay?.classList.remove('active');
-    btn?.setAttribute('aria-expanded', 'false');
-    document.body.style.overflow = '';
-  }
-
-  function initMobileToc() {
-    if (drawerInitialized) return;
-
-    const btn = document.getElementById('mobile-toc-toggle');
-    const overlay = document.getElementById('mobile-sidebar-overlay');
-    const drawer = document.getElementById('mobile-drawer');
-    if (!btn || !overlay || !drawer) return;
-
-    drawerInitialized = true;
-
-    function openDrawer() {
-      buildMobileOutline();
-      drawer.classList.add('open');
-      overlay.classList.add('active');
-      btn.setAttribute('aria-expanded', 'true');
-      document.body.style.overflow = 'hidden';
-    }
-
-    btn.addEventListener('click', () => {
-      const isOpen = drawer.classList.contains('open');
-      isOpen ? closeDrawer() : openDrawer();
-    });
-
-    overlay.addEventListener('click', closeDrawer);
-
-    drawer.querySelectorAll('.mobile-tab').forEach(tab => {
-      tab.addEventListener('click', () => {
-        const target = tab.dataset.tab;
-        drawer.querySelectorAll('.mobile-tab').forEach(t => t.classList.remove('active'));
-        drawer.querySelectorAll('.mobile-panel').forEach(p => p.classList.remove('active'));
-        tab.classList.add('active');
-
-        const panel = target === 'outline'
-          ? document.getElementById('mobile-outline-panel')
-          : document.getElementById('mobile-chapters-panel');
-
-        panel?.classList.add('active');
-      });
-    });
-
-    drawer.querySelectorAll('a.mobile-toc-link').forEach(link => {
-      link.addEventListener('click', async (e) => {
-        e.preventDefault();
-        closeDrawer();
-
-        const url = link.getAttribute('href')?.split('?')[0] || '';
-        await loadChapterContent(url);
-      });
-    });
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initMobileToc);
-  } else {
-    initMobileToc();
-  }
-
-  window.addEventListener('language-changed', () => {
-    const drawer = document.getElementById('mobile-drawer');
-    if (drawer && drawer.classList.contains('open')) buildMobileOutline();
-  });
-
-  // Immersive mode is manual-only (keyboard shortcut / FAB).
-  // Auto-triggering it on scroll caused the reading column to jump width
-  // when the 320px sidebar margins were removed — visible as horizontal
-  // shift during scroll. Keep immersive as an explicit user action instead.
-  window.addEventListener('popstate', () => {
-    document.body.classList.remove('reading-immersive');
-  });
+  /* Bootstrap the sidebar runtime. The bootstrap function handles
+     DOMContentLoaded vs. already-loaded itself, and idempotently
+     installs all lifecycle handlers. */
+  import { bootstrap } from '../utils/sidebar/sidebar-init';
+  bootstrap();
 </script>
