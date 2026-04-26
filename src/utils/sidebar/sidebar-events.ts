@@ -185,6 +185,20 @@ export function initScrollListener(): void {
          visually — the ring is the user's live position indicator. */
       updateProgressBadges(pct);
 
+      /* Grow the gold arc on the active chapter's sidebar node in
+         real time. Only the active card needs continuous updates;
+         other chapters refresh on syncChapterStates() (load, content
+         swap, completion events). Skip the write if the active
+         chapter is already in the completed list — the CSS selector
+         hides the arc there anyway. */
+      const activeLi = document.querySelector<HTMLElement>(
+        `.usb-chapter[data-chapter-id="${chapterId}"]`,
+      );
+      if (activeLi && !activeLi.classList.contains('usb-chapter-completed')) {
+        activeLi.style.setProperty('--chapter-progress', `${pct}%`);
+        activeLi.dataset.hasProgress = pct > 0 ? 'true' : 'false';
+      }
+
       /* Time-remaining header — cheap (one DOM write), worth
          refreshing on every tick because it's sensitive to active
          chapter pct, not just whole-chapter completion. */

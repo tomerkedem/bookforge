@@ -268,6 +268,70 @@
   z-index: 1;
 }
 
+/* ─── Per-chapter scroll-progress arc (gold) ───────────────────────────
+   Thin gold ring painted around the existing node border to encode
+   how far the reader scrolled in each chapter (0–100%). Driven by
+   the --chapter-progress custom property set in sidebar-render.ts
+   (on syncChapterStates) and sidebar-events.ts (on every scroll tick
+   for the active chapter only). The @property declaration upgrades
+   the variable to an interpolatable percentage, so the conic gradient
+   tweens smoothly when the value changes.
+
+   Hidden on completed chapters: completion is already conveyed by
+   the green node border + check badge, and most chapters auto-complete
+   at 95%, so a near-full gold arc next to the green border would just
+   be redundant chrome. The arc only appears on in-progress chapters
+   that haven't yet been marked done. */
+@property --chapter-progress {
+  syntax: '<percentage>';
+  inherits: true;
+  initial-value: 0%;
+}
+
+.usb-chapter {
+  --chapter-progress: 0%;
+  transition: --chapter-progress 360ms var(--ease-standard);
+}
+
+.usb-chapter[data-has-progress="true"]:not(.usb-chapter-completed) .usb-node::after {
+  content: '';
+  position: absolute;
+  /* Sit outside the existing colored border. -5px clears both the
+     2px border (any state) and the active state's 4px purple glow
+     (box-shadow), so the gold ring never overlaps the active halo. */
+  inset: -5px;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    #c9a227 0%,
+    #c9a227 var(--chapter-progress, 0%),
+    transparent var(--chapter-progress, 0%),
+    transparent 100%
+  );
+  /* Carve the disc into a 2px-thick ring at the outer edge. */
+  -webkit-mask: radial-gradient(
+    closest-side,
+    transparent calc(100% - 2px),
+    #000 calc(100% - 2px)
+  );
+  mask: radial-gradient(
+    closest-side,
+    transparent calc(100% - 2px),
+    #000 calc(100% - 2px)
+  );
+  pointer-events: none;
+}
+
+.dark .usb-chapter[data-has-progress="true"]:not(.usb-chapter-completed) .usb-node::after {
+  background: conic-gradient(
+    from 0deg,
+    #d4c098 0%,
+    #d4c098 var(--chapter-progress, 0%),
+    transparent var(--chapter-progress, 0%),
+    transparent 100%
+  );
+}
+
 /* ─── Card (chapter row body) ──────────────────────────────────────── */
 .usb-card {
   flex: 1;

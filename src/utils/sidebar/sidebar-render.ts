@@ -21,7 +21,7 @@ import {
   chapterContentUrl,
   getVisibleContentDiv,
 } from './sidebar-helpers';
-import { getCompletedChapters } from './sidebar-storage';
+import { getCompletedChapters, getChapterScrollPercent } from './sidebar-storage';
 import {
   computeTimeRemaining,
   formatTimeRemaining,
@@ -100,6 +100,15 @@ export function syncChapterStates(): void {
       const words = parseInt(timeEl.dataset.wordCount || '0', 10) || 0;
       timeEl.textContent = formatChapterTime(words);
     }
+
+    /* Per-chapter scroll progress → gold arc on the node circle.
+       Read max recorded percentage; expose as a CSS variable plus a
+       boolean flag for the stylesheet's :not(.usb-chapter-completed)
+       selector to consume. Completed chapters skip the arc entirely
+       so the green border isn't doubled by a near-full gold ring. */
+    const pct = getChapterScrollPercent(book, id);
+    li.style.setProperty('--chapter-progress', `${pct}%`);
+    li.dataset.hasProgress = pct > 0 ? 'true' : 'false';
   });
 
   const total = document.querySelectorAll('.usb-chapter').length;
