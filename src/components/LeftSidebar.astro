@@ -1,0 +1,256 @@
+---
+// Left-side reading-tools activity bar — VS Code Activity Bar style.
+//
+// Sits on the inline-END edge (visual left in RTL, visual right in LTR),
+// opposite the existing unified sidebar at inline-start. Five icon-only
+// buttons stacked vertically with a divider after the second button.
+//
+// This task wires only the structural shell: hover, tooltip, active
+// state, and a custom `left-sidebar-action` event. Popovers/drawers
+// for each action land in later tasks.
+---
+
+<aside id="left-sidebar" class="left-sidebar" aria-label="Reading tools">
+  <button
+    type="button"
+    class="lsb-btn"
+    data-action="daily-goal"
+    data-i18n-tooltip="leftSidebar.dailyGoal"
+    data-i18n-aria-label="leftSidebar.dailyGoal"
+    aria-label="Daily goal"
+  >
+    <svg class="lsb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="9"/>
+      <circle cx="12" cy="12" r="5.5"/>
+      <circle cx="12" cy="12" r="2"/>
+    </svg>
+  </button>
+
+  <button
+    type="button"
+    class="lsb-btn"
+    data-action="tts"
+    data-i18n-tooltip="leftSidebar.tts"
+    data-i18n-aria-label="leftSidebar.tts"
+    aria-label="Listen"
+  >
+    <svg class="lsb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M3 12c0-4.97 4.03-9 9-9s9 4.03 9 9v3"/>
+      <path d="M3 15v-3"/>
+      <rect x="3" y="14" width="4" height="6" rx="1.5"/>
+      <rect x="17" y="14" width="4" height="6" rx="1.5"/>
+    </svg>
+  </button>
+
+  <div class="lsb-divider" aria-hidden="true"></div>
+
+  <button
+    type="button"
+    class="lsb-btn"
+    data-action="statistics"
+    data-i18n-tooltip="leftSidebar.statistics"
+    data-i18n-aria-label="leftSidebar.statistics"
+    aria-label="Reading statistics"
+  >
+    <svg class="lsb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <line x1="6" y1="20" x2="6" y2="13"/>
+      <line x1="12" y1="20" x2="12" y2="8"/>
+      <line x1="18" y1="20" x2="18" y2="15"/>
+    </svg>
+  </button>
+
+  <button
+    type="button"
+    class="lsb-btn"
+    data-action="bookmarks"
+    data-i18n-tooltip="leftSidebar.bookmarks"
+    data-i18n-aria-label="leftSidebar.bookmarks"
+    aria-label="Bookmarks"
+  >
+    <svg class="lsb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+    </svg>
+  </button>
+
+  <button
+    type="button"
+    class="lsb-btn"
+    data-action="highlights"
+    data-i18n-tooltip="leftSidebar.highlights"
+    data-i18n-aria-label="leftSidebar.highlights"
+    aria-label="My highlights"
+  >
+    <svg class="lsb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M12 20l-3-3m3 3l9-9-3-3-9 9m3 3l-3 3-1-2 2-1-1-2 2-1"/>
+    </svg>
+  </button>
+</aside>
+
+<style>
+  /* ── Container ────────────────────────────────────────────────────────── */
+  .left-sidebar {
+    position: fixed;
+    inset-inline-end: 0;
+    /* Header height — matches the unified right sidebar's top: 68px so
+       both bars align under the platform header instead of covering it. */
+    top: 68px;
+    bottom: 0;
+    width: 76px;
+    z-index: 40;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1.5rem 0;
+    gap: 1.1rem;
+    background: rgba(15, 15, 18, 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-inline-start: 0.5px solid var(--yuval-border, rgba(127, 127, 127, 0.18));
+    box-sizing: border-box;
+  }
+
+  :global(:root:not(.dark)) .left-sidebar {
+    background: rgba(255, 255, 255, 0.92);
+  }
+
+  /* Hide on tablet and below — mobile integration is a later task. */
+  @media (max-width: 1023px) {
+    .left-sidebar {
+      display: none;
+    }
+  }
+
+  /* ── Buttons ──────────────────────────────────────────────────────────── */
+  .lsb-btn {
+    position: relative;
+    width: 56px;
+    height: 56px;
+    border-radius: 12px;
+    border: none;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.7);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    transition: background 200ms cubic-bezier(0.4, 0, 0.2, 1),
+                color 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  :global(:root:not(.dark)) .lsb-btn {
+    color: rgba(0, 0, 0, 0.65);
+  }
+
+  .lsb-btn:hover,
+  .lsb-btn:focus-visible {
+    background: rgba(201, 162, 39, 0.1);
+    color: #c9a227;
+    outline: none;
+  }
+
+  .lsb-btn.active {
+    background: rgba(201, 162, 39, 0.15);
+    color: #c9a227;
+  }
+
+  /* Gold pill protruding from the inline-START edge of an active button
+     (the edge facing the reading content, opposite the bar's edge). */
+  .lsb-btn.active::before {
+    content: '';
+    position: absolute;
+    inset-inline-start: -14px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 28px;
+    background: #c9a227;
+    border-radius: 2px;
+    pointer-events: none;
+  }
+
+  .lsb-icon {
+    width: 32px;
+    height: 32px;
+    display: block;
+  }
+
+  /* ── Badge (slot exists; populated in a later task) ───────────────────── */
+  .lsb-btn[data-badge]::after {
+    content: attr(data-badge);
+    position: absolute;
+    top: 4px;
+    inset-inline-start: 4px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    box-sizing: border-box;
+    border-radius: 9px;
+    border: 1.5px solid rgba(15, 15, 18, 0.85);
+    background: #c9a227;
+    color: #1a1502;
+    font-size: 0.68rem;
+    font-weight: 700;
+    line-height: 15px;
+    text-align: center;
+    pointer-events: none;
+  }
+
+  :global(:root:not(.dark)) .lsb-btn[data-badge]::after {
+    border-color: rgba(255, 255, 255, 0.92);
+  }
+
+  .lsb-btn[data-badge-color="green"]::after {
+    background: #1f8a4d;
+    color: #ffffff;
+  }
+
+  .lsb-btn[data-badge-color="purple"]::after {
+    background: #a78bfa;
+    color: #1a1632;
+  }
+
+  /* ── Divider ──────────────────────────────────────────────────────────── */
+  .lsb-divider {
+    width: 36px;
+    height: 0.5px;
+    background: rgba(255, 255, 255, 0.08);
+    margin: 0.25rem 0;
+  }
+
+  :global(:root:not(.dark)) .lsb-divider {
+    background: rgba(0, 0, 0, 0.08);
+  }
+
+  /* ── Tooltip (rendered as a single floating element, see script) ─────── */
+  :global(.lsb-tooltip) {
+    position: fixed;
+    z-index: 41;
+    padding: 0.55rem 0.95rem;
+    background: rgba(20, 20, 22, 0.96);
+    color: rgba(255, 255, 255, 0.95);
+    border: 0.5px solid var(--yuval-border, rgba(127, 127, 127, 0.18));
+    border-radius: 7px;
+    font-size: 0.82rem;
+    font-weight: 500;
+    line-height: 1.2;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  :global(:root:not(.dark) .lsb-tooltip) {
+    background: rgba(255, 255, 255, 0.96);
+    color: rgba(0, 0, 0, 0.85);
+  }
+
+  :global(.lsb-tooltip.visible) {
+    opacity: 1;
+  }
+</style>

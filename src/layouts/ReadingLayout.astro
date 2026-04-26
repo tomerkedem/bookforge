@@ -2,6 +2,7 @@
 import type { Language } from '../types/index';
 import BaseLayout from './BaseLayout.astro';
 import ReadingControls from '../components/ReadingControls.astro';
+import LeftSidebar from '../components/LeftSidebar.astro';
 import '../styles/reading-typography.css';
 import '../styles/bash-block.css';
 import '../styles/code-runner.css';
@@ -28,8 +29,13 @@ const COPY_SUCCESS_MESSAGE = 'Code copied!';
   showProgress={false}
   showLanguageToggle={true}
 >
-  <!-- Sidebars passed through to body level -->
-  <slot name="sidebars" slot="sidebars" />
+  <!-- Sidebars passed through to body level. The left activity bar
+       renders alongside the page-provided right sidebar so both sit
+       at the BaseLayout root, outside <main>'s view-transition scope. -->
+  <Fragment slot="sidebars">
+    <slot name="sidebars" />
+    <LeftSidebar />
+  </Fragment>
 
   <article
     class:list={[
@@ -725,18 +731,25 @@ const COPY_SUCCESS_MESSAGE = 'Code copied!';
       }
 
       /* Desktop: fill the entire space between the two 320px sidebars.
-         No width cap — the reading column spans edge-to-edge between them. */
+         No width cap — the reading column spans edge-to-edge between them.
+         padding-inline-end reserves clearance for the 76px left activity
+         bar (which sits on inline-end — visual left in RTL, visual right
+         in LTR). Existing 320px margin already covers it, but the padding
+         makes the dependency explicit and survives margin tweaks. */
       @media (min-width: 1024px) {
         .reading-article {
           max-width: none;
           margin-left: 320px;
           margin-right: 320px;
+          padding-inline-end: calc(76px + 2rem);
         }
 
-        /* Immersive: article expands to full width */
+        /* Immersive: article expands to full width — but still must not
+           overlap the activity bar. Keep the inline-end inset. */
         :global(body.reading-immersive) .reading-article {
           margin-left: 0;
           margin-right: 0;
+          padding-inline-end: calc(76px + 2rem);
         }
       }
 

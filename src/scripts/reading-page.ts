@@ -19,6 +19,7 @@ import { initOnboardingTour } from './onboarding-tour';
 import { initTextToSpeech } from './text-to-speech';
 import { initChapterTitleTap } from './chapter-title-tap';
 import { initImageLightbox } from './image-lightbox';
+import { initLeftSidebar } from './left-sidebar';
 
 let currentController: AbortController | null = null;
 let currentProgressCleanup: (() => void) | null = null;
@@ -66,6 +67,7 @@ function initializeReadingPage() {
   initOnboardingTour();
   initChapterTitleTap(controller.signal);
   initImageLightbox(controller);
+  initLeftSidebar(controller.signal);
 
   const cleanup = () => {
     currentProgressCleanup?.();

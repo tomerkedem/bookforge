@@ -36,6 +36,8 @@ export const translations: Translations = {
   'display.widthMedium':   { he: 'בינוני',         en: 'Medium',           es: 'Medio' },
   'display.widthWide':     { he: 'רחב',            en: 'Wide',             es: 'Amplio' },
   'display.font':          { he: 'גופן',           en: 'Font',             es: 'Fuente' },
+  'display.fontModern':    { he: 'מודרני',          en: 'Modern',           es: 'Moderno' },
+  'display.fontClean':     { he: 'נקי',             en: 'Clean',            es: 'Limpio' },
   'display.reset':         { he: 'איפוס',          en: 'Reset defaults',   es: 'Restablecer' },
 
   // ── Focus Mode ──────────────────────────────────────────────────────────────
@@ -315,6 +317,13 @@ export const translations: Translations = {
 
   'empty.library.title':   { he: 'הספרייה ריקה',     en: 'Library is empty', es: 'La biblioteca está vacía' },
   'empty.library.body':    { he: 'עוד לא נוספו ספרים. הוסף קובצי MD לתיקיית output/ כדי להתחיל.', en: 'No books added yet. Drop MD files into the output/ folder to get started.', es: 'Aún no se han añadido libros. Coloca archivos MD en la carpeta output/ para empezar.' },
+
+  // ── Left Sidebar (reading-tools activity bar) ──────────────────────────────
+  'leftSidebar.dailyGoal':  { he: 'יעד יומי',           en: 'Daily goal',           es: 'Meta diaria' },
+  'leftSidebar.tts':        { he: 'הקראה',              en: 'Listen',               es: 'Escuchar' },
+  'leftSidebar.statistics': { he: 'סטטיסטיקות קריאה',   en: 'Reading statistics',   es: 'Estadísticas de lectura' },
+  'leftSidebar.bookmarks':  { he: 'סימניות',            en: 'Bookmarks',            es: 'Marcadores' },
+  'leftSidebar.highlights': { he: 'ההדגשות שלי',        en: 'My highlights',        es: 'Mis resaltados' },
 
   // ── Image Lightbox ──────────────────────────────────────────────────────────
   'lightbox.close':        { he: 'סגור',              en: 'Close',            es: 'Cerrar' },

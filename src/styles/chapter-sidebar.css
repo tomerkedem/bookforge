@@ -76,53 +76,60 @@
   pointer-events: none;
 }
 
-/* Glass-tube scrollbar — visually quotes the neuron progress track.
-   The track is a faint dark recess; the thumb is a vertical capsule
-   with a hairline border + asymmetric inset shadows that imply a
-   round tube laid on its side. Hover lifts the capsule with an
-   outer purple glow. Firefox uses scrollbar-color (limited to two
-   solid colors); WebKit gets the full effect. */
+/* Plasma-glass scrollbar — 3px hair-thin capsule with a vertical
+   purple→pink gradient thumb and a permanent soft halo so it reads
+   as "lit glass" rather than a flat line. The gradient does double
+   duty as the "two-color" shading that gives the capsule depth at
+   sub-pixel-border sizes where inset shadows can't fit.
+
+   Firefox: scrollbar-color only accepts two flat colors, so we pick
+   the gradient's midpoint (a lavender-rose blend) for the thumb. */
 .unified-sidebar {
   scrollbar-width: thin;
-  scrollbar-color: rgba(124, 92, 240, 0.6) rgba(20, 18, 32, 0.35);
+  scrollbar-color: rgba(207, 126, 211, 0.7) rgba(20, 18, 32, 0.25);
 }
 
 .unified-sidebar::-webkit-scrollbar {
-  width: 5px;
+  width: 3px;
 }
 .unified-sidebar::-webkit-scrollbar-track {
-  background: rgba(20, 18, 32, 0.35);
+  background: rgba(20, 18, 32, 0.25);
   border-radius: 99px;
   margin: 6px 0;
 }
-/* At 5px width the asymmetric inset shadows from the wider design
-   no longer fit (they'd consume the whole capsule). The hairline
-   border alone carries the "glass tube" character; the hover glow
-   does the rest. */
 .unified-sidebar::-webkit-scrollbar-thumb {
-  background: rgba(124, 92, 240, 0.6);
-  border: 1px solid rgba(167, 139, 250, 0.45);
+  background: linear-gradient(
+    180deg,
+    rgba(167, 139, 250, 0.9) 0%,
+    rgba(207, 126, 211, 0.85) 50%,
+    rgba(248, 113, 113, 0.8) 100%
+  );
   border-radius: 99px;
+  /* Permanent halo — the "glass" effect at this size. Subtle enough
+     to not bloom against text, persistent enough to make the line
+     feel lit rather than painted. */
+  box-shadow:
+    0 0 3px rgba(167, 139, 250, 0.5),
+    0 0 6px rgba(207, 126, 211, 0.25);
 }
 .unified-sidebar::-webkit-scrollbar-thumb:hover {
-  background: rgba(124, 92, 240, 0.9);
-  box-shadow: 0 0 5px rgba(124, 92, 240, 0.55);
+  background: linear-gradient(
+    180deg,
+    rgba(167, 139, 250, 1) 0%,
+    rgba(207, 126, 211, 1) 50%,
+    rgba(248, 113, 113, 0.95) 100%
+  );
+  box-shadow:
+    0 0 4px rgba(167, 139, 250, 0.7),
+    0 0 10px rgba(207, 126, 211, 0.5);
 }
 
-/* Light mode: lighter recessed track, same purple capsule but tuned
-   for a bright surrounding. */
+/* Light mode: lighter track recess, same gradient thumb. */
 :root:not(.dark) .unified-sidebar {
-  scrollbar-color: rgba(124, 92, 240, 0.55) rgba(60, 50, 90, 0.08);
+  scrollbar-color: rgba(207, 126, 211, 0.65) rgba(60, 50, 90, 0.06);
 }
 :root:not(.dark) .unified-sidebar::-webkit-scrollbar-track {
-  background: rgba(60, 50, 90, 0.08);
-}
-:root:not(.dark) .unified-sidebar::-webkit-scrollbar-thumb {
-  background: rgba(124, 92, 240, 0.55);
-  border-color: rgba(124, 92, 240, 0.4);
-}
-:root:not(.dark) .unified-sidebar::-webkit-scrollbar-thumb:hover {
-  background: rgba(124, 92, 240, 0.8);
+  background: rgba(60, 50, 90, 0.06);
 }
 
 /* ─── Header ───────────────────────────────────────────────────────── */
