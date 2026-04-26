@@ -28,6 +28,10 @@ import {
   syncChapterStates,
   renderChapterSections,
 } from './sidebar-render';
+import {
+  updateProgressBadges,
+  syncStripCompletion,
+} from './sidebar-progress';
 import { loadChapterContent } from './sidebar-navigation';
 import { AUTO_COMPLETE_THRESHOLD } from './sidebar-constants';
 
@@ -170,8 +174,16 @@ export function initScrollListener(): void {
         if (!before.includes(String(chapterId))) {
           markChapterComplete(book, chapterId);
           syncChapterStates();
+          /* Reveal the inline "הקריאה הושלמה" pill now that the
+             current chapter has just been marked complete. */
+          syncStripCompletion();
         }
       }
+
+      /* Update the chapter top-strip progress ring on every scroll
+         tick. Cheap (one DOM write to one SVG attribute) and matters
+         visually — the ring is the user's live position indicator. */
+      updateProgressBadges(pct);
 
       /* Time-remaining header — cheap (one DOM write), worth
          refreshing on every tick because it's sensitive to active

@@ -1,4 +1,30 @@
-import { t, resolveLanguage } from '../i18n';
+/**
+ * Sticky chapter top-strip behavior.
+ *
+ * Owns ONLY the visual chrome of the sticky strip:
+ *   - Toggles .scrolled class once page scroll passes a threshold
+ *   - Updates --reading-sticky-top and --top-strip-h CSS custom
+ *     properties so other components can lay out around the strip
+ *   - Re-runs the offset calculation on resize / language change /
+ *     strip resize via a ResizeObserver
+ *
+ * Does NOT own:
+ *   - Progress percentage text (.progress-label) — owned by
+ *     sidebar-progress.ts (`updateProgressBadges`)
+ *   - Horizontal progress bar (.strip-progress-bar-fill) — same
+ *   - Reading-time meta text (.reading-time-value) — owned by the
+ *     ChapterMeta render path; live updates are no longer needed
+ *     because the strip-completion pill conveys completion state
+ *   - Document title — kept here as a side-effect of the scroll
+ *     listener so the browser tab still reflects scroll progress
+ *
+ * Earlier revisions of this file wrote directly to
+ * .progress-badge.textContent on every scroll tick, which destroyed
+ * the badge's child nodes (SVG ring + percentage span) and left the
+ * badge as a bare text node. We now leave that DOM alone.
+ */
+
+import { resolveLanguage } from '../i18n';
 
 const SCROLL_THRESHOLD = 80;
 
@@ -12,20 +38,28 @@ function getLang(): string {
   );
 }
 
+// Reference kept so the warning about unused imports doesn't fire
+// during incremental cleanups; getLang() is still used downstream
+// if other handlers in this file need it again.
+void getLang;
+
 // ── Init ────────────────────────────────────────────────────────────────────
 
 export function initStickyHeader(controller: AbortController) {
   const topStrip = document.getElementById('chapter-top-strip');
   if (!topStrip) return;
 
+  /* topStrip is non-null past the early return above; capture it in
+     a typed local so the closures below get the narrowed type
+     without re-asserting. */
+  const strip: HTMLElement = topStrip;
+
   const siteHeader = document.getElementById('site-header');
-  const progressFill = document.getElementById('header-progress-fill');
-  const progressBadges = Array.from(document.querySelectorAll<HTMLElement>('.progress-badge'));
 
   function updateStickyOffset(): void {
     const top = siteHeader?.offsetHeight ?? 64;
     document.documentElement.style.setProperty('--reading-sticky-top', `${top}px`);
-    const stripH = topStrip.offsetHeight;
+    const stripH = strip.offsetHeight;
     document.documentElement.style.setProperty('--top-strip-h', `${stripH}px`);
   }
 
@@ -50,51 +84,6 @@ export function initStickyHeader(controller: AbortController) {
       : 0;
   }
 
-  function updateReadingTime(pct: number): void {
-    const lang = getLang();
-
-    document.querySelectorAll<HTMLElement>('.reading-time-value').forEach(el => {
-      const total = parseInt(el.dataset.totalMinutes || '0', 10);
-      if (!total) return;
-
-      const remaining = Math.max(0, Math.round(total * (1 - pct / 100)));
-
-      if (remaining <= 0) {
-        el.textContent = t('reading.completed', lang);
-      } else if (pct > 0) {
-        el.textContent = t('reading.remaining', lang, { n: remaining });
-      } else {
-        el.textContent = t('reading.total', lang, { n: total });
-      }
-    });
-  }
-
-  let chapterCompleted = false;
-
-  function onScroll() {
-    if (window.scrollY > SCROLL_THRESHOLD) {
-      topStrip.classList.add('scrolled');
-    } else {
-      topStrip.classList.remove('scrolled');
-    }
-
-    if (chapterCompleted) return;
-
-    const pct = calcPct();
-    const text = `${pct}%`;
-
-    progressBadges.forEach((badge) => {
-      badge.textContent = text;
-    });
-
-    if (progressFill) {
-      progressFill.style.width = `${pct}%`;
-    }
-
-    updateReadingTime(pct);
-    updateDocumentTitle(pct);
-  }
-
   // ── Document title ─────────────────────────────────────────────────────────
 
   const originalTitle = document.title;
@@ -108,53 +97,38 @@ export function initStickyHeader(controller: AbortController) {
     document.title = `(${pct}%) ${originalTitle}`;
   }
 
+  // ── Scroll handler ────────────────────────────────────────────────────────
+  // Updates only:
+  //   - .scrolled class on the sticky strip
+  //   - document.title (browser tab text)
+  // Progress percentage text + horizontal bar are updated by
+  // sidebar-progress.ts on the same scroll event.
+
+  function onScroll(): void {
+    if (window.scrollY > SCROLL_THRESHOLD) {
+      strip.classList.add('scrolled');
+    } else {
+      strip.classList.remove('scrolled');
+    }
+
+    updateDocumentTitle(calcPct());
+  }
+
   // ── Completion ─────────────────────────────────────────────────────────────
+  // The chapter-completed event is now consumed by
+  // sidebar-progress.ts (it reveals the .strip-completion pill and
+  // pins the position bar to 100%). All this listener still does is
+  // update the document title, which is purely cosmetic.
 
-  function forceComplete(): void {
-    chapterCompleted = true;
-
-    const text = '100%';
-
-    progressBadges.forEach((badge) => {
-      badge.textContent = text;
-    });
-
-    if (progressFill) progressFill.style.width = '100%';
-
-    updateReadingTime(100);
+  function onChapterComplete(): void {
     updateDocumentTitle(100);
   }
 
-  window.addEventListener('chapter-completed', forceComplete, {
+  window.addEventListener('chapter-completed', onChapterComplete, {
     signal: controller.signal,
   });
 
-  window.addEventListener('language-changed', () => {
-    if (chapterCompleted) {
-      updateReadingTime(100);
-      return;
-    }
-
-    updateReadingTime(calcPct());
-  }, {
-    signal: controller.signal,
-  });
-
-  const parts = window.location.pathname.split('/').filter(Boolean);
-  const bookId = parts[1];
-  const chapterId = parts[2];
-
-  if (chapterId && bookId) {
-    try {
-      const completed: string[] = JSON.parse(
-        localStorage.getItem(`yuval_ch_complete_${bookId}`) || '[]'
-      );
-
-      if (completed.includes(chapterId)) {
-        forceComplete();
-      }
-    } catch {}
-  }
+  // ── Listeners ─────────────────────────────────────────────────────────────
 
   window.addEventListener('scroll', onScroll, {
     passive: true,
@@ -171,7 +145,7 @@ export function initStickyHeader(controller: AbortController) {
   });
 
   const stripObserver = new ResizeObserver(updateStickyOffset);
-  stripObserver.observe(topStrip);
+  stripObserver.observe(strip);
   controller.signal.addEventListener('abort', () => stripObserver.disconnect());
 
   updateStickyOffset();

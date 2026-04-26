@@ -23,6 +23,10 @@ import {
   buildSectionList,
   syncChapterStates,
 } from './sidebar-render';
+import {
+  syncProgressOnLoad,
+  syncStripCompletion,
+} from './sidebar-progress';
 
 /**
  * Toggle visibility of language-tagged elements. Only acts on
@@ -105,6 +109,11 @@ export async function loadChapterContent(url: string): Promise<void> {
     ensureSectionsContainer();
     buildSectionList();
     syncChapterStates();
+
+    /* Refresh progress UI for the newly-loaded chapter — the ring
+       starts at 0% otherwise because no scroll has fired yet. */
+    syncProgressOnLoad();
+    syncStripCompletion();
 
     try {
       const { applyTranslations } = await import('../../i18n');

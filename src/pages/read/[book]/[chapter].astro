@@ -157,12 +157,28 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
                   language={l}
                 />
               </div>
+              {/* Completion indicator — hidden by default, revealed by
+                  the chapter-row class toggler in ChapterSidebars when
+                  the chapter is marked complete. Sits inline with the
+                  meta items so it reads as one row. */}
+              <div class="strip-completion" id={`strip-completion-${l}`} aria-hidden="true">
+                <span class="strip-completion-dot" aria-hidden="true"></span>
+                <span class="strip-completion-text">{l === 'he' ? 'הקריאה הושלמה' : l === 'es' ? 'Lectura completa' : 'Reading complete'}</span>
+              </div>
+              {/* Position-in-chapter percentage. The ID is preserved
+                  (progress-badge-{l}) so existing scroll listeners
+                  continue to find it; the visual is now plain text
+                  with a thin progress bar painted as a sibling at the
+                  bottom of the strip-row. No SVG. */}
               <div class="progress-badge" id={`progress-badge-${l}`} role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-                <svg class="progress-ring" viewBox="0 0 40 40" aria-hidden="true">
-                  <circle class="ring-track" cx="20" cy="20" r="17"></circle>
-                  <circle class="ring-fill" cx="20" cy="20" r="17"></circle>
-                </svg>
                 <span class="progress-label">0%</span>
+              </div>
+              {/* Thin progress bar that runs the full width of the row.
+                  Updated alongside the percentage by sidebar-progress.ts.
+                  Position: absolute so it sits flush with the row's
+                  bottom border. */}
+              <div class="strip-progress-bar" id={`strip-progress-bar-${l}`} aria-hidden="true">
+                <div class="strip-progress-bar-fill"></div>
               </div>
             </div>
           );
@@ -198,20 +214,38 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
 .visible { display: block; }
 
 /* ─────────────────────────────────────────────────────────────
-   UNIFIED TOP STRIP
+   UNIFIED TOP STRIP — modernized
    Sticky band between sidebars that holds chapter number + title
-   + meta stats + progress badge in a single row. Replaces what
-   used to be a separate large title card sitting below the strip.
+   + meta stats + progress badge in a single row.
+
+   Visual update: replaced the heavy gold-on-gold "old book" feel
+   with a flat, modern bar that uses gold only as accent (chapter
+   pill, eyebrow, progress ring). The bar itself is nearly
+   transparent with a faint gold tint and a thin bottom divider —
+   enough hierarchy to separate it from content while sticky, but
+   not enough to compete with the reading text.
    ───────────────────────────────────────────────────────────── */
 .chapter-top-strip {
   position: sticky;
-  top: var(--reading-sticky-top, 4rem);
+  /* The site header's offsetHeight (~64px) is reported to
+     --reading-sticky-top by sticky-header.ts. But the visible
+     quote inside the site header ends ~15px before the header's
+     bottom edge, leaving an empty band. Subtract 15px so the
+     strip docks directly under the quote, not under the empty
+     padding band below it. */
+  top: calc(var(--reading-sticky-top, 4rem) - 15px);
   z-index: 46;
   width: 100%;
   max-width: 100%;
-  margin: 0 0 1.25rem;
-  padding: 0.4rem 0 0.5rem;
+  /* Negative top margin pulls the strip up by the same 15px on its
+     non-sticky position, so before the user scrolls the strip is
+     also flush with the quote's bottom. */
+  margin: -15px 0 1rem;
+  padding: 0;
 
+  /* Faint gold tint over the reading background — gives the strip a
+     "tone" so it reads as header chrome, but the eye doesn't get
+     pulled to it. */
   background:
     linear-gradient(to bottom,
       color-mix(in srgb, var(--yuval-reading-bg) 96%, transparent),
@@ -219,8 +253,41 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
   backdrop-filter: blur(14px);
 }
 
+/* Mobile / tablet: parent .reading-article has horizontal padding
+   (px-4 = 16px on phone, sm:px-6 = 24px on tablet) that constrains
+   our strip to a narrower column. Use negative inline margins to
+   break out of that padding and let the strip extend edge-to-edge.
+   Also add a small top margin so the strip isn't flush against the
+   quote on mobile (the desktop -15px lift was tuned for the desktop
+   header layout). */
+@media (max-width: 1023px) {
+  .chapter-top-strip {
+    /* Break out of .reading-article's px-6 (24px) horizontal padding. */
+    margin-inline-start: -1.5rem;
+    margin-inline-end: -1.5rem;
+    margin-top: 0;
+  }
+}
+
+@media (max-width: 639px) {
+  .chapter-top-strip {
+    /* Force true edge-to-edge on phone regardless of any ancestor
+       padding (px-4 on .reading-article, plus any other wrappers
+       that might constrain width). 100vw + negative half-vw margin
+       is the one trick that always wins. */
+    width: 100vw;
+    max-width: 100vw;
+    margin-inline-start: calc(50% - 50vw);
+    margin-inline-end: calc(50% - 50vw);
+    /* Strip stays flush against the quote — no extra top margin.
+       The strip's internal vertical padding (.strip-row below) is
+       what makes the header taller on mobile, not external space. */
+    margin-top: 0;
+  }
+}
+
 .chapter-top-strip.scrolled {
-  box-shadow: 0 8px 20px rgba(17, 24, 39, 0.06);
+  box-shadow: 0 4px 12px rgba(17, 24, 39, 0.04);
 }
 
 .chapter-strip-inner,
@@ -232,98 +299,98 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
 }
 
 /* One row per language (language-switcher toggles .hidden/.visible).
-   Gold-tinted surface with a 3px inline-start accent — a compressed
-   echo of the TOC sidebar's "active chapter" card so the reading page
-   reads as a continuation of the menu. */
+   Modern flat row: faint gold tint (4%), thin bottom divider, no
+   border accent strip — gold "lives" in the chapter pill + eyebrow
+   instead. */
 .strip-row {
   position: relative;
   display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.4rem 0.65rem;
-  padding: 0.35rem 0.85rem 0.4rem;
-  padding-inline-start: 0.95rem;
-  border-radius: 10px;
-  background: linear-gradient(135deg,
-    rgba(201, 162, 39, 0.10) 0%,
-    rgba(201, 162, 39, 0.04) 100%
-  );
-  box-shadow:
-    0 1px 8px rgba(201, 162, 39, 0.12),
-    inset 0 0 0 1px rgba(201, 162, 39, 0.22);
-  overflow: hidden;
+  /* baseline alignment so the completion pill, percent text, and meta
+     items all sit on the same text baseline. align-items: center
+     made the pill optically drop below text since its border+padding
+     gave it more vertical mass than the surrounding meta. */
+  align-items: baseline;
+  /* No-wrap so the completion pill stays inline with the meta items
+     instead of dropping to a second row when the strip is narrow.
+     The meta items themselves will compress / ellipsize before the
+     pill is pushed below. */
+  flex-wrap: nowrap;
+  gap: 0.4rem 0.85rem;
+  /* Tighter vertical padding for a compact, single-line header. */
+  padding: 0.5rem 0.85rem;
+  border-radius: 0;
+  background: rgba(201, 162, 39, 0.04);
+  border-bottom: 0.5px solid var(--yuval-border, rgba(127, 127, 127, 0.18));
+  box-shadow: none;
+  overflow: visible;
 }
 
 .strip-row.hidden {
   display: none !important;
 }
 
+/* The legacy ::before accent strip is no longer painted — gold lives
+   in the pill + eyebrow now. Keeping the rule with display:none in
+   case any consumer specificity selectors target it elsewhere. */
 .strip-row::before {
-  content: '';
-  position: absolute;
-  inset-inline-start: 0;
-  top: 0;
-  bottom: 0;
-  width: 3px;
-  background: linear-gradient(to bottom, #e8c547, #c9a227, #a8852a);
+  content: none;
 }
 
 :global(.dark) .strip-row {
-  background: linear-gradient(145deg, rgba(90, 80, 65, 0.9), rgba(70, 60, 50, 0.95));
-  box-shadow:
-    0 3px 12px rgba(139, 115, 85, 0.25),
-    inset 0 0 0 1px #8b7355;
-}
-
-:global(.dark) .strip-row::before {
-  background: linear-gradient(to bottom, #a8956d, #8b7355, #6d5a42);
+  background: rgba(201, 162, 39, 0.05);
+  border-bottom-color: rgba(255, 255, 255, 0.06);
+  box-shadow: none;
 }
 
 /* "Chapter NN" cluster — groups the localized label with the gold
    number pill so they read as one unit, mirroring the pattern used on
    the book landing page. The inner pill keeps its own styling. */
+/* "Chapter NN" cluster — groups the localized label with the gold
+   number pill so they read as one unit ("פרק 04" / "Chapter 04"). */
 .strip-num-cluster {
   flex-shrink: 0;
   display: inline-flex;
   align-items: center;
-  gap: 0.45rem;
+  gap: 0.4rem;
 }
 
-/* Compact number pill — small version of the old 3.25rem title pill.
-   Keeps the 145deg gold gradient and ring-shadow so the visual link to
-   the TOC active-chapter pill is preserved. */
+/* Compact number pill — modernized.
+   Old: solid gold gradient + ring-shadow + inset highlight (heavy).
+   New: outlined gold pill (border + faint fill), text in gold instead
+   of white. Reads as accent, not as a button. */
 .strip-pill {
   flex-shrink: 0;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 1.7rem;
-  height: 1.7rem;
-  border-radius: 7px;
-  background: linear-gradient(145deg, #c9a227, #ddb52f);
-  box-shadow:
-    0 0 0 2px rgba(201, 162, 39, 0.22),
-    0 2px 6px rgba(201, 162, 39, 0.35),
-    inset 0 1px 1.5px rgba(255, 255, 255, 0.3);
+  height: 1.5rem;
+  min-width: 1.5rem;
+  padding: 0 0.45rem;
+  border-radius: 99px;
+  background: rgba(201, 162, 39, 0.10);
+  border: 1px solid rgba(201, 162, 39, 0.4);
+  box-shadow: none;
 }
 
 :global(.dark) .strip-pill {
-  background: linear-gradient(145deg, #8b7355, #9d8463);
-  box-shadow:
-    0 0 0 2px rgba(139, 115, 85, 0.25),
-    0 2px 6px rgba(139, 115, 85, 0.45),
-    inset 0 1px 1.5px rgba(255, 255, 255, 0.12);
+  background: rgba(168, 149, 109, 0.12);
+  border-color: rgba(168, 149, 109, 0.45);
+  box-shadow: none;
 }
 
 .pill-number {
   font-family: var(--reading-font-family);
-  font-size: 1.8rem;
-  font-weight: 800;
-  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #c9a227;
   line-height: 1;
   font-variant-numeric: tabular-nums;
-  letter-spacing: 0.01em;
+  letter-spacing: 0.03em;
   direction: ltr;
+}
+
+:global(.dark) .pill-number {
+  color: #d4c098;
 }
 
 /* Eyebrow + title laid out inline on a single baseline so the whole
@@ -339,32 +406,40 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
   line-height: 1.2;
 }
 
+/* Eyebrow ("פרק" / "Chapter") — modernized.
+   Old: tiny 0.62rem extra-bold uppercase in gold-mix, sat as a separate
+   word above/beside the pill.
+   New: same-size as pill, sits cleanly to the trailing side of the
+   pill. Subtler weight, same gold tone — reads as one unit
+   "פרק 04". */
 .strip-eyebrow {
   flex-shrink: 0;
   font-family: var(--reading-font-family);
-  font-size: 0.62rem;
-  font-weight: 700;
-  letter-spacing: 0.2em;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: color-mix(in srgb, var(--gold-700) 85%, var(--yuval-text-tertiary));
+  color: #c9a227;
   line-height: 1;
   user-select: none;
 }
 
 :global(.dark) .strip-eyebrow {
-  color: color-mix(in srgb, #a8956d 80%, var(--yuval-text-tertiary));
+  color: #d4c098;
 }
 
-/* Title — the class .chapter-title is preserved (highlighter depends on
-   it at highlighter.ts:820). Typography compressed for inline use. */
+/* Title — the class .chapter-title is preserved (highlighter depends
+   on it at highlighter.ts:820). Modernized: weight 500 instead of 700
+   so the title doesn't compete with the gold pill or the reading
+   text below. Color stays semantic via --yuval-chapter-title. */
 .strip-title {
   margin: 0;
   display: block;
   font-family: var(--reading-font-family);
-  font-size: clamp(1rem, 0.85rem + 0.55vw, 1.2rem);
-  font-weight: 700;
+  font-size: clamp(1rem, 0.85rem + 0.55vw, 1.15rem);
+  font-weight: 500;
   line-height: 1.25;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.005em;
   color: var(--yuval-chapter-title);
   text-align: start;
   text-wrap: balance;
@@ -422,87 +497,123 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
    if word_count isn't available. Filled state shows a ✓ mark.
    The SVG ring references #ring-gold-gradient from the global <defs>
    in ReadingLayout.astro so all three language-row rings share one gradient. */
+/* Progress percent — text-only.
+   Lives inline in the meta row and shows the reader's CURRENT POSITION
+   in the chapter (not whether they have completed it). The matching
+   horizontal bar lives below at .strip-progress-bar. */
 .progress-badge {
-  position: relative;
   flex-shrink: 0;
-  width: 40px;
-  height: 40px;
   display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  filter: drop-shadow(0 1px 3px rgba(201, 162, 39, 0.22));
-}
-
-.progress-ring {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  /* Start the arc from 12 o'clock instead of 3 o'clock. */
-  transform: rotate(-90deg);
-  overflow: visible;
-}
-
-.ring-track {
-  fill: transparent;
-  stroke: color-mix(in srgb, var(--gold-500) 18%, transparent);
-  stroke-width: 2.5;
-}
-
-.ring-fill {
-  fill: transparent;
-  stroke: url(#ring-gold-gradient);
-  stroke-width: 2.5;
-  stroke-linecap: round;
-  /* 2πr for r=17 → 106.814… — refreshed on scroll via stroke-dashoffset. */
-  stroke-dasharray: 106.814;
-  stroke-dashoffset: 106.814;
-  transition: stroke-dashoffset 320ms cubic-bezier(0.4, 0, 0.2, 1);
+  align-items: baseline;
+  gap: 0.2rem;
+  font-family: var(--reading-font-family);
 }
 
 .progress-label {
-  position: relative;
-  z-index: 1;
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: var(--gold-700);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #c9a227;
   letter-spacing: 0.01em;
   line-height: 1;
   font-variant-numeric: tabular-nums;
-  /* Keep the apostrophe/suffix visually LTR even on RTL pages so
-     "7'" doesn't become "'7". */
   direction: ltr;
   unicode-bidi: isolate;
 }
 
-.progress-badge.is-complete .progress-label {
-  font-size: 0.9rem;
-  color: #22c55e;
-}
-.progress-badge.is-complete .ring-fill {
-  stroke: #22c55e;
-}
-
-:global(.dark) .ring-track {
-  stroke: color-mix(in srgb, #a8956d 25%, transparent);
-}
-:global(.dark) .ring-fill {
-  stroke: url(#ring-gold-gradient-dark);
-}
 :global(.dark) .progress-label {
   color: #d4c098;
 }
-:global(.dark) .progress-badge.is-complete .progress-label {
-  color: #4ade80;
+
+/* Horizontal progress bar — option ג.
+   Sits flush at the bottom edge of .strip-row, runs the full width
+   minus the row's padding (negative margins extend it edge-to-edge).
+   Static rail + gold gradient fill that grows with scroll position. */
+.strip-progress-bar {
+  position: absolute;
+  inset-inline-start: 0;
+  inset-inline-end: 0;
+  bottom: 0;
+  height: 2px;
+  background: rgba(201, 162, 39, 0.10);
+  pointer-events: none;
+  overflow: hidden;
 }
-:global(.dark) .progress-badge.is-complete .ring-fill {
-  stroke: #4ade80;
+
+.strip-progress-bar-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #c9a227, #e8c547);
+  border-radius: 0 99px 99px 0;
+  transition: width 320ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+:global(.dark) .strip-progress-bar {
+  background: rgba(212, 192, 152, 0.12);
+}
+
+:global(.dark) .strip-progress-bar-fill {
+  background: linear-gradient(90deg, #c9a227, #d4c098);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ring-fill {
+  .strip-progress-bar-fill {
     transition: none;
   }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   STRIP COMPLETION INDICATOR
+   Inline pill that reveals itself when the chapter is marked
+   complete. Shown by the chapter-row class toggler in
+   ChapterSidebars (it adds .is-complete to the wrapping
+   .strip-completion when the chapter's id is in the completed list).
+   Hidden by default so unfinished chapters get no chrome.
+   ───────────────────────────────────────────────────────────── */
+.strip-completion {
+  display: none;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+  /* Inline-block-ish behavior: the pill sits on the text baseline of
+     its row neighbors. Padding is asymmetric (a hair more on top)
+     because the dot+text inside the pill optically pulls down. */
+  padding: 0.05rem 0.55rem;
+  border-radius: 99px;
+  background: rgba(31, 138, 77, 0.08);
+  border: 0.5px solid rgba(31, 138, 77, 0.3);
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: #1f8a4d;
+  line-height: 1.2;
+  white-space: nowrap;
+  /* Lift the pill ~5px above its natural baseline position so it
+     visually sits in line with the meta text. Without this, the
+     pill sits slightly below the meta items because of its border
+     and padding adding optical weight at the bottom. */
+  transform: translateY(-5px);
+  transition: opacity 200ms ease;
+}
+
+.strip-completion.is-complete {
+  display: inline-flex;
+}
+
+.strip-completion-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #1f8a4d;
+  flex-shrink: 0;
+}
+
+:global(.dark) .strip-completion {
+  background: rgba(74, 222, 128, 0.10);
+  border-color: rgba(74, 222, 128, 0.35);
+  color: #4ade80;
+}
+
+:global(.dark) .strip-completion-dot {
+  background: #4ade80;
 }
 
 /* Resume bookmark — when progress-tracker restores the scroll position
@@ -570,10 +681,47 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
   }
 }
 
-@media (min-width: 1024px) {
-  .chapter-top-strip {
-    padding: 0.5rem 0 0.6rem;
-    margin-bottom: 1.5rem;
+/* ─────────────────────────────────────────────────────────────
+   RESPONSIVE — phone first
+   4 breakpoints, mockup approved:
+     ≥1024px  desktop      → single line, all elements
+     640-1023 tablet       → single line, completion pill hidden
+     380-639  mobile       → 2 lines, "הושלמה" short label
+     <380px   narrow phone → 2 lines, "פרק" eyebrow hidden,
+                             sections meta hidden
+   ───────────────────────────────────────────────────────────── */
+
+/* TABLET — hide completion pill (still visible in sidebar). */
+@media (max-width: 1023px) {
+  .strip-row {
+    gap: 0.3rem 0.55rem;
+    padding: 0.45rem 0.7rem;
+  }
+
+  .strip-title {
+    font-size: clamp(0.9rem, 0.8rem + 0.5vw, 1rem);
+  }
+
+  /* Hide the inline completion pill — completion is still
+     conveyed by the green check on the chapter card in the
+     right-hand sidebar. */
+  .strip-completion {
+    display: none !important;
+  }
+
+  #chapter-meta-bar :global(.chapter-meta),
+  #chapter-meta-bar :global(.chapter-meta .meta-item),
+  #chapter-meta-bar :global(.chapter-meta .meta-item *:not(.meta-icon):not(.meta-dot)) {
+    font-size: 0.72rem;
+  }
+
+  #chapter-meta-bar :global(.chapter-meta) {
+    gap: 0.2rem 0.45rem;
+  }
+
+  #chapter-meta-bar :global(.meta-icon) {
+    width: 0.82rem;
+    height: 0.82rem;
   }
 }
 
@@ -616,85 +764,91 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
   }
 }
 
-/* Narrow tablets and below: meta and progress wrap below the title
-   so the title has room to breathe. The strip stays one sticky band. */
-@media (max-width: 767px) {
+/* MOBILE — minimalist single-line layout.
+   Only what's essential: chapter pill + title + percent.
+   Hidden: eyebrow "פרק", meta items (minutes/sections),
+   completion pill. The user can see all that information in
+   the right-hand sidebar; the strip stays clean. */
+@media (max-width: 639px) {
   .strip-row {
-    padding: 0.45rem 0.7rem 0.5rem;
-    padding-inline-start: 0.85rem;
-    gap: 0.3rem 0.5rem;
-    border-radius: 10px;
+    flex-wrap: nowrap;
+    align-items: baseline;
+    column-gap: 0.5rem;
+    /* Generous vertical padding — extra on top so the chapter title
+       has visual breathing room below the site header above it.
+       The strip itself stays flush against the header (no external
+       top margin); the breathing room lives inside the row. */
+    padding: 1.35rem 1rem 1.1rem;
+  }
+
+  /* Hide the "פרק" eyebrow — the pill alone conveys "chapter N". */
+  .strip-eyebrow {
+    display: none;
+  }
+
+  /* Hide meta items — moved to sidebar in mobile. */
+  .strip-meta {
+    display: none;
+  }
+
+  /* Hide completion pill — the sidebar's chapter card has the
+     green check, which is the canonical completion affordance. */
+  .strip-completion {
+    display: none !important;
+  }
+
+  /* Title can ellipsis if too long, since meta+completion are gone
+     and there's plenty of room. */
+  .strip-title-wrap {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .strip-title {
+    font-size: clamp(0.85rem, 0.7rem + 0.7vw, 0.95rem);
   }
 
   .strip-pill {
-    width: 1.85rem;
-    height: 1.85rem;
-    border-radius: 8px;
+    height: 1.5rem;
+    min-width: 1.5rem;
+    padding: 0 0.45rem;
+  }
+
+  .pill-number {
+    font-size: 0.85rem;
+    letter-spacing: 0.04em;
+  }
+
+  .progress-label {
+    font-size: 0.78rem;
+  }
+}
+
+/* NARROW PHONE — same single-line layout as mobile, just slightly
+   smaller. Everything that was hidden at the mobile breakpoint
+   stays hidden. */
+@media (max-width: 379px) {
+  .strip-row {
+    padding: 1.1rem 0.75rem 0.95rem;
+    column-gap: 0.4rem;
+  }
+
+  .strip-pill {
+    height: 1.4rem;
+    min-width: 1.5rem;
+    padding: 0 0.4rem;
   }
 
   .pill-number {
     font-size: 0.8rem;
   }
 
-  .strip-title-wrap {
-    flex: 1 1 calc(100% - 2.5rem);
-  }
-
   .strip-title {
-    font-size: clamp(0.92rem, 0.8rem + 0.8vw, 1.05rem);
+    font-size: 0.82rem;
   }
 
-  .strip-eyebrow {
-    font-size: 0.55rem;
-    letter-spacing: 0.18em;
-  }
-
-  /* Meta and progress drop to a second line under the title, aligned
-     to the trailing edge for a clean right/left rag in RTL/LTR. */
-  .strip-meta {
-    flex: 1 1 auto;
-    margin-inline-start: 0;
-    order: 2;
-  }
-
-  .progress-badge {
-    order: 3;
-    width: 34px;
-    height: 34px;
-  }
-  .progress-badge .progress-label {
-    font-size: 0.6rem;
-  }
-  .progress-badge.is-complete .progress-label {
-    font-size: 0.75rem;
-  }
-
-  #chapter-meta-bar :global(.chapter-meta),
-  #chapter-meta-bar :global(.chapter-meta .meta-item),
-  #chapter-meta-bar :global(.chapter-meta .meta-item *:not(.meta-icon):not(.meta-dot)) {
-    font-size: 0.7rem;
-  }
-
-  #chapter-meta-bar :global(.chapter-meta) {
-    gap: 0.2rem 0.4rem;
-    justify-content: flex-start;
-  }
-
-  #chapter-meta-bar :global(.meta-icon) {
-    width: 0.82rem;
-    height: 0.82rem;
-  }
-}
-
-@media (max-width: 380px) {
-  /* Ultra-narrow: allow title to wrap to two lines and hide meta dots
-     so the icon+value groups pack tighter. */
-  .strip-title {
-    white-space: normal;
-    line-height: 1.2;
-  }
-  #chapter-meta-bar :global(.meta-dot) {
-    display: none;
+  .progress-label {
+    font-size: 0.72rem;
   }
 }
 </style>

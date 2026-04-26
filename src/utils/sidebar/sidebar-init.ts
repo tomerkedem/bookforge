@@ -36,6 +36,10 @@ import {
 } from './sidebar-mobile';
 import { markChapterComplete } from './sidebar-storage';
 import { setNavigator } from './sidebar-dispatcher';
+import {
+  syncProgressOnLoad,
+  syncStripCompletion,
+} from './sidebar-progress';
 
 /** Wire the sidebar for the current page. Safe to call multiple
  *  times — each subsystem guards itself against double-init. */
@@ -52,6 +56,11 @@ export function initializeSidebar(): void {
   setTimeout(() => {
     buildSectionList();
     syncChapterStates();
+    /* Paint the ring + completion pill once on load so they reflect
+       the persisted state (the scroll listener won't fire until the
+       reader actually scrolls). */
+    syncProgressOnLoad();
+    syncStripCompletion();
   }, 150);
 }
 
@@ -73,6 +82,9 @@ export function installLifecycleHandlers(): void {
     if (book && chId) {
       markChapterComplete(book, chId);
       syncChapterStates();
+      /* Reveal the inline completion pill in the chapter top strip
+         now that the active chapter has just been marked complete. */
+      syncStripCompletion();
     }
   });
 

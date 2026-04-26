@@ -201,19 +201,46 @@
 }
 
 .coderunner .cr-btn-primary {
-  background: var(--cr-btn-primary-bg);
-  color: var(--cr-btn-primary-color);
-  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(35, 134, 54, 0.12);
+  color: var(--cr-btn-primary-bg-hover);
+  border-color: var(--cr-btn-primary-bg);
 }
 
 .coderunner .cr-btn-primary:hover {
-  background: var(--cr-btn-primary-bg-hover);
+  background: rgba(35, 134, 54, 0.22);
 }
 
 .coderunner .cr-btn-primary:disabled,
 .coderunner .cr-btn-primary.running {
   opacity: 0.7;
   cursor: wait;
+}
+
+/* Icon-only header buttons — match cr-theme-btn sizing (compact square). */
+.coderunner .cr-copy-btn,
+.coderunner .cr-edit-btn,
+.coderunner .cr-reset-btn,
+.coderunner .cr-run-btn {
+  padding: 4px 7px;
+  gap: 0;
+}
+
+.coderunner .cr-copy-label,
+.coderunner .cr-copied-label,
+.coderunner .cr-edit-label,
+.coderunner .cr-editing-label,
+.coderunner .cr-run-label,
+.coderunner .cr-running-label,
+.coderunner .cr-reset-btn > span {
+  display: none !important;
+}
+
+.coderunner .cr-copy-btn svg,
+.coderunner .cr-edit-btn svg,
+.coderunner .cr-reset-btn svg,
+.coderunner .cr-run-btn svg {
+  width: 14px;
+  height: 14px;
 }
 
 /*
