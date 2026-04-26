@@ -17,6 +17,7 @@ export type Translations = Record<string, Record<string, string>>;
 export const translations: Translations = {
 
   // ── FAB / Reading Controls ──────────────────────────────────────────────────
+  'fab.reading':           { he: 'הגדרות קריאה',   en: 'Reading controls', es: 'Controles de lectura' },
   'fab.theme':             { he: 'ערכת צבע',     en: 'Theme',            es: 'Tema' },
   'fab.typography':        { he: 'גופן',          en: 'Typography',       es: 'Tipografía' },
   'fab.focus':             { he: 'מיקוד',         en: 'Focus',            es: 'Enfoque' },
