@@ -255,6 +255,7 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
       color-mix(in srgb, var(--yuval-reading-bg) 96%, transparent),
       color-mix(in srgb, var(--yuval-reading-bg) 88%, transparent 12%));
   backdrop-filter: blur(14px);
+  box-shadow: none;
 }
 
 /* Mobile / tablet: parent .reading-article has horizontal padding
@@ -282,11 +283,14 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
     max-width: 100vw;
     margin-inline-start: calc(50% - 50vw);
     margin-inline-end: calc(50% - 50vw);
+    /* Tighter spacing on phone so the strip doesn't dominate the
+       viewport. */
+    margin-bottom: 0.25rem;
   }
 }
 
 .chapter-top-strip.scrolled {
-  box-shadow: 0 4px 12px rgba(17, 24, 39, 0.04);
+  box-shadow: none;
 }
 
 .chapter-strip-inner,
@@ -332,11 +336,44 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
   display: none !important;
 }
 
-/* The legacy ::before accent strip is no longer painted — gold lives
-   in the pill + eyebrow now. Keeping the rule with display:none in
-   case any consumer specificity selectors target it elsewhere. */
+/* "Tucked-under" illusion: a thin gradient overlay painted on top of
+   the strip-row's background, fading from a soft shadow at the very
+   top edge to transparent ~10px down. The eye reads this as the
+   platform header casting a shadow onto the strip below — i.e. the
+   strip is sliding out from under the header.
+   Pointer-events: none so it doesn't block taps; positioned absolute
+   in the row's relative box, painted above .strip-row's solid
+   background but below its text. */
 .strip-row::before {
-  content: none;
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 10px;
+  background: linear-gradient(
+    to bottom,
+    rgba(17, 24, 39, 0.18) 0%,
+    rgba(17, 24, 39, 0.06) 55%,
+    transparent 100%
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+:global(.dark) .strip-row::before {
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.55) 0%,
+    rgba(0, 0, 0, 0.20) 55%,
+    transparent 100%
+  );
+}
+
+/* Lift the row's actual content above the shadow overlay. */
+.strip-row > * {
+  position: relative;
+  z-index: 1;
 }
 
 :global(.dark) .strip-row {
@@ -808,14 +845,13 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
 @media (max-width: 639px) {
   .strip-row {
     flex-wrap: nowrap;
-    align-items: baseline;
+    align-items: center;
     column-gap: 0.5rem;
-    /* Generous vertical padding — extra on top so the chapter title
-       has visual breathing room below the site header above it.
-       padding-bottom is zeroed globally by reading-typography.css; only
-       padding-top contributes to row height. -2px below 1.35rem
-       (21.6 → 19.6) to shave 2px off the row. */
-    padding: 19.6px 1rem 1.1rem;
+    /* Ultra-compact vertical padding for phone — the strip is sticky
+       and must stay slim so it doesn't eat the viewport on small
+       screens. padding-bottom is zeroed globally by
+       reading-typography.css; only padding-top contributes. */
+    padding: 4px 0.85rem 2px;
   }
 
   /* Hide the "פרק" eyebrow — the pill alone conveys "chapter N". */
@@ -842,22 +878,23 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
   }
 
   .strip-title {
-    font-size: clamp(0.85rem, 0.7rem + 0.7vw, 0.95rem);
+    font-size: clamp(0.8rem, 0.7rem + 0.5vw, 0.88rem);
+    line-height: 1.15;
   }
 
   .strip-pill {
-    height: 1.5rem;
-    min-width: 1.5rem;
-    padding: 0 0.45rem;
+    height: 1.15rem;
+    min-width: 1.15rem;
+    padding: 0 0.35rem;
   }
 
   .pill-number {
-    font-size: 0.85rem;
-    letter-spacing: 0.04em;
+    font-size: 0.7rem;
+    letter-spacing: 0.03em;
   }
 
   .progress-label {
-    font-size: 0.78rem;
+    font-size: 0.7rem;
   }
 }
 
@@ -866,29 +903,26 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
    stays hidden. */
 @media (max-width: 379px) {
   .strip-row {
-    /* padding-bottom is zeroed globally by reading-typography.css; only
-       padding-top contributes to row height. -2px below 1.1rem
-       (17.6 → 15.6) to shave 2px off the row. */
-    padding: 15.6px 0.75rem 0.95rem;
-    column-gap: 0.4rem;
+    padding: 3px 0.6rem 1px;
+    column-gap: 0.35rem;
   }
 
   .strip-pill {
-    height: 1.4rem;
-    min-width: 1.5rem;
-    padding: 0 0.4rem;
+    height: 1.05rem;
+    min-width: 1.05rem;
+    padding: 0 0.3rem;
   }
 
   .pill-number {
-    font-size: 0.8rem;
+    font-size: 0.65rem;
   }
 
   .strip-title {
-    font-size: 0.82rem;
+    font-size: 0.78rem;
   }
 
   .progress-label {
-    font-size: 0.72rem;
+    font-size: 0.65rem;
   }
 }
 </style>
