@@ -36,6 +36,26 @@ import {
   setActiveOutlineItem,
 } from './sidebar-outline';
 import { navigateTo } from './sidebar-dispatcher';
+import {
+  ensureChapterTubes,
+  setActiveTube,
+  tubes as particleTubes,
+} from './sidebar-particle-tube';
+import { NeuronBar } from './sidebar-neuron-bar';
+
+/* Single instance per page. Lazily created the first time
+   syncChapterStates runs after the canvas is in the DOM. View
+   transitions persist the sidebar via transition:persist, so the
+   canvas (and this instance) survive content swaps. */
+let neuronBar: NeuronBar | null = null;
+
+function getOrCreateNeuronBar(initialPct: number): NeuronBar | null {
+  if (neuronBar) return neuronBar;
+  const canvas = document.getElementById('usb-progress-canvas');
+  if (!(canvas instanceof HTMLCanvasElement)) return null;
+  neuronBar = new NeuronBar(canvas, initialPct);
+  return neuronBar;
+}
 
 /**
  * Repaint the vertical thread gradient based on current chapter
@@ -86,7 +106,13 @@ export function renderThreadGradient(): void {
 export function syncChapterStates(): void {
   const book = getBookSlug();
   const completed = new Set(getCompletedChapters(book));
+  const activeId = String(getCurrentChapterId() || '');
   let doneCount = 0;
+
+  /* Ensure each row has its particle-tube canvas + ParticleTube
+     instance before we start pushing pcts into them. Idempotent —
+     no-op for rows that already have a tube. */
+  ensureChapterTubes(activeId || null);
 
   document.querySelectorAll<HTMLElement>('.usb-chapter[data-chapter-id]').forEach(li => {
     const id = li.dataset.chapterId || '';
@@ -101,25 +127,27 @@ export function syncChapterStates(): void {
       timeEl.textContent = formatChapterTime(words);
     }
 
-    /* Per-chapter scroll progress → gold arc on the node circle.
-       Read max recorded percentage; expose as a CSS variable plus a
-       boolean flag for the stylesheet's :not(.usb-chapter-completed)
-       selector to consume. Completed chapters skip the arc entirely
-       so the green border isn't doubled by a near-full gold ring. */
-    const pct = getChapterScrollPercent(book, id);
-    li.style.setProperty('--chapter-progress', `${pct}%`);
-    li.dataset.hasProgress = pct > 0 ? 'true' : 'false';
+    /* Per-chapter scroll progress is rendered by the particle tube.
+       Completed chapters: full ring + green palette; in-progress:
+       partial ring + purple palette. */
+    const stored = getChapterScrollPercent(book, id);
+    const pct = isComplete ? 100 : stored;
+    const tube = particleTubes.get(id);
+    if (tube) {
+      tube.setCompleted(isComplete);
+      tube.setPct(pct);
+    }
   });
 
   const total = document.querySelectorAll('.usb-chapter').length;
   const doneEl = document.getElementById('usb-completion-done');
-  const fillEl = document.getElementById('usb-progress-fill');
   const pctEl = document.getElementById('usb-progress-percent');
   const timeEl = document.getElementById('usb-time-remaining');
 
   if (doneEl) doneEl.textContent = String(doneCount);
   const overallPct = total > 0 ? Math.round((doneCount / total) * 100) : 0;
-  if (fillEl) fillEl.style.width = `${overallPct}%`;
+  const bar = getOrCreateNeuronBar(overallPct);
+  if (bar) bar.setPct(overallPct);
   if (pctEl) pctEl.textContent = `${overallPct}%`;
   if (timeEl) timeEl.textContent = formatTimeRemaining(computeTimeRemaining());
 
@@ -358,6 +386,10 @@ export function ensureSectionsContainer(): void {
 export function updateActiveChapterRow(): void {
   const currentId = getCurrentChapterId();
   if (currentId === null) return;
+
+  /* Hand the RAF baton to the new active chapter's tube. Prior
+     active tube stops its loop and freezes on a static frame. */
+  setActiveTube(String(currentId));
 
   document.querySelectorAll<HTMLElement>('.usb-chapter').forEach(li => {
     const chapterId = li.dataset.chapterId || '';

@@ -34,6 +34,7 @@ import {
 } from './sidebar-progress';
 import { loadChapterContent } from './sidebar-navigation';
 import { AUTO_COMPLETE_THRESHOLD } from './sidebar-constants';
+import { setActiveTubePct } from './sidebar-particle-tube';
 
 /** Wire all sidebar click + hover handlers. Idempotent — guards
  *  against double-init via a data-nav-init flag on the sidebar. */
@@ -72,7 +73,19 @@ export function initSidebarNavigation(): void {
       return;
     }
 
-    /* Reset button: clear completion for this chapter only. */
+    /* Reset button: clear completion AND scroll progress for this
+       chapter. The visual goal is for the badge to flip back to the
+       gold "untouched" state, so we have to undo three things:
+         1. Completion list entry (handled by unmarkChapterComplete).
+         2. reading_progress_* localStorage entries (also handled by
+            unmarkChapterComplete).
+         3. The scroll listener's per-chapter `lastWrittenPct` cache
+            — without this, the very next scroll tick would see the
+            cached pct and rewrite the freshly-cleared storage.
+       If the chapter being reset is the currently active one, we
+       also scroll the window to the top of the chapter so the live
+       scroll position matches pct=0. Otherwise the next scroll tick
+       would record whatever mid-chapter position the reader is on. */
     const resetBtn = target.closest<HTMLElement>('[data-action="reset-completion"]');
     if (resetBtn) {
       e.preventDefault();
@@ -81,6 +94,14 @@ export function initSidebarNavigation(): void {
       const book = getBookSlug();
       if (chId && book) {
         unmarkChapterComplete(book, chId);
+        invalidateScrollCache(chId);
+
+        if (String(chId) === String(getCurrentChapterId() || '')) {
+          const container = document.getElementById('chapter-container');
+          const top = container ? container.offsetTop : 0;
+          window.scrollTo({ top, behavior: 'instant' as ScrollBehavior });
+        }
+
         syncChapterStates();
       }
       return;
@@ -124,9 +145,22 @@ export function initSidebarNavigation(): void {
  *   4. Refresh the "X minutes remaining" header text — sensitive to
  *      per-chapter pct, so updates on every tick.
  */
+/* Per-chapter "last persisted pct" cache. Lifted out of the scroll
+   listener so the reset handler can invalidate the entry for the
+   chapter being cleared — otherwise the next scroll tick would see
+   the cached value and re-write the old pct over the freshly-cleared
+   storage. */
+const lastWrittenByChapter = new Map<string, number>();
+
+/** Force the next scroll tick to re-record progress for `chapterId`,
+ *  even if the underlying pct hasn't moved. Called from the reset
+ *  handler after wiping that chapter's stored progress. */
+function invalidateScrollCache(chapterId: string): void {
+  lastWrittenByChapter.delete(chapterId);
+}
+
 export function initScrollListener(): void {
   let scrollTimeout: number | undefined;
-  let lastWrittenPct = -1;
 
   window.addEventListener('scroll', () => {
     if (scrollTimeout !== undefined) clearTimeout(scrollTimeout);
@@ -152,7 +186,10 @@ export function initScrollListener(): void {
 
       /* Persist scroll progress in ReadingProgressManager-compatible
          shape so any consumer reading reading_progress_* keys stays
-         working. */
+         working. The per-chapter cache (instead of a single closure)
+         means a reset on chapter X invalidates X's entry without
+         affecting other chapters. */
+      const lastWrittenPct = lastWrittenByChapter.get(String(chapterId)) ?? -1;
       if (Math.abs(pct - lastWrittenPct) >= 1) {
         const key = `reading_progress_${book}_ch${chapterId}`;
         try {
@@ -164,7 +201,7 @@ export function initScrollListener(): void {
             percentage: pct,
           };
           localStorage.setItem(key, JSON.stringify(payload));
-          lastWrittenPct = pct;
+          lastWrittenByChapter.set(String(chapterId), pct);
         } catch {}
       }
 
@@ -185,19 +222,11 @@ export function initScrollListener(): void {
          visually — the ring is the user's live position indicator. */
       updateProgressBadges(pct);
 
-      /* Grow the gold arc on the active chapter's sidebar node in
-         real time. Only the active card needs continuous updates;
-         other chapters refresh on syncChapterStates() (load, content
-         swap, completion events). Skip the write if the active
-         chapter is already in the completed list — the CSS selector
-         hides the arc there anyway. */
-      const activeLi = document.querySelector<HTMLElement>(
-        `.usb-chapter[data-chapter-id="${chapterId}"]`,
-      );
-      if (activeLi && !activeLi.classList.contains('usb-chapter-completed')) {
-        activeLi.style.setProperty('--chapter-progress', `${pct}%`);
-        activeLi.dataset.hasProgress = pct > 0 ? 'true' : 'false';
-      }
+      /* Feed live progress to the active chapter's particle tube so
+         the visible particle population grows/shrinks in real time
+         as the reader scrolls. Inactive tubes don't get scroll
+         updates — they only refresh on syncChapterStates(). */
+      setActiveTubePct(String(chapterId), pct);
 
       /* Time-remaining header — cheap (one DOM write), worth
          refreshing on every tick because it's sensitive to active

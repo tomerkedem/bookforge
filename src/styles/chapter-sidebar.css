@@ -46,7 +46,10 @@
   height: calc(100vh - 68px);
   background: var(--yuval-surface, #fff);
   border-inline-end: 1px solid var(--yuval-border, rgba(127, 127, 127, 0.18));
-  padding: 18px 16px 32px;
+  /* No padding-top — the sticky .usb-header owns the top inset so it
+     pins flush to the sidebar's visual top edge. Bottom + sides keep
+     their original padding. */
+  padding: 0 16px 32px;
   overflow-y: auto;
   z-index: 30;
   font-size: 13px;
@@ -73,26 +76,73 @@
   pointer-events: none;
 }
 
-/* Slim scrollbar — chrome only, doesn't compete with thread visual. */
+/* Glass-tube scrollbar — visually quotes the neuron progress track.
+   The track is a faint dark recess; the thumb is a vertical capsule
+   with a hairline border + asymmetric inset shadows that imply a
+   round tube laid on its side. Hover lifts the capsule with an
+   outer purple glow. Firefox uses scrollbar-color (limited to two
+   solid colors); WebKit gets the full effect. */
+.unified-sidebar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(124, 92, 240, 0.6) rgba(20, 18, 32, 0.35);
+}
+
 .unified-sidebar::-webkit-scrollbar {
-  width: 4px;
+  width: 5px;
 }
 .unified-sidebar::-webkit-scrollbar-track {
-  background: transparent;
+  background: rgba(20, 18, 32, 0.35);
+  border-radius: 99px;
+  margin: 6px 0;
 }
+/* At 5px width the asymmetric inset shadows from the wider design
+   no longer fit (they'd consume the whole capsule). The hairline
+   border alone carries the "glass tube" character; the hover glow
+   does the rest. */
 .unified-sidebar::-webkit-scrollbar-thumb {
-  background: rgba(127, 127, 127, 0.3);
-  border-radius: 2px;
+  background: rgba(124, 92, 240, 0.6);
+  border: 1px solid rgba(167, 139, 250, 0.45);
+  border-radius: 99px;
 }
 .unified-sidebar::-webkit-scrollbar-thumb:hover {
-  background: rgba(127, 127, 127, 0.5);
+  background: rgba(124, 92, 240, 0.9);
+  box-shadow: 0 0 5px rgba(124, 92, 240, 0.55);
+}
+
+/* Light mode: lighter recessed track, same purple capsule but tuned
+   for a bright surrounding. */
+:root:not(.dark) .unified-sidebar {
+  scrollbar-color: rgba(124, 92, 240, 0.55) rgba(60, 50, 90, 0.08);
+}
+:root:not(.dark) .unified-sidebar::-webkit-scrollbar-track {
+  background: rgba(60, 50, 90, 0.08);
+}
+:root:not(.dark) .unified-sidebar::-webkit-scrollbar-thumb {
+  background: rgba(124, 92, 240, 0.55);
+  border-color: rgba(124, 92, 240, 0.4);
+}
+:root:not(.dark) .unified-sidebar::-webkit-scrollbar-thumb:hover {
+  background: rgba(124, 92, 240, 0.8);
 }
 
 /* ─── Header ───────────────────────────────────────────────────────── */
+/* Sticky to the top of the scrolling sidebar so the title, neuron
+   bar, percentage and time-remaining stay visible while the chapter
+   list scrolls behind. Negative margins + re-padding extend the
+   solid background out to the sidebar's full inline width so
+   scrolled chapter rows don't peek through at the inline edges. */
 .usb-header {
-  margin-bottom: 18px;
-  padding-bottom: 14px;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: var(--yuval-surface, #fff);
+  margin: 0 -16px 18px;
+  padding: 18px 16px 14px;
   border-bottom: 1px solid var(--yuval-border, rgba(127, 127, 127, 0.18));
+}
+
+.dark .usb-header {
+  background: var(--yuval-surface, #1a1a1a);
 }
 
 .usb-header-row {
@@ -136,28 +186,49 @@
   opacity: 0.6;
 }
 
+/* Glass-tube container for the neuron particles. The inset shadow
+   on top + faint highlight on bottom imply concave depth ("the
+   particles live inside the tube"); the hairline border defines the
+   rim. Tuned so the effect reads at 14px height without competing
+   with the particle glow inside. */
 .usb-progress-track {
-  height: 4px;
-  background: var(--yuval-border, rgba(127, 127, 127, 0.18));
+  position: relative;
+  height: 21px;
+  background: rgba(20, 18, 32, 0.55);
+  border: 1px solid rgba(127, 127, 127, 0.22);
   border-radius: 99px;
   overflow: hidden;
   margin-top: 10px;
   margin-bottom: 6px;
+  box-shadow:
+    inset 0 1px 2px rgba(0, 0, 0, 0.35),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.05);
 }
 
-/* RTL flips the gradient direction so green is on the leading
-   edge (= start of the bar, semantically "completed first"). */
-.usb-progress-fill {
+/* Light mode: lighter tube interior, darker rim, subtler shadows. */
+:root:not(.dark) .usb-progress-track {
+  background: rgba(245, 244, 250, 0.85);
+  border-color: rgba(60, 50, 90, 0.18);
+  box-shadow:
+    inset 0 1px 2px rgba(20, 15, 40, 0.12),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.6);
+}
+
+/* Neuron particle bar — canvas overlay fills the track; particle
+   visibility encodes overall completion percentage. The canvas is
+   logical-LTR so particle anchors progress from the inline-start
+   edge of the bar in both RTL and LTR layouts. */
+.usb-toc-progress-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
   height: 100%;
-  border-radius: 99px;
-  background: linear-gradient(90deg, #1f8a4d, #7c5cf0);
-  transition: width 600ms var(--ease-standard);
+  display: block;
 }
 
-[dir="rtl"] .usb-progress-fill,
-.unified-sidebar-rtl .usb-progress-fill {
-  background: linear-gradient(270deg, #1f8a4d, #7c5cf0);
-}
+/* RTL is handled inside NeuronBar's draw math (logicalX remap) —
+   not via CSS transform, because scaleX(-1) would also flip every
+   glyph (ε → ɜ). The canvas itself stays in its native orientation. */
 
 .usb-header-meta {
   font-size: 11px;
@@ -230,6 +301,48 @@
   transition: background 160ms var(--ease-standard);
 }
 
+/* ─── Node wrapper (holds the badge + the particle-tube canvas) ───────
+   Wrapping is performed at runtime by sidebar-particle-tube.ts —
+   the .astro template still renders a bare .usb-node, and the wrap
+   span is inserted on first sync. We give the wrap the absolute
+   positioning that .usb-node used to own, so the badge (and the
+   sibling canvas) sit at the same spot relative to the chapter row. */
+.usb-node-wrap {
+  position: absolute;
+  inset-inline-start: 1px;
+  top: 8px;
+  width: 32px;
+  height: 32px;
+}
+
+/* The canvas is a sibling of .usb-node inside .usb-node-wrap. It
+   exactly overlays the badge (32×32) and sits ABOVE the .usb-node
+   (which carries an opaque surface-color disc to occlude the
+   vertical thread). The canvas is mostly transparent — only the
+   track ring + progress arc are painted — so the chapter number
+   (inside .usb-node) shows through the gaps untouched.
+   pointer-events: none so it never intercepts the link click. */
+.usb-particle-tube {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 3;
+  pointer-events: none;
+}
+
+/* When the runtime wrap exists, the node fills it instead of holding
+   its own absolute coords. The original `.usb-node` rules below still
+   apply (size, border, background, transitions). */
+.usb-node-wrap > .usb-node {
+  position: absolute;
+  inset: 0;
+  inset-inline-start: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+}
+
 /* ─── Node (the circle on the thread) ──────────────────────────────── */
 .usb-node {
   position: absolute;
@@ -238,13 +351,12 @@
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  /* Two-layer background: the tint (background-image) sits on top
-     of an opaque sidebar-color base (background-color). This way
-     active/completed states can override only the tint while the
-     opaque layer always blocks the thread from showing through. */
+  /* Opaque surface-color disc occludes the vertical thread inside
+     the badge area. No visible border — the visual ring is drawn by
+     the particle-tube canvas overlay. */
   background-color: var(--yuval-surface, #fff);
   background-image: none;
-  border: 2px solid rgba(127, 127, 127, 0.35);
+  border: 0 solid transparent;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -268,69 +380,9 @@
   z-index: 1;
 }
 
-/* ─── Per-chapter scroll-progress arc (gold) ───────────────────────────
-   Thin gold ring painted around the existing node border to encode
-   how far the reader scrolled in each chapter (0–100%). Driven by
-   the --chapter-progress custom property set in sidebar-render.ts
-   (on syncChapterStates) and sidebar-events.ts (on every scroll tick
-   for the active chapter only). The @property declaration upgrades
-   the variable to an interpolatable percentage, so the conic gradient
-   tweens smoothly when the value changes.
-
-   Hidden on completed chapters: completion is already conveyed by
-   the green node border + check badge, and most chapters auto-complete
-   at 95%, so a near-full gold arc next to the green border would just
-   be redundant chrome. The arc only appears on in-progress chapters
-   that haven't yet been marked done. */
-@property --chapter-progress {
-  syntax: '<percentage>';
-  inherits: true;
-  initial-value: 0%;
-}
-
-.usb-chapter {
-  --chapter-progress: 0%;
-  transition: --chapter-progress 360ms var(--ease-standard);
-}
-
-.usb-chapter[data-has-progress="true"]:not(.usb-chapter-completed) .usb-node::after {
-  content: '';
-  position: absolute;
-  /* Sit outside the existing colored border. -5px clears both the
-     2px border (any state) and the active state's 4px purple glow
-     (box-shadow), so the gold ring never overlaps the active halo. */
-  inset: -5px;
-  border-radius: 50%;
-  background: conic-gradient(
-    from 0deg,
-    #c9a227 0%,
-    #c9a227 var(--chapter-progress, 0%),
-    transparent var(--chapter-progress, 0%),
-    transparent 100%
-  );
-  /* Carve the disc into a 2px-thick ring at the outer edge. */
-  -webkit-mask: radial-gradient(
-    closest-side,
-    transparent calc(100% - 2px),
-    #000 calc(100% - 2px)
-  );
-  mask: radial-gradient(
-    closest-side,
-    transparent calc(100% - 2px),
-    #000 calc(100% - 2px)
-  );
-  pointer-events: none;
-}
-
-.dark .usb-chapter[data-has-progress="true"]:not(.usb-chapter-completed) .usb-node::after {
-  background: conic-gradient(
-    from 0deg,
-    #d4c098 0%,
-    #d4c098 var(--chapter-progress, 0%),
-    transparent var(--chapter-progress, 0%),
-    transparent 100%
-  );
-}
+/* Per-chapter scroll progress is now visualized by the canvas
+   particle tube (sidebar-particle-tube.ts). The previous gold conic
+   arc was removed in favor of the particle visualization. */
 
 /* ─── Card (chapter row body) ──────────────────────────────────────── */
 .usb-card {
@@ -390,18 +442,19 @@
 }
 
 .usb-chapter-link:hover .usb-node {
-  border-color: rgba(124, 92, 240, 0.4);
+  /* Border hidden — particle tube provides the visual ring. */
 }
 
-/* ─── Active chapter ───────────────────────────────────────────────── */
+/* ─── Active chapter ─────────────────────────────────────────────────
+   The badge stays exactly the same size + position as inactive states
+   so the particle-tube canvas (32×32, locked to the wrap) stays in
+   alignment with the visible circle. The active signal comes from
+   the purple tint, the purple border, and the soft halo (box-shadow). */
 .usb-chapter-active .usb-node {
-  inset-inline-start: -1px;
-  top: 6px;
-  width: 36px;
-  height: 36px;
-  /* Tint layer over the opaque base. */
-  background-image: linear-gradient(rgba(124, 92, 240, 0.18), rgba(124, 92, 240, 0.18));
-  border-color: #7c5cf0;
+  /* Active signal: just the soft purple halo (the badge body itself
+     is invisible; the particle tube provides the ring). */
+  background-image: none;
+  border-color: transparent;
   box-shadow: 0 0 0 4px rgba(124, 92, 240, 0.12);
 }
 
@@ -441,8 +494,10 @@
    Node stays neutral with the chapter number visible. The visual
    completion signal is the green check badge in the card below. */
 .usb-chapter-completed .usb-node {
-  background-image: linear-gradient(rgba(31, 138, 77, 0.12), rgba(31, 138, 77, 0.12));
-  border-color: rgba(31, 138, 77, 0.55);
+  /* Badge body stays invisible; completion is signaled by the green
+     check badge in the card and by every tube particle being lit. */
+  background-image: none;
+  border-color: transparent;
 }
 
 .usb-chapter-completed .usb-node-number {
@@ -488,8 +543,8 @@
 /* Active AND completed: keep the active purple node ring; the
    check badge in the card already signals completion separately. */
 .usb-chapter-active.usb-chapter-completed .usb-node {
-  background-image: linear-gradient(rgba(124, 92, 240, 0.18), rgba(124, 92, 240, 0.18));
-  border-color: #7c5cf0;
+  background-image: none;
+  border-color: transparent;
   box-shadow: 0 0 0 4px rgba(124, 92, 240, 0.12);
 }
 
