@@ -42,19 +42,15 @@ function trackColor(): string {
   return v || TRACK_COLOR_FALLBACK;
 }
 
-/* Two color palettes — purple for in-progress chapters, green for
-   completed ones. The active chapter's arc breathes in whichever
-   palette is currently active. */
 /* "In progress" palette — partial arc on chapters that have been
-   opened but not yet finished. Switched from purple to a warm orange
-   so it reads distinctly from the active-chapter purple halo (which
-   highlights the currently-visible chapter, regardless of completion).
-   Constants keep the legacy PURPLE_* names so call sites don't churn —
-   the values are now orange. */
-const PURPLE_LIGHT = '#fdba74';
-const PURPLE_MID = '#f97316';
-const PURPLE_DARK = '#c2410c';
-const PURPLE_GLOW = 'rgba(249, 115, 22, 0.6)';
+   opened but not yet finished. The chapter card revamp moved to a
+   blue/cyan accent palette (--color-text-accent #4DA8E0), so this
+   ring now picks up that family. Constants keep the legacy PURPLE_*
+   names so call sites don't churn — the values are now blue. */
+const PURPLE_LIGHT = '#85B7EB';
+const PURPLE_MID = '#4DA8E0';
+const PURPLE_DARK = '#2A6BAE';
+const PURPLE_GLOW = 'rgba(77, 168, 224, 0.6)';
 
 /* Untouched + completed states render as a flat single-color ring
    matching the inter-circle thread color (--usb-thread-inactive).
@@ -292,32 +288,25 @@ export function ensureChapterTubes(activeChapterId: string | null): void {
     const link = li.querySelector<HTMLElement>('.usb-chapter-link');
     if (!link) return;
 
-    let node = link.querySelector<HTMLElement>(':scope > .usb-node');
-    let wrap = link.querySelector<HTMLElement>(':scope > .usb-node-wrap');
+    /* The Astro template renders the wrap directly inside .usb-card
+       (which itself is the link's child), so .usb-node-wrap is no
+       longer a direct child of the link. Search the whole link
+       subtree to find the wrap regardless of nesting depth. */
+    const node = link.querySelector<HTMLElement>('.usb-node');
+    const wrap = link.querySelector<HTMLElement>('.usb-node-wrap');
+    if (!wrap || !node) return;
 
-    if (!wrap) {
-      wrap = document.createElement('span');
-      wrap.className = 'usb-node-wrap';
-      wrap.setAttribute('aria-hidden', 'true');
-
-      if (node) {
-        link.insertBefore(wrap, node);
-        wrap.appendChild(node);
-      } else {
-        /* Defensive: if the node lives somewhere unexpected, leave it
-           where it is and abort the wrap for this row. */
-        return;
-      }
-
-      const canvas = document.createElement('canvas');
+    let canvas = wrap.querySelector<HTMLCanvasElement>(':scope > canvas.usb-particle-tube');
+    if (!canvas) {
+      canvas = document.createElement('canvas');
       canvas.className = 'usb-particle-tube';
       canvas.setAttribute('aria-hidden', 'true');
-      wrap.insertBefore(canvas, node);
+      /* Canvas is the FIRST child so the chapter number, completion
+         badge, and reset button all stack above it. */
+      wrap.insertBefore(canvas, wrap.firstChild);
     }
 
     if (!tubes.has(chId)) {
-      const canvas = wrap.querySelector<HTMLCanvasElement>(':scope > canvas.usb-particle-tube');
-      if (!canvas) return;
       const initialPct = book ? getChapterScrollPercent(book, chId) : 0;
       const tube = new ParticleTube(canvas, initialPct, chId === activeChapterId);
       tubes.set(chId, tube);

@@ -406,14 +406,55 @@
   --usb-thread-inactive: rgba(127, 127, 127, 0.18);
   --usb-track-color: rgba(127, 127, 127, 0.22);
   /* Thread color for chapters with scroll progress but not yet
-     completed. Matches the peach disc gradient on .usb-chapter-in-progress
-     so the row's thread band reads as the same identity as its badge. */
-  --usb-thread-in-progress: rgba(253, 186, 116, 0.65);
+     completed. Aligned with the in-progress accent (#4DA8E0). */
+  --usb-thread-in-progress: rgba(77, 168, 224, 0.55);
+
+  /* ─── Chapter card revamp tokens (Step 1 of 4) ─────────────────
+     Defaults are the dark-mode palette; light-mode overrides are
+     in :root:not(.dark) below. */
+  --sidebar-bg:                  #0c1620;
+  --color-card-bg-completed:     #102438;
+  --color-card-bg-locked:        #0e1a26;
+  --color-card-bg-active:        linear-gradient(135deg, #15304a, #0f2336);
+  --color-card-border-completed: #1a3850;
+  --color-card-border-locked:    #14283c;
+  --color-card-border-active:    #4DA8E0;
+  --color-circle-bg:             #102230;
+  --color-circle-border-locked:  #2A6BAE;
+  --color-text-accent:           #4DA8E0;
+  --color-text-completed:        #5DCAA5;
+  --color-text-active:           #E6F1FB;
+  --color-text-active-subtitle:  #85B7EB;
+  --color-text-locked:           #9aa8b8;
+  --color-text-in-progress:      #B5D4F4;
+  --color-text-tertiary:         #2C4860;
+  --color-completion-green:      #5DCAA5;
+  --color-active-accent:         #4DA8E0;
 }
 :root:not(.dark) {
   --usb-thread-inactive: rgba(35, 40, 52, 0.78);
   --usb-track-color: rgba(35, 40, 52, 0.78);
-  --usb-thread-in-progress: #fed7aa;
+  --usb-thread-in-progress: rgba(37, 99, 235, 0.55);
+
+  /* Chapter card revamp — light-mode parallels (pending review) */
+  --sidebar-bg:                  #f8fafc;
+  --color-card-bg-completed:     #ECFDF5;
+  --color-card-bg-locked:        #f1f5f9;
+  --color-card-bg-active:        linear-gradient(135deg, #DBEAFE, #BFDBFE);
+  --color-card-border-completed: #BBF7D0;
+  --color-card-border-locked:    #e2e8f0;
+  --color-card-border-active:    #2563EB;
+  --color-circle-bg:             #f1f5f9;
+  --color-circle-border-locked:  #93C5FD;
+  --color-text-accent:           #2563EB;
+  --color-text-completed:        #059669;
+  --color-text-active:           #0a1828;
+  --color-text-active-subtitle:  #1D4ED8;
+  --color-text-locked:           #64748b;
+  --color-text-in-progress:      #1D4ED8;
+  --color-text-tertiary:         #cbd5e1;
+  --color-completion-green:      #10b981;
+  --color-active-accent:         #2563EB;
 }
 
 .usb-thread {
@@ -445,112 +486,30 @@
 .usb-chapter-link {
   display: flex;
   align-items: stretch;
-  gap: 12px;
   text-decoration: none;
   color: inherit;
   cursor: pointer;
-  /* Reserve inline-START space for the node + thread (rail on the
-     outer edge of the sidebar). */
-  padding-inline-start: 40px;
-  padding-inline-end: 0;
   position: relative;
   border-radius: 8px;
   transition: background 160ms var(--ease-standard);
 }
 
-/* ─── Node wrapper (holds the badge + the particle-tube canvas) ───────
-   Wrapping is performed at runtime by sidebar-particle-tube.ts —
-   the .astro template still renders a bare .usb-node, and the wrap
-   span is inserted on first sync. We give the wrap the absolute
-   positioning that .usb-node used to own, so the badge (and the
-   sibling canvas) sit at the same spot relative to the chapter row. */
-.usb-node-wrap {
-  position: absolute;
-  inset-inline-start: 1px;
-  top: 8px;
-  width: 32px;
-  height: 32px;
-}
-
-/* The canvas is a sibling of .usb-node inside .usb-node-wrap. It
-   exactly overlays the badge (32×32) and sits ABOVE the .usb-node
-   (which carries an opaque surface-color disc to occlude the
-   vertical thread). The canvas is mostly transparent — only the
-   track ring + progress arc are painted — so the chapter number
-   (inside .usb-node) shows through the gaps untouched.
-   pointer-events: none so it never intercepts the link click. */
-.usb-particle-tube {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 3;
-  pointer-events: none;
-}
-
-/* When the runtime wrap exists, the node fills it instead of holding
-   its own absolute coords. The original `.usb-node` rules below still
-   apply (size, border, background, transitions). */
-.usb-node-wrap > .usb-node {
-  position: absolute;
-  inset: 0;
-  inset-inline-start: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-}
-
-/* ─── Node (the circle on the thread) ──────────────────────────────── */
-.usb-node {
-  position: absolute;
-  inset-inline-start: 1px;
-  top: 8px;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  /* Opaque surface-color disc occludes the vertical thread inside
-     the badge area. No visible border — the visual ring is drawn by
-     the particle-tube canvas overlay. */
-  background-color: var(--yuval-surface, #fff);
-  background-image: none;
-  border: 0 solid transparent;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  transition:
-    background-image 200ms var(--ease-standard),
-    border-color 200ms var(--ease-standard),
-    box-shadow 200ms var(--ease-standard),
-    transform 200ms var(--ease-standard);
-  z-index: 2;
-}
-
-.usb-node-number {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--yuval-text-muted, #6b7280);
-  font-variant-numeric: tabular-nums;
-  transition: color 200ms var(--ease-standard);
-  line-height: 1;
-  position: relative;
-  z-index: 1;
-}
-
-/* Per-chapter scroll progress is now visualized by the canvas
-   particle tube (sidebar-particle-tube.ts). The previous gold conic
-   arc was removed in favor of the particle visualization. */
-
-/* ─── Card (chapter row body) ──────────────────────────────────────── */
+/* ─── Card (chapter row, all-in-one container) ─────────────────────
+   The card is now a single rounded rectangle that holds BOTH the
+   chapter number circle and the title/meta text. Flex row in source
+   order: circle first → text second. In RTL the row reads visually
+   from right (circle) to left (text). The previous absolute-
+   positioned circle sitting outside the card is gone. */
 .usb-card {
   flex: 1;
   min-width: 0;
   display: flex;
-  flex-direction: column;
-  gap: 3px;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
   padding: 10px 14px;
-  background: var(--yuval-surface-alt, rgba(127, 127, 127, 0.05));
-  border: 0.5px solid var(--yuval-border, rgba(127, 127, 127, 0.18));
+  background: var(--color-card-bg-locked);
+  border: 1px solid var(--color-card-border-locked);
   border-radius: 8px;
   position: relative;
   transition:
@@ -558,6 +517,70 @@
     border-color 160ms var(--ease-standard),
     box-shadow 160ms var(--ease-standard),
     padding 200ms var(--ease-standard);
+}
+
+/* ─── Node wrapper — the chapter circle's containing block ─────────
+   Now a normal flex item inside .usb-card (not absolute). Holds:
+     • the particle-tube canvas (runtime-injected, draws progress arc)
+     • the .usb-node (visible circle with the chapter number)
+     • the completion badge (.usb-card-check, top-right corner)
+     • the reset button (.usb-reset-btn, hover replacement for badge) */
+.usb-node-wrap {
+  position: relative;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+}
+
+/* Canvas overlay — fills the wrap. The chapter number (.usb-node)
+   stacks above it via DOM order. pointer-events: none keeps the
+   click going to the link. */
+.usb-particle-tube {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* ─── Node (the circle with the chapter number) ───────────────────── */
+.usb-node {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background-color: var(--color-circle-bg);
+  border: 1.5px solid var(--color-circle-border-locked);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  transition:
+    background 200ms var(--ease-standard),
+    border-color 200ms var(--ease-standard),
+    box-shadow 200ms var(--ease-standard),
+    width 200ms var(--ease-standard),
+    height 200ms var(--ease-standard);
+}
+
+.usb-node-number {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-accent);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  transition: color 200ms var(--ease-standard);
+}
+
+/* ─── Card text block — title + meta stacked vertically ───────────── */
+.usb-card-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
 }
 
 .usb-card-title {
@@ -569,14 +592,10 @@
   font-size: 14px;
   font-weight: 500;
   line-height: 1.3;
-  color: var(--yuval-text-primary, #1a1a1a);
+  color: var(--color-text-locked);
   word-break: break-word;
   display: block;
-}
-
-/* Dark mode keeps the lighter fallback. */
-.dark .usb-card-title-text {
-  color: var(--yuval-text-primary, #c5cad6);
+  transition: color 200ms var(--ease-standard);
 }
 
 .usb-card-meta {
@@ -585,220 +604,187 @@
   align-items: baseline;
   gap: 8px;
   font-size: 11px;
-  color: var(--yuval-text-muted, #6b7280);
+  color: var(--color-text-tertiary);
 }
 
 .usb-card-time {
   font-variant-numeric: tabular-nums;
 }
 
-/* ─── Hover (any chapter) ──────────────────────────────────────────── */
+/* ─── Hover (any non-active chapter) ───────────────────────────────── */
 .usb-chapter-link:hover .usb-card {
-  background: rgba(37, 99, 235, 0.05);
-  border-color: rgba(37, 99, 235, 0.2);
+  border-color: var(--color-text-accent);
 }
 
-.usb-chapter-link:hover .usb-node {
-  /* Border hidden — particle tube provides the visual ring. */
+/* ─── ACTIVE chapter ───────────────────────────────────────────────
+   Active card uses the gradient background, accent border + soft
+   blue glow. The circle grows to 36×36 with a bright cyan
+   gradient fill, gap-then-ring box-shadow stack, and outer glow. */
+.usb-chapter-active .usb-card {
+  background: var(--color-card-bg-active);
+  border-color: var(--color-card-border-active);
+  box-shadow:
+    0 0 0 3px rgba(77, 168, 224, 0.10),
+    0 0 14px rgba(77, 168, 224, 0.25);
+  padding: 12px 14px;
 }
 
-/* ─── Active chapter ─────────────────────────────────────────────────
-   The badge stays exactly the same size + position as inactive states
-   so the particle-tube canvas (32×32, locked to the wrap) stays in
-   alignment with the visible circle. The active signal is the blue
-   palette: #2563EB accent, #DBEAFE soft card background, and a soft
-   blue halo on the badge. Red is reserved for destructive actions. */
+.usb-chapter-active .usb-node-wrap {
+  width: 36px;
+  height: 36px;
+}
+
 .usb-chapter-active .usb-node {
-  background-image: none;
+  background: linear-gradient(135deg, #4DA8E0, #378ADD);
   border-color: transparent;
-  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.18);
+  box-shadow:
+    0 0 0 3px var(--sidebar-bg),
+    0 0 0 4px var(--color-active-accent),
+    0 0 12px rgba(77, 168, 224, 0.5);
 }
 
 .usb-chapter-active .usb-node-number {
-  color: #2563EB;
+  color: #0a1828;
   font-weight: 600;
-}
-
-.dark .usb-chapter-active .usb-node-number {
-  color: #93C5FD;
-}
-
-.usb-chapter-active .usb-card {
-  background: #DBEAFE;
-  border-color: rgba(37, 99, 235, 0.3);
-}
-
-.dark .usb-chapter-active .usb-card {
-  background: rgba(125, 211, 252, 0.20);
-  border-color: rgba(96, 165, 250, 0.4);
 }
 
 .usb-chapter-active .usb-card-title-text {
-  color: var(--yuval-text-primary, #1a1a1a);
+  color: var(--color-text-active);
   font-weight: 600;
 }
 
-/* Dark-mode override: white text on the dark active background. */
-.dark .usb-chapter-active .usb-card-title-text {
-  color: var(--yuval-text-primary, #fff);
-}
-
+.usb-chapter-active .usb-card-meta,
 .usb-chapter-active .usb-card-time {
-  color: #1D4ED8;
+  color: var(--color-text-active-subtitle);
 }
 
-.dark .usb-chapter-active .usb-card-time {
-  color: #93C5FD;
-}
-
-/* ─── In-progress chapter ────────────────────────────────────────────
-   Chapter has scroll progress but isn't completed yet. Without a
-   tinted background the white badge body is invisible against the
-   white sidebar surface in light mode — only the thin orange arc on
-   the canvas signals "you've started this", which is too subtle. We
-   give the disc a soft peach gradient + warm rim + faint shadow so
-   it reads as a distinct "currently reading" badge against white,
-   while still letting the orange canvas arc remain the primary
-   progress signal. */
+/* ─── IN-PROGRESS chapter (started but not completed) ─────────────
+   Distinct from "locked" but uses the same card background. The
+   accent border on the circle + the lighter title color signal
+   "you've opened this". The progress ring on the canvas paints the
+   actual percentage. No completion badge. */
 .usb-chapter-in-progress .usb-node {
-  background-color: #fff5eb;
-  background-image: linear-gradient(135deg, #ffedd5 0%, #fed7aa 100%);
-  border: 1px solid rgba(249, 115, 22, 0.45);
-  box-shadow:
-    0 1px 2px rgba(194, 65, 12, 0.18),
-    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  border-color: var(--color-text-accent);
 }
 
-.dark .usb-chapter-in-progress .usb-node {
-  background-color: #2a1a0e;
-  background-image: linear-gradient(135deg, #3a2415 0%, #4a2c18 100%);
-  border: 1px solid rgba(253, 186, 116, 0.4);
-  box-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+.usb-chapter-in-progress .usb-card-title-text {
+  color: var(--color-text-in-progress);
 }
 
-.usb-chapter-in-progress .usb-node-number {
-  color: #9a3412;
-  font-weight: 700;
+/* ─── COMPLETED chapter ────────────────────────────────────────────
+   Soft completed card background, green border, green title color,
+   green outline on the circle. The completion badge (top-right
+   corner of the circle) is the primary "done" signal — the chapter
+   number STAYS VISIBLE inside the circle. */
+.usb-chapter-completed .usb-card {
+  background: var(--color-card-bg-completed);
+  border-color: var(--color-card-border-completed);
 }
 
-.dark .usb-chapter-in-progress .usb-node-number {
-  color: #fdba74;
-  font-weight: 700;
-}
-
-/* ─── Completed chapter ──────────────────────────────────────────────
-   The badge becomes a bright green disc with a pulsing emerald halo —
-   "the chapter is lit up" — and the chapter number flips to white
-   for high contrast against the saturated green fill. The canvas
-   still paints its green ring on top, so the visible badge is a
-   solid green disc with a subtle ring at the perimeter.
-   Active+completed below cancels the pulse and uses the purple halo
-   instead (active state takes priority — the user is reading it
-   right now, completion is secondary signal). */
-/* Per design: a completed chapter's disc looks identical to an
-   untouched one. No green fill, no halo, no animation — only the
-   chapter NUMBER changes color to forest green. The canvas ring
-   (drawn by ParticleTube) likewise uses the neutral gray/gold
-   palette in this state, not green. */
 .usb-chapter-completed .usb-node {
-  border-color: transparent;
+  border-color: var(--color-completion-green);
 }
 
 .usb-chapter-completed .usb-node-number {
-  color: #2e7a4d;
-  font-weight: 700;
+  color: var(--color-text-completed);
 }
 
-.dark .usb-chapter-completed .usb-node-number {
-  color: #65b889;
+.usb-chapter-completed .usb-card-title-text {
+  color: var(--color-text-completed);
 }
 
-/* The green check badge: appears at the inline-end of the card
-   (= left side in RTL, right side in LTR). */
+/* Active + completed: active styling wins (gradient bg, glow ring),
+   but the chapter number keeps the dark-on-cyan styling rather than
+   flipping to green — active is the dominant signal. The badge in
+   the corner remains visible because completion is the static
+   secondary signal. */
+.usb-chapter-active.usb-chapter-completed .usb-node {
+  border-color: transparent;
+}
+
+.usb-chapter-active.usb-chapter-completed .usb-node-number {
+  color: #0a1828;
+}
+
+.usb-chapter-active.usb-chapter-completed .usb-card-title-text {
+  color: var(--color-text-active);
+}
+
+/* ─── Completion badge — top-right corner of the circle ────────────
+   Anchored to .usb-node-wrap (position: relative). 16×16 circle
+   with a 2px sidebar-bg border that creates a visible gap between
+   the badge and the underlying circle. -4px offset on each axis
+   makes the badge overlap the circle's corner by 4px. Visible only
+   on completed chapters; cross-fades with .usb-reset-btn on hover. */
 .usb-card-check {
   position: absolute;
-  inset-inline-end: 8px;
-  top: 50%;
-  transform: translateY(-50%) scale(0.6);
-  width: 22px;
-  height: 22px;
+  top: -4px;
+  inset-inline-start: -4px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
-  background: #2e7a4d;
-  color: #fff;
-  display: flex;
+  background: var(--color-completion-green);
+  border: 2px solid var(--sidebar-bg);
+  color: #0a1828;
+  display: none;
   align-items: center;
   justify-content: center;
-  opacity: 0;
   pointer-events: none;
-  transition: opacity 180ms var(--ease-standard), transform 180ms var(--ease-standard);
-  box-shadow: 0 1px 3px rgba(46, 122, 77, 0.35);
+  z-index: 4;
+  box-shadow: 0 0 4px rgba(93, 202, 165, 0.4);
+  opacity: 1;
+  transition: opacity 150ms ease;
 }
 
 .usb-chapter-completed .usb-card-check {
-  opacity: 1;
-  transform: translateY(-50%) scale(1);
+  display: flex;
 }
 
-/* Reserve inline-end padding inside the card so the title text
-   never runs under the check badge. */
-.usb-chapter-completed .usb-card {
-  padding-inline-end: 36px;
-}
-
-/* Active AND completed: keep the green fill (so the chapter still
-   visually reads as "done"), but cancel the pulsing glow and stack
-   a purple halo on top — purple = "you are here right now" takes
-   priority over the green sparkle. */
-.usb-chapter-active.usb-chapter-completed .usb-node {
-  border-color: transparent;
-  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.18);
-}
-
-/* Active + completed: the disc still looks like untouched (the
-   active state contributes its red halo via the rule above). The
-   number color stays forest green to keep "you've read this"
-   readable — it's a stronger persistent signal than the transient
-   "currently viewing" red. */
-.usb-chapter-active.usb-chapter-completed .usb-node-number {
-  color: #2e7a4d;
-  font-weight: 700;
-}
-
-.dark .usb-chapter-active.usb-chapter-completed .usb-node-number {
-  color: #65b889;
-}
-
-/* ─── Reset button (appears on hover for completed chapters) ──────── */
+/* ─── Reset button — same position as badge, cross-fades on hover
+   over a completed chapter card. Filled circle with a refresh
+   glyph; on hover (over the button itself) it lights up red to
+   warn that this is a destructive action. */
 .usb-reset-btn {
   position: absolute;
-  inset-inline-start: -2px;
-  top: -2px;
-  width: 22px;
-  height: 22px;
+  top: -4px;
+  inset-inline-start: -4px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
-  background: var(--yuval-surface, #fff);
-  border: 1px solid var(--yuval-border, rgba(127, 127, 127, 0.18));
-  color: var(--yuval-text-muted, #6b7280);
+  background: var(--sidebar-bg);
+  border: 1.5px solid var(--color-text-locked);
+  color: var(--color-text-locked);
   display: none;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   padding: 0;
-  z-index: 3;
+  z-index: 5;
+  opacity: 0;
+  pointer-events: none;
   transition:
+    opacity 150ms ease,
     background 140ms var(--ease-standard),
     color 140ms var(--ease-standard),
-    transform 140ms var(--ease-standard);
+    border-color 140ms var(--ease-standard);
+}
+
+.usb-chapter-completed .usb-reset-btn {
+  display: flex;
+}
+
+.usb-chapter-completed:hover .usb-card-check {
+  opacity: 0;
 }
 
 .usb-chapter-completed:hover .usb-reset-btn {
-  display: inline-flex;
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .usb-reset-btn:hover {
-  background: rgba(239, 68, 68, 0.1);
+  background: rgba(239, 68, 68, 0.15);
+  border-color: #ef4444;
   color: #ef4444;
   transform: scale(1.08);
 }

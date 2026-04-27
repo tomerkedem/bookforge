@@ -173,37 +173,41 @@ function formatChapterNumber(id: number | string): string {
               aria-current={chapter.id === currentChapterId ? 'page' : undefined}
               data-chapter-id={chapter.id}
             >
-              <span class="usb-node" aria-hidden="true">
-                <span class="usb-node-number">{formatChapterNumber(chapter.id)}</span>
-              </span>
               <span class="usb-card">
-                <span class="usb-card-title">
-                  <span class="usb-card-title-text" data-titles={serializeTitles(chapter)}>
-                    {getChapterTitle(chapter, language)}
+                <span class="usb-node-wrap" aria-hidden="true">
+                  <span class="usb-node">
+                    <span class="usb-node-number">{formatChapterNumber(chapter.id)}</span>
+                  </span>
+                  <span class="usb-card-check" aria-hidden="true" title="Completed">
+                    <svg viewBox="0 0 16 16" width="10" height="10">
+                      <path d="M3.5 8.5l3 3L12.5 5" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </span>
+                  <button
+                    type="button"
+                    class="usb-reset-btn"
+                    data-action="reset-completion"
+                    data-chapter-id={chapter.id}
+                    aria-label="Reset completion"
+                    title="Reset completion"
+                  >
+                    <svg viewBox="0 0 16 16" width="10" height="10" aria-hidden="true">
+                      <path d="M3 8a5 5 0 0 1 8.5-3.5L13 3v4H9" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M13 8a5 5 0 0 1-8.5 3.5L3 13V9h4" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </button>
+                </span>
+                <span class="usb-card-text">
+                  <span class="usb-card-title">
+                    <span class="usb-card-title-text" data-titles={serializeTitles(chapter)}>
+                      {getChapterTitle(chapter, language)}
+                    </span>
+                  </span>
+                  <span class="usb-card-meta">
+                    <span class="usb-card-time" data-word-count={chapter.word_count ?? 0}></span>
                   </span>
                 </span>
-                <span class="usb-card-meta">
-                  <span class="usb-card-time" data-word-count={chapter.word_count ?? 0}></span>
-                </span>
-                <span class="usb-card-check" aria-hidden="true" title="Completed">
-                  <svg viewBox="0 0 16 16" width="12" height="12">
-                    <path d="M3.5 8.5l3 3L12.5 5" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                </span>
               </span>
-              <button
-                type="button"
-                class="usb-reset-btn"
-                data-action="reset-completion"
-                data-chapter-id={chapter.id}
-                aria-label="Reset completion"
-                title="Reset completion"
-              >
-                <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
-                  <path d="M3 8a5 5 0 0 1 8.5-3.5L13 3v4H9" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-                  <path d="M13 8a5 5 0 0 1-8.5 3.5L3 13V9h4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-              </button>
             </a>
 
             {(chapter.sections ?? 0) > 0 && (
