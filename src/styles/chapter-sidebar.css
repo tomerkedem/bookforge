@@ -605,29 +605,32 @@
 /* ─── Active chapter ─────────────────────────────────────────────────
    The badge stays exactly the same size + position as inactive states
    so the particle-tube canvas (32×32, locked to the wrap) stays in
-   alignment with the visible circle. The active signal comes from
-   the purple tint, the purple border, and the soft halo (box-shadow). */
+   alignment with the visible circle. The active signal is the blue
+   palette: #2563EB accent, #DBEAFE soft card background, and a soft
+   blue halo on the badge. Red is reserved for destructive actions. */
 .usb-chapter-active .usb-node {
-  /* Active signal: a soft red halo. Switched from purple because
-     purple at 0.12 alpha got swallowed by gray/peach disc backgrounds
-     mid-read; red holds visibility against every disc state. */
   background-image: none;
   border-color: transparent;
-  box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.18);
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.18);
 }
 
 .usb-chapter-active .usb-node-number {
-  color: #dc2626;
+  color: #2563EB;
   font-weight: 600;
 }
 
 .dark .usb-chapter-active .usb-node-number {
-  color: #fca5a5;
+  color: #93C5FD;
 }
 
 .usb-chapter-active .usb-card {
-  background: rgba(220, 38, 38, 0.07);
-  border-color: rgba(220, 38, 38, 0.3);
+  background: #DBEAFE;
+  border-color: rgba(37, 99, 235, 0.3);
+}
+
+.dark .usb-chapter-active .usb-card {
+  background: rgba(37, 99, 235, 0.14);
+  border-color: rgba(96, 165, 250, 0.4);
 }
 
 .usb-chapter-active .usb-card-title-text {
@@ -641,11 +644,11 @@
 }
 
 .usb-chapter-active .usb-card-time {
-  color: #b91c1c;
+  color: #1D4ED8;
 }
 
 .dark .usb-chapter-active .usb-card-time {
-  color: #fca5a5;
+  color: #93C5FD;
 }
 
 /* ─── In-progress chapter ────────────────────────────────────────────
@@ -750,7 +753,7 @@
    priority over the green sparkle. */
 .usb-chapter-active.usb-chapter-completed .usb-node {
   border-color: transparent;
-  box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.18);
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.18);
 }
 
 /* Active + completed: the disc still looks like untouched (the
