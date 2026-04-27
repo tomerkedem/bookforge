@@ -296,7 +296,7 @@ export class NeuronBar {
         const isDark =
           typeof document !== 'undefined' &&
           document.documentElement.classList.contains('dark');
-        opacity = (isDark ? 0.05 : 0.30) * flicker;
+        opacity = (isDark ? 0.15 : 0.19) * flicker;
       }
 
       if (opacity < 0.02) continue;
