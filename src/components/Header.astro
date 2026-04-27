@@ -335,7 +335,8 @@ const isRtl = getLanguageDirection(language) === 'rtl';
     letter-spacing: 0.12em;
     text-transform: uppercase;
     opacity: 1;
-    transition: opacity 500ms var(--ease-standard);
+    transition: opacity 500ms var(--ease-standard),
+                transform 500ms var(--ease-standard);
     /* Inline-end edge of the inner .quote-stack — the stack is
        sized to the quote text, so this is the visual end of the
        quote, not the wide outer container's edge. */
@@ -350,7 +351,7 @@ const isRtl = getLanguageDirection(language) === 'rtl';
        straddling the bottom edge" effect requested. line-height: 1
        keeps the protrusion clean (no extra ascender padding). */
     line-height: 1;
-    margin-top: -0.15em;
+    margin-top: -0.5em;
     transform: translateY(50%);
   }
 
@@ -360,6 +361,12 @@ const isRtl = getLanguageDirection(language) === 'rtl';
 
   .quote-author.fade-out {
     opacity: 0;
+    transform: translateY(50%) translateY(8px);
+  }
+
+  .quote-author.fade-in-up {
+    opacity: 0;
+    transform: translateY(50%) translateY(12px);
   }
 
   .quote-author::before {
@@ -391,7 +398,9 @@ const isRtl = getLanguageDirection(language) === 'rtl';
     text-align: center;
     line-height: 1.5;
     opacity: 1;
-    transition: opacity 500ms var(--ease-standard);
+    transform: translateY(0);
+    transition: opacity 500ms var(--ease-standard),
+                transform 500ms var(--ease-standard);
     letter-spacing: 0.005em;
     text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5);
   }
@@ -405,6 +414,12 @@ const isRtl = getLanguageDirection(language) === 'rtl';
 
   .quote-text.fade-out {
     opacity: 0;
+    transform: translateY(8px);
+  }
+
+  .quote-text.fade-in-up {
+    opacity: 0;
+    transform: translateY(12px);
   }
 
   :global(.dark) .quote-text {
@@ -695,11 +710,20 @@ const isRtl = getLanguageDirection(language) === 'rtl';
         quoteEl.dir = isRtl ? 'rtl' : 'ltr';
         applyFontToEl(quoteEl, font);
         quoteEl.classList.remove('fade-out');
+        quoteEl.classList.add('fade-in-up');
         if (authorEl) {
           authorEl.textContent = author;
           authorEl.dir = isRtl ? 'rtl' : 'ltr';
           authorEl.classList.remove('fade-out');
+          authorEl.classList.add('fade-in-up');
         }
+        // Force reflow so the browser registers the "below" state
+        // before we transition up to the resting position.
+        void quoteEl.offsetWidth;
+        requestAnimationFrame(() => {
+          quoteEl.classList.remove('fade-in-up');
+          if (authorEl) authorEl.classList.remove('fade-in-up');
+        });
       }, 500);
     }
 

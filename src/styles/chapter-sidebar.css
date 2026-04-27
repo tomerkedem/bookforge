@@ -430,6 +430,36 @@
   --color-text-tertiary:         #2C4860;
   --color-completion-green:      #5DCAA5;
   --color-active-accent:         #4DA8E0;
+
+  /* ─── Step 2 of 4: chapters-pipe glass tokens (dark default) ───── */
+  --pipe-glass-stop-edge:        #5a7a92;
+  --pipe-glass-stop-mid:         #9fc4dc;
+  --pipe-glass-edge-line:        #1a3850;
+  --pipe-glass-highlight:        #ffffff;
+  /* Shared X position for the main pipe AND the per-chapter water
+     overlay (step 3). Promoted to a variable so the two layers stay
+     in lockstep — never set them independently. */
+  --usb-pipe-inline-start:       26px;
+
+  /* ─── Step 3 of 4: water tokens (dark default) ───────────────── */
+  --water-stop-deep:             #185FA5;
+  --water-stop-mid:              #378ADD;
+  --water-stop-light:            #85B7EB;
+  --water-flow-stripe-1:         #B5D4F4;
+  --water-flow-stripe-2:         #E6F1FB;
+  --bubble-color:                #E6F1FB;
+
+  /* Z-index stack: pipe sits BEHIND cards (so card backgrounds
+     visually break the tube at chapter boundaries), chapter circles
+     sit on top of cards (so the tube looks like it threads through
+     them), and the corner badge / reset button stack above all. */
+  --z-pipe:                      1;
+  --z-pipe-water:                1;
+  --z-card:                      2;
+  --z-card-circle:               3;
+  --z-card-progress-ring:        3;
+  --z-card-badge:                4;
+  --z-card-reset-btn:            4;
 }
 :root:not(.dark) {
   --usb-thread-inactive: rgba(35, 40, 52, 0.78);
@@ -455,6 +485,21 @@
   --color-text-tertiary:         #cbd5e1;
   --color-completion-green:      #10b981;
   --color-active-accent:         #2563EB;
+
+  /* Step 2 chapters-pipe glass — light-mode parallels */
+  --pipe-glass-stop-edge:        #94a8bc;
+  --pipe-glass-stop-mid:         #d3dde7;
+  --pipe-glass-edge-line:        #5a7a92;
+  --pipe-glass-highlight:        #ffffff;
+
+  /* Step 3 water — light-mode parallels (lighter, washed-out blues
+     so the water reads against the pale card backgrounds). */
+  --water-stop-deep:             #4DA8E0;
+  --water-stop-mid:              #85B7EB;
+  --water-stop-light:             #B5D4F4;
+  --water-flow-stripe-1:         #ffffff;
+  --water-flow-stripe-2:         #ffffff;
+  --bubble-color:                #ffffff;
 }
 
 .usb-thread {
@@ -466,6 +511,123 @@
   background: var(--usb-thread-inactive);
   border-radius: 1px;
   pointer-events: none;
+  /* Step 2 of 4: hidden because the new .usb-chapters-pipe takes
+     over its visual role. The element + its color tokens stay in
+     the DOM/CSS so we can restore it as a fallback by deleting
+     this single rule. */
+  display: none;
+}
+
+/* ─── Chapters pipe ──────────────────────────────────────────────────
+   Single continuous transparent glass tube that runs the full
+   height of the chapter list, passing through the centre of every
+   chapter circle. Empty in step 2 (no water yet — that's step 3;
+   no feeders — that's step 4). Positioned so the tube's centre
+   (x=30 from .usb-timeline inline-start) aligns with every circle
+   centre regardless of state: locked / in-progress / completed
+   centre at padding 14 + half of 32-wrap = 30; active centre at
+   padding 12 + half of 36-wrap = 30. */
+.usb-chapters-pipe {
+  position: absolute;
+  inset-inline-start: var(--usb-pipe-inline-start);
+  top: 0;
+  width: 8px;
+  /* Explicit height: 100% (instead of auto + top:0; bottom:0)
+     because SVG is a replaced element — `height: auto` falls back
+     to the SVG's intrinsic height (or browser default ~150px),
+     not the parent height we want. */
+  height: 100%;
+  pointer-events: none;
+  z-index: var(--z-pipe);
+  display: block;
+}
+
+/* ─── Chapters pipe: water layer (step 3 of 4) ───────────────────
+   A per-chapter SVG that paints the animated water inside the main
+   glass pipe. Hidden by default; the rule below switches it on for
+   the .usb-chapter-active row only. Sits at the same x as the main
+   pipe (--usb-pipe-inline-start), so the water visually fills the
+   inside of the glass tube exactly. The pipe's inner channel is
+   6px wide (8px outer minus 1px wall on each side); the water rect
+   inside the SVG matches that channel.
+
+   The local SVG is positioned absolutely inside the chapter <li>
+   (which is position: relative), so its top/bottom anchor to the
+   chapter's full vertical extent — chapter card + expanded
+   subsection list. When the user activates a different chapter,
+   the previous active loses its class, this rule stops applying,
+   and the water disappears. Pure DOM lifecycle, no JS. */
+.usb-chapters-pipe-water {
+  position: absolute;
+  inset-inline-start: var(--usb-pipe-inline-start);
+  top: 0;
+  bottom: 0;
+  width: 8px;
+  height: 100%;
+  pointer-events: none;
+  z-index: var(--z-pipe-water);
+  display: none;
+}
+
+.usb-chapter-active .usb-chapters-pipe-water {
+  display: block;
+}
+
+/* Edge case: chapters with no subsections. Water still renders in
+   the chapter card area, but fades out toward the bottom — visual
+   metaphor for "water entered the chapter, but there are no
+   subsections to feed, so it dissipates at the bottom". The mask
+   is defined in the shared <svg class="usb-pipe-defs"> at the top
+   of .usb-timeline. */
+.usb-chapter-active.usb-chapter-no-sections .usb-chapters-pipe-water {
+  mask: url(#usbWaterFadeMask);
+  -webkit-mask: url(#usbWaterFadeMask);
+}
+
+@keyframes usbWaterFlowDown {
+  0%   { transform: translateY(-20px); }
+  100% { transform: translateY(20px); }
+}
+
+@keyframes usbWaterBubbleUp {
+  0%   { transform: translateY(0); opacity: 0; }
+  20%  { opacity: 0.7; }
+  80%  { opacity: 0.7; }
+  100% { transform: translateY(-40px); opacity: 0; }
+}
+
+/* offset-path particles travel the pipe centerline. They give the
+   "real flowing water" feel — discrete highlights moving through
+   the water rather than the ambient pattern alone. Matches the
+   technique used by the legacy section-pipe (.usb-pipe-overlay).
+   The path string here is simple (vertical line at x=4) because
+   the chapters-pipe is a straight tube with no bend; for the
+   section-pipe with its curve the path is more complex. */
+@keyframes usbWaterParticleFlow {
+  0%   { offset-distance: 0%;   opacity: 0; }
+  10%  { opacity: 0.9; }
+  85%  { opacity: 0.9; }
+  100% { offset-distance: 100%; opacity: 0; }
+}
+
+.usb-chapters-pipe-water .usb-water-stream {
+  animation: usbWaterFlowDown 2.5s linear infinite;
+}
+
+.usb-chapters-pipe-water .usb-water-bubble {
+  animation: usbWaterBubbleUp 2.5s ease-in infinite;
+}
+
+.usb-chapters-pipe-water .usb-water-particle {
+  animation: usbWaterParticleFlow 5s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .usb-chapters-pipe-water .usb-water-stream,
+  .usb-chapters-pipe-water .usb-water-bubble,
+  .usb-chapters-pipe-water .usb-water-particle {
+    animation: none;
+  }
 }
 
 .usb-chapter-list {
@@ -512,6 +674,10 @@
   border: 1px solid var(--color-card-border-locked);
   border-radius: 8px;
   position: relative;
+  /* Cards sit ABOVE the .usb-chapters-pipe so their opaque
+     backgrounds visually "break" the tube into segments — the pipe
+     only shows in the 10px gap between cards. */
+  z-index: var(--z-card);
   transition:
     background 160ms var(--ease-standard),
     border-color 160ms var(--ease-standard),
@@ -540,7 +706,7 @@
   inset: 0;
   width: 100%;
   height: 100%;
-  z-index: 1;
+  z-index: var(--z-card-progress-ring);
   pointer-events: none;
 }
 
@@ -556,7 +722,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 2;
+  z-index: var(--z-card-circle);
   transition:
     background 200ms var(--ease-standard),
     border-color 200ms var(--ease-standard),
@@ -627,6 +793,11 @@
     0 0 0 3px rgba(77, 168, 224, 0.10),
     0 0 14px rgba(77, 168, 224, 0.25);
   padding: 12px 14px;
+  /* Active circle is 36×36 (vs 32×32 for the other states); shrink
+     the inline-start padding by 2 so the circle's centre lands at
+     the same x=30 as every other state, letting the pipe pass
+     through dead-centre on every chapter regardless of state. */
+  padding-inline-start: 12px;
 }
 
 .usb-chapter-active .usb-node-wrap {
@@ -730,7 +901,7 @@
   align-items: center;
   justify-content: center;
   pointer-events: none;
-  z-index: 4;
+  z-index: var(--z-card-badge);
   box-shadow: 0 0 4px rgba(93, 202, 165, 0.4);
   opacity: 1;
   transition: opacity 150ms ease;
@@ -759,7 +930,7 @@
   justify-content: center;
   cursor: pointer;
   padding: 0;
-  z-index: 5;
+  z-index: var(--z-card-reset-btn);
   opacity: 0;
   pointer-events: none;
   transition:
