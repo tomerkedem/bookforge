@@ -46,6 +46,7 @@ import {
   tubes as particleTubes,
 } from './sidebar-particle-tube';
 import { NeuronBar } from './sidebar-neuron-bar';
+import { renderActiveChapterPipe, removeChapterPipe } from './sidebar-pipe';
 
 /* Single instance per page. Lazily created the first time
    syncChapterStates runs after the canvas is in the DOM. View
@@ -215,6 +216,9 @@ export async function renderChapterSections(chapterId: string | number): Promise
     empty.textContent = lang === 'he' ? 'אין סעיפים' : 'No sections';
     ul.appendChild(empty);
     if (isActive) setupOutlineScrollSpy([]);
+    /* Empty chapter: no rows means nothing for the pipe to feed.
+       Remove any leftover overlay from a prior render. */
+    removeChapterPipe(container);
     return;
   }
 
@@ -289,6 +293,10 @@ export async function renderChapterSections(chapterId: string | number): Promise
     const titleSpan = document.createElement('span');
     titleSpan.className = 'section-title';
     titleSpan.textContent = `${sectionLabel} · ${h.text}`;
+    /* Active-chapter rows ellipsize on overflow (fixed 36px height,
+       nowrap) — surface the full label as a native tooltip so users
+       can still read truncated headings on hover. */
+    titleSpan.title = `${sectionLabel} · ${h.text}`;
 
     const timeSpan = document.createElement('span');
     timeSpan.className = 'section-time';
@@ -339,6 +347,9 @@ export async function renderChapterSections(chapterId: string | number): Promise
 
   if (isActive) {
     setupOutlineScrollSpy(liveHeadings);
+    renderActiveChapterPipe(container, headings.length);
+  } else {
+    removeChapterPipe(container);
   }
 }
 
@@ -386,6 +397,13 @@ export function ensureSectionsContainer(): void {
       li.dataset.expanded = 'false';
       const btn = li.querySelector('.usb-toggle-btn');
       btn?.setAttribute('aria-expanded', 'false');
+      /* If this chapter just lost active status, tear down its pipe
+         overlay. The live `.usb-chapter-active` styles (36px rows,
+         hidden dots) are CSS-only and detach automatically when the
+         class is removed by updateActiveChapterRow, but the SVG node
+         we injected is real DOM and has to be removed explicitly. */
+      const sc = li.querySelector<HTMLElement>('.usb-sections');
+      if (sc) removeChapterPipe(sc);
     }
   });
 }

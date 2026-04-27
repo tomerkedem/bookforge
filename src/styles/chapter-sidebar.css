@@ -594,8 +594,8 @@
 
 /* ─── Hover (any chapter) ──────────────────────────────────────────── */
 .usb-chapter-link:hover .usb-card {
-  background: rgba(124, 92, 240, 0.05);
-  border-color: rgba(124, 92, 240, 0.2);
+  background: rgba(37, 99, 235, 0.05);
+  border-color: rgba(37, 99, 235, 0.2);
 }
 
 .usb-chapter-link:hover .usb-node {
@@ -833,14 +833,14 @@
 /* In RTL, translateX(-50%) keeps it centered the same way (the
    percentage refers to its own width, not direction). */
 .usb-toggle-btn:hover {
-  background: rgba(124, 92, 240, 0.1);
-  color: #7c5cf0;
-  border-color: rgba(124, 92, 240, 0.3);
+  background: rgba(37, 99, 235, 0.10);
+  color: #2563EB;
+  border-color: rgba(37, 99, 235, 0.3);
   transform: translateX(-50%) scale(1.1);
 }
 
 .dark .usb-toggle-btn:hover {
-  color: #a89cf5;
+  color: #93C5FD;
 }
 
 .usb-toggle-btn svg {
@@ -853,12 +853,12 @@
 }
 
 .usb-chapter[data-expanded="true"] .usb-toggle-btn {
-  color: #7c5cf0;
-  border-color: rgba(124, 92, 240, 0.3);
+  color: #2563EB;
+  border-color: rgba(37, 99, 235, 0.3);
 }
 
 .dark .usb-chapter[data-expanded="true"] .usb-toggle-btn {
-  color: #a89cf5;
+  color: #93C5FD;
 }
 
 /* When a chapter has the toggle button, leave a little extra
@@ -941,11 +941,11 @@
 }
 
 .usb-sections li:hover {
-  background: rgba(124, 92, 240, 0.06);
+  background: rgba(37, 99, 235, 0.06);
 }
 
 .usb-sections li.active {
-  background: rgba(124, 92, 240, 0.1);
+  background: rgba(37, 99, 235, 0.10);
 }
 
 .usb-sections a {
@@ -1000,9 +1000,9 @@
 }
 
 .usb-sections li.active::before {
-  background: #7c5cf0;
-  border-color: #7c5cf0;
-  box-shadow: 0 0 0 3px rgba(124, 92, 240, 0.25);
+  background: #2563EB;
+  border-color: #2563EB;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
   transform: scale(1.1);
   inset-inline-start: -21px;
   top: 10px;
@@ -1046,11 +1046,11 @@
 }
 
 .usb-sections li.active .section-time {
-  color: #7c5cf0;
+  color: #2563EB;
 }
 
 .dark .usb-sections li.active .section-time {
-  color: #a89cf5;
+  color: #93C5FD;
 }
 
 /* H3 sections: indented + smaller. */
@@ -1122,8 +1122,8 @@
 }
 
 .mobile-tab.active {
-  color: #7c5cf0;
-  border-bottom-color: #7c5cf0;
+  color: #2563EB;
+  border-bottom-color: #2563EB;
 }
 
 .mobile-panel {
@@ -1238,12 +1238,12 @@
 }
 
 .mobile-panel .toc-item-active {
-  background: rgba(124, 92, 240, 0.1);
-  border-color: rgba(124, 92, 240, 0.3);
+  background: rgba(37, 99, 235, 0.10);
+  border-color: rgba(37, 99, 235, 0.3);
 }
 
 .mobile-panel .toc-item-active .toc-number {
-  color: #7c5cf0;
+  color: #2563EB;
 }
 
 /* Mobile outline list (sections). */
@@ -1266,11 +1266,112 @@
 }
 
 .mobile-panel .outline-list li.active a {
-  color: #7c5cf0;
-  background: rgba(124, 92, 240, 0.08);
+  color: #2563EB;
+  background: rgba(37, 99, 235, 0.08);
   font-weight: 500;
 }
 
 .mobile-panel .outline-list li[data-level="h3"] {
   margin-inline-start: 14px;
+}
+
+/* ─── Active-chapter drip-irrigation pipe ────────────────────────────
+   Visual overlay that runs alongside the active chapter's section
+   list, with feeder tubes branching off into each section row and a
+   curve into the last row. Pure decoration: pointer-events: none so
+   row clicks pass through. The SVG itself is built in JS
+   (sidebar-pipe.ts) and injected into .usb-sections; geometry assumes
+   each row is exactly 36px tall — we pin that here. */
+
+/* Active-chapter section rows: fixed 36px height + nowrap so the SVG
+   can compute feeder Y offsets from row index × 36 with no surprises.
+   Long titles ellipsize; the section anchor gets a title attribute
+   from JS so the full text is available on hover. */
+.usb-chapter-active .usb-sections ul {
+  gap: 0;
+  padding-inline-start: 28px;
+}
+
+.usb-chapter-active .usb-sections li,
+.usb-chapter-active .usb-sections li[data-level="h3"] {
+  height: 36px;
+}
+
+.usb-chapter-active .usb-sections a {
+  height: 100%;
+  align-items: center;
+}
+
+.usb-chapter-active .usb-sections .section-title {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Hide the inactive-state thread + dots on the active chapter — the
+   pipe takes over their visual job. Non-active chapters keep the
+   existing thin thread + dots when expanded. */
+.usb-chapter-active .usb-sections::before,
+.usb-chapter-active .usb-sections li::before {
+  display: none;
+}
+
+/* The SVG sits in the inline-start gutter just outside the section
+   text. inset-inline-start: -2px lets it stick 2px past the inline-
+   start edge so the bottom curve can wrap into the last row card.
+   overflow: visible on the SVG element ensures the curve is not
+   clipped. z-index: 1 + pointer-events: none keeps it above the row
+   background but transparent to clicks. */
+.usb-pipe-overlay {
+  position: absolute;
+  inset-inline-start: -2px;
+  top: 0;
+  pointer-events: none;
+  z-index: 1;
+  overflow: visible;
+}
+
+/* Subtle, slow water-flow animations.
+
+   The MAIN pipe (vertical → bottom curve → entry into the last row)
+   is a single continuous SVG path with a stroke-dashoffset animation,
+   so the flow stays seamless across the bend with no break or reset.
+   Side feeders use a separate horizontal translateX animation per
+   branch. Bubbles fade-rise over a long cycle inside the vertical
+   pipe. Speeds chosen to be noticeable on inspection but calm at a
+   glance. */
+
+@keyframes pipeFlowDash {
+  to { stroke-dashoffset: -22; }
+}
+
+@keyframes pipeFlowLeft {
+  from { transform: translateX(8px); }
+  to   { transform: translateX(-8px); }
+}
+
+@keyframes pipeBubbleUp {
+  0%   { transform: translateY(0); opacity: 0; }
+  20%  { opacity: 0.6; }
+  80%  { opacity: 0.6; }
+  100% { transform: translateY(-40px); opacity: 0; }
+}
+
+.usb-pipe-overlay .usb-pipe-flow          { animation: pipeFlowDash 2.5s linear infinite; }
+.usb-pipe-overlay .usb-pipe-water-feeder  { animation: pipeFlowLeft 1.2s linear infinite; }
+.usb-pipe-overlay .usb-pipe-bubble        { animation: pipeBubbleUp 3s ease-in infinite; }
+
+/* Reduced motion: full stop on flow streams, bubbles hidden entirely
+   so the pipe reads as a static structural element (per spec). */
+@media (prefers-reduced-motion: reduce) {
+  .usb-pipe-overlay .usb-pipe-flow,
+  .usb-pipe-overlay .usb-pipe-water-feeder {
+    animation: none;
+  }
+  .usb-pipe-overlay .usb-pipe-bubble {
+    animation: none;
+    display: none;
+  }
 }

@@ -285,12 +285,18 @@ export class NeuronBar {
           opacity = p.baseOpacity * flicker;
         }
       } else {
-        /* Past the leading edge: ghosted to near-zero so the contrast
-           between "filled" and "empty" zones reads sharply. The < 0.02
-           skip below culls almost all of these — only the brightest
-           flicker peaks survive, keeping the empty zone alive with
-           the faintest occasional twinkle rather than dead. */
-        opacity = 0.018 * flicker;
+        /* Past the leading edge: faint baseline so the bar still
+           reads as "alive" at low completion percentages without
+           muddying the contrast against the filled zone. Light
+           mode needs a higher alpha — the near-white track bg
+           washes out 0.05-alpha medium colors completely; dark
+           mode is fine at 0.05 since particles already stand out
+           against the near-black bg. Re-checked every frame so a
+           live theme toggle picks up immediately. */
+        const isDark =
+          typeof document !== 'undefined' &&
+          document.documentElement.classList.contains('dark');
+        opacity = (isDark ? 0.05 : 0.30) * flicker;
       }
 
       if (opacity < 0.02) continue;
