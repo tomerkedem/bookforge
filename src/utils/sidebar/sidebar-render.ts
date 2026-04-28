@@ -33,7 +33,7 @@ import {
   formatChapterTime,
   distributeChapterMinutesFromData,
 } from './sidebar-time';
-import { loadChapterSections, invalidateChapterCache, isCached } from './sidebar-cache';
+import { loadChapterSections, invalidateChapterCache, isCached, type SectionPreview } from './sidebar-cache';
 import {
   setupOutlineScrollSpy,
   registerOutlineEntry,
@@ -54,6 +54,61 @@ import { renderActiveChapterPipe, removeChapterPipe } from './sidebar-pipe';
    transitions persist the sidebar via transition:persist, so the
    canvas (and this instance) survive content swaps. */
 let neuronBar: NeuronBar | null = null;
+
+/** Pick the inline-end content-hint glyph for a section row.
+ *
+ *  - Code previews → `{}` (universal, monospace-friendly, instantly
+ *    reads as "code lives here").
+ *  - Non-empty prose → `¶` (paragraph mark — quietly classical).
+ *  - No preview / empty prose → null (omit the hint altogether so an
+ *    empty section doesn't get a misleading marker).
+ *
+ *  Unicode glyphs over emoji on purpose: emoji renders inconsistently
+ *  across iOS / Android / Windows; these glyphs are baked into every
+ *  monospace font and render identically everywhere. */
+function pickHintGlyph(preview: SectionPreview | undefined): string | null {
+  if (!preview) return null;
+  if (preview.type === 'code') return '{}';
+  if (preview.type === 'text' && preview.sentence.trim() !== '') return '¶';
+  return null;
+}
+
+/** Build the preview pane DOM for a section. The pane's outer
+ *  `data-preview-type` attribute lets CSS pick a direction
+ *  (LTR for code, RTL for prose) and apply different chrome.
+ *
+ *  For `code` previews, the inner HTML is already escaped + hljs-
+ *  highlighted at build time (see preview-extractor + [chapter].astro);
+ *  setting it via `innerHTML` is safe because every `<` / `>` / `&` /
+ *  `"` in the original source is entity-encoded and the only `<` /
+ *  `>` characters left are the ones wrapping `<span class="hljs-…">`.
+ *
+ *  For `text` previews, we use `textContent` so any leftover entities
+ *  render as plain characters (no XSS surface). */
+function buildPreviewPane(preview: SectionPreview): HTMLElement {
+  const pane = document.createElement('div');
+  pane.className = 'usb-section-preview';
+  pane.setAttribute('data-preview-type', preview.type);
+
+  if (preview.type === 'code') {
+    const pre = document.createElement('pre');
+    pre.className = 'usb-preview-code';
+    pre.setAttribute('data-language', preview.language);
+    pre.dir = 'ltr';
+    const code = document.createElement('code');
+    code.className = `hljs language-${preview.language}`;
+    code.innerHTML = preview.html;
+    pre.appendChild(code);
+    pane.appendChild(pre);
+  } else {
+    const p = document.createElement('p');
+    p.className = 'usb-preview-text';
+    p.textContent = preview.sentence;
+    pane.appendChild(p);
+  }
+
+  return pane;
+}
 
 function getOrCreateNeuronBar(initialPct: number): NeuronBar | null {
   if (neuronBar) return neuronBar;
@@ -316,22 +371,65 @@ export async function renderChapterSections(chapterId: string | number): Promise
       link.href = url ? `${url}#${h.id}` : `#${h.id}`;
     }
 
+    /* Title row holds the section number, the heading text, and the
+       reading-time badge in a single horizontal strip. The number
+       becomes a separate <span> (was a `${label} · ` prefix on the
+       title text) so Step 6's circle styling has its own hook without
+       reaching into the title text. Legacy `.section-title` /
+       `.section-time` classes are preserved alongside the new
+       `.usb-section-*` ones to keep existing CSS rules working. */
+    const titleRow = document.createElement('div');
+    titleRow.className = 'usb-section-title-row';
+
+    const numSpan = document.createElement('span');
+    numSpan.className = 'usb-section-number';
+    numSpan.textContent = sectionLabel;
+
     const titleSpan = document.createElement('span');
-    titleSpan.className = 'section-title';
-    titleSpan.textContent = `${sectionLabel} · ${h.text}`;
+    titleSpan.className = 'section-title usb-section-title';
+    titleSpan.textContent = h.text;
     /* Active-chapter rows ellipsize on overflow (fixed 36px height,
        nowrap) — surface the full label as a native tooltip so users
        can still read truncated headings on hover. */
     titleSpan.title = `${sectionLabel} · ${h.text}`;
 
     const timeSpan = document.createElement('span');
-    timeSpan.className = 'section-time';
+    timeSpan.className = 'section-time usb-section-time';
     const minutes = sectionMinutes[index] || 1;
     const lang = getCurrentLang();
     timeSpan.textContent = lang === 'he' ? `${minutes} דק'` : `${minutes}m`;
 
-    link.appendChild(titleSpan);
-    link.appendChild(timeSpan);
+    titleRow.appendChild(numSpan);
+    titleRow.appendChild(titleSpan);
+    titleRow.appendChild(timeSpan);
+
+    /* Content-hint glyph at the inline-end edge — `{}` for code,
+       `¶` for prose, omitted for empty sections. CSS hides it on
+       the active row (which already shows the full preview pane
+       below, making the hint redundant). The glyph is `aria-hidden`
+       because it's purely visual; the section title and time are
+       what screen readers should read. */
+    const hintGlyph = pickHintGlyph(h.preview);
+    if (hintGlyph) {
+      const hint = document.createElement('span');
+      hint.className = 'usb-content-hint';
+      hint.textContent = hintGlyph;
+      hint.setAttribute('aria-hidden', 'true');
+      titleRow.appendChild(hint);
+    }
+
+    link.appendChild(titleRow);
+
+    /* Preview pane is appended only when the cache delivered a
+       preview for this section. Missing previews (legacy fetched HTML
+       from before this feature shipped, malformed JSON, sections
+       beyond the previews array's length) skip the pane entirely
+       rather than render an empty placeholder — fewer DOM nodes,
+       cleaner layout, and downstream CSS doesn't need to special-case
+       an "empty" state. */
+    if (h.preview) {
+      link.appendChild(buildPreviewPane(h.preview));
+    }
 
     /* Step 4 of 4: per-section horizontal feeder pipe. Injected
        once per section row; CSS handles visibility (only shows on

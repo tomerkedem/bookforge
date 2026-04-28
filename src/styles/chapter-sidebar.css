@@ -417,7 +417,12 @@
   --color-card-bg-locked:        #0e1a26;
   --color-card-bg-active:        linear-gradient(135deg, #15304a, #0f2336);
   --color-card-border-completed: #1a3850;
-  --color-card-border-locked:    #14283c;
+  /* Neutral gray (not navy). Navy borders chained visually into a
+     vertical "blue column" when 10+ locked cards stacked — read as
+     a water-filled pipe alongside the actual transparent pipe.
+     Cool gray here keeps card silhouette visible without color
+     bleed into the timeline. */
+  --color-card-border-locked:    #374151;
   --color-card-border-active:    #4DA8E0;
   --color-circle-bg:             #102230;
   /* Neutral gray (not blue) — six chapters in a row with blue
@@ -605,7 +610,11 @@
   height: 100%;
   pointer-events: none;
   z-index: var(--z-pipe-water);
-  display: none;
+  /* Always-on: water flows through every chapter regardless of
+     completion/active state. User explicitly chose this after
+     state-conditional water created perceptual ambiguity that
+     proved unfixable from CSS alone. */
+  display: block;
   /* Explicit clip — the water-stream <rect> uses y=-20, height=1040
      to animate translateY past viewBox edges, so any SVG renderer
      that interprets overflow:visible (deviating from the UA default)
@@ -636,26 +645,13 @@
    unread, the 10px sliver below the completed card still shows
    water — that IS the user's stated rule (the gap below a ✓ is
    "below the completed card", regardless of what's after). */
-.usb-chapter-completed .usb-chapters-pipe-water {
-  display: block;
+/* Bridge gap between every consecutive chapter so the water column
+   reads as one continuous flow through the whole timeline, not a
+   stack of isolated water-filled <li>s. Last child has no
+   margin-bottom, so no extension needed there. */
+.usb-chapter:not(:last-child) .usb-chapters-pipe-water {
   bottom: -10px;
   height: auto;
-}
-
-/* Last child has no margin-bottom (see .usb-chapter:last-child
-   rule above), so there's no gap below it to fill. Keep the
-   water strictly inside its <li>. */
-.usb-chapter-completed:last-child .usb-chapters-pipe-water {
-  bottom: 0;
-  height: 100%;
-}
-
-.usb-chapter-completed .usb-chapters-pipe-water .usb-water-stream {
-  animation: none;
-}
-
-.usb-chapter-completed .usb-chapters-pipe-water .usb-water-particle {
-  animation-duration: 8s;
 }
 
 
@@ -767,8 +763,8 @@
   visibility: hidden;
 }
 
-.usb-chapter-active .usb-sections li.active .usb-feeder-water,
-.usb-chapter-active .usb-sections li.active .usb-feeder-stream {
+.usb-sections li.active .usb-feeder-water,
+.usb-sections li.active .usb-feeder-stream {
   visibility: visible;
 }
 
@@ -1844,3 +1840,334 @@
     animation: none;
   }
 }
+
+/* ─────────────────────────────────────────────────────────────────
+   SECTION PREVIEWS  ─  "code-first" preview pane.
+   Visual policy after live testing: only the *active* section in the
+   active chapter renders a full preview pane. Every other row stays
+   compact (title-only) and gets a small inline-end content-hint
+   glyph (`{}` for code, `¶` for prose) so the row still telegraphs
+   "this section is mostly code / mostly prose" without taking real
+   estate. Earlier collapsed-peek attempts read as visual noise on
+   chapters with 6+ sections.
+   ───────────────────────────────────────────────────────────── */
+
+/* Hide preview pane on every row by default (covers non-active
+   chapters too). Unhidden only on the active row of the active
+   chapter, below. */
+.usb-section-preview {
+  display: none;
+}
+
+/* Compact row layout for non-active rows is the existing single-row
+   flex (defined upstream in this file). Only the active row needs
+   to stack vertically (title-row + preview pane). */
+.usb-sections li.active a {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  height: auto;
+  padding-top: 8px;
+  padding-bottom: 10px;
+}
+
+/* Active row card — gives the row visual weight so the preview pane
+   doesn't read as "free-floating content" between the row above and
+   the row below. The active row becomes its own brick: tinted
+   background, an inline-start accent stripe in the same blue family
+   as the chapter card, a soft shadow that lifts it off the timeline,
+   and a generous margin-bottom that creates an uncontested gap
+   before the next row's title strip. Without these, the screenshot
+   showed sections 7+8 visually merging with section 6's preview.
+
+   Specificity: must out-rank `.usb-sections li.active` upstream
+   (which sets a 10% blue background only). Same selector with the
+   `.usb-chapter-active` ancestor wins on length. */
+.usb-sections li.active {
+  background: rgba(37, 99, 235, 0.16);
+  border-radius: 6px;
+  border-inline-start: 3px solid #4DA8E0;
+  box-shadow:
+    0 1px 0 rgba(0, 0, 0, 0.18),
+    0 4px 14px rgba(15, 35, 54, 0.35);
+  margin-block: 4px 14px;
+  padding-inline-start: 4px;
+  /* Override the upstream fixed height (36px) on
+     `.usb-chapter-active .usb-sections li` — that rule was tuned for
+     compact title-only rows; the active row now contains both the
+     title strip + a preview pane, so it has to grow with content. */
+  height: auto;
+  min-height: 36px;
+}
+
+/* Defensive: id-prefixed twin to guarantee `height: auto` wins even
+   if the upstream selector's specificity ever increases (it's
+   currently 0,2,1; ours is 0,2,1, source-order wins, but explicit is
+   safer than depending on order). The `#unified-sidebar` id boosts
+   us to 1,2,1, which always beats class-only selectors. */
+#unified-sidebar .usb-sections li.active {
+  height: auto;
+  min-height: 36px;
+}
+
+.dark .usb-sections li.active {
+  background: rgba(77, 168, 224, 0.14);
+  box-shadow:
+    0 1px 0 rgba(0, 0, 0, 0.4),
+    0 6px 20px rgba(0, 0, 0, 0.45);
+}
+
+.usb-section-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+}
+
+/* Feeder anchored to the title-row's vertical centre. With the
+   active row's preview pane expanded (~140px) the row itself becomes
+   much taller than the title strip, and `top: 50%` would float the
+   feeder into the middle of the code. Fixed value tuned to the
+   title-row's content height. */
+.usb-chapter-active .usb-sections li .usb-section-feeder {
+  top: 13px;
+  transform: none;
+}
+
+/* Active section: expanded preview, full opacity. */
+.usb-sections li.active .usb-section-preview {
+  display: block;
+  margin-top: 2px;
+  padding: 6px 8px;
+  background: rgba(15, 35, 54, 0.5);
+  border-radius: 4px;
+  overflow: hidden;
+  max-height: 140px;
+  opacity: 1;
+  transition: max-height 0.25s ease-out, opacity 0.2s ease-out;
+}
+
+.usb-sections li.active .usb-section-preview[data-preview-type='code'] {
+  direction: ltr;
+  text-align: left;
+}
+
+.usb-sections li.active .usb-section-preview[data-preview-type='text'] {
+  direction: rtl;
+  text-align: right;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .usb-sections li.active .usb-section-preview {
+    transition: none;
+  }
+}
+
+/* Content-hint glyph inside the title row — see render code for
+   visibility logic (omitted for empty sections, hidden on the active
+   row). Same color as the time text so it reads as quiet metadata,
+   not a separate UI element. Monospace family is what gives `{}` its
+   crisp, code-shaped silhouette. */
+.usb-content-hint {
+  font-size: 11px;
+  color: #5a7a92;
+  opacity: 0.6;
+  margin-inline-start: 6px;
+  font-family: 'JetBrains Mono', 'Consolas', 'Menlo', monospace;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.usb-sections li.active .usb-content-hint {
+  display: none;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   SECTION ROW STATES  ─  upcoming / active / completed
+   Renders the per-section number circle in three flavors and tunes
+   the title / time opacity per state so the active row reads as
+   "now", completed as "done", and upcoming as "still ahead".
+   Mirrors the mockup approved with the user.
+   ───────────────────────────────────────────────────────────── */
+
+/* Number circle — base (upcoming). Same blue family as the chapter
+   pipe, but quiet: tinted background, blue text, no shadow. */
+.usb-section-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(77, 168, 224, 0.10);
+  color: #4DA8E0;
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+  /* Numbers are LTR even in RTL layouts — without this, "01" renders
+     as "10" when the row's direction is rtl. */
+  direction: ltr;
+}
+
+/* Active circle — gradient + glow. Matches the active card's accent
+   stripe so number and stripe read as one visual unit. */
+.usb-sections li.active .usb-section-number {
+  background: linear-gradient(135deg, #185FA5, #4DA8E0);
+  color: #ffffff;
+  box-shadow: 0 0 8px rgba(77, 168, 224, 0.4);
+}
+
+/* Completed circle — green tint + green text. Reads as "done"
+   without needing a checkmark inside the circle (the row's
+   inline-end ✓ glyph carries that signal). */
+.usb-sections li.section-completed .usb-section-number {
+  background: rgba(93, 202, 165, 0.15);
+  color: #5DCAA5;
+}
+
+/* Active title — full opacity + slightly heavier weight so the row's
+   subject is unmistakable. */
+.usb-sections li.active .section-title {
+  color: var(--yuval-text-primary, #ffffff);
+  font-weight: 500;
+  opacity: 1;
+}
+
+/* Completed row — title slightly muted, time more muted; the row
+   reads as "settled" rather than competing for attention with the
+   active card or the still-ahead upcoming rows. */
+.usb-sections li.section-completed .section-title {
+  opacity: 0.85;
+}
+.usb-sections li.section-completed .section-time {
+  opacity: 0.6;
+}
+
+/* Upcoming row — quieter still. Lower opacity than completed so the
+   eye naturally lands on completed (recent achievement) before
+   wandering further down. */
+.usb-sections li:not(.active):not(.section-completed) .section-title {
+  opacity: 0.7;
+}
+.usb-sections li:not(.active):not(.section-completed) .section-time {
+  opacity: 0.5;
+}
+
+/* Completed row — replace the upcoming `{}` / `¶` glyph with a
+   green ✓. The DOM still emits the upcoming hint span (the renderer
+   doesn't know about completion state at build time), so we hide it
+   here and inject the ✓ via ::after on the title row. The pseudo-
+   element sits at the row's flex-end edge, where the hint span
+   would have been, so visual position stays consistent. */
+.usb-sections li.section-completed .usb-content-hint {
+  display: none;
+}
+
+.usb-sections li.section-completed .usb-section-title-row::after {
+  content: '✓';
+  color: #5DCAA5;
+  font-size: 12px;
+  font-weight: 600;
+  margin-inline-start: 6px;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+/* Code rendering. white-space: pre so newlines are preserved without
+   wrapping; overflow-x:auto + hidden scrollbar lets long lines
+   horizontally scroll on hover/focus without showing chrome. */
+.usb-preview-code {
+  font-family: 'JetBrains Mono', 'Consolas', 'Menlo', monospace;
+  font-size: 10px;
+  line-height: 1.5;
+  color: #85B7EB;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  white-space: pre;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+}
+
+.usb-preview-code::-webkit-scrollbar {
+  display: none;
+}
+
+/* Inner <code> inherits everything; clear any prose-block defaults
+   (yuval body styles can leak in via .reading-content selectors). */
+.usb-preview-code code,
+.usb-preview-code code.hljs {
+  background: transparent;
+  padding: 0;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  color: inherit;
+  display: inline;
+}
+
+/* Text fallback — first sentence of section prose. Italic + muted
+   reads as "subtitle / hint", lighter than the title above. */
+.usb-preview-text {
+  font-size: 9.5px;
+  line-height: 1.5;
+  color: #5a7a92;
+  font-style: italic;
+  margin: 0;
+  /* Wrap normally for prose, unlike the code pane. Single-paragraph
+     content typically fits in ~2 lines. */
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+/* hljs token overrides — softer palette for the sidebar.
+   The body's hljs colors (ReadingLayout, code-runner.css) are tuned
+   for full-size reading; reusing them here would fight with the
+   muted card. Scoped to #unified-sidebar so body code blocks are
+   untouched. Mapped to a wide set of hljs class variants to cover
+   every grammar — title/title.function_/title.class_ all map to the
+   same yellow, etc.
+   Palette per design (Apr 2026): purple keywords, green strings,
+   gray comments, yellow titles, light-blue numbers, blue built-ins. */
+#unified-sidebar .usb-preview-code .hljs-keyword,
+#unified-sidebar .usb-preview-code .hljs-keyword-meta,
+#unified-sidebar .usb-preview-code .hljs-doctag,
+#unified-sidebar .usb-preview-code .hljs-meta .hljs-keyword,
+#unified-sidebar .usb-preview-code .hljs-template-tag,
+#unified-sidebar .usb-preview-code .hljs-template-variable,
+#unified-sidebar .usb-preview-code .hljs-type,
+#unified-sidebar .usb-preview-code .hljs-variable.language_ { color: #c586c0; }
+
+#unified-sidebar .usb-preview-code .hljs-string,
+#unified-sidebar .usb-preview-code .hljs-meta-string,
+#unified-sidebar .usb-preview-code .hljs-regexp,
+#unified-sidebar .usb-preview-code .hljs-addition { color: #5DCAA5; }
+
+#unified-sidebar .usb-preview-code .hljs-comment,
+#unified-sidebar .usb-preview-code .hljs-quote,
+#unified-sidebar .usb-preview-code .hljs-code { color: #5a7a92; font-style: italic; }
+
+#unified-sidebar .usb-preview-code .hljs-title,
+#unified-sidebar .usb-preview-code .hljs-title.function_,
+#unified-sidebar .usb-preview-code .hljs-title.class_,
+#unified-sidebar .usb-preview-code .hljs-section { color: #F5C850; }
+
+#unified-sidebar .usb-preview-code .hljs-number,
+#unified-sidebar .usb-preview-code .hljs-literal { color: #B5D4F4; }
+
+#unified-sidebar .usb-preview-code .hljs-attr,
+#unified-sidebar .usb-preview-code .hljs-attribute,
+#unified-sidebar .usb-preview-code .hljs-property,
+#unified-sidebar .usb-preview-code .hljs-name,
+#unified-sidebar .usb-preview-code .hljs-selector-id,
+#unified-sidebar .usb-preview-code .hljs-selector-class,
+#unified-sidebar .usb-preview-code .hljs-selector-attr { color: #85B7EB; }
+
+#unified-sidebar .usb-preview-code .hljs-built_in,
+#unified-sidebar .usb-preview-code .hljs-symbol,
+#unified-sidebar .usb-preview-code .hljs-link { color: #4DA8E0; }

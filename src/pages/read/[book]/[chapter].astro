@@ -10,6 +10,7 @@ import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import { marked } from '../../../utils/markdown';
 import { discoverAllBooks } from '../../../utils/book-discovery';
+import { extractSectionPreviews } from '../../../utils/sidebar/preview-extractor';
 
 type LocalizedMap = Record<string, string | undefined>;
 
@@ -70,6 +71,24 @@ function annotateBookmarkAnchors(html: string): string {
   });
 }
 
+/** Serialize section previews into a `<script type="application/json">`
+ *  tag that lives at the very top of `.chapter-content` (before the
+ *  first heading), so it's never a sibling of any h2/h3 — important
+ *  because `extractSectionsFromDoc` walks heading siblings to count
+ *  characters per section, and including this JSON in that count would
+ *  poison the per-section reading-time distribution.
+ *
+ *  JSON inside `<script type="application/json">` isn't HTML-parsed
+ *  except for one sequence: `</script>` closes the tag. Replacing the
+ *  literal `<` with its unicode escape inside the JSON string body is
+ *  the standard guard, and a no-op for valid JSON readers. */
+function buildPreviewsScript(md: string): string {
+  const previews = extractSectionPreviews(md);
+  if (previews.length === 0) return '';
+  const json = JSON.stringify(previews).replace(/</g, '\\u003c');
+  return `<script type="application/json" class="chapter-previews-data">${json}</script>`;
+}
+
 async function loadContent(lang: string): Promise<string> {
   const fileSlug =
     (current as any).file_slug ||
@@ -82,12 +101,13 @@ async function loadContent(lang: string): Promise<string> {
 
   try {
     const md = readFileSync(path, 'utf-8');
+    const previewsScript = buildPreviewsScript(md);
     let html = await marked(md);
     html = html.replaceAll('src="../assets/', `src="/${book}/assets/`);
     // Remove leading <h1>...</h1> if present (to avoid duplicate chapter title)
     html = html.replace(/^<h1[^>]*>.*?<\/h1>/s, '');
     html = annotateBookmarkAnchors(html);
-    return html;
+    return previewsScript + html;
   } catch {
     return `<h2 data-bm-anchor="h-1">${getLocalized(current.titles, lang)}</h2>`;
   }

@@ -14,12 +14,44 @@
  */
 
 import { chapterContentUrl, getCurrentChapterId } from './sidebar-helpers';
+import type { SectionPreview } from './preview-extractor';
+
+export type { SectionPreview };
 
 export interface CachedSection {
   id: string;
   level: 'h2' | 'h3';
   text: string;
   chars: number;
+  /** Pre-extracted preview rendered in the sidebar (code snippet or
+   *  first-sentence text). Populated from a `<script
+   *  type="application/json" class="chapter-previews-data">` injected
+   *  by [chapter].astro at the top of `.chapter-content`. Optional —
+   *  if the script is missing, malformed, or this section's index has
+   *  no entry, sidebar render falls back to no preview pane (legacy
+   *  behavior). */
+  preview?: SectionPreview;
+}
+
+/** Read previews JSON from inside a chapter container. Works on both
+ *  the live `document` and a `DOMParser`-parsed doc — `<script
+ *  type="application/json">` is preserved as a regular element by
+ *  both, with its body in `.textContent`.
+ *
+ *  Defensive: any failure (missing tag, malformed JSON, wrong shape)
+ *  returns `[]` so the sidebar continues to render without previews
+ *  rather than blanking out. Logged once per failure for visibility. */
+function extractPreviewsFromContainer(container: Element): SectionPreview[] {
+  const scriptEl = container.querySelector('script.chapter-previews-data');
+  const text = scriptEl?.textContent;
+  if (!text) return [];
+  try {
+    const parsed = JSON.parse(text);
+    return Array.isArray(parsed) ? (parsed as SectionPreview[]) : [];
+  } catch (err) {
+    console.warn('[sidebar-cache] failed to parse chapter previews JSON:', err);
+    return [];
+  }
 }
 
 export interface CachedChapter {
@@ -52,6 +84,14 @@ export function extractSectionsFromDoc(doc: Document): CachedChapter {
 
   if (!container) return { headings: [], chapterWords: 0 };
 
+  /* Previews are emitted in source order alongside headings (one per
+     h2/h3, in the same iteration order querySelectorAll uses), so the
+     i-th preview matches the i-th heading. If the array is shorter
+     than headings (legacy cached HTML pre-feature, missing tag, etc.)
+     trailing headings simply get `preview: undefined` and the renderer
+     falls back to no preview pane. */
+  const previews = extractPreviewsFromContainer(container as Element);
+
   const headings = Array.from(container.querySelectorAll('h2, h3')) as HTMLElement[];
   const result: CachedSection[] = headings.map((heading, idx) => {
     const stopAt = headings[idx + 1] || null;
@@ -72,6 +112,7 @@ export function extractSectionsFromDoc(doc: Document): CachedChapter {
       level: (heading.tagName.toLowerCase() as 'h2' | 'h3'),
       text: (heading.textContent || '').trim() || `Section ${idx + 1}`,
       chars: Math.max(1, chars),
+      preview: previews[idx],
     };
   });
 
