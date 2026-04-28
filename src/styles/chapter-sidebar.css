@@ -1929,9 +1929,17 @@
     0 20px 50px rgba(0, 0, 0, 0.5);
   position: relative;
   z-index: 10;
+  /* Snappy transitions (was 0.3s). When clicking a section, the
+     resulting `scrollIntoView({ behavior: 'smooth' })` causes the
+     scroll-spy IntersectionObserver to fire on every heading the
+     scroll passes through — so .active flips through 3-4 sections
+     in quick succession before settling. With 0.3s transitions
+     those scale animations overlapped and produced a visible
+     "judder". 0.15s is short enough that intermediate states snap
+     past invisibly while the final landing still feels animated. */
   transition:
-    transform 0.3s ease-out,
-    box-shadow 0.3s ease-out;
+    transform 0.15s ease-out,
+    box-shadow 0.15s ease-out;
   /* Override the upstream fixed height (36px) on
      `.usb-chapter-active .usb-sections li` — content grows with the
      preview pane below the title row. */
@@ -1975,7 +1983,9 @@
   overflow: hidden;
   max-height: 140px;
   opacity: 1;
-  transition: max-height 0.25s ease-out, opacity 0.2s ease-out;
+  /* Matched to the parent .active transition tempo (0.15s) so the
+     pane growth doesn't lag behind the row's scale animation. */
+  transition: max-height 0.15s ease-out, opacity 0.12s ease-out;
 }
 
 .usb-sections li.active .usb-section-preview[data-preview-type='code'] {
@@ -2130,12 +2140,13 @@
   min-height: 32px;
 }
 
-/* Compact gap between rows so the bordered cards don't kiss each
-   other. The active row's own `margin-block: 4px 14px` already
-   handles spacing around the spotlight; this is just for the
-   completed/upcoming sequence. */
+/* Gap between rows so the bordered cards have breathing room.
+   The active row's own `margin-block: 4px 14px` already handles
+   spacing around the spotlight; this is just for the completed/
+   upcoming sequence. 8px feels airy without losing the visual
+   continuity of the section list. */
 .usb-sections li:not(.active) {
-  margin-bottom: 3px;
+  margin-bottom: 8px;
 }
 
 /* Completed row card — soft inline-direction green gradient
@@ -2362,30 +2373,20 @@
    support floor.
    ───────────────────────────────────────────────────────────── */
 
-/* Default falloff: every sibling of the active row. Both directions
-   covered: `:has(~ li.active)` matches predecessors, `.active ~ li`
-   matches successors. Selectors share specificity (0,2,1) so source
-   order doesn't matter; the override below uses !important to win
-   regardless. */
+/* Floating-lens blur was making non-active section titles
+   unreadable (opacity 0.55 + 0.7px blur on a 12px-13px font is too
+   much). The active card already stands out via its own scaling +
+   gradient + shadow + border treatment, so we don't need to dim
+   neighbors to create focus. Kept the selectors here as no-ops in
+   case we want to revisit a milder lens later, but currently they
+   apply nothing — every non-active section renders at full
+   opacity, no blur. */
 .usb-sections li:has(~ li.active),
-.usb-sections li.active ~ li {
-  filter: blur(0.7px);
-  opacity: 0.55;
-  transition:
-    filter 0.3s ease-out,
-    opacity 0.3s ease-out;
-}
-
-/* Direct-neighbor override: only the row immediately before/after
-   the active gets the lighter (0.4px) blur. `:has(+ li.active)`
-   matches the row that is *immediately* before the active row;
-   `.active + li` matches the row immediately after. !important is
-   the simplest way to win against the broader rule above without
-   chasing source-order or specificity tweaks. */
+.usb-sections li.active ~ li,
 .usb-sections li:has(+ li.active),
 .usb-sections li.active + li {
-  filter: blur(0.4px) !important;
-  opacity: 0.85 !important;
+  filter: none;
+  opacity: 1;
 }
 
 /* Reduced motion: the lens metaphor is purely visual. Users who
@@ -2699,17 +2700,14 @@
   border-style: solid;
 }
 
-/* Lens blur — much gentler on light. 0.7/0.55 was tuned for the
-   dark "out-of-focus night sky" feel; on white the same numbers
-   make rows read as "smudged photocopies". Halve the blur and
-   raise the opacity floor. */
+/* Light-mode lens blur — disabled. Same rationale as the dark
+   override above: blur + opacity on small text in the sidebar
+   was hurting legibility more than it was helping focus. Active
+   card stands out on its own. */
 :root:not(.dark) .usb-sections li:has(~ li.active),
-:root:not(.dark) .usb-sections li.active ~ li {
-  filter: blur(0.4px);
-  opacity: 0.65;
-}
+:root:not(.dark) .usb-sections li.active ~ li,
 :root:not(.dark) .usb-sections li:has(+ li.active),
 :root:not(.dark) .usb-sections li.active + li {
-  filter: blur(0.3px) !important;
-  opacity: 0.78 !important;
+  filter: none;
+  opacity: 1;
 }
