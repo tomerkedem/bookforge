@@ -1884,38 +1884,50 @@
    Specificity: must out-rank `.usb-sections li.active` upstream
    (which sets a 10% blue background only). Same selector with the
    `.usb-chapter-active` ancestor wins on length. */
+/* Active card — "floating lens" focal point. The card is scaled to
+   108% and lifted with a multi-layer shadow stack so it reads as
+   "above" the rest of the section list; surrounding rows get a
+   blur falloff (declared further down) that mimics camera depth-
+   of-field around the focal point. The dual-layer background pairs
+   a soft radial highlight in the upper-right with a deep blue
+   diagonal gradient — the highlight reads as light catching the
+   "lens" at glance. */
 .usb-sections li.active {
-  background: rgba(37, 99, 235, 0.16);
-  border-radius: 6px;
-  border-inline-start: 3px solid #4DA8E0;
+  margin: 14px -4px;
+  transform: scale(1.08);
+  transform-origin: center;
+  background:
+    radial-gradient(
+      circle at 75% 25%,
+      rgba(133, 183, 235, 0.15) 0%,
+      transparent 50%
+    ),
+    linear-gradient(135deg, #1a3a5c 0%, #14304a 50%, #0a1f33 100%);
+  border: 2px solid #4DA8E0;
+  border-radius: 10px;
   box-shadow:
-    0 1px 0 rgba(0, 0, 0, 0.18),
-    0 4px 14px rgba(15, 35, 54, 0.35);
-  margin-block: 4px 14px;
-  padding-inline-start: 4px;
+    0 0 0 1px rgba(77, 168, 224, 0.4),
+    0 4px 16px rgba(77, 168, 224, 0.4),
+    0 12px 32px rgba(77, 168, 224, 0.2),
+    0 20px 50px rgba(0, 0, 0, 0.5);
+  position: relative;
+  z-index: 10;
+  transition:
+    transform 0.3s ease-out,
+    box-shadow 0.3s ease-out;
   /* Override the upstream fixed height (36px) on
-     `.usb-chapter-active .usb-sections li` — that rule was tuned for
-     compact title-only rows; the active row now contains both the
-     title strip + a preview pane, so it has to grow with content. */
+     `.usb-chapter-active .usb-sections li` — content grows with the
+     preview pane below the title row. */
   height: auto;
   min-height: 36px;
 }
 
 /* Defensive: id-prefixed twin to guarantee `height: auto` wins even
-   if the upstream selector's specificity ever increases (it's
-   currently 0,2,1; ours is 0,2,1, source-order wins, but explicit is
-   safer than depending on order). The `#unified-sidebar` id boosts
-   us to 1,2,1, which always beats class-only selectors. */
+   if the upstream selector's specificity ever increases. The
+   `#unified-sidebar` id boosts us to 1,2,1, beating class-only. */
 #unified-sidebar .usb-sections li.active {
   height: auto;
   min-height: 36px;
-}
-
-.dark .usb-sections li.active {
-  background: rgba(77, 168, 224, 0.14);
-  box-shadow:
-    0 1px 0 rgba(0, 0, 0, 0.4),
-    0 6px 20px rgba(0, 0, 0, 0.45);
 }
 
 .usb-section-title-row {
@@ -2316,4 +2328,62 @@
   overflow: hidden;
   line-height: 1.35;
   text-overflow: clip;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   FLOATING-LENS DEPTH-OF-FIELD  ─  blur falloff around the active
+   section. The active card is scaled + lifted (declared earlier);
+   here we make every other section row in the same list look like
+   it's "out of focus" relative to that focal point. Blur strength
+   is a function of distance to the active row:
+     • All siblings of active   → 0.7px blur, 55% opacity (default)
+     • Direct neighbor (±1)     → 0.4px blur, 85% opacity (override)
+     • Active itself            → no blur, 100% (already)
+   The :has() selector gives us "li that has an active li after it"
+   (i.e. predecessors of active). Modern-browser-only — Chrome 105+
+   / Safari 15.4+ / Firefox 121+, all current at this codebase's
+   support floor.
+   ───────────────────────────────────────────────────────────── */
+
+/* Default falloff: every sibling of the active row. Both directions
+   covered: `:has(~ li.active)` matches predecessors, `.active ~ li`
+   matches successors. Selectors share specificity (0,2,1) so source
+   order doesn't matter; the override below uses !important to win
+   regardless. */
+.usb-sections li:has(~ li.active),
+.usb-sections li.active ~ li {
+  filter: blur(0.7px);
+  opacity: 0.55;
+  transition:
+    filter 0.3s ease-out,
+    opacity 0.3s ease-out;
+}
+
+/* Direct-neighbor override: only the row immediately before/after
+   the active gets the lighter (0.4px) blur. `:has(+ li.active)`
+   matches the row that is *immediately* before the active row;
+   `.active + li` matches the row immediately after. !important is
+   the simplest way to win against the broader rule above without
+   chasing source-order or specificity tweaks. */
+.usb-sections li:has(+ li.active),
+.usb-sections li.active + li {
+  filter: blur(0.4px) !important;
+  opacity: 0.85 !important;
+}
+
+/* Reduced motion: the lens metaphor is purely visual. Users who
+   opt out of motion get a flat sidebar — no scale, no blur, no
+   opacity dimming, no transitions. Active row still has its border
+   + gradient + glow shadow, so it's still findable, just not
+   "lifted". */
+@media (prefers-reduced-motion: reduce) {
+  .usb-sections li {
+    filter: none !important;
+    opacity: 1 !important;
+    transition: none !important;
+  }
+  .usb-sections li.active {
+    transform: none;
+    transition: none;
+  }
 }
