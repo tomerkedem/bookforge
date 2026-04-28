@@ -177,14 +177,7 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
                   language={l}
                 />
               </div>
-              {/* Completion indicator — hidden by default, revealed by
-                  the chapter-row class toggler in ChapterSidebars when
-                  the chapter is marked complete. Sits inline with the
-                  meta items so it reads as one row. */}
-              <div class="strip-completion" id={`strip-completion-${l}`} aria-hidden="true">
-                <span class="strip-completion-dot" aria-hidden="true"></span>
-                <span class="strip-completion-text">{l === 'he' ? 'הקריאה הושלמה' : l === 'es' ? 'Lectura completa' : 'Reading complete'}</span>
-              </div>
+              {/* הקריאה הושלמה pill removed as requested */}
               {/* Position-in-chapter percentage. The ID is preserved
                   (progress-badge-{l}) so existing scroll listeners
                   continue to find it; the visual is now plain text
