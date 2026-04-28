@@ -2020,11 +2020,14 @@
   box-shadow: 0 0 8px rgba(77, 168, 224, 0.4);
 }
 
-/* Completed circle — green tint + green text. Reads as "done"
-   without needing a checkmark inside the circle (the row's
-   inline-end ✓ glyph carries that signal). */
+/* Completed circle — green tint + thin green border + green text.
+   Reads as "done" without needing a checkmark inside the circle
+   (the row's inline-end ✓ glyph carries that signal). Background
+   slightly softer than the new card-level gradient so the circle
+   doesn't read as a second concentric ring. */
 .usb-sections li.section-completed .usb-section-number {
-  background: rgba(93, 202, 165, 0.15);
+  background: rgba(93, 202, 165, 0.10);
+  border: 1px solid rgba(93, 202, 165, 0.35);
   color: #5DCAA5;
 }
 
@@ -2036,24 +2039,26 @@
   opacity: 1;
 }
 
-/* Completed row — title slightly muted, time more muted; the row
-   reads as "settled" rather than competing for attention with the
-   active card or the still-ahead upcoming rows. */
+/* Completed row — soft-green title + green time. We use color
+   intensity (not opacity) to convey "done" so the type stays crisp
+   on the new gradient row background; double-fade (color + opacity)
+   would render the text washed out. */
 .usb-sections li.section-completed .section-title {
-  opacity: 0.85;
+  color: #8AC4A8;
 }
 .usb-sections li.section-completed .section-time {
-  opacity: 0.6;
+  color: #5DCAA5;
 }
 
-/* Upcoming row — quieter still. Lower opacity than completed so the
-   eye naturally lands on completed (recent achievement) before
-   wandering further down. */
+/* Upcoming row — muted blue-gray title + faded blue time. Same
+   color-only-no-opacity rule as completed: the gradient hierarchy
+   between #B5C5D5 (upcoming) and #8AC4A8 (completed) and the
+   active row's pure white reads cleanly without any opacity layer. */
 .usb-sections li:not(.active):not(.section-completed) .section-title {
-  opacity: 0.7;
+  color: #B5C5D5;
 }
 .usb-sections li:not(.active):not(.section-completed) .section-time {
-  opacity: 0.5;
+  color: #6BA0CC;
 }
 
 /* Completed row — replace the upcoming `{}` / `¶` glyph with a
@@ -2074,6 +2079,92 @@
   margin-inline-start: 6px;
   flex-shrink: 0;
   user-select: none;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   ROW-LEVEL CARDS  ─  liquid green for completed, empty glass for
+   upcoming. Extends the sidebar's water/pipe metaphor down to the
+   section row: completed rows look "filled with absorbed water"
+   (soft green gradient + thin solid border), upcoming rows look
+   like "empty glass waiting" (near-transparent + dashed blue
+   outline). Active row's existing card style (blue accent stripe
+   + spotlight + preview pane) is unchanged.
+   ───────────────────────────────────────────────────────────── */
+
+/* Override the upstream fixed `height: 36px` on rows in the active
+   chapter so non-active rows can still grow to accommodate the new
+   padding. Active rows have their own height: auto rule earlier in
+   the file; this covers everything else. The id-prefixed selector
+   (1,2,1) outranks the upstream class chain (0,2,1). */
+#unified-sidebar .usb-sections li:not(.active) {
+  height: auto;
+  min-height: 32px;
+}
+
+/* Compact gap between rows so the bordered cards don't kiss each
+   other. The active row's own `margin-block: 4px 14px` already
+   handles spacing around the spotlight; this is just for the
+   completed/upcoming sequence. */
+.usb-sections li:not(.active) {
+  margin-bottom: 3px;
+}
+
+/* Completed row card — soft inline-direction green gradient
+   (slightly stronger near the row's inline-start edge, where the
+   accent visually originates from). Border rounded to match the
+   active card's 6px so all three states share the same silhouette. */
+.usb-sections li.section-completed {
+  background: linear-gradient(
+    to left,
+    rgba(93, 202, 165, 0.08),
+    rgba(93, 202, 165, 0.02)
+  );
+  border: 0.5px solid rgba(93, 202, 165, 0.15);
+  border-radius: 5px;
+}
+.usb-sections li.section-completed > a {
+  padding: 9px 10px;
+}
+
+/* Upcoming row card — empty glass. Near-transparent fill (just
+   enough to define the rectangle on dark backgrounds) + dashed
+   border in the blue family of the pipe. Reads as "this is a
+   container, but it hasn't been filled yet". */
+.usb-sections li:not(.active):not(.section-completed) {
+  background: rgba(255, 255, 255, 0.015);
+  border: 0.5px dashed rgba(77, 168, 224, 0.12);
+  border-radius: 5px;
+}
+.usb-sections li:not(.active):not(.section-completed) > a {
+  padding: 9px 10px;
+}
+
+/* Upcoming circle — outline only (transparent fill, dashed border).
+   Mirrors the row's empty-glass treatment at the badge scale. */
+.usb-sections li:not(.active):not(.section-completed) .usb-section-number {
+  background: transparent;
+  border: 1px dashed rgba(77, 168, 224, 0.4);
+  color: #6BA0CC;
+}
+
+/* Hover states — subtle invitation to click. Completed gets a
+   slightly stronger green wash; upcoming's dashed border firms up
+   to solid (signals "ready to enter"). */
+.usb-sections li.section-completed:hover {
+  background: linear-gradient(
+    to left,
+    rgba(93, 202, 165, 0.12),
+    rgba(93, 202, 165, 0.04)
+  );
+  border-color: rgba(93, 202, 165, 0.25);
+  cursor: pointer;
+}
+
+.usb-sections li:not(.active):not(.section-completed):hover {
+  background: rgba(77, 168, 224, 0.04);
+  border-color: rgba(77, 168, 224, 0.2);
+  border-style: solid;
+  cursor: pointer;
 }
 
 /* Code rendering. white-space: pre so newlines are preserved without
