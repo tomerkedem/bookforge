@@ -2291,14 +2291,29 @@
   display: none;
 }
 
-/* With time and ✓ gone, let the title claim the freed inline space.
-   `flex: 1` already exists on the title in the active-chapter rule
-   upstream, but that rule depends on `.usb-chapter-active` being on
-   the chapter LI — we've seen that ancestor class can be absent in
-   some states. This rule is unconditional and id-prefixed so it
-   wins regardless. */
+/* With time and ✓ gone, let the title claim the freed inline space
+   AND wrap onto a second line when needed. The upstream rule on
+   `.usb-chapter-active .usb-sections .section-title` (line 1650)
+   forces `white-space: nowrap` + `text-overflow: ellipsis` — that
+   was tuned for the old 36px fixed-height row where wrapping wasn't
+   possible. Now that non-active rows have `height: auto`, we can
+   let titles breathe to 2 lines. Titles that fit on one line still
+   render on one line (line-clamp doesn't force a wrap, only caps).
+   Titles longer than 2 lines still get a clamped ellipsis.
+   `flex: 1` is required so the title actually claims the space the
+   freed time/✓ left behind. id-prefixed for specificity. */
 #unified-sidebar .usb-sections li:not(.active) .usb-section-title,
 #unified-sidebar .usb-sections li:not(.active) .section-title {
   flex: 1;
   min-width: 0;
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.35;
+  text-overflow: clip;
 }
