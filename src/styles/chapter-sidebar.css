@@ -650,18 +650,25 @@
    stack of isolated water-filled <li>s. Last child has no
    margin-bottom, so no extension needed there. */
 .usb-chapter:not(:last-child) .usb-chapters-pipe-water {
-  bottom: -10px;
-  /* CRITICAL: explicit height (not `auto`) because <svg> is a
+  /* Extend the water beyond the <li>'s bottom edge to fill the
+     full margin-gap to the next chapter. The actual gap is up to
+     16px (the base 10px from .usb-chapter margin-bottom + an
+     extra ~6-8px from .usb-sections margin-bottom when the
+     chapter above has expanded sections). 20px gives us 4px of
+     overlap into the next li in the worst case — safely covered
+     by that li's own card (z-index in the link's stack), so no
+     visible bleed-through. Anything less left a sliver of empty
+     pipe at the boundary.
+     CRITICAL: explicit height (not `auto`) because <svg> is a
      replaced element. With `height: auto` the browser falls back
      to the SVG's intrinsic height — and the viewBox is "0 0 8 1000"
      (a 1000-unit coordinate space, not a render hint), so the
-     intrinsic height resolves to ~1000px. That meant every non-
-     last chapter's water SVG was 1000px tall, painting straight
+     intrinsic height resolves to ~1000px. That made every non-
+     last chapter's water SVG 1000px tall, painting straight
      through every chapter card below it the moment a sibling
-     expanded its section list. `calc(100% + 10px)` ties the height
-     to the parent <li> + the 10px overhang we want into the
-     margin gap, and nothing more. */
-  height: calc(100% + 10px);
+     expanded its section list. */
+  bottom: -20px;
+  height: calc(100% + 20px);
 }
 
 
