@@ -1876,6 +1876,28 @@
   display: none;
 }
 
+/* Active section's feeder is removed — the card itself now
+   extends all the way to the pipe (margin-inline-start: -60px
+   above), so there's no gap left for the feeder to bridge. With
+   the card overlapping the pipe area, a feeder would just be
+   visual noise behind the card edge. */
+.usb-sections li.active .usb-section-feeder {
+  display: none;
+}
+
+/* Allow the active section's card to extend past the .usb-sections
+   container's inline-start edge so it can cover the timeline pipe
+   visually. The base .usb-sections rule sets overflow:hidden for
+   the collapse animation; we override to `visible` only in the
+   active-chapter context, where the section list is permanently
+   expanded — the collapse animation isn't relevant here. Without
+   this, the section.active's `margin-inline-start: -60px` extension
+   was being clipped at .usb-sections's inline-start edge, leaving
+   the pipe visible to the right of the card. */
+.usb-chapter-active .usb-sections {
+  overflow: visible;
+}
+
 /* Active row link — column layout, NO padding here. The title-row
    and the preview pane each carry their own padding so they can
    render their own internal chrome (border-bottom on the title
@@ -1902,16 +1924,18 @@
   z-index: 3;
 }
 
-/* Preview pane (the <pre> wrapper) — replaces the old 6/8 padding
-   with the design's 11/13 + bumped inline-end so the bar's halo
-   doesn't overlap code text. The bottom-corners get the card's
-   14px radius so the preview seamlessly meets the card edge. */
+/* Preview pane — distinct rectangle inset inside the card so it
+   reads as its own surface, separate from the title strip
+   above. Margin pulls it inward from card edges; border + border-
+   radius give it its own outline; padding controls inner
+   breathing room. */
 .usb-sections li.active .usb-section-preview {
+  margin: 6px 12px 12px 12px;
   padding-block: 11px 13px;
   padding-inline-start: 16px;
   padding-inline-end: 24px;
-  border-radius: 0 0 14px 14px;
-  margin-top: 0;
+  border: 1px solid var(--header-border);
+  border-radius: 8px;
   position: relative;
   z-index: 3;
 }
@@ -1974,16 +1998,38 @@
    --neumorphic-* + --bar-* CSS variables defined per theme
    below; structure is identical in light + dark. */
 .usb-sections li.active {
-  /* `!important` overrides the upstream `margin-block` rule on
-     non-active sections (8px) and the older `margin: 14px -4px`
-     of the previous Floating Lens. The 24px breathing-room is
-     non-negotiable for neumorphic — outer shadows are 16-32px
-     and would clip into neighbors with anything tighter. */
-  margin: 24px -8px !important;
+  /* Margin per-axis. Inline-start: -60px lets the card cover the
+     entire main pipe area (timeline x=26-34) and an extra ~18px
+     past it — user spec is "even over the main pipe, what
+     matters is all content reads clearly". Inline-end: +12px
+     leaves a small visible breathing-room gap on the inline-end
+     side so the inline-end edge of the card is clearly inset
+     from the sidebar boundary (per the request). Block: 24px
+     for the neumorphic outer shadow clearance. !important to
+     beat the upstream `margin-block: 8px` on non-active rows. */
+  margin-block: 24px !important;
+  margin-inline-start: -60px !important;
+  margin-inline-end: 12px !important;
   padding: 0;
   transform: scale(1.10);
-  transform-origin: center;
-  background: var(--neumorphic-bg);
+  /* Origin at the inline-start edge (RTL: physical right; LTR:
+     physical left) so the card grows "inward" — away from the
+     pipe — rather than symmetrically. With center-origin, scale
+     pushed the inline-start edge ~5px further toward the pipe,
+     dragging the feeder past the pipe's inline-end edge. With
+     edge-origin, the inline-start position is fixed and only the
+     inline-end side (interior) expands. The 50% on the y axis
+     keeps vertical scale visually centered. */
+  transform-origin: 100% 50%;
+  /* Hardcoded opaque fallback + !important guarantees the card
+     paints over the pipe even if the cascade somehow leaves the
+     CSS variable unresolved (we observed `rgba(0,0,0,0)` computed
+     here in DevTools, which means var() yielded transparent —
+     either an upstream rule was emptying it, or var resolution
+     order disagreed with the def site). The light-mode override
+     below uses the same pattern. */
+  background-color: #1A1A1A !important;
+  background: var(--neumorphic-bg, #1A1A1A) !important;
   border: none;
   border-radius: 14px;
   box-shadow:
@@ -1997,9 +2043,15 @@
     /* Main 3D depth */
     0 16px 32px var(--neu-deep-shadow),
     0 32px 64px rgba(0, 0, 0, 0.10);
-  overflow: hidden;
+  /* No overflow:hidden here — the section feeder SVG sits at
+     inset-inline-start: -34.5px (when not display:none'd), and
+     the <a> has its own overflow:hidden for the glow bar.
+     z-index: 100 (was 10) raises the active card decisively
+     above every other layer in the stacking context, including
+     the per-chapter water SVG (z-index 1 in chapter li's stack)
+     and the global empty pipe (z-index 1 in document). */
   position: relative;
-  z-index: 10;
+  z-index: 100;
   transition:
     transform 0.15s ease-out,
     box-shadow 0.15s ease-out;
@@ -2102,6 +2154,14 @@
 .usb-sections li.active .usb-section-preview[data-preview-type='code'] {
   direction: ltr;
   text-align: left;
+  /* Code starts close to the frame's inline-start edge so the
+     text reads as "filling the box" rather than floating in the
+     middle of it. The bar sits OUTSIDE this frame (in the <a>'s
+     space, separated by the frame's 12px margin) so we don't
+     need a huge inline-start padding to clear it — 12px each
+     side is plenty. */
+  padding-inline-start: 12px;
+  padding-inline-end: 12px;
 }
 
 .usb-sections li.active .usb-section-preview[data-preview-type='text'] {
@@ -2643,6 +2703,8 @@
    `--neumorphic-bg` here MUST match #f8fafc exactly, otherwise
    the card edge will be visible against the sidebar. */
 :root:not(.dark) .usb-sections li.active {
+  background-color: #f8fafc !important;
+  background: #f8fafc !important;
   --neumorphic-bg: #f8fafc;
   --neu-inner-light: rgba(255, 255, 255, 1);
   --neu-inner-shadow: rgba(24, 95, 165, 0.06);
