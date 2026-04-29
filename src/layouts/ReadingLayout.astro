@@ -757,10 +757,13 @@ const COPY_SUCCESS_MESSAGE = 'Code copied!';
           /* TOC stays on the inline-START edge (logical) — right in
              RTL, left in LTR. The left dock is anchored to the visual
              LEFT in every language (physical), so its reservation
-             uses an explicit margin-left instead of inline-end. */
+             uses an explicit margin-left instead of inline-end.
+             We do NOT set `margin-right: 0` here — in RTL,
+             `margin-inline-start` resolves to margin-right (320px
+             for the TOC), and a later `margin-right: 0` would
+             cancel it, dropping content under the right sidebar. */
           margin-inline-start: 320px;
-          margin-left: 144px;
-          margin-right: 0;
+          margin-left: 128px;
           /* Sync with the chromatic-shift collapse animations: same
              500ms cubic-out the SVG matrices run on. Both edges
              transition independently. */
@@ -773,7 +776,7 @@ const COPY_SUCCESS_MESSAGE = 'Code copied!';
            inline-start reservation and only keep the LeftSidebar gap. */
         :global(body.reading-immersive) .reading-article {
           margin-inline-start: 0;
-          margin-left: 144px;
+          margin-left: 128px;
         }
 
         /* Sidebar-collapsed: same reservation drop, but driven by

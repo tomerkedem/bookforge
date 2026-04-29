@@ -702,6 +702,22 @@ export function initSearch(signal: AbortSignal): void {
   buildSearchBar();
   updateModeUI();
 
+  // Expose open/close hooks on window so other UI surfaces (the
+  // left reading dock's "search" tile, future menus, etc.) can
+  // open the panel without re-implementing the keyboard shortcut.
+  // Mirrors the existing __ttsOpenPanel / __ttsToggle pattern.
+  const win = window as unknown as {
+    __openSearch?: () => void;
+    __closeSearch?: () => void;
+    __toggleSearch?: () => void;
+  };
+  win.__openSearch = openSearch;
+  win.__closeSearch = closeSearch;
+  win.__toggleSearch = () => {
+    if (searchBar?.classList.contains('open')) closeSearch();
+    else openSearch();
+  };
+
   document.addEventListener('keydown', (e) => {
     const target = e.target as HTMLElement | null;
     const isTyping =

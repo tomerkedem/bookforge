@@ -38,6 +38,17 @@ const ACTION_TARGETS: Record<string, () => void> = {
   'statistics': () => document.getElementById('stats-fab-btn')?.click(),
   'bookmarks': () => document.getElementById('bm-fab-btn')?.click(),
   'highlights': () => document.getElementById('highlights-fab')?.click(),
+  'search': () => {
+    // Mirrors the `/` keyboard shortcut. search.ts exposes the
+    // hook on window during initSearch — the toggle variant gives
+    // the user a click-to-close affordance as well.
+    const win = window as unknown as {
+      __toggleSearch?: () => void;
+      __openSearch?: () => void;
+    };
+    if (typeof win.__toggleSearch === 'function') win.__toggleSearch();
+    else win.__openSearch?.();
+  },
 };
 
 let tooltipEl: HTMLDivElement | null = null;

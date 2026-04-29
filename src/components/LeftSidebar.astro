@@ -58,13 +58,6 @@
 
 <aside id="left-sidebar" class="reading-left-dock left-sidebar" aria-label="Reading tools">
 
-  <!-- ── Logo ─────────────────────────────────────────────────── -->
-  <div class="reading-left-dock__logo" aria-hidden="true">
-    <span class="reading-left-dock__logo-letter">Y</span><span
-          class="reading-left-dock__logo-rest">uval</span><span
-          class="reading-left-dock__logo-ornament">✦</span>
-  </div>
-
   <!-- ── Progress ring ────────────────────────────────────────── -->
   <div class="reading-left-dock__progress">
     <svg class="reading-left-dock__progress-ring" viewBox="0 0 48 48" aria-hidden="true">
@@ -79,8 +72,6 @@
               stroke-dasharray="0 100"/>
     </svg>
     <span class="reading-left-dock__progress-percent" id="rldock-progress-percent">0%</span>
-    <span class="reading-left-dock__progress-label"
-          data-i18n="reading.leftDock.progress">התקדמות</span>
   </div>
 
   <!-- ── Menu items ───────────────────────────────────────────── -->
@@ -90,26 +81,17 @@
         type="button"
         class="lsb-btn reading-left-dock__item active lsb-btn-goal"
         data-action="daily-goal"
-        data-i18n-tooltip="reading.leftDock.overview"
-        data-i18n-aria-label="reading.leftDock.overview"
-        aria-label="Overview"
+        data-i18n-tooltip="readingTools.dailyGoal"
+        data-i18n-aria-label="readingTools.dailyGoal"
+        aria-label="Daily goal"
         aria-pressed="true"
       >
         <span class="reading-left-dock__item-dot" aria-hidden="true"></span>
         <span class="reading-left-dock__item-icon">
-          <!-- Crosshair / target -->
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-               stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <circle cx="12" cy="12" r="9"/>
-            <circle cx="12" cy="12" r="3"/>
-            <line x1="12" y1="2" x2="12" y2="5.5"/>
-            <line x1="12" y1="18.5" x2="12" y2="22"/>
-            <line x1="2" y1="12" x2="5.5" y2="12"/>
-            <line x1="18.5" y1="12" x2="22" y2="12"/>
-          </svg>
+          <img src="/assets/icons/sidebar/target.svg" alt="" aria-hidden="true" />
         </span>
         <span class="reading-left-dock__item-label"
-              data-i18n="reading.leftDock.overview">סקירה</span>
+              data-i18n="readingTools.dailyGoal">יעד יומי</span>
       </button>
     </li>
 
@@ -118,22 +100,16 @@
         type="button"
         class="lsb-btn reading-left-dock__item"
         data-action="tts"
-        data-i18n-tooltip="reading.leftDock.readAloud"
-        data-i18n-aria-label="reading.leftDock.readAloud"
+        data-i18n-tooltip="readingTools.audioReading"
+        data-i18n-aria-label="readingTools.audioReading"
         aria-label="Read aloud"
       >
         <span class="reading-left-dock__item-dot" aria-hidden="true"></span>
         <span class="reading-left-dock__item-icon">
-          <!-- Headphones -->
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-               stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M4 14a8 8 0 0 1 16 0"/>
-            <path d="M4 14v4a2 2 0 0 0 2 2h1a1 1 0 0 0 1-1v-5a1 1 0 0 0-1-1H4z"/>
-            <path d="M20 14v4a2 2 0 0 1-2 2h-1a1 1 0 0 1-1-1v-5a1 1 0 0 1 1-1h3z"/>
-          </svg>
+          <img src="/assets/icons/sidebar/audio.svg" alt="" aria-hidden="true" />
         </span>
         <span class="reading-left-dock__item-label"
-              data-i18n="reading.leftDock.readAloud">הקראה</span>
+              data-i18n="readingTools.audioReading">הקראה בקול רם</span>
       </button>
     </li>
 
@@ -142,22 +118,16 @@
         type="button"
         class="lsb-btn reading-left-dock__item"
         data-action="statistics"
-        data-i18n-tooltip="reading.leftDock.statistics"
-        data-i18n-aria-label="reading.leftDock.statistics"
-        aria-label="Statistics"
+        data-i18n-tooltip="readingTools.readingStats"
+        data-i18n-aria-label="readingTools.readingStats"
+        aria-label="Reading statistics"
       >
         <span class="reading-left-dock__item-dot" aria-hidden="true"></span>
         <span class="reading-left-dock__item-icon">
-          <!-- Vertical bars -->
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-               stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <line x1="6"  y1="20" x2="6"  y2="14"/>
-            <line x1="12" y1="20" x2="12" y2="9"/>
-            <line x1="18" y1="20" x2="18" y2="16"/>
-          </svg>
+          <img src="/assets/icons/sidebar/stats.svg" alt="" aria-hidden="true" />
         </span>
         <span class="reading-left-dock__item-label"
-              data-i18n="reading.leftDock.statistics">סטטיסטיקות</span>
+              data-i18n="readingTools.readingStats">סטטיסטיקות קריאה</span>
       </button>
     </li>
 
@@ -166,20 +136,16 @@
         type="button"
         class="lsb-btn reading-left-dock__item"
         data-action="bookmarks"
-        data-i18n-tooltip="reading.leftDock.bookmarks"
-        data-i18n-aria-label="reading.leftDock.bookmarks"
+        data-i18n-tooltip="readingTools.bookmarks"
+        data-i18n-aria-label="readingTools.bookmarks"
         aria-label="Bookmarks"
       >
         <span class="reading-left-dock__item-dot" aria-hidden="true"></span>
         <span class="reading-left-dock__item-icon">
-          <!-- Bookmark outline -->
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-               stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M7 4h10a1 1 0 0 1 1 1v15l-6-3.5L6 20V5a1 1 0 0 1 1-1z"/>
-          </svg>
+          <img src="/assets/icons/sidebar/bookmarks.svg" alt="" aria-hidden="true" />
         </span>
         <span class="reading-left-dock__item-label"
-              data-i18n="reading.leftDock.bookmarks">סימניות</span>
+              data-i18n="readingTools.bookmarks">סימניות</span>
       </button>
     </li>
 
@@ -188,21 +154,16 @@
         type="button"
         class="lsb-btn reading-left-dock__item"
         data-action="highlights"
-        data-i18n-tooltip="reading.leftDock.highlights"
-        data-i18n-aria-label="reading.leftDock.highlights"
-        aria-label="Highlights"
+        data-i18n-tooltip="readingTools.highlights"
+        data-i18n-aria-label="readingTools.highlights"
+        aria-label="My highlights"
       >
         <span class="reading-left-dock__item-dot" aria-hidden="true"></span>
         <span class="reading-left-dock__item-icon">
-          <!-- Pencil / marker -->
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-               stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M15.5 4.5l4 4L8 20H4v-4L15.5 4.5z"/>
-            <path d="M13.5 6.5l4 4"/>
-          </svg>
+          <img src="/assets/icons/sidebar/highlight.svg" alt="" aria-hidden="true" />
         </span>
         <span class="reading-left-dock__item-label"
-              data-i18n="reading.leftDock.highlights">הדגשות</span>
+              data-i18n="readingTools.highlights">ההדגשות שלי</span>
       </button>
     </li>
 
@@ -210,23 +171,17 @@
       <button
         type="button"
         class="lsb-btn reading-left-dock__item"
-        data-action="more"
-        data-i18n-tooltip="reading.leftDock.more"
-        data-i18n-aria-label="reading.leftDock.more"
-        aria-label="More"
+        data-action="search"
+        data-i18n-tooltip="readingTools.search"
+        data-i18n-aria-label="readingTools.search"
+        aria-label="Search"
       >
         <span class="reading-left-dock__item-dot" aria-hidden="true"></span>
         <span class="reading-left-dock__item-icon">
-          <!-- Three horizontal dots -->
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-               stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <circle cx="6"  cy="12" r="1.4" fill="currentColor"/>
-            <circle cx="12" cy="12" r="1.4" fill="currentColor"/>
-            <circle cx="18" cy="12" r="1.4" fill="currentColor"/>
-          </svg>
+          <img src="/assets/icons/sidebar/search.svg" alt="" aria-hidden="true" />
         </span>
         <span class="reading-left-dock__item-label"
-              data-i18n="reading.leftDock.more">עוד</span>
+              data-i18n="readingTools.search">חיפוש</span>
       </button>
     </li>
   </ul>
@@ -277,36 +232,39 @@
 </style>
 
 <style>
-  /* ── Container: tall floating glass capsule ─────────────────── */
+  /* ── Container: tall narrow dark-glass capsule ──────────────── */
   /* Anchored to the visual LEFT in EVERY language. The dock is a
      visual chrome element, not a flow-bound one — flipping it to
      the right in LTR breaks the layout reservation in
-     ReadingLayout.astro (which now reserves margin-left: 144px
+     ReadingLayout.astro (which now reserves margin-left
      unconditionally). Use physical left/right, not inset-inline-*. */
   .reading-left-dock {
     position: fixed;
     left: 16px;
     right: auto;
-    top: 16px;
+    /* 68px = global site header height; +16px gap so the dock's
+       own Yuval logo isn't clipped by the header. */
+    top: 84px;
     bottom: 16px;
     height: auto;
-    width: 112px;
+    width: 96px;
     z-index: 40;
     display: flex;
     flex-direction: column;
     align-items: stretch;
-    padding: 18px 10px 14px;
+    padding: 16px 8px 14px;
     box-sizing: border-box;
-    border-radius: 38px;
+    border-radius: 28px;
     background: rgba(7, 13, 28, 0.78);
     backdrop-filter: blur(20px) saturate(140%);
     -webkit-backdrop-filter: blur(20px) saturate(140%);
-    border: 1px solid rgba(128, 95, 255, 0.35);
+    /* Outer hairline (purple-tinted) + inner soft hairline for the
+       quiet "two-stroke" container the spec asks for. */
+    border: 1px solid rgba(128, 95, 255, 0.28);
     box-shadow:
-      0 18px 48px -12px rgba(98, 65, 210, 0.45),
-      0 0 0 1px rgba(255, 255, 255, 0.02),
-      inset 0 1px 0 rgba(255, 255, 255, 0.06),
-      inset 0 -1px 0 rgba(0, 0, 0, 0.35);
+      0 18px 48px -12px rgba(8, 10, 24, 0.55),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.04),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
   }
 
   /* Light theme readability — keep the navy capsule character even
@@ -324,53 +282,35 @@
     }
   }
 
-  /* ── Logo ───────────────────────────────────────────────────── */
-  .reading-left-dock__logo {
-    display: flex;
-    align-items: baseline;
-    justify-content: center;
-    gap: 1px;
-    margin: 4px 0 14px;
-    font-family: var(--font-heading, 'Frank Ruhl Libre', 'Georgia', serif);
-    color: rgba(232, 230, 255, 0.96);
-    text-shadow:
-      0 0 8px rgba(138, 77, 255, 0.45),
-      0 0 18px rgba(109, 93, 251, 0.25);
-    user-select: none;
-  }
-
-  .reading-left-dock__logo-letter {
-    font-size: 1.45rem;
-    font-weight: 700;
-    letter-spacing: 0.01em;
-  }
-
-  .reading-left-dock__logo-rest {
-    font-size: 1.35rem;
-    font-weight: 500;
-    letter-spacing: 0.01em;
-    margin-inline-start: 1px;
-  }
-
-  .reading-left-dock__logo-ornament {
-    font-size: 0.85rem;
-    color: #f1c265;
-    margin-inline-start: 3px;
-    text-shadow:
-      0 0 6px rgba(241, 194, 101, 0.7),
-      0 0 12px rgba(241, 194, 101, 0.35);
-    transform: translateY(-4px);
-  }
-
   /* ── Progress ring ──────────────────────────────────────────── */
   .reading-left-dock__progress {
     position: relative;
-    margin: 4px auto 18px;
+    margin: 6px auto 24px;
     width: 76px;
     height: 76px;
     display: flex;
     align-items: center;
     justify-content: center;
+  }
+
+  /* Hairline divider below the ring — separates progress from
+     the action menu, matching the divider above the collapse
+     button at the bottom. */
+  .reading-left-dock__progress::after {
+    content: '';
+    position: absolute;
+    bottom: -14px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 56px;
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.10) 50%,
+      transparent 100%
+    );
+    pointer-events: none;
   }
 
   .reading-left-dock__progress-ring {
@@ -423,18 +363,17 @@
   }
 
   /* ── Menu list ──────────────────────────────────────────────── */
-  /* flex: 1 + space-evenly distributes the six items down the
-     remaining capsule height so the bottom collapse button always
-     anchors at the bottom edge (not floating mid-dock when the
-     viewport is tall). */
+  /* flex: 1 + space-evenly distributes the items down the remaining
+     capsule height so each tile gets large breathing room while
+     the bottom collapse button always anchors at the bottom edge. */
   .reading-left-dock__menu {
     list-style: none;
-    margin: 18px 0 0;
+    margin: 14px 0 0;
     padding: 0;
     display: flex;
     flex-direction: column;
     justify-content: space-evenly;
-    gap: 6px;
+    gap: 4px;
     flex: 1 1 auto;
     min-height: 0;
     overflow: visible;
@@ -444,23 +383,28 @@
     display: block;
   }
 
-  /* ── Menu item button ───────────────────────────────────────── */
+  /* ── Menu item tile ─────────────────────────────────────────── */
+  /* Each tool is a compact vertical tile: icon stacked above a
+     centered Hebrew/English label. Inactive tiles carry a barely-
+     there border (just enough to read as a card on the dark glass);
+     the active state amplifies it without going neon. */
   .reading-left-dock__item {
     position: relative;
     width: 100%;
-    min-height: 56px;
-    padding: 8px 6px 7px;
+    min-height: 60px;
+    padding: 8px 4px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 4px;
+    gap: 0;
     background: transparent;
-    border: 1px solid transparent;
-    border-radius: 14px;
-    color: rgba(230, 235, 255, 0.82);
+    border: 1px solid rgba(255, 255, 255, 0.045);
+    border-radius: 16px;
+    color: rgba(230, 235, 255, 0.78);
     cursor: pointer;
     user-select: none;
+    overflow: visible;
     transition:
       background 180ms cubic-bezier(0.4, 0, 0.2, 1),
       border-color 180ms cubic-bezier(0.4, 0, 0.2, 1),
@@ -474,48 +418,75 @@
     outline-offset: 2px;
   }
 
+  /* Thin purple vertical indicator on the LEFT edge of the active
+     tile (screen-edge side). Hidden by default via scaleY(0); the
+     active state below scales it up. */
+  .reading-left-dock__item::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: -1px;
+    right: auto;
+    width: 3px;
+    height: 24px;
+    border-radius: 2px;
+    background: linear-gradient(
+      180deg,
+      rgba(138, 77, 255, 0.95),
+      rgba(124, 92, 255, 0.85)
+    );
+    box-shadow: 0 0 8px rgba(138, 77, 255, 0.55);
+    transform: translateY(-50%) scaleY(0);
+    transform-origin: center;
+    opacity: 0;
+    pointer-events: none;
+    transition:
+      transform 220ms cubic-bezier(0.33, 1, 0.68, 1),
+      opacity 180ms ease;
+  }
+
   .reading-left-dock__item-icon {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 26px;
-    height: 26px;
+    width: 44px;
+    height: 44px;
+    opacity: 0.82;
+    transition: opacity 180ms cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  .reading-left-dock__item-icon svg {
-    width: 24px;
-    height: 24px;
+  /* Icons render at their authored colors — only opacity/filter
+     tweaks signal state, so each SVG keeps its identity. */
+  .reading-left-dock__item-icon svg,
+  .reading-left-dock__item-icon img {
+    width: 40px;
+    height: 40px;
     color: inherit;
+    display: block;
   }
 
+  /* Labels are hidden — tile is icon-only; the existing tooltip
+     (data-i18n-tooltip → .lsb-tooltip) is the only label surface
+     visible to sighted users, while aria-label keeps the button
+     accessible to screen readers. */
   .reading-left-dock__item-label {
-    font-size: 0.78rem;
-    font-weight: 500;
-    line-height: 1.1;
-    letter-spacing: 0.01em;
-    color: rgba(230, 235, 255, 0.78);
-    text-align: center;
-    white-space: nowrap;
-    transition: color 180ms cubic-bezier(0.4, 0, 0.2, 1);
+    display: none;
   }
 
-  /* Glowing dot anchored to the RIGHT edge of the active item —
-     i.e. the side closest to the reading content. Physical `right`
-     (not inset-inline-end) so it never flips to the screen-edge
-     side in LTR. */
+  /* Small purple dot indicator — sits inside the tile near the
+     content-facing (right) edge of the active item. Physical right
+     so it never flips by language. */
   .reading-left-dock__item-dot {
     position: absolute;
-    top: 50%;
-    right: -6px;
+    top: 9px;
+    right: 9px;
     left: auto;
-    width: 9px;
-    height: 9px;
+    width: 6px;
+    height: 6px;
     border-radius: 50%;
-    background: #7C5CFF;
-    box-shadow:
-      0 0 6px rgba(138, 77, 255, 0.85),
-      0 0 14px rgba(138, 77, 255, 0.55);
-    transform: translateY(-50%) scale(0);
+    background: #8A4DFF;
+    box-shadow: 0 0 6px rgba(138, 77, 255, 0.7);
+    transform: scale(0);
     opacity: 0;
     pointer-events: none;
     transition:
@@ -526,24 +497,40 @@
   /* ── Hover (inactive only) ──────────────────────────────────── */
   .reading-left-dock__item:hover:not(.active),
   .lsb-btn.reading-left-dock__item:focus-visible:not(.active) {
-    background: rgba(255, 255, 255, 0.045);
-    color: #ffffff;
-    transform: translateY(-1px);
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.07);
+    color: rgba(255, 255, 255, 0.95);
+  }
+
+  .reading-left-dock__item:hover:not(.active) .reading-left-dock__item-icon {
+    opacity: 1;
   }
 
   .reading-left-dock__item:hover:not(.active)
     .reading-left-dock__item-label {
-    color: #ffffff;
+    color: rgba(255, 255, 255, 0.95);
   }
 
-  /* ── Active state — driven by `.active` (toggled by left-sidebar.ts) ── */
+  /* ── Active state — driven by `.active` (toggled by left-sidebar.ts) ──
+     Soft purple wash + thin left-edge indicator + small right-corner
+     dot + INSET purple glow only inside the tile. No outer halo —
+     the spec asks for quiet, professional emphasis, not a beacon. */
   .lsb-btn.reading-left-dock__item.active {
-    background: rgba(98, 65, 210, 0.22);
-    border-color: rgba(147, 103, 255, 0.65);
+    background: rgba(98, 65, 210, 0.20);
+    border-color: rgba(138, 77, 255, 0.50);
     color: #ffffff;
     box-shadow:
-      0 0 18px rgba(138, 77, 255, 0.45),
+      inset 0 0 18px rgba(138, 77, 255, 0.22),
       inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  }
+
+  .lsb-btn.reading-left-dock__item.active::before {
+    transform: translateY(-50%) scaleY(1);
+    opacity: 1;
+  }
+
+  .lsb-btn.reading-left-dock__item.active .reading-left-dock__item-icon {
+    opacity: 1;
   }
 
   .lsb-btn.reading-left-dock__item.active .reading-left-dock__item-label {
@@ -551,7 +538,7 @@
   }
 
   .lsb-btn.reading-left-dock__item.active .reading-left-dock__item-dot {
-    transform: translateY(-50%) scale(1);
+    transform: scale(1);
     opacity: 1;
   }
 
@@ -605,17 +592,27 @@
   :global(.lsb-tooltip.visible) { opacity: 1; }
 
   /* ── Collapse button (bottom of dock) ───────────────────────── */
+  /* Subtle divider above the button: a hairline that fades at both
+     ends, signalling "controls below the menu" without making
+     noise. The pseudo-element is full container width minus a
+     small inset. */
+  /* Subtle rounded square — quieter chrome that echoes the tile
+     language (same border + radius family) instead of a contrasting
+     circle. The button is a clean 40×40 box; the divider line
+     above it lives in the margin gap, not in the button's box. */
   .reading-left-dock__collapse {
     appearance: none;
-    margin: 8px auto 0;
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
+    position: relative;
+    margin: 18px auto 0;
+    width: 40px;
+    height: 40px;
+    box-sizing: border-box;
+    border-radius: 12px;
     display: inline-grid;
     place-items: center;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(128, 95, 255, 0.3);
-    color: rgba(230, 235, 255, 0.85);
+    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    color: rgba(230, 235, 255, 0.78);
     cursor: pointer;
     flex-shrink: 0;
     transition:
@@ -626,11 +623,29 @@
       transform 180ms ease;
   }
 
+  /* Hairline divider sits in the margin above the button, not
+     inside it — keeps the button itself a tight 40×40 square. */
+  .reading-left-dock__collapse::before {
+    content: '';
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 56px;
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.10) 50%,
+      transparent 100%
+    );
+    pointer-events: none;
+  }
+
   .reading-left-dock__collapse:hover {
-    background: rgba(98, 65, 210, 0.18);
-    border-color: rgba(147, 103, 255, 0.65);
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(138, 77, 255, 0.35);
     color: #ffffff;
-    box-shadow: 0 0 14px rgba(138, 77, 255, 0.5);
   }
 
   .reading-left-dock__collapse:active { transform: scale(0.94); }
