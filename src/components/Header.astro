@@ -194,11 +194,14 @@ const isRtl = getLanguageDirection(language) === 'rtl';
   }
 
   .logo-letter {
-    font-family: 'Fraunces', 'Playfair Display', Georgia, serif;
-    font-size: 2.15rem;
+    /* Cinzel — Roman-inscription serif, the typeface of luxury
+       wordmarks. Capitals only by design, which is why the Y reads
+       as a monumental letter instead of a stylized italic. */
+    font-family: 'Cinzel', 'Trajan Pro', 'Playfair Display', Georgia, serif;
+    font-size: 2.0rem;
     font-weight: 600;
-    font-style: italic;
-    font-variation-settings: "opsz" 144, "SOFT" 100, "WONK" 1;
+    font-style: normal;
+    letter-spacing: 0.02em;
     /* Subtle gold-cream gradient on the italic Y so it reads as
        jewelry rather than flat text. background-clip: text paints
        the gradient onto the glyph; no text-shadow here — with a
@@ -233,11 +236,10 @@ const isRtl = getLanguageDirection(language) === 'rtl';
   }
 
   .logo-rest {
-    font-family: 'Fraunces', 'Playfair Display', Georgia, serif;
-    font-size: 1.7rem;
+    font-family: 'Cinzel', 'Trajan Pro', 'Playfair Display', Georgia, serif;
+    font-size: 1.5rem;
     font-weight: 400;
-    font-variation-settings: "opsz" 144, "SOFT" 100, "WONK" 0;
-    letter-spacing: 0.14em;
+    letter-spacing: 0.18em;
     color: #4a4a54;
     line-height: 1;
     /* Echo the Y's metallic finish — slightly cooler stops so the
@@ -358,9 +360,8 @@ const isRtl = getLanguageDirection(language) === 'rtl';
     letter-spacing: 0.16em;
   }
 
-  .yuval-logo:hover .logo-letter {
-    font-variation-settings: "opsz" 144, "SOFT" 100, "WONK" 1;
-  }
+  /* Hover: nothing to vary on Cinzel beyond the existing color
+     gradient + filter shifts handled in the gradient hover rules. */
 
   /* Hover (dark): the gold pops more, with a subtle drop-shadow
      halo so the Y feels lit from within. */
@@ -399,11 +400,11 @@ const isRtl = getLanguageDirection(language) === 'rtl';
 
   @media (min-width: 640px) {
     .logo-letter {
-      font-size: 2.55rem;
+      font-size: 2.4rem;
     }
     .logo-rest {
-      font-size: 1.95rem;
-      letter-spacing: 0.16em;
+      font-size: 1.7rem;
+      letter-spacing: 0.20em;
     }
   }
 

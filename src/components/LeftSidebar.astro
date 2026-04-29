@@ -283,12 +283,116 @@
       inset 0 1px 0 rgba(212, 196, 168, 0.06);
   }
 
-  /* Light theme readability — keep the navy capsule character even
-     against a light reading background (Yuval is dark-first; this is
-     just a polish for users who flip the page theme). */
+  /* ─────────── Light theme ────────────────────────────────────
+     The dock fully flips to a cream-paper surface that harmonizes
+     with the light header (linear-gradient #faf8f5 → #f5f3f0) and
+     the gold ornament. Indigo stays as the active-state accent so
+     users navigating between the right TOC and the left dock see
+     the same brand color in both menus. */
   :global(:root:not(.dark)) .reading-left-dock {
-    background: rgba(15, 22, 42, 0.86);
-    border-color: rgba(128, 95, 255, 0.45);
+    background: linear-gradient(
+      180deg,
+      rgba(252, 250, 246, 0.92) 0%,
+      rgba(245, 242, 235, 0.94) 100%
+    );
+    border-color: rgba(201, 169, 110, 0.30);
+    box-shadow:
+      0 18px 40px -16px rgba(60, 50, 30, 0.18),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.55),
+      inset 0 1px 0 rgba(255, 255, 255, 0.85);
+  }
+
+  /* Progress percent: switch to the same metallic Yuval cream-gold
+     as the header letter for full brand harmony. */
+  :global(:root:not(.dark)) .reading-left-dock__progress-percent {
+    color: #8b7355;
+    text-shadow: none;
+  }
+
+  /* Progress ring track — needs more contrast against cream than
+     against navy. */
+  :global(:root:not(.dark)) .reading-left-dock__progress-track {
+    stroke: rgba(0, 0, 0, 0.08);
+  }
+
+  /* Hairline divider tones below progress + above collapse: darker
+     so the line is visible on cream. */
+  :global(:root:not(.dark)) .reading-left-dock__progress::after,
+  :global(:root:not(.dark)) .reading-left-dock__collapse::before {
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(60, 50, 30, 0.16) 50%,
+      transparent 100%
+    );
+  }
+
+  /* Menu item default state — dark text/icon on cream. */
+  :global(:root:not(.dark)) .reading-left-dock__item {
+    border-color: rgba(60, 50, 30, 0.06);
+    color: rgba(60, 50, 70, 0.78);
+  }
+
+  :global(:root:not(.dark)) .reading-left-dock__item-label {
+    color: rgba(60, 50, 70, 0.72);
+  }
+
+  /* Hover (inactive only): darker text + cream-gold tinted bg. */
+  :global(:root:not(.dark)) .reading-left-dock__item:hover:not(.active),
+  :global(:root:not(.dark)) .reading-left-dock__item:focus-visible:not(.active) {
+    background: rgba(201, 169, 110, 0.10);
+    border-color: rgba(201, 169, 110, 0.28);
+    color: #2c2c34;
+  }
+
+  :global(:root:not(.dark)) .reading-left-dock__item:hover:not(.active)
+    .reading-left-dock__item-label {
+    color: #2c2c34;
+  }
+
+  /* Active state: same indigo as dark theme but the inset glow is
+     milder (cream surface doesn't need much glow to read). */
+  :global(:root:not(.dark)) .lsb-btn.reading-left-dock__item.active {
+    background: rgba(124, 92, 240, 0.10);
+    border-color: rgba(124, 92, 240, 0.45);
+    color: #2c2c34;
+    box-shadow:
+      inset 0 0 14px rgba(124, 92, 240, 0.10),
+      inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  }
+
+  :global(:root:not(.dark)) .lsb-btn.reading-left-dock__item.active
+    .reading-left-dock__item-label {
+    color: #2c2c34;
+  }
+
+  /* Collapse button: light surface, dark icon. */
+  :global(:root:not(.dark)) .reading-left-dock__collapse {
+    background: rgba(255, 255, 255, 0.55);
+    border-color: rgba(60, 50, 30, 0.14);
+    color: rgba(60, 50, 70, 0.7);
+  }
+
+  :global(:root:not(.dark)) .reading-left-dock__collapse:hover {
+    background: rgba(124, 92, 240, 0.10);
+    border-color: rgba(124, 92, 240, 0.40);
+    color: #2c2c34;
+  }
+
+  /* Tooltip + keycap — flip to a paper-light tone in day mode so
+     the floating chip reads as part of the same surface family as
+     the cream dock instead of an inverted island. */
+  :global(:root:not(.dark) .lsb-tooltip) {
+    background: rgba(252, 250, 246, 0.97);
+    color: rgba(40, 35, 50, 0.95);
+    border-color: rgba(60, 50, 30, 0.18);
+    box-shadow: 0 8px 24px -10px rgba(60, 50, 30, 0.30);
+  }
+
+  :global(:root:not(.dark) .lsb-tooltip-shortcut) {
+    background: rgba(60, 50, 30, 0.06);
+    border-color: rgba(60, 50, 30, 0.16);
+    color: #8b7355;
   }
 
   /* Hide on tablet and below — mobile pattern handled separately. */

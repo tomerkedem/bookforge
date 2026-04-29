@@ -27,20 +27,15 @@ const { class: className } = Astro.props;
     </div>
 
     <!--
-      Stars — positions, sizes and colors are randomized at mount via
-      CSS variables set by the init script. Seven spans give enough
-      twinkle variety in a 64×28 window without crowding the moon
-      that shares the space.
+      Stars — populated dynamically per visit. The init script
+      picks a constellation from CONSTELLATIONS[] based on today's
+      date (one per month, roughly matching what's actually visible
+      in the Northern-Hemisphere evening sky for that month) and
+      lays its stars out in this container. Brightness, tint and
+      twinkle phase still vary star-to-star so the field reads as
+      a real night sky rather than a dot pattern.
     -->
-    <div class="stars" data-sky-stars>
-      <span class="star"></span>
-      <span class="star"></span>
-      <span class="star"></span>
-      <span class="star"></span>
-      <span class="star"></span>
-      <span class="star"></span>
-      <span class="star"></span>
-    </div>
+    <div class="stars" data-sky-stars></div>
 
     <!-- Shooting stars container — populated dynamically by script -->
     <div class="shooters" data-sky-shooters aria-hidden="true"></div>
@@ -236,7 +231,11 @@ const { class: className } = Astro.props;
     opacity: 0;
   }
 
-  .star {
+  /* Stars are spawned dynamically by JS (constellation pattern per
+     month). Astro's per-component scoping is bypassed via :global
+     so the rules apply to the newly-created spans — same approach
+     used for .bird and .cloud below. */
+  :global(.star) {
     position: absolute;
     top: var(--star-y, 10px);
     left: var(--star-x, 10px);
@@ -244,7 +243,7 @@ const { class: className } = Astro.props;
     height: var(--star-size, 1.5px);
     background: var(--star-tint, #ffffff);
     border-radius: 50%;
-    animation: twinkle var(--star-dur, 2s) var(--ease-standard) infinite;
+    animation: star-twinkle var(--star-dur, 2s) ease-in-out infinite;
     animation-delay: var(--star-delay, 0s);
     box-shadow:
       0 0 3px var(--star-glow, rgba(255, 255, 255, 0.8)),
@@ -252,7 +251,7 @@ const { class: className } = Astro.props;
     pointer-events: none;
   }
 
-  @keyframes twinkle {
+  @keyframes star-twinkle {
     0%, 100% { opacity: 0.4; transform: scale(1); filter: brightness(0.8); }
     25% { opacity: 0.8; }
     50% { opacity: 1; transform: scale(1.3); filter: brightness(1.3); }
@@ -414,15 +413,23 @@ const { class: className } = Astro.props;
   /* Celestial bodies positioning */
   .celestial {
     position: absolute;
-    transition: transform 600ms var(--ease-emphasized);
+    /* top/left also transition so the gentle hour-of-day shift
+       between page navigations / scheduled refreshes glides into
+       place instead of snapping. */
+    transition:
+      transform 600ms var(--ease-emphasized),
+      top 1200ms var(--ease-standard),
+      left 1200ms var(--ease-standard);
   }
 
-  /* Sun - visible in dark theme */
+  /* Sun — visible in dark theme. top/left set per page load by
+     applyCelestialPositions() so the sun rides a low arc east→west
+     mirroring the real local hour of day. */
   .sun {
     width: 18px;
     height: 18px;
-    top: 5px;
-    left: 6px;
+    top: var(--sun-top, 5px);
+    left: var(--sun-left, 6px);
     transform: translateY(30px) scale(0.5);
   }
 
@@ -517,8 +524,8 @@ const { class: className } = Astro.props;
   .moon {
     width: 16px;
     height: 16px;
-    top: 6px;
-    left: 6px;
+    top: var(--moon-top, 6px);
+    left: var(--moon-left, 6px);
     right: auto;
     transform: translateY(0) scale(1);
     --moon-shadow-x: -5px;
@@ -891,27 +898,245 @@ const { class: className } = Astro.props;
     return min + Math.random() * (max - min);
   }
 
-  function randomizeStars(root: HTMLElement) {
-    const stars = root.querySelectorAll<HTMLElement>('[data-sky-stars] .star');
-    stars.forEach((star, i) => {
-      // Avoid the moon zone (left 0-22px) for roughly half the stars so
-      // the other half can sit behind the moon halo without harm.
-      const avoidMoon = i % 2 === 0;
-      const x = avoidMoon ? randomInRange(22, 60) : randomInRange(2, 60);
-      const y = randomInRange(2, 24);
-      const size = Math.random() < 0.3 ? 2 : Math.random() < 0.6 ? 1.5 : 1;
-      const tint = STAR_TINTS[Math.floor(Math.random() * STAR_TINTS.length)];
+  // ── Constellations ────────────────────────────────────────────────
+  /*
+    Twelve constellations, one for each calendar month, chosen to
+    match what's actually visible high in the Northern-Hemisphere
+    evening sky during that month. Star coordinates are normalized
+    (0..1 in both axes) and scaled by applyConstellation() into the
+    drawable region of the window — i.e. the right ~70% of the
+    width (the moon owns the left side) and most of the height.
+
+    Each star carries a `bright` value (0..1) used both for the dot
+    size and for whether the star tints toward a "named" hue: the
+    brightest one in each constellation (e.g. Sirius, Betelgeuse,
+    Arcturus, Antares) gets a real-life tint, the rest stay white-
+    or warm-cream so the named star stands out the way it does in
+    the real sky.
+  */
+  type ConstellationStar = {
+    x: number;          // 0..1 in the drawable area
+    y: number;          // 0..1
+    bright: number;     // 0..1 — both size scalar and "named" cue
+    tint?: { body: string; glow: string };  // override for famous named stars
+  };
+  type Constellation = {
+    name: string;
+    stars: ConstellationStar[];
+  };
+
+  const TINT_BLUE_GIANT  = { body: '#cfe0ff', glow: 'rgba(180, 210, 255, 0.95)' };  // Rigel, Sirius
+  const TINT_RED_GIANT   = { body: '#ffd0a8', glow: 'rgba(255, 170, 120, 0.95)' };  // Betelgeuse, Antares
+  const TINT_GOLD_GIANT  = { body: '#ffe6a8', glow: 'rgba(255, 220, 140, 0.92)' };  // Arcturus
+  const TINT_WHITE_GIANT = { body: '#ffffff', glow: 'rgba(255, 255, 255, 0.95)' };  // Deneb, Vega
+
+  const CONSTELLATIONS: Constellation[] = [
+    // January — Orion (the iconic winter pattern; Betelgeuse + Rigel)
+    { name: 'Orion', stars: [
+      { x: 0.30, y: 0.15, bright: 0.6 },                              // Bellatrix
+      { x: 0.70, y: 0.10, bright: 1.0, tint: TINT_RED_GIANT },        // Betelgeuse
+      { x: 0.40, y: 0.45, bright: 0.5 },                              // Belt 1 (Mintaka)
+      { x: 0.50, y: 0.50, bright: 0.5 },                              // Belt 2 (Alnilam)
+      { x: 0.60, y: 0.55, bright: 0.5 },                              // Belt 3 (Alnitak)
+      { x: 0.30, y: 0.82, bright: 0.6 },                              // Saiph
+      { x: 0.72, y: 0.88, bright: 1.0, tint: TINT_BLUE_GIANT },       // Rigel
+    ]},
+    // February — Canis Major (Sirius, brightest star in night sky)
+    { name: 'Canis Major', stars: [
+      { x: 0.30, y: 0.40, bright: 1.0, tint: TINT_BLUE_GIANT },       // Sirius
+      { x: 0.50, y: 0.25, bright: 0.5 },
+      { x: 0.55, y: 0.55, bright: 0.5 },
+      { x: 0.70, y: 0.50, bright: 0.6 },
+      { x: 0.82, y: 0.70, bright: 0.5 },
+    ]},
+    // March — Leo (the sickle + triangle; Regulus, Denebola)
+    { name: 'Leo', stars: [
+      { x: 0.18, y: 0.35, bright: 0.5 },                              // Mane top
+      { x: 0.28, y: 0.20, bright: 0.5 },
+      { x: 0.40, y: 0.18, bright: 0.6 },
+      { x: 0.42, y: 0.50, bright: 0.9 },                              // Regulus (heart)
+      { x: 0.62, y: 0.32, bright: 0.5 },                              // Body
+      { x: 0.86, y: 0.58, bright: 0.8 },                              // Denebola (tail)
+      { x: 0.62, y: 0.70, bright: 0.5 },
+    ]},
+    // April — Virgo (the long Y; Spica anchors the bottom)
+    { name: 'Virgo', stars: [
+      { x: 0.15, y: 0.20, bright: 0.5 },
+      { x: 0.35, y: 0.30, bright: 0.6 },
+      { x: 0.50, y: 0.50, bright: 0.5 },
+      { x: 0.62, y: 0.72, bright: 1.0, tint: TINT_BLUE_GIANT },       // Spica
+      { x: 0.80, y: 0.30, bright: 0.5 },
+      { x: 0.78, y: 0.55, bright: 0.5 },
+    ]},
+    // May — Bootes (kite shape; Arcturus is the orange anchor)
+    { name: 'Bootes', stars: [
+      { x: 0.50, y: 0.10, bright: 0.6 },                              // Top of kite
+      { x: 0.30, y: 0.40, bright: 0.5 },                              // Left
+      { x: 0.70, y: 0.40, bright: 0.5 },                              // Right
+      { x: 0.50, y: 0.60, bright: 1.0, tint: TINT_GOLD_GIANT },       // Arcturus
+      { x: 0.50, y: 0.88, bright: 0.5 },                              // Foot
+    ]},
+    // June — Hercules (the keystone trapezoid)
+    { name: 'Hercules', stars: [
+      { x: 0.30, y: 0.18, bright: 0.5 },
+      { x: 0.65, y: 0.15, bright: 0.6 },
+      { x: 0.34, y: 0.55, bright: 0.7 },
+      { x: 0.70, y: 0.55, bright: 0.7 },
+      { x: 0.20, y: 0.78, bright: 0.5 },
+      { x: 0.85, y: 0.80, bright: 0.5 },
+    ]},
+    // July — Scorpius (curved S; Antares is the red heart)
+    { name: 'Scorpius', stars: [
+      { x: 0.18, y: 0.18, bright: 0.5 },
+      { x: 0.28, y: 0.32, bright: 0.5 },
+      { x: 0.40, y: 0.45, bright: 1.0, tint: TINT_RED_GIANT },        // Antares
+      { x: 0.50, y: 0.55, bright: 0.5 },
+      { x: 0.62, y: 0.65, bright: 0.6 },
+      { x: 0.78, y: 0.72, bright: 0.5 },
+      { x: 0.88, y: 0.55, bright: 0.7 },                              // Stinger
+    ]},
+    // August — Sagittarius (the Teapot)
+    { name: 'Sagittarius', stars: [
+      { x: 0.25, y: 0.40, bright: 0.6 },                              // Spout top
+      { x: 0.20, y: 0.65, bright: 0.5 },                              // Bottom-left
+      { x: 0.55, y: 0.68, bright: 0.5 },                              // Bottom-right
+      { x: 0.55, y: 0.40, bright: 0.7 },                              // Handle attach
+      { x: 0.40, y: 0.18, bright: 0.8 },                              // Lid
+      { x: 0.75, y: 0.45, bright: 0.5 },
+      { x: 0.86, y: 0.55, bright: 0.5 },
+    ]},
+    // September — Cygnus (Northern Cross; Deneb at the top)
+    { name: 'Cygnus', stars: [
+      { x: 0.50, y: 0.15, bright: 1.0, tint: TINT_WHITE_GIANT },      // Deneb
+      { x: 0.50, y: 0.45, bright: 0.5 },                              // Cross center
+      { x: 0.50, y: 0.85, bright: 0.7 },                              // Albireo
+      { x: 0.22, y: 0.55, bright: 0.5 },                              // Left wing
+      { x: 0.78, y: 0.55, bright: 0.6 },                              // Right wing
+    ]},
+    // October — Pegasus (the Great Square)
+    { name: 'Pegasus', stars: [
+      { x: 0.30, y: 0.20, bright: 0.7 },                              // Markab
+      { x: 0.72, y: 0.20, bright: 0.7 },                              // Scheat
+      { x: 0.30, y: 0.78, bright: 0.7 },                              // Algenib
+      { x: 0.72, y: 0.78, bright: 0.7 },                              // Alpheratz (shared with Andromeda)
+      { x: 0.10, y: 0.18, bright: 0.5 },                              // Enif (nose)
+    ]},
+    // November — Andromeda (the chain reaching from Pegasus)
+    { name: 'Andromeda', stars: [
+      { x: 0.18, y: 0.30, bright: 0.8 },                              // Alpheratz
+      { x: 0.40, y: 0.45, bright: 0.7 },                              // Mirach
+      { x: 0.62, y: 0.55, bright: 0.6 },                              // Almach
+      { x: 0.84, y: 0.65, bright: 0.5 },
+      { x: 0.40, y: 0.22, bright: 0.5 },                              // Galaxy hint above Mirach
+      { x: 0.58, y: 0.78, bright: 0.5 },
+    ]},
+    // December — Cassiopeia (the W)
+    { name: 'Cassiopeia', stars: [
+      { x: 0.13, y: 0.30, bright: 0.7 },                              // Caph
+      { x: 0.30, y: 0.68, bright: 0.6 },                              // Schedar
+      { x: 0.50, y: 0.30, bright: 0.8 },                              // Gamma Cas (middle peak)
+      { x: 0.70, y: 0.68, bright: 0.6 },                              // Ruchbah
+      { x: 0.87, y: 0.30, bright: 0.7 },                              // Segin
+    ]},
+  ];
+
+  /* Drawable region inside the 84×37 window (avoids the moon on the
+     left and keeps a small safety margin from the frame). */
+  const STAR_X_MIN = 26, STAR_X_MAX = 80;
+  const STAR_Y_MIN = 3,  STAR_Y_MAX = 30;
+
+  function getTodaysConstellation(date: Date = new Date()): Constellation {
+    return CONSTELLATIONS[date.getMonth()] || CONSTELLATIONS[0];
+  }
+
+  // ── Celestial positioning ────────────────────────────────────────
+  /*
+    Sun and moon ride a parabolic arc across the window matching the
+    local hour of day:
+      sun:  6 AM (left horizon) → noon (high middle) → 6 PM (right horizon)
+      moon: 6 PM (left horizon) → midnight (high middle) → 6 AM (right horizon)
+    Outside their own visibility windows each body parks at the
+    horizon on the relevant edge — they're hidden by the existing
+    transform/scale anyway, so the parked position only matters
+    visually during the brief sunrise/sunset transitions.
+
+    The window is 84×37 with the moon-zone left margin from earlier;
+    sun is 18×18, moon is 16×16. The math leaves a 4px gutter on
+    every edge so the body never visually clips the frame.
+  */
+  function clamp(v: number, lo: number, hi: number): number {
+    return Math.min(hi, Math.max(lo, v));
+  }
+  function lerp(a: number, b: number, t: number): number {
+    return a + (b - a) * t;
+  }
+
+  function applyCelestialPositions(toggle: HTMLElement, date: Date = new Date()) {
+    const hour = date.getHours() + date.getMinutes() / 60;  // 0..24 fractional
+
+    // ── Sun arc: visible 6:00–18:00, parabolic y peaking at noon ──
+    const sunProgress = clamp((hour - 6) / 12, 0, 1);
+    const sunX = lerp(4, 84 - 18 - 4, sunProgress);          // 4..62
+    const sunY = 16 - 14 * Math.sin(Math.PI * sunProgress);  // 16 (horizon) → 2 (noon) → 16
+
+    // ── Moon arc: visible 18:00–06:00, parabolic y peaking at midnight ──
+    // Progress = 0 at 18:00 (rises on left), 1 at 06:00 (sets on right).
+    const moonProgress = clamp(
+      hour >= 18 ? (hour - 18) / 12 : (hour + 6) / 12,
+      0, 1
+    );
+    const moonX = lerp(4, 84 - 16 - 4, moonProgress);          // 4..64
+    const moonY = 17 - 13 * Math.sin(Math.PI * moonProgress);  // 17 → 4 → 17
+
+    toggle.style.setProperty('--sun-left', `${sunX.toFixed(1)}px`);
+    toggle.style.setProperty('--sun-top',  `${sunY.toFixed(1)}px`);
+    toggle.style.setProperty('--moon-left', `${moonX.toFixed(1)}px`);
+    toggle.style.setProperty('--moon-top',  `${moonY.toFixed(1)}px`);
+  }
+
+  function applyConstellation(root: HTMLElement, date: Date = new Date()) {
+    const host = root.querySelector<HTMLElement>('[data-sky-stars]');
+    if (!host) return;
+    host.replaceChildren();
+
+    const c = getTodaysConstellation(date);
+    const dx = STAR_X_MAX - STAR_X_MIN;
+    const dy = STAR_Y_MAX - STAR_Y_MIN;
+
+    c.stars.forEach((s) => {
+      const star = document.createElement('span');
+      star.className = 'star';
+
+      const x = STAR_X_MIN + s.x * dx;
+      const y = STAR_Y_MIN + s.y * dy;
+      // Brightness 0..1 maps to size 1..2.4px (named giants top out
+      // bigger than ordinary stars).
+      const size = 1 + s.bright * 1.4;
+      // Named star? Use its real-life tint. Otherwise pick from the
+      // neutral white/cream/blue/pink palette — gives subtle variety
+      // even within one constellation.
+      const tint = s.tint
+        ?? STAR_TINTS[Math.floor(Math.random() * STAR_TINTS.length)];
       const dur = randomInRange(1.6, 2.8);
       const delay = randomInRange(0, 2);
 
       star.style.setProperty('--star-x', `${x.toFixed(1)}px`);
       star.style.setProperty('--star-y', `${y.toFixed(1)}px`);
-      star.style.setProperty('--star-size', `${size}px`);
+      star.style.setProperty('--star-size', `${size.toFixed(2)}px`);
       star.style.setProperty('--star-tint', tint.body);
       star.style.setProperty('--star-glow', tint.glow);
       star.style.setProperty('--star-dur', `${dur.toFixed(2)}s`);
       star.style.setProperty('--star-delay', `${delay.toFixed(2)}s`);
+      // Name is set as data-attr for inspection / future tooltip.
+      star.dataset.constellation = c.name;
+      host.appendChild(star);
     });
+  }
+
+  function randomizeStars(root: HTMLElement) {
+    // Wrapper kept for callsite compatibility; the actual placement
+    // is now constellation-driven.
+    applyConstellation(root);
   }
 
   /*
@@ -1259,6 +1484,7 @@ const { class: className } = Astro.props;
 
   let cloudTimer: number | undefined;
   let cloudHoverActive = false;
+  let celestialTimer: number | undefined;
 
   function scheduleNextCloud(host: HTMLElement) {
     const range = cloudHoverActive ? CLOUD_INTERVAL_HOVER_S : CLOUD_INTERVAL_S;
@@ -1516,6 +1742,15 @@ const { class: className } = Astro.props;
     const moonEl = toggle.querySelector<HTMLElement>('[data-sky-moon]');
     if (moonEl) applyMoonPhase(moonEl);
 
+    // Position sun + moon along their hour-of-day arcs. Refreshed
+    // every 10 minutes via a low-impact timer so the bodies glide
+    // forward across long open sessions without animating constantly.
+    applyCelestialPositions(toggle);
+    if (celestialTimer !== undefined) clearInterval(celestialTimer);
+    celestialTimer = window.setInterval(() => {
+      applyCelestialPositions(toggle);
+    }, 10 * 60 * 1000);
+
     // Kick off the shooting-star loop.
     const shooterHost = toggle.querySelector<HTMLElement>('[data-sky-shooters]');
     stopMeteors();
@@ -1602,6 +1837,10 @@ const { class: className } = Astro.props;
     stopMeteors();
     stopBirds();
     stopClouds();
+    if (celestialTimer !== undefined) {
+      clearInterval(celestialTimer);
+      celestialTimer = undefined;
+    }
   });
   document.addEventListener('astro:after-swap', initThemeToggle);
 </script>
