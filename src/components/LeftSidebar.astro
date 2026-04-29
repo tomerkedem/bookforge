@@ -30,10 +30,14 @@
          rotated -90deg in CSS so the arc starts at 12 o'clock; the
          gradient runs along its visible sweep, picking up purple at
          the start and electric cyan at the end. -->
+    <!-- Soft Yuval-brand gradient: indigo (matches the right TOC
+         active accent #7c5cf0) → lighter indigo → warm gold (the
+         header ornament tone). Ties the dock to both the menu-on-
+         the-right and the logo-up-top without electric blue. -->
     <linearGradient id="rldock-progress-arc" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%"   stop-color="#6D5DFB"/>
-      <stop offset="55%"  stop-color="#8A4DFF"/>
-      <stop offset="100%" stop-color="#2DD4FF"/>
+      <stop offset="0%"   stop-color="#7c5cf0"/>
+      <stop offset="60%"  stop-color="#a89cf5"/>
+      <stop offset="100%" stop-color="#d4c4a8"/>
     </linearGradient>
   </defs>
 </svg>
@@ -238,12 +242,17 @@
      the right in LTR breaks the layout reservation in
      ReadingLayout.astro (which now reserves margin-left
      unconditionally). Use physical left/right, not inset-inline-*. */
+  /* Surface tuned to the warm dark Yuval palette (matches the
+     `--yuval-surface, #1a1a1a` used by the right TOC and the
+     `#1a1a1f → #141418` header gradient). The container reads as
+     part of the same brand environment instead of a colder
+     navy-purple intruder. */
   .reading-left-dock {
     position: fixed;
     left: 16px;
     right: auto;
-    /* 68px = global site header height; +16px gap so the dock's
-       own Yuval logo isn't clipped by the header. */
+    /* 68px = global site header height; +16px gap so the dock
+       sits beneath the header without overlap. */
     top: 84px;
     bottom: 16px;
     height: auto;
@@ -255,16 +264,22 @@
     padding: 16px 8px 14px;
     box-sizing: border-box;
     border-radius: 28px;
-    background: rgba(7, 13, 28, 0.78);
+    background:
+      linear-gradient(
+        180deg,
+        rgba(28, 28, 34, 0.82) 0%,
+        rgba(20, 20, 26, 0.86) 100%
+      );
     backdrop-filter: blur(20px) saturate(140%);
     -webkit-backdrop-filter: blur(20px) saturate(140%);
-    /* Outer hairline (purple-tinted) + inner soft hairline for the
-       quiet "two-stroke" container the spec asks for. */
-    border: 1px solid rgba(128, 95, 255, 0.28);
+    /* Neutral hairline matching the right TOC's --yuval-border.
+       The gold inner-shadow hint echoes the header's gold ornament
+       without ever reading as decoration. */
+    border: 1px solid var(--yuval-border, rgba(127, 127, 127, 0.18));
     box-shadow:
-      0 18px 48px -12px rgba(8, 10, 24, 0.55),
-      inset 0 0 0 1px rgba(255, 255, 255, 0.04),
-      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      0 20px 50px -14px rgba(0, 0, 0, 0.55),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.035),
+      inset 0 1px 0 rgba(212, 196, 168, 0.06);
   }
 
   /* Light theme readability — keep the navy capsule character even
@@ -333,18 +348,19 @@
     stroke: url(#rldock-progress-arc);
     stroke-width: 4;
     stroke-linecap: round;
-    filter: drop-shadow(0 0 6px rgba(138, 77, 255, 0.45));
+    filter: drop-shadow(0 0 5px rgba(124, 92, 240, 0.35));
     transition: stroke-dasharray 500ms cubic-bezier(0.33, 1, 0.68, 1);
   }
 
   .reading-left-dock__progress-percent {
     position: relative;
     z-index: 1;
+    font-family: 'Fraunces', 'Playfair Display', Georgia, serif;
     font-size: 1.05rem;
-    font-weight: 700;
-    color: #b9aaff;
-    text-shadow: 0 0 10px rgba(138, 77, 255, 0.6);
-    letter-spacing: 0.01em;
+    font-weight: 600;
+    color: #d4c4a8;          /* warm cream — matches header ornament */
+    text-shadow: 0 0 8px rgba(212, 196, 168, 0.25);
+    letter-spacing: 0.02em;
     line-height: 1;
     direction: ltr;
     unicode-bidi: isolate;
@@ -414,13 +430,14 @@
   }
 
   .reading-left-dock__item:focus-visible {
-    outline: 2px solid rgba(138, 77, 255, 0.7);
+    outline: 2px solid rgba(168, 156, 245, 0.7);
     outline-offset: 2px;
   }
 
-  /* Thin purple vertical indicator on the LEFT edge of the active
-     tile (screen-edge side). Hidden by default via scaleY(0); the
-     active state below scales it up. */
+  /* Thin indigo vertical indicator on the LEFT edge of the active
+     tile (screen-edge side). Tone matches the right TOC's active
+     chapter color (#7c5cf0/#a89cf5) so the two menus feel like
+     siblings. Hidden by default via scaleY(0). */
   .reading-left-dock__item::before {
     content: '';
     position: absolute;
@@ -432,10 +449,10 @@
     border-radius: 2px;
     background: linear-gradient(
       180deg,
-      rgba(138, 77, 255, 0.95),
-      rgba(124, 92, 255, 0.85)
+      #a89cf5 0%,
+      #7c5cf0 100%
     );
-    box-shadow: 0 0 8px rgba(138, 77, 255, 0.55);
+    box-shadow: 0 0 6px rgba(124, 92, 240, 0.45);
     transform: translateY(-50%) scaleY(0);
     transform-origin: center;
     opacity: 0;
@@ -473,9 +490,9 @@
     display: none;
   }
 
-  /* Small purple dot indicator — sits inside the tile near the
+  /* Small indigo dot indicator — sits inside the tile near the
      content-facing (right) edge of the active item. Physical right
-     so it never flips by language. */
+     so it never flips by language. Matches Yuval's brand indigo. */
   .reading-left-dock__item-dot {
     position: absolute;
     top: 9px;
@@ -484,8 +501,8 @@
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    background: #8A4DFF;
-    box-shadow: 0 0 6px rgba(138, 77, 255, 0.7);
+    background: #a89cf5;
+    box-shadow: 0 0 5px rgba(168, 156, 245, 0.6);
     transform: scale(0);
     opacity: 0;
     pointer-events: none;
@@ -512,16 +529,17 @@
   }
 
   /* ── Active state — driven by `.active` (toggled by left-sidebar.ts) ──
-     Soft purple wash + thin left-edge indicator + small right-corner
-     dot + INSET purple glow only inside the tile. No outer halo —
-     the spec asks for quiet, professional emphasis, not a beacon. */
+     Soft indigo wash + thin left-edge indicator + small right-corner
+     dot + INSET indigo glow only inside the tile. The tone matches
+     the Yuval brand indigo (#7c5cf0) used by the right TOC for the
+     active chapter, so the two sidebars share one accent color. */
   .lsb-btn.reading-left-dock__item.active {
-    background: rgba(98, 65, 210, 0.20);
-    border-color: rgba(138, 77, 255, 0.50);
+    background: rgba(124, 92, 240, 0.16);
+    border-color: rgba(168, 156, 245, 0.42);
     color: #ffffff;
     box-shadow:
-      inset 0 0 18px rgba(138, 77, 255, 0.22),
-      inset 0 1px 0 rgba(255, 255, 255, 0.06);
+      inset 0 0 18px rgba(124, 92, 240, 0.18),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
   }
 
   .lsb-btn.reading-left-dock__item.active::before {
@@ -575,9 +593,9 @@
     position: fixed;
     z-index: 41;
     padding: 0.45rem 0.85rem;
-    background: rgba(7, 13, 28, 0.96);
-    color: rgba(255, 255, 255, 0.95);
-    border: 1px solid rgba(128, 95, 255, 0.45);
+    background: rgba(22, 22, 28, 0.96);
+    color: rgba(240, 240, 244, 0.96);
+    border: 1px solid var(--yuval-border, rgba(127, 127, 127, 0.22));
     border-radius: 8px;
     font-size: 0.8rem;
     font-weight: 500;
@@ -585,7 +603,7 @@
     white-space: nowrap;
     pointer-events: none;
     opacity: 0;
-    box-shadow: 0 6px 24px -8px rgba(98, 65, 210, 0.55);
+    box-shadow: 0 8px 24px -10px rgba(0, 0, 0, 0.6);
     transition: opacity 200ms cubic-bezier(0.4, 0, 0.2, 1);
   }
 
@@ -644,14 +662,14 @@
 
   .reading-left-dock__collapse:hover {
     background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(138, 77, 255, 0.35);
+    border-color: rgba(168, 156, 245, 0.35);
     color: #ffffff;
   }
 
   .reading-left-dock__collapse:active { transform: scale(0.94); }
 
   .reading-left-dock__collapse:focus-visible {
-    outline: 2px solid rgba(138, 77, 255, 0.7);
+    outline: 2px solid rgba(168, 156, 245, 0.7);
     outline-offset: 2px;
   }
 
@@ -706,7 +724,7 @@
     width: 32px;
     height: 64px;
     padding: 0;
-    border: 1px solid rgba(128, 95, 255, 0.45);
+    border: 1px solid var(--yuval-border, rgba(127, 127, 127, 0.22));
     border-left: none;
     border-top-left-radius: 0;
     border-bottom-left-radius: 0;
@@ -714,8 +732,8 @@
     border-bottom-right-radius: 14px;
     background: linear-gradient(
       135deg,
-      rgba(138, 77, 255, 0.22),
-      rgba(98, 65, 210, 0.06)
+      rgba(124, 92, 240, 0.18),
+      rgba(28, 28, 34, 0.5)
     );
     color: rgba(232, 230, 255, 0.95);
     cursor: pointer;
@@ -739,8 +757,8 @@
   .lsb-return-btn:hover {
     background: linear-gradient(
       135deg,
-      rgba(138, 77, 255, 0.36),
-      rgba(98, 65, 210, 0.12)
+      rgba(168, 156, 245, 0.32),
+      rgba(28, 28, 34, 0.6)
     );
   }
 
@@ -749,7 +767,7 @@
   }
 
   .lsb-return-btn:focus-visible {
-    outline: 2px solid rgba(138, 77, 255, 0.7);
+    outline: 2px solid rgba(168, 156, 245, 0.7);
     outline-offset: 2px;
   }
 
@@ -771,7 +789,7 @@
     border-radius: inherit;
     background: radial-gradient(
       ellipse at center,
-      rgba(138, 77, 255, 0.55),
+      rgba(168, 156, 245, 0.45),
       transparent 70%
     );
     opacity: 0;
