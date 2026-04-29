@@ -329,6 +329,16 @@ export const translations: Translations = {
   'leftSidebar.collapse':   { he: 'הסתר סרגל כלים',     en: 'Collapse tools',       es: 'Ocultar herramientas' },
   'leftSidebar.expand':     { he: 'הצג סרגל כלים',      en: 'Show tools',           es: 'Mostrar herramientas' },
 
+  // ── Reading Left Dock (premium vertical floating dock) ────────────────────
+  'reading.leftDock.overview':   { he: 'סקירה',     en: 'Overview',   es: 'Resumen' },
+  'reading.leftDock.readAloud':  { he: 'הקראה',     en: 'Read Aloud', es: 'Lectura en voz' },
+  'reading.leftDock.statistics': { he: 'סטטיסטיקות', en: 'Statistics', es: 'Estadísticas' },
+  'reading.leftDock.bookmarks':  { he: 'סימניות',   en: 'Bookmarks',  es: 'Marcadores' },
+  'reading.leftDock.highlights': { he: 'הדגשות',   en: 'Highlights', es: 'Resaltados' },
+  'reading.leftDock.more':       { he: 'עוד',       en: 'More',       es: 'Más' },
+  'reading.leftDock.progress':   { he: 'התקדמות',   en: 'Progress',   es: 'Progreso' },
+  'reading.leftDock.collapse':   { he: 'כווץ',      en: 'Collapse',   es: 'Contraer' },
+
   // ── Image Lightbox ──────────────────────────────────────────────────────────
   'lightbox.close':        { he: 'סגור',              en: 'Close',            es: 'Cerrar' },
   'lightbox.prev':         { he: 'תמונה קודמת',       en: 'Previous image',   es: 'Imagen anterior' },

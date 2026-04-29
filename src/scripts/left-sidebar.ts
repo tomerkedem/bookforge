@@ -61,7 +61,6 @@ function ensureTooltip(): HTMLDivElement {
 
 function positionTooltip(button: HTMLButtonElement, tip: HTMLDivElement): void {
   const rect = button.getBoundingClientRect();
-  const isRtl = document.documentElement.dir === 'rtl';
   // Render hidden first so we can measure final size.
   tip.style.visibility = 'hidden';
   tip.style.left = '0px';
@@ -69,17 +68,11 @@ function positionTooltip(button: HTMLButtonElement, tip: HTMLDivElement): void {
   tip.classList.add('visible');
   const tipRect = tip.getBoundingClientRect();
 
-  // Tooltip sits on the inline-START side of the button (toward the
-  // reading content, opposite the bar's edge). 18px gap.
+  // The dock is always on the visual LEFT (in every language), so
+  // the tooltip always extends to the RIGHT of the button — toward
+  // the reading content. 18px gap.
   const gap = 18;
-  let left: number;
-  if (isRtl) {
-    // Bar on visual left → tooltip extends to the right of the button.
-    left = rect.right + gap;
-  } else {
-    // Bar on visual right → tooltip extends to the left of the button.
-    left = rect.left - gap - tipRect.width;
-  }
+  const left = rect.right + gap;
   const top = rect.top + rect.height / 2 - tipRect.height / 2;
 
   tip.style.left = `${Math.round(left)}px`;
@@ -225,11 +218,51 @@ function syncGoalRing(snapshot: GoalSnapshot): void {
   btn.dataset.goalDone = snapshot.done ? 'true' : 'false';
 }
 
+/** Mirror the right-sidebar overall completion percent into the
+ *  premium left dock's central progress ring. We pull the number
+ *  straight from the live #usb-progress-percent text (the right
+ *  sidebar is the authoritative source for book progress) so this
+ *  stays in sync with no extra wiring. */
+function syncReadingProgress(): void {
+  const fill = document.querySelector<SVGCircleElement>(
+    '.reading-left-dock__progress-fill'
+  );
+  const label = document.getElementById('rldock-progress-percent');
+  if (!fill && !label) return;
+
+  const src = document.getElementById('usb-progress-percent');
+  const raw = (src?.textContent || '0%').trim();
+  const match = raw.match(/(\d+(?:\.\d+)?)/);
+  const pct = match ? Math.max(0, Math.min(100, Math.round(parseFloat(match[1])))) : 0;
+
+  if (label) label.textContent = `${pct}%`;
+  if (fill) fill.style.strokeDasharray = `${pct} ${100 - pct}`;
+}
+
+let progressObserver: MutationObserver | null = null;
+
+function watchReadingProgress(signal?: AbortSignal): void {
+  // Dispose any previous observer (re-mount across View Transitions).
+  progressObserver?.disconnect();
+  progressObserver = null;
+
+  const src = document.getElementById('usb-progress-percent');
+  if (!src) return;
+  progressObserver = new MutationObserver(() => syncReadingProgress());
+  progressObserver.observe(src, { childList: true, characterData: true, subtree: true });
+
+  signal?.addEventListener('abort', () => {
+    progressObserver?.disconnect();
+    progressObserver = null;
+  });
+}
+
 function refreshAll(): void {
   const book = getCurrentBook();
   setBadge('bookmarks', countBookmarks(book), 'gold');
   setBadge('highlights', countHighlights(book), 'gold');
   syncGoalRing(readGoal());
+  syncReadingProgress();
 }
 
 function applyAriaLabels(sidebar: HTMLElement): void {
@@ -272,6 +305,7 @@ export function initLeftSidebar(signal?: AbortSignal): void {
   // not have populated their floating buttons yet, but localStorage
   // is already authoritative — no need to wait.
   refreshAll();
+  watchReadingProgress(signal);
 
   // React immediately to user actions inside the existing modules so
   // badges feel live. Storage event covers cross-tab edits.

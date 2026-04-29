@@ -754,23 +754,26 @@ const COPY_SUCCESS_MESSAGE = 'Code copied!';
       @media (min-width: 1024px) {
         .reading-article {
           max-width: none;
-          margin-left: 0;
-          margin-right: 0;
+          /* TOC stays on the inline-START edge (logical) — right in
+             RTL, left in LTR. The left dock is anchored to the visual
+             LEFT in every language (physical), so its reservation
+             uses an explicit margin-left instead of inline-end. */
           margin-inline-start: 320px;
-          margin-inline-end: 76px;
+          margin-left: 144px;
+          margin-right: 0;
           /* Sync with the chromatic-shift collapse animations: same
              500ms cubic-out the SVG matrices run on. Both edges
              transition independently. */
           transition:
             margin-inline-start 500ms cubic-bezier(0.33, 1, 0.68, 1),
-            margin-inline-end   500ms cubic-bezier(0.33, 1, 0.68, 1);
+            margin-left         500ms cubic-bezier(0.33, 1, 0.68, 1);
         }
 
         /* Immersive: hides the unified sidebar, so we drop the
            inline-start reservation and only keep the LeftSidebar gap. */
         :global(body.reading-immersive) .reading-article {
           margin-inline-start: 0;
-          margin-inline-end: 76px;
+          margin-left: 144px;
         }
 
         /* Sidebar-collapsed: same reservation drop, but driven by
@@ -779,11 +782,11 @@ const COPY_SUCCESS_MESSAGE = 'Code copied!';
           margin-inline-start: 0;
         }
 
-        /* Left-sidebar collapsed: drop the inline-end activity-rail
+        /* Left-sidebar collapsed: drop the visual-left dock
            reservation. Stacks with sidebar-collapsed when both are
            collapsed (full-width reading column). */
         :global(body.left-sidebar-collapsed) .reading-article {
-          margin-inline-end: 0;
+          margin-left: 0;
         }
       }
 

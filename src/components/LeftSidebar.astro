@@ -1,13 +1,16 @@
 ---
-// Left-side reading-tools activity bar — VS Code Activity Bar style.
+// Reading Left Dock — premium vertical floating capsule.
 //
-// Sits on the inline-END edge (visual left in RTL, visual right in LTR),
-// opposite the existing unified sidebar at inline-start. Five icon-only
-// buttons stacked vertically with a divider after the second button.
+// Sits on the inline-END edge of the reading page (visual LEFT in
+// RTL Hebrew layout, visual RIGHT in LTR). Tall rounded glass capsule
+// with: Yuval logo, circular progress ring, six labeled menu items,
+// active item with purple glow + side dot, and a circular collapse
+// button at the bottom.
 //
-// This task wires only the structural shell: hover, tooltip, active
-// state, and a custom `left-sidebar-action` event. Popovers/drawers
-// for each action land in later tasks.
+// Behavior contract preserved: every menu button keeps `lsb-btn` +
+// `data-action` so the existing `src/scripts/left-sidebar.ts` wiring
+// (tooltip, click delegation to legacy FABs, badges, custom event)
+// still owns interaction. Visual changes only here.
 ---
 
 <!-- Hidden SVG filter for the chromatic-shift collapse animation.
@@ -23,12 +26,20 @@
         values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 1 0"
       />
     </filter>
+    <!-- Active arc gradient for the progress ring. The ring is
+         rotated -90deg in CSS so the arc starts at 12 o'clock; the
+         gradient runs along its visible sweep, picking up purple at
+         the start and electric cyan at the end. -->
+    <linearGradient id="rldock-progress-arc" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"   stop-color="#6D5DFB"/>
+      <stop offset="55%"  stop-color="#8A4DFF"/>
+      <stop offset="100%" stop-color="#2DD4FF"/>
+    </linearGradient>
   </defs>
 </svg>
 
 <!-- Floating return button: appears on the inline-end screen edge
-     while the activity rail is collapsed. Mirror of the right-side
-     return button — same pulse-glow language, opposite anchor. -->
+     while the dock is collapsed. Pulse-glow signals "bring me back". -->
 <button
   type="button"
   class="lsb-return-btn"
@@ -41,107 +52,201 @@
   <span class="sr-only" data-i18n="leftSidebar.expand">Show tools</span>
   <span class="lsb-return-glow" aria-hidden="true"></span>
   <svg class="lsb-return-chev" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
-    <!-- Chevron points inline-START in LTR (away from screen edge,
-         into the page = "I'll pop out"). CSS flips it for RTL. -->
     <path d="M10 4l-4 4 4 4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
   </svg>
 </button>
 
-<aside id="left-sidebar" class="left-sidebar" aria-label="Reading tools">
-  <!-- Collapse trigger: small chevron button at the top of the rail.
-       Chevron points outward (toward inline-end / outer screen edge).
-       Visually separated from the action icons by gap; the existing
-       gap: 1.1rem on the rail handles spacing. -->
+<aside id="left-sidebar" class="reading-left-dock left-sidebar" aria-label="Reading tools">
+
+  <!-- ── Logo ─────────────────────────────────────────────────── -->
+  <div class="reading-left-dock__logo" aria-hidden="true">
+    <span class="reading-left-dock__logo-letter">Y</span><span
+          class="reading-left-dock__logo-rest">uval</span><span
+          class="reading-left-dock__logo-ornament">✦</span>
+  </div>
+
+  <!-- ── Progress ring ────────────────────────────────────────── -->
+  <div class="reading-left-dock__progress">
+    <svg class="reading-left-dock__progress-ring" viewBox="0 0 48 48" aria-hidden="true">
+      <!-- Track + active arc share the same circle geometry.
+           r = 20, circumference ≈ 125.66. Arc length is
+           controlled in left-sidebar.ts via stroke-dasharray. -->
+      <circle class="reading-left-dock__progress-track"
+              cx="24" cy="24" r="20"/>
+      <circle class="reading-left-dock__progress-fill"
+              cx="24" cy="24" r="20"
+              pathLength="100"
+              stroke-dasharray="0 100"/>
+    </svg>
+    <span class="reading-left-dock__progress-percent" id="rldock-progress-percent">0%</span>
+    <span class="reading-left-dock__progress-label"
+          data-i18n="reading.leftDock.progress">התקדמות</span>
+  </div>
+
+  <!-- ── Menu items ───────────────────────────────────────────── -->
+  <ul class="reading-left-dock__menu" role="list">
+    <li>
+      <button
+        type="button"
+        class="lsb-btn reading-left-dock__item active lsb-btn-goal"
+        data-action="daily-goal"
+        data-i18n-tooltip="reading.leftDock.overview"
+        data-i18n-aria-label="reading.leftDock.overview"
+        aria-label="Overview"
+        aria-pressed="true"
+      >
+        <span class="reading-left-dock__item-dot" aria-hidden="true"></span>
+        <span class="reading-left-dock__item-icon">
+          <!-- Crosshair / target -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"/>
+            <circle cx="12" cy="12" r="3"/>
+            <line x1="12" y1="2" x2="12" y2="5.5"/>
+            <line x1="12" y1="18.5" x2="12" y2="22"/>
+            <line x1="2" y1="12" x2="5.5" y2="12"/>
+            <line x1="18.5" y1="12" x2="22" y2="12"/>
+          </svg>
+        </span>
+        <span class="reading-left-dock__item-label"
+              data-i18n="reading.leftDock.overview">סקירה</span>
+      </button>
+    </li>
+
+    <li>
+      <button
+        type="button"
+        class="lsb-btn reading-left-dock__item"
+        data-action="tts"
+        data-i18n-tooltip="reading.leftDock.readAloud"
+        data-i18n-aria-label="reading.leftDock.readAloud"
+        aria-label="Read aloud"
+      >
+        <span class="reading-left-dock__item-dot" aria-hidden="true"></span>
+        <span class="reading-left-dock__item-icon">
+          <!-- Headphones -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M4 14a8 8 0 0 1 16 0"/>
+            <path d="M4 14v4a2 2 0 0 0 2 2h1a1 1 0 0 0 1-1v-5a1 1 0 0 0-1-1H4z"/>
+            <path d="M20 14v4a2 2 0 0 1-2 2h-1a1 1 0 0 1-1-1v-5a1 1 0 0 1 1-1h3z"/>
+          </svg>
+        </span>
+        <span class="reading-left-dock__item-label"
+              data-i18n="reading.leftDock.readAloud">הקראה</span>
+      </button>
+    </li>
+
+    <li>
+      <button
+        type="button"
+        class="lsb-btn reading-left-dock__item"
+        data-action="statistics"
+        data-i18n-tooltip="reading.leftDock.statistics"
+        data-i18n-aria-label="reading.leftDock.statistics"
+        aria-label="Statistics"
+      >
+        <span class="reading-left-dock__item-dot" aria-hidden="true"></span>
+        <span class="reading-left-dock__item-icon">
+          <!-- Vertical bars -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="6"  y1="20" x2="6"  y2="14"/>
+            <line x1="12" y1="20" x2="12" y2="9"/>
+            <line x1="18" y1="20" x2="18" y2="16"/>
+          </svg>
+        </span>
+        <span class="reading-left-dock__item-label"
+              data-i18n="reading.leftDock.statistics">סטטיסטיקות</span>
+      </button>
+    </li>
+
+    <li>
+      <button
+        type="button"
+        class="lsb-btn reading-left-dock__item"
+        data-action="bookmarks"
+        data-i18n-tooltip="reading.leftDock.bookmarks"
+        data-i18n-aria-label="reading.leftDock.bookmarks"
+        aria-label="Bookmarks"
+      >
+        <span class="reading-left-dock__item-dot" aria-hidden="true"></span>
+        <span class="reading-left-dock__item-icon">
+          <!-- Bookmark outline -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M7 4h10a1 1 0 0 1 1 1v15l-6-3.5L6 20V5a1 1 0 0 1 1-1z"/>
+          </svg>
+        </span>
+        <span class="reading-left-dock__item-label"
+              data-i18n="reading.leftDock.bookmarks">סימניות</span>
+      </button>
+    </li>
+
+    <li>
+      <button
+        type="button"
+        class="lsb-btn reading-left-dock__item"
+        data-action="highlights"
+        data-i18n-tooltip="reading.leftDock.highlights"
+        data-i18n-aria-label="reading.leftDock.highlights"
+        aria-label="Highlights"
+      >
+        <span class="reading-left-dock__item-dot" aria-hidden="true"></span>
+        <span class="reading-left-dock__item-icon">
+          <!-- Pencil / marker -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M15.5 4.5l4 4L8 20H4v-4L15.5 4.5z"/>
+            <path d="M13.5 6.5l4 4"/>
+          </svg>
+        </span>
+        <span class="reading-left-dock__item-label"
+              data-i18n="reading.leftDock.highlights">הדגשות</span>
+      </button>
+    </li>
+
+    <li>
+      <button
+        type="button"
+        class="lsb-btn reading-left-dock__item"
+        data-action="more"
+        data-i18n-tooltip="reading.leftDock.more"
+        data-i18n-aria-label="reading.leftDock.more"
+        aria-label="More"
+      >
+        <span class="reading-left-dock__item-dot" aria-hidden="true"></span>
+        <span class="reading-left-dock__item-icon">
+          <!-- Three horizontal dots -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="6"  cy="12" r="1.4" fill="currentColor"/>
+            <circle cx="12" cy="12" r="1.4" fill="currentColor"/>
+            <circle cx="18" cy="12" r="1.4" fill="currentColor"/>
+          </svg>
+        </span>
+        <span class="reading-left-dock__item-label"
+              data-i18n="reading.leftDock.more">עוד</span>
+      </button>
+    </li>
+  </ul>
+
+  <!-- ── Collapse button (bottom of dock) ─────────────────────── -->
   <button
     type="button"
-    class="lsb-collapse-btn"
+    class="reading-left-dock__collapse lsb-collapse-btn"
     data-left-sidebar-toggle="collapse"
     aria-controls="left-sidebar"
     aria-expanded="true"
-    title="Collapse tools"
-    data-i18n-title="leftSidebar.collapse"
+    title="Collapse"
+    data-i18n-title="reading.leftDock.collapse"
   >
-    <span class="sr-only" data-i18n="leftSidebar.collapse">Collapse tools</span>
-    <svg class="lsb-collapse-chev" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
-      <path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
-  </button>
-
-  <button
-    type="button"
-    class="lsb-btn lsb-btn-goal"
-    data-action="daily-goal"
-    data-i18n-tooltip="leftSidebar.dailyGoal"
-    data-i18n-aria-label="leftSidebar.dailyGoal"
-    aria-label="Daily goal"
-  >
-   
-    <svg class="lsb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-      <circle cx="12" cy="12" r="9"/>
-      <circle cx="12" cy="12" r="5.5"/>
-      <circle cx="12" cy="12" r="2"/>
-    </svg>
-  </button>
-
-  <button
-    type="button"
-    class="lsb-btn"
-    data-action="tts"
-    data-i18n-tooltip="leftSidebar.tts"
-    data-i18n-aria-label="leftSidebar.tts"
-    aria-label="Listen"
-  >
-    <svg class="lsb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-      <path d="M3 12c0-4.97 4.03-9 9-9s9 4.03 9 9v3"/>
-      <path d="M3 15v-3"/>
-      <rect x="3" y="14" width="4" height="6" rx="1.5"/>
-      <rect x="17" y="14" width="4" height="6" rx="1.5"/>
-    </svg>
-  </button>
-
-  <button
-    type="button"
-    class="lsb-btn"
-    data-action="statistics"
-    data-i18n-tooltip="leftSidebar.statistics"
-    data-i18n-aria-label="leftSidebar.statistics"
-    aria-label="Reading statistics"
-  >
-    <svg class="lsb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-      <line x1="6" y1="20" x2="6" y2="13"/>
-      <line x1="12" y1="20" x2="12" y2="8"/>
-      <line x1="18" y1="20" x2="18" y2="15"/>
-    </svg>
-  </button>
-
-  <button
-    type="button"
-    class="lsb-btn"
-    data-action="bookmarks"
-    data-i18n-tooltip="leftSidebar.bookmarks"
-    data-i18n-aria-label="leftSidebar.bookmarks"
-    aria-label="Bookmarks"
-  >
-    <svg class="lsb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-      <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
-    </svg>
-  </button>
-
-  <button
-    type="button"
-    class="lsb-btn"
-    data-action="highlights"
-    data-i18n-tooltip="leftSidebar.highlights"
-    data-i18n-aria-label="leftSidebar.highlights"
-    aria-label="My highlights"
-  >
-    <svg class="lsb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-      <path d="M12 20l-3-3m3 3l9-9-3-3-9 9m3 3l-3 3-1-2 2-1-1-2 2-1"/>
+    <span class="sr-only" data-i18n="reading.leftDock.collapse">Collapse</span>
+    <svg class="lsb-collapse-chev" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
+      <!-- Double chevron pointing inline-END (outward). RTL flips. -->
+      <path d="M3 4l4 4-4 4M8 4l4 4-4 4"
+            stroke="currentColor" stroke-width="1.8" fill="none"
+            stroke-linecap="round" stroke-linejoin="round"/>
     </svg>
   </button>
 </aside>
@@ -152,7 +257,7 @@
      modules — they need a guaranteed-global rule with !important to beat
      the inline styles those modules inject. The DOM stays intact so
      left-sidebar.ts can still delegate clicks to them. On ≤1023px this
-     sidebar is hidden and the legacy FABs naturally reappear. -->
+     dock is hidden and the legacy FABs naturally reappear. -->
 <style is:global>
   @media (min-width: 1024px) {
     #goal-indicator,
@@ -172,225 +277,402 @@
 </style>
 
 <style>
-  /* ── Container ────────────────────────────────────────────────────────── */
-  .left-sidebar {
+  /* ── Container: tall floating glass capsule ─────────────────── */
+  /* Anchored to the visual LEFT in EVERY language. The dock is a
+     visual chrome element, not a flow-bound one — flipping it to
+     the right in LTR breaks the layout reservation in
+     ReadingLayout.astro (which now reserves margin-left: 144px
+     unconditionally). Use physical left/right, not inset-inline-*. */
+  .reading-left-dock {
     position: fixed;
-    inset-inline-end: 0;
-    /* Header height — matches the unified right sidebar's top: 68px so
-       both bars align under the platform header instead of covering it. */
-    top: 68px;
-    bottom: 0;
-    width: 76px;
+    left: 16px;
+    right: auto;
+    top: 16px;
+    bottom: 16px;
+    height: auto;
+    width: 112px;
     z-index: 40;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    padding: 1.5rem 0;
-    gap: 1.1rem;
-    background: rgba(15, 15, 18, 0.85);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border-inline-start: 0.5px solid var(--yuval-border, rgba(127, 127, 127, 0.18));
+    align-items: stretch;
+    padding: 18px 10px 14px;
     box-sizing: border-box;
+    border-radius: 38px;
+    background: rgba(7, 13, 28, 0.78);
+    backdrop-filter: blur(20px) saturate(140%);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    border: 1px solid rgba(128, 95, 255, 0.35);
+    box-shadow:
+      0 18px 48px -12px rgba(98, 65, 210, 0.45),
+      0 0 0 1px rgba(255, 255, 255, 0.02),
+      inset 0 1px 0 rgba(255, 255, 255, 0.06),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.35);
   }
 
-  :global(:root:not(.dark)) .left-sidebar {
-    background: rgba(255, 255, 255, 0.92);
+  /* Light theme readability — keep the navy capsule character even
+     against a light reading background (Yuval is dark-first; this is
+     just a polish for users who flip the page theme). */
+  :global(:root:not(.dark)) .reading-left-dock {
+    background: rgba(15, 22, 42, 0.86);
+    border-color: rgba(128, 95, 255, 0.45);
   }
 
-  /* Hide on tablet and below — mobile integration is a later task. */
+  /* Hide on tablet and below — mobile pattern handled separately. */
   @media (max-width: 1023px) {
-    .left-sidebar {
+    .reading-left-dock {
       display: none;
     }
   }
 
-  /* ── Buttons ──────────────────────────────────────────────────────────── */
-  .lsb-btn {
+  /* ── Logo ───────────────────────────────────────────────────── */
+  .reading-left-dock__logo {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 1px;
+    margin: 4px 0 14px;
+    font-family: var(--font-heading, 'Frank Ruhl Libre', 'Georgia', serif);
+    color: rgba(232, 230, 255, 0.96);
+    text-shadow:
+      0 0 8px rgba(138, 77, 255, 0.45),
+      0 0 18px rgba(109, 93, 251, 0.25);
+    user-select: none;
+  }
+
+  .reading-left-dock__logo-letter {
+    font-size: 1.45rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+  }
+
+  .reading-left-dock__logo-rest {
+    font-size: 1.35rem;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    margin-inline-start: 1px;
+  }
+
+  .reading-left-dock__logo-ornament {
+    font-size: 0.85rem;
+    color: #f1c265;
+    margin-inline-start: 3px;
+    text-shadow:
+      0 0 6px rgba(241, 194, 101, 0.7),
+      0 0 12px rgba(241, 194, 101, 0.35);
+    transform: translateY(-4px);
+  }
+
+  /* ── Progress ring ──────────────────────────────────────────── */
+  .reading-left-dock__progress {
     position: relative;
-    width: 56px;
-    height: 56px;
-    border-radius: 12px;
-    border: none;
-    background: transparent;
-    color: rgba(255, 255, 255, 0.7);
-    cursor: pointer;
+    margin: 4px auto 18px;
+    width: 76px;
+    height: 76px;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0;
-    transition: background 200ms cubic-bezier(0.4, 0, 0.2, 1),
-                color 200ms cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  :global(:root:not(.dark)) .lsb-btn {
-    color: rgba(0, 0, 0, 0.65);
-  }
-
-  .lsb-btn:hover,
-  .lsb-btn:focus-visible {
-    background: rgba(201, 162, 39, 0.1);
-    color: #c9a227;
-    outline: none;
-  }
-
-  .lsb-btn.active {
-    background: rgba(201, 162, 39, 0.15);
-    color: #c9a227;
-  }
-
-  /* Gold pill protruding from the inline-START edge of an active button
-     (the edge facing the reading content, opposite the bar's edge). */
-  .lsb-btn.active::before {
-    content: '';
+  .reading-left-dock__progress-ring {
     position: absolute;
-    inset-inline-start: -14px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 3px;
-    height: 28px;
-    background: #c9a227;
-    border-radius: 2px;
-    pointer-events: none;
-  }
-
-  .lsb-icon {
-    width: 32px;
-    height: 32px;
-    display: block;
-  }
-
-  /* ── Daily-goal progress ring (overlay around the icon) ───────────────── */
-  .lsb-goal-ring {
-    position: absolute;
-    width: 44px;
-    height: 44px;
-    top: 50%;
-    inset-inline-start: 50%;
-    transform: translate(-50%, -50%) rotate(-90deg);
-    pointer-events: none;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg); /* arc starts at 12 o'clock */
     overflow: visible;
   }
 
-  .lsb-goal-ring-track {
+  .reading-left-dock__progress-track {
     fill: none;
-    stroke: rgba(255, 255, 255, 0.1);
-    stroke-width: 2.5;
+    stroke: rgba(255, 255, 255, 0.08);
+    stroke-width: 4;
   }
 
-  :global(:root:not(.dark)) .lsb-goal-ring-track {
-    stroke: rgba(0, 0, 0, 0.08);
-  }
-
-  .lsb-goal-ring-fill {
+  .reading-left-dock__progress-fill {
     fill: none;
-    stroke: #1f8a4d;
-    stroke-width: 2.5;
+    stroke: url(#rldock-progress-arc);
+    stroke-width: 4;
     stroke-linecap: round;
-    transition: stroke-dasharray 400ms cubic-bezier(0.4, 0, 0.2, 1),
-                stroke 200ms ease,
-                filter 200ms ease;
+    filter: drop-shadow(0 0 6px rgba(138, 77, 255, 0.45));
+    transition: stroke-dasharray 500ms cubic-bezier(0.33, 1, 0.68, 1);
   }
 
-  /* Fully achieved → brighter green with a soft glow. */
-  .lsb-btn-goal[data-goal-done="true"] .lsb-goal-ring-fill {
-    stroke: #28c46b;
-    filter: drop-shadow(0 0 4px rgba(40, 196, 107, 0.55));
+  .reading-left-dock__progress-percent {
+    position: relative;
+    z-index: 1;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #b9aaff;
+    text-shadow: 0 0 10px rgba(138, 77, 255, 0.6);
+    letter-spacing: 0.01em;
+    line-height: 1;
+    direction: ltr;
+    unicode-bidi: isolate;
   }
 
-  /* ── Badge (slot exists; populated in a later task) ───────────────────── */
+  .reading-left-dock__progress-label {
+    position: absolute;
+    bottom: -18px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: rgba(230, 235, 255, 0.78);
+    white-space: nowrap;
+    letter-spacing: 0.02em;
+  }
+
+  /* ── Menu list ──────────────────────────────────────────────── */
+  /* flex: 1 + space-evenly distributes the six items down the
+     remaining capsule height so the bottom collapse button always
+     anchors at the bottom edge (not floating mid-dock when the
+     viewport is tall). */
+  .reading-left-dock__menu {
+    list-style: none;
+    margin: 18px 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+    gap: 6px;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: visible;
+  }
+
+  .reading-left-dock__menu li {
+    display: block;
+  }
+
+  /* ── Menu item button ───────────────────────────────────────── */
+  .reading-left-dock__item {
+    position: relative;
+    width: 100%;
+    min-height: 56px;
+    padding: 8px 6px 7px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 14px;
+    color: rgba(230, 235, 255, 0.82);
+    cursor: pointer;
+    user-select: none;
+    transition:
+      background 180ms cubic-bezier(0.4, 0, 0.2, 1),
+      border-color 180ms cubic-bezier(0.4, 0, 0.2, 1),
+      color 180ms cubic-bezier(0.4, 0, 0.2, 1),
+      box-shadow 180ms cubic-bezier(0.4, 0, 0.2, 1),
+      transform 180ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .reading-left-dock__item:focus-visible {
+    outline: 2px solid rgba(138, 77, 255, 0.7);
+    outline-offset: 2px;
+  }
+
+  .reading-left-dock__item-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+  }
+
+  .reading-left-dock__item-icon svg {
+    width: 24px;
+    height: 24px;
+    color: inherit;
+  }
+
+  .reading-left-dock__item-label {
+    font-size: 0.78rem;
+    font-weight: 500;
+    line-height: 1.1;
+    letter-spacing: 0.01em;
+    color: rgba(230, 235, 255, 0.78);
+    text-align: center;
+    white-space: nowrap;
+    transition: color 180ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Glowing dot anchored to the RIGHT edge of the active item —
+     i.e. the side closest to the reading content. Physical `right`
+     (not inset-inline-end) so it never flips to the screen-edge
+     side in LTR. */
+  .reading-left-dock__item-dot {
+    position: absolute;
+    top: 50%;
+    right: -6px;
+    left: auto;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #7C5CFF;
+    box-shadow:
+      0 0 6px rgba(138, 77, 255, 0.85),
+      0 0 14px rgba(138, 77, 255, 0.55);
+    transform: translateY(-50%) scale(0);
+    opacity: 0;
+    pointer-events: none;
+    transition:
+      transform 220ms cubic-bezier(0.33, 1, 0.68, 1),
+      opacity 180ms ease;
+  }
+
+  /* ── Hover (inactive only) ──────────────────────────────────── */
+  .reading-left-dock__item:hover:not(.active),
+  .lsb-btn.reading-left-dock__item:focus-visible:not(.active) {
+    background: rgba(255, 255, 255, 0.045);
+    color: #ffffff;
+    transform: translateY(-1px);
+  }
+
+  .reading-left-dock__item:hover:not(.active)
+    .reading-left-dock__item-label {
+    color: #ffffff;
+  }
+
+  /* ── Active state — driven by `.active` (toggled by left-sidebar.ts) ── */
+  .lsb-btn.reading-left-dock__item.active {
+    background: rgba(98, 65, 210, 0.22);
+    border-color: rgba(147, 103, 255, 0.65);
+    color: #ffffff;
+    box-shadow:
+      0 0 18px rgba(138, 77, 255, 0.45),
+      inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  }
+
+  .lsb-btn.reading-left-dock__item.active .reading-left-dock__item-label {
+    color: #ffffff;
+  }
+
+  .lsb-btn.reading-left-dock__item.active .reading-left-dock__item-dot {
+    transform: translateY(-50%) scale(1);
+    opacity: 1;
+  }
+
+  /* ── Badge — preserved from the previous activity-bar API ──── */
+  /* Anchored to the top-RIGHT corner of the button (toward the
+     reading content) regardless of language. */
   .lsb-btn[data-badge]::after {
     content: attr(data-badge);
     position: absolute;
     top: 4px;
-    inset-inline-start: 4px;
+    right: 6px;
+    left: auto;
     min-width: 18px;
     height: 18px;
     padding: 0 5px;
     box-sizing: border-box;
     border-radius: 9px;
-    border: 1.5px solid rgba(15, 15, 18, 0.85);
-    background: #c9a227;
-    color: #1a1502;
+    border: 1.5px solid rgba(7, 13, 28, 0.85);
+    background: #8A4DFF;
+    color: #ffffff;
     font-size: 0.68rem;
     font-weight: 700;
     line-height: 15px;
     text-align: center;
     pointer-events: none;
+    box-shadow: 0 0 8px rgba(138, 77, 255, 0.6);
   }
 
-  :global(:root:not(.dark)) .lsb-btn[data-badge]::after {
-    border-color: rgba(255, 255, 255, 0.92);
-  }
+  .lsb-btn[data-badge-color="green"]::after { background: #1f8a4d; }
+  .lsb-btn[data-badge-color="purple"]::after { background: #a78bfa; color: #1a1632; }
 
-  .lsb-btn[data-badge-color="green"]::after {
-    background: #1f8a4d;
-    color: #ffffff;
-  }
-
-  .lsb-btn[data-badge-color="purple"]::after {
-    background: #a78bfa;
-    color: #1a1632;
-  }
-
-  /* ── Tooltip (rendered as a single floating element, see script) ─────── */
+  /* ── Tooltip (rendered as a single floating element, see script) ─ */
   :global(.lsb-tooltip) {
     position: fixed;
     z-index: 41;
-    padding: 0.55rem 0.95rem;
-    background: rgba(20, 20, 22, 0.96);
+    padding: 0.45rem 0.85rem;
+    background: rgba(7, 13, 28, 0.96);
     color: rgba(255, 255, 255, 0.95);
-    border: 0.5px solid var(--yuval-border, rgba(127, 127, 127, 0.18));
-    border-radius: 7px;
-    font-size: 0.82rem;
+    border: 1px solid rgba(128, 95, 255, 0.45);
+    border-radius: 8px;
+    font-size: 0.8rem;
     font-weight: 500;
     line-height: 1.2;
     white-space: nowrap;
     pointer-events: none;
     opacity: 0;
+    box-shadow: 0 6px 24px -8px rgba(98, 65, 210, 0.55);
     transition: opacity 200ms cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  :global(:root:not(.dark) .lsb-tooltip) {
-    background: rgba(255, 255, 255, 0.96);
-    color: rgba(0, 0, 0, 0.85);
+  :global(.lsb-tooltip.visible) { opacity: 1; }
+
+  /* ── Collapse button (bottom of dock) ───────────────────────── */
+  .reading-left-dock__collapse {
+    appearance: none;
+    margin: 8px auto 0;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: inline-grid;
+    place-items: center;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(128, 95, 255, 0.3);
+    color: rgba(230, 235, 255, 0.85);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition:
+      background-color 180ms ease,
+      border-color 180ms ease,
+      color 180ms ease,
+      box-shadow 180ms ease,
+      transform 180ms ease;
   }
 
-  :global(.lsb-tooltip.visible) {
-    opacity: 1;
+  .reading-left-dock__collapse:hover {
+    background: rgba(98, 65, 210, 0.18);
+    border-color: rgba(147, 103, 255, 0.65);
+    color: #ffffff;
+    box-shadow: 0 0 14px rgba(138, 77, 255, 0.5);
   }
 
-  /* ─── Chromatic-shift collapse ─────────────────────────────────────
-     Same approach as the right-side unified sidebar: 500ms cubic-out
-     on opacity + transform, with rAF mutating <feColorMatrix> for the
-     color → grayscale drain. The filter is only attached during the
-     animation window via :global(body.left-sidebar-animating). */
+  .reading-left-dock__collapse:active { transform: scale(0.94); }
 
-  /* Exit direction: LeftSidebar sits on inline-END, so on collapse
-     it slides OUTWARD — away from the content edge.
-     LTR: inline-end = right → translateX(+100%)
-     RTL: inline-end = left  → translateX(-100%) */
-  :root { --lsb-collapse-exit: 1; }
+  .reading-left-dock__collapse:focus-visible {
+    outline: 2px solid rgba(138, 77, 255, 0.7);
+    outline-offset: 2px;
+  }
+
+  /* Dock collapses to the LEFT in every language, so the double
+     chevron always points LEFT. The path is authored as ">>" so we
+     flip it horizontally unconditionally. */
+  .lsb-collapse-chev {
+    transform: scaleX(-1);
+  }
+
+  /* ─── Chromatic-shift collapse animation (preserved API) ───────
+     Dock is always on the visual LEFT, so the exit direction is
+     also always LEFT. The --lsb-collapse-exit var is locked to -1
+     in both LTR and RTL so the slide direction never flips. */
+  :root { --lsb-collapse-exit: -1; }
   :global([dir="rtl"]) { --lsb-collapse-exit: -1; }
 
-  .left-sidebar {
+  .reading-left-dock {
     transition:
       opacity 500ms cubic-bezier(0.33, 1, 0.68, 1),
-      transform 500ms cubic-bezier(0.33, 1, 0.68, 1);
+      transform 500ms cubic-bezier(0.33, 1, 0.68, 1),
+      background 300ms ease,
+      box-shadow 300ms ease;
     will-change: opacity, transform;
   }
 
-  :global(body.left-sidebar-animating) .left-sidebar {
+  :global(body.left-sidebar-animating) .reading-left-dock {
     filter: url(#left-sidebar-chromatic);
   }
 
-  :global(body.left-sidebar-collapsed) .left-sidebar {
+  :global(body.left-sidebar-collapsed) .reading-left-dock {
     opacity: 0;
-    transform: translateX(calc(var(--lsb-collapse-exit, 1) * 100%));
+    transform: translateX(-110%);
     pointer-events: none;
   }
 
-  /* Hide the SVG defs visually but keep them in the layout tree. */
   .lsb-fx-defs {
     position: absolute;
     width: 0;
@@ -398,88 +680,39 @@
     overflow: hidden;
   }
 
-  /* ─── Collapse button (top of rail) ─────────────────────────────── */
-  .lsb-collapse-btn {
-    appearance: none;
-    background: transparent;
-    border: 1px solid var(--yuval-border, rgba(127, 127, 127, 0.18));
-    color: rgba(255, 255, 255, 0.55);
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
-    display: inline-grid;
-    place-items: center;
-    cursor: pointer;
-    flex-shrink: 0;
-    margin-block-end: 4px;
-    transition:
-      background-color 160ms ease,
-      border-color 160ms ease,
-      color 160ms ease,
-      transform 160ms ease;
-  }
-
-  :global(:root:not(.dark)) .lsb-collapse-btn {
-    color: rgba(0, 0, 0, 0.5);
-  }
-
-  .lsb-collapse-btn:hover {
-    background: rgba(201, 162, 39, 0.1);
-    border-color: rgba(201, 162, 39, 0.4);
-    color: #c9a227;
-  }
-
-  .lsb-collapse-btn:active { transform: scale(0.94); }
-
-  .lsb-collapse-btn:focus-visible {
-    outline: 2px solid rgba(201, 162, 39, 0.7);
-    outline-offset: 2px;
-  }
-
-  /* The chevron path points inline-END in LTR (toward the outer
-     screen edge). RTL flips horizontally. */
-  :global([dir="rtl"]) .lsb-collapse-chev {
-    transform: scaleX(-1);
-  }
-
-  /* ─── Return button (floating, on inline-end edge) ──────────────── */
+  /* ─── Return button (floating, on the LEFT screen edge) ──────
+     Anchored to the LEFT in every language, mirroring the dock. */
   .lsb-return-btn {
-    /* Mirror of usb-return-btn but anchored to inline-END. Half-pill
-       with rounded corners on the inline-START side (facing the
-       content). Pulse glow signals "bring me back" while collapsed. */
     position: fixed;
-    inset-block-start: calc(50% + 60px);
-    inset-inline-end: 0;
+    top: calc(50% + 60px);
+    left: 0;
+    right: auto;
     z-index: 41;
     width: 32px;
     height: 64px;
     padding: 0;
-    border: 1px solid var(--yuval-border, rgba(127, 127, 127, 0.22));
-    border-inline-end: none;
-    border-start-start-radius: 14px;
-    border-end-start-radius: 14px;
-    border-start-end-radius: 0;
-    border-end-end-radius: 0;
+    border: 1px solid rgba(128, 95, 255, 0.45);
+    border-left: none;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    border-top-right-radius: 14px;
+    border-bottom-right-radius: 14px;
     background: linear-gradient(
-      225deg,
-      rgba(201, 162, 39, 0.14),
-      rgba(201, 162, 39, 0.04)
+      135deg,
+      rgba(138, 77, 255, 0.22),
+      rgba(98, 65, 210, 0.06)
     );
-    color: rgba(255, 255, 255, 0.85);
+    color: rgba(232, 230, 255, 0.95);
     cursor: pointer;
     display: grid;
     place-items: center;
     opacity: 0;
     pointer-events: none;
-    transform: translateY(-50%) translateX(calc(var(--lsb-collapse-exit, 1) * 12px));
+    transform: translateY(-50%) translateX(-12px);
     transition:
       opacity 320ms cubic-bezier(0.33, 1, 0.68, 1) 180ms,
       transform 360ms cubic-bezier(0.33, 1, 0.68, 1) 180ms,
       background 220ms ease;
-  }
-
-  :global(:root:not(.dark)) .lsb-return-btn {
-    color: rgba(0, 0, 0, 0.75);
   }
 
   :global(body.left-sidebar-collapsed) .lsb-return-btn {
@@ -490,48 +723,40 @@
 
   .lsb-return-btn:hover {
     background: linear-gradient(
-      225deg,
-      rgba(201, 162, 39, 0.28),
-      rgba(201, 162, 39, 0.10)
+      135deg,
+      rgba(138, 77, 255, 0.36),
+      rgba(98, 65, 210, 0.12)
     );
   }
 
   :global(body.left-sidebar-collapsed) .lsb-return-btn:hover {
-    transform:
-      translateY(-50%)
-      translateX(calc(var(--lsb-collapse-exit, 1) * -4px));
+    transform: translateY(-50%) translateX(4px);
   }
 
   .lsb-return-btn:focus-visible {
-    outline: 2px solid rgba(201, 162, 39, 0.7);
+    outline: 2px solid rgba(138, 77, 255, 0.7);
     outline-offset: 2px;
   }
 
+  /* Return-button chevron: dock is on the LEFT screen edge, so the
+     chevron always points RIGHT (into the content). The path is
+     authored as a "<" so we flip it horizontally unconditionally. */
   .lsb-return-chev {
+    transform: scaleX(-1);
     transition: transform 220ms cubic-bezier(0.33, 1, 0.68, 1);
   }
 
-  /* Path points inline-START in LTR (toward content). RTL flips. */
-  :global([dir="rtl"]) .lsb-return-chev {
-    transform: scaleX(-1);
-  }
-
   .lsb-return-btn:hover .lsb-return-chev {
-    transform: translateX(calc(var(--lsb-collapse-exit, 1) * 2px));
-  }
-
-  :global([dir="rtl"]) .lsb-return-btn:hover .lsb-return-chev {
     transform: scaleX(-1) translateX(-2px);
   }
 
-  /* Pulse glow ring — only animates while collapsed. */
   .lsb-return-glow {
     position: absolute;
     inset: -8px;
     border-radius: inherit;
     background: radial-gradient(
       ellipse at center,
-      rgba(201, 162, 39, 0.55),
+      rgba(138, 77, 255, 0.55),
       transparent 70%
     );
     opacity: 0;
@@ -548,8 +773,7 @@
     50%      { transform: scale(1.12); opacity: 0.7; }
   }
 
-  /* sr-only — visually hidden but accessible to screen readers.
-     Mirrors the global utility used elsewhere in the codebase. */
+  /* sr-only — visually hidden but accessible to screen readers. */
   .sr-only {
     position: absolute;
     width: 1px;
@@ -562,18 +786,20 @@
     border: 0;
   }
 
-  /* Mobile: rail is already hidden under 1024px; hide collapse and
-     return controls there too. */
+  /* Mobile: dock hidden, supporting controls hidden too. */
   @media (max-width: 1023px) {
-    .lsb-collapse-btn,
     .lsb-return-btn { display: none; }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .left-sidebar,
+    .reading-left-dock,
+    .reading-left-dock__item,
+    .reading-left-dock__progress-fill,
+    .reading-left-dock__collapse,
     .lsb-return-btn,
-    .lsb-return-chev,
-    .lsb-collapse-btn { transition-duration: 0ms !important; }
+    .lsb-return-chev {
+      transition-duration: 0ms !important;
+    }
     :global(body.left-sidebar-collapsed) .lsb-return-glow { animation: none; }
   }
 </style>
