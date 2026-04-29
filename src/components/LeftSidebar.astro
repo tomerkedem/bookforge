@@ -380,18 +380,19 @@
   }
 
   /* ── Menu list ──────────────────────────────────────────────── */
-  /* flex: 1 + space-evenly distributes the items down the remaining
-     capsule height so each tile gets large breathing room while
-     the bottom collapse button always anchors at the bottom edge. */
+  /* Tight vertical stack — items pack right under the progress
+     divider with a small consistent gap. We DO NOT distribute them
+     across the remaining capsule height; empty space below the last
+     tile (down to the collapse button) is fine and intentional. */
   .reading-left-dock__menu {
     list-style: none;
     margin: 14px 0 0;
     padding: 0;
     display: flex;
     flex-direction: column;
-    justify-content: space-evenly;
-    gap: 4px;
-    flex: 1 1 auto;
+    justify-content: flex-start;
+    gap: 6px;
+    flex: 0 0 auto;
     min-height: 0;
     overflow: visible;
   }
@@ -687,11 +688,14 @@
   /* Subtle rounded square — quieter chrome that echoes the tile
      language (same border + radius family) instead of a contrasting
      circle. The button is a clean 40×40 box; the divider line
-     above it lives in the margin gap, not in the button's box. */
+     above it lives in the margin gap, not in the button's box.
+     `margin-top: auto` anchors it to the bottom of the flex column
+     so any empty space sits between the menu and the button — the
+     menu can stay tight at the top, the button stays grounded. */
   .reading-left-dock__collapse {
     appearance: none;
     position: relative;
-    margin: 18px auto 0;
+    margin: auto auto 0;
     width: 40px;
     height: 40px;
     box-sizing: border-box;

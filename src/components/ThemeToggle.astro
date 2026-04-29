@@ -365,11 +365,18 @@ const { class: className } = Astro.props;
 
   /* Species palette — silhouette color. Kept slightly lighter than pure
      black so the bird reads against the cyan day-sky gradient without
-     looking pasted on. */
+     looking pasted on. Each species has a slight tonal shift so a
+     mixed-species sky reads as varied even when birds overlap. */
   :global(.bird-eagle)   { color: #1d1208; }
   :global(.bird-seagull) { color: #2a2a34; }
   :global(.bird-dove)    { color: #4a4e5a; }
   :global(.bird-sparrow) { color: #2b1f14; }
+  :global(.bird-stork)   { color: #3a3530; }
+  :global(.bird-swallow) { color: #2c2538; }
+  :global(.bird-hawk)    { color: #2a1f10; }
+  :global(.bird-crow)    { color: #15151a; }
+  :global(.bird-heron)   { color: #4a4c52; }
+  :global(.bird-crane)   { color: #5a5048; }
 
   /* Wing-flap: two path groups per bird, swapped rapidly via opacity.
      steps(1) gives a snap between poses (no crossfade), which reads as
@@ -967,11 +974,13 @@ const { class: className } = Astro.props;
   }
 
   /*
-    Birds — four species (crow, seagull, dove, sparrow) drift across the
-    day sky at irregular intervals. Each spawn picks a random species,
-    direction, altitude, speed and flap rate, then self-removes when its
-    flight animation ends. Birds are skipped in dark mode or under
-    prefers-reduced-motion, mirroring the meteor scheduler.
+    Birds — ten species (eagle, seagull, dove, sparrow, stork, swallow,
+    hawk, crow, heron, crane) drift across the day sky at irregular
+    intervals. Each spawn picks a random species (with no immediate
+    repeats for solo birds), direction, altitude, speed and flap rate,
+    then self-removes when its flight animation ends. Birds are skipped
+    in dark mode or under prefers-reduced-motion, mirroring the meteor
+    scheduler.
   */
   type BirdSpecies = {
     name: string;
@@ -1040,6 +1049,94 @@ const { class: className } = Astro.props;
       '<circle cx="20" cy="10" r="1.1" fill="currentColor"/>' +
     '</svg>';
 
+  // Stork (חסידה): wide arched wings, neck stretched forward, legs
+  // trailing behind. Slow, graceful flap. The horizontal neck-line
+  // is what reads as "stork" at small scale.
+  const STORK_SVG =
+    '<svg viewBox="0 0 40 20" preserveAspectRatio="xMidYMid meet">' +
+      '<g class="wings-up" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">' +
+        '<path d="M 2 11 Q 11 2 20 9 Q 29 2 38 11"/>' +
+        '<path d="M 20 9 L 27 8.5 L 30 9.5"/>' +
+        '<path d="M 11 11 L 6 14"/>' +
+      '</g>' +
+      '<g class="wings-down" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">' +
+        '<path d="M 2 8 Q 11 17 20 10 Q 29 17 38 8"/>' +
+        '<path d="M 20 10 L 27 9.5 L 30 10"/>' +
+        '<path d="M 11 11 L 6 14"/>' +
+      '</g>' +
+    '</svg>';
+
+  // Swallow (סנונית): sharp V wings, distinctive forked tail.
+  // Smallest of the new set, fastest flap.
+  const SWALLOW_SVG =
+    '<svg viewBox="0 0 40 20" preserveAspectRatio="xMidYMid meet">' +
+      '<g class="wings-up" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">' +
+        '<path d="M 4 14 L 14 5 L 20 10 L 26 5 L 36 14"/>' +
+        '<path d="M 18 10 L 14 13 M 22 10 L 18 13"/>' +
+      '</g>' +
+      '<g class="wings-down" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">' +
+        '<path d="M 4 6 L 14 14 L 20 10 L 26 14 L 36 6"/>' +
+        '<path d="M 18 10 L 14 13 M 22 10 L 18 13"/>' +
+      '</g>' +
+    '</svg>';
+
+  // Hawk: swept-back pointed wings with flared tips.
+  const HAWK_SVG =
+    '<svg viewBox="0 0 40 20" preserveAspectRatio="xMidYMid meet">' +
+      '<g class="wings-up" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+        '<path d="M 6 13 Q 14 4 20 10 Q 26 4 34 13"/>' +
+        '<path d="M 6 13 L 3 11"/>' +
+        '<path d="M 34 13 L 37 11"/>' +
+      '</g>' +
+      '<g class="wings-down" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+        '<path d="M 6 7 Q 14 17 20 10 Q 26 17 34 7"/>' +
+        '<path d="M 6 7 L 3 5"/>' +
+        '<path d="M 34 7 L 37 5"/>' +
+      '</g>' +
+      '<circle cx="20" cy="10" r="1.4" fill="currentColor"/>' +
+    '</svg>';
+
+  // Crow: blocky, sharp angles. Heaviest stroke for a "solid" feel.
+  const CROW_SVG =
+    '<svg viewBox="0 0 40 20" preserveAspectRatio="xMidYMid meet">' +
+      '<g class="wings-up" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">' +
+        '<path d="M 6 12 L 14 6 L 20 10 L 26 6 L 34 12"/>' +
+      '</g>' +
+      '<g class="wings-down" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">' +
+        '<path d="M 6 8 L 14 15 L 20 10 L 26 15 L 34 8"/>' +
+      '</g>' +
+      '<circle cx="20" cy="10" r="1.7" fill="currentColor"/>' +
+    '</svg>';
+
+  // Heron: slow, wide wings with a long stretched neck.
+  const HERON_SVG =
+    '<svg viewBox="0 0 40 20" preserveAspectRatio="xMidYMid meet">' +
+      '<g class="wings-up" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">' +
+        '<path d="M 2 12 Q 11 3 20 10 Q 29 3 38 12"/>' +
+        '<path d="M 20 10 Q 26 8.5 31 10"/>' +
+      '</g>' +
+      '<g class="wings-down" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">' +
+        '<path d="M 2 8 Q 11 17 20 10 Q 29 17 38 8"/>' +
+        '<path d="M 20 10 Q 26 11.5 31 10"/>' +
+      '</g>' +
+    '</svg>';
+
+  // Crane: similar long-neck profile to heron but lighter stroke
+  // and slimmer body — reads as the slighter cousin in the same sky.
+  const CRANE_SVG =
+    '<svg viewBox="0 0 40 20" preserveAspectRatio="xMidYMid meet">' +
+      '<g class="wings-up" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">' +
+        '<path d="M 4 11 Q 12 3 20 10 Q 28 3 36 11"/>' +
+        '<path d="M 20 10 L 26 9.2"/>' +
+        '<path d="M 9 11 L 5 13.5"/>' +
+      '</g>' +
+      '<g class="wings-down" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">' +
+        '<path d="M 4 9 Q 12 16 20 10 Q 28 16 36 9"/>' +
+        '<path d="M 20 10 L 26 10.2"/>' +
+        '<path d="M 9 11 L 5 13.5"/>' +
+      '</g>' +
+    '</svg>';
+
   /*
     Tuning per species — duration is now 2–4s per the calm-flock spec
     (one flock pass shouldn't linger), and opacity is dialed down to
@@ -1047,16 +1144,24 @@ const { class: className } = Astro.props;
     of advertising themselves to the reader's peripheral vision.
     Altitude ranges scaled up a touch for the new 32px window height.
   */
-  /* Four silhouettes — eagle / seagull / dove / sparrow. Solitary
-     passes can pick from any of them so the user sees real variety
-     between scattered birds; flocks stick to a single species per
-     pass so a group reads as one species moving together. Altitude
-     ranges scale with the new 37px window height. */
+  /* Ten silhouettes for real variety — each with a distinct
+     profile (wing shape, neck length, body weight, flap rate).
+     Stork carries the longest neck/leg trail; swallow is the
+     smallest with a forked tail; crane is the slim cousin of
+     the heron; crow is the heaviest stroke. Solitary spawns
+     also receive a sizeMul + speedMul so no two birds of the
+     same species look identical. */
   const BIRD_SPECIES: BirdSpecies[] = [
-    { name: 'eagle',   size: [16, 22], opacity: [0.55, 0.68], altitude: [3, 14], duration: [3.0, 4.0], flap: [480, 620], svg: EAGLE_SVG },
-    { name: 'seagull', size: [14, 20], opacity: [0.55, 0.70], altitude: [2, 12], duration: [2.6, 3.6], flap: [360, 460], svg: SEAGULL_SVG },
-    { name: 'dove',    size: [12, 16], opacity: [0.55, 0.70], altitude: [4, 16], duration: [2.4, 3.4], flap: [260, 340], svg: DOVE_SVG },
-    { name: 'sparrow', size: [9,  13], opacity: [0.50, 0.65], altitude: [5, 19], duration: [2.0, 3.0], flap: [160, 220], svg: SPARROW_SVG },
+    { name: 'eagle',   size: [14, 26], opacity: [0.50, 0.72], altitude: [3, 14], duration: [2.8, 4.4], flap: [460, 660], svg: EAGLE_SVG },
+    { name: 'seagull', size: [12, 22], opacity: [0.50, 0.74], altitude: [2, 12], duration: [2.4, 3.8], flap: [340, 480], svg: SEAGULL_SVG },
+    { name: 'dove',    size: [10, 18], opacity: [0.55, 0.72], altitude: [4, 16], duration: [2.2, 3.6], flap: [240, 360], svg: DOVE_SVG },
+    { name: 'sparrow', size: [7,  15], opacity: [0.45, 0.68], altitude: [5, 19], duration: [1.8, 3.2], flap: [150, 240], svg: SPARROW_SVG },
+    { name: 'stork',   size: [18, 30], opacity: [0.50, 0.70], altitude: [3, 12], duration: [3.4, 4.8], flap: [560, 760], svg: STORK_SVG },
+    { name: 'swallow', size: [8,  14], opacity: [0.45, 0.65], altitude: [4, 18], duration: [1.6, 2.6], flap: [120, 200], svg: SWALLOW_SVG },
+    { name: 'hawk',    size: [13, 21], opacity: [0.55, 0.74], altitude: [3, 14], duration: [2.4, 3.6], flap: [380, 520], svg: HAWK_SVG },
+    { name: 'crow',    size: [12, 20], opacity: [0.55, 0.78], altitude: [4, 15], duration: [2.6, 4.0], flap: [320, 440], svg: CROW_SVG },
+    { name: 'heron',   size: [16, 26], opacity: [0.48, 0.70], altitude: [3, 13], duration: [3.0, 4.4], flap: [520, 700], svg: HERON_SVG },
+    { name: 'crane',   size: [14, 22], opacity: [0.48, 0.68], altitude: [3, 14], duration: [3.0, 4.2], flap: [500, 680], svg: CRANE_SVG },
   ];
 
   /* Window dimensions — read once and reused so size tweaks here
@@ -1317,31 +1422,60 @@ const { class: className } = Astro.props;
     }
   }
 
-  /* Solitary spawner — a single bird of a random species drifts
-     across alone. Used for ~60% of intervals so the user sees real
-     variety between flock passes. Each solitary bird is fully
-     randomized (any species, any direction, any altitude). */
+  /* Solitary spawner — a single bird drifts across alone. Each
+     solitary gets a sizeMul (0.78–1.25) and speedMul (0.85–1.20)
+     applied on top of the species range, so two doves still look
+     different from each other. To force perceptible variety we
+     also avoid spawning the same species two solitaries in a row:
+     `lastSoloSpecies` is excluded from the random pick. */
+  let lastSoloSpecies: string | null = null;
+
+  function pickSoloSpecies(): BirdSpecies {
+    const pool = lastSoloSpecies
+      ? BIRD_SPECIES.filter(s => s.name !== lastSoloSpecies)
+      : BIRD_SPECIES;
+    const choice = pool[Math.floor(Math.random() * pool.length)];
+    lastSoloSpecies = choice.name;
+    return choice;
+  }
+
   function spawnSolitary(host: HTMLElement) {
     if (birdsDisabled()) return;
-    spawnBird(host);  // no opts → all parameters randomized
-    // Occasional pair: 18% chance a second bird (different species
-    // possible) trails 400-900ms behind. Reads as "two unrelated
-    // birds happened to cross at once" rather than a tiny flock.
+    const species = pickSoloSpecies();
+    spawnBird(host, {
+      species,
+      // direction stays fully random so consecutive birds can
+      // cross from opposite sides
+      sizeMul: randomInRange(0.78, 1.25),
+      speedMul: randomInRange(0.85, 1.20),
+    });
+    // Occasional pair: 18% chance a second bird (DIFFERENT species
+    // again — also picked via pickSoloSpecies) trails 400-900ms
+    // behind. Reads as two unrelated birds happening to cross at
+    // once rather than a tiny flock.
     if (Math.random() < 0.18) {
-      window.setTimeout(() => spawnBird(host), randomInRange(400, 900));
+      const secondSpecies = pickSoloSpecies();
+      window.setTimeout(() => spawnBird(host, {
+        species: secondSpecies,
+        sizeMul: randomInRange(0.78, 1.25),
+        speedMul: randomInRange(0.85, 1.20),
+      }), randomInRange(400, 900));
     }
   }
 
-  /* Default cadence (calm) — 10 to 25 seconds between events.
-     Hover state shortens the next interval. */
-  const BIRD_INTERVAL_S: [number, number] = [10, 25];
-  const BIRD_INTERVAL_HOVER_S: [number, number] = [4, 10];
+  /* Cadence — a bird (or flock) starts every 1.5–3.5s, so the user
+     sees something passing through the window at least every ~3
+     seconds on average. Hover tightens it further. The intervals
+     are sampled uniformly so the gap feels organic, never on a
+     metronome. */
+  const BIRD_INTERVAL_S: [number, number] = [1.5, 3.5];
+  const BIRD_INTERVAL_HOVER_S: [number, number] = [0.8, 2.0];
 
-  /* Mode mix per scheduled tick: ~60% solitary, ~40% flock. The
-     solitary path is what makes the sky feel inhabited between the
-     bigger flock moments — birds of different species cross at
-     unrelated times, like a real sky. */
-  const FLOCK_PROBABILITY = 0.4;
+  /* Mode mix per scheduled tick: 85% solitary, 15% flock. Flocks
+     are rare events; solitary birds (random species, random
+     direction) carry the day-to-day "sky is alive" feel without
+     overcrowding the window. */
+  const FLOCK_PROBABILITY = 0.15;
 
   let birdTimer: number | undefined;
   let birdHoverActive = false;
@@ -1387,13 +1521,16 @@ const { class: className } = Astro.props;
     stopMeteors();
     if (shooterHost) scheduleNextMeteor(shooterHost);
 
-    // Kick off the flock loop (day-sky only; the spawn function gates
-    // itself). No immediate spawn on page load — the window must feel
-    // CALM at idle and only earn attention when the user looks. The
-    // first flock arrives after the regular 10–25s wait.
+    // Kick off the bird loop (day-sky only; the spawn function gates
+    // itself). The first solitary bird appears within 0.5-1.5s so
+    // the window reads as alive immediately on page load; subsequent
+    // birds follow the random 1.5-3.5s cadence.
     const birdHost = toggle.querySelector<HTMLElement>('[data-sky-birds]');
     stopBirds();
-    if (birdHost) scheduleNextBird(birdHost);
+    if (birdHost) {
+      window.setTimeout(() => spawnSolitary(birdHost), randomInRange(500, 1500));
+      scheduleNextBird(birdHost);
+    }
 
     // Kick off the cloud loop — bootstrap a few mid-flight clouds so
     // the sky reads as populated immediately, then schedule fresh

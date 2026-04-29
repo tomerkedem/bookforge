@@ -440,22 +440,29 @@ const isRtl = getLanguageDirection(currentLang.code) === 'rtl';
   /* ─────────────────────────────────────────────────────────────────── */
 
   @media (max-width: 640px) {
+    /* Phone: collapse the trigger to a flag-only circular pill.
+       The flag emoji is universally recognizable on its own; the
+       text label and chevron are noise at this scale. Tapping the
+       flag still opens the same full dropdown panel underneath. */
     .language-selector-trigger {
-      padding: 8px 12px;
-      font-size: 13px;
+      width: 38px;
+      height: 38px;
+      padding: 0;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
     }
 
     .trigger-flag {
-      font-size: 16px;
+      font-size: 18px;
+      line-height: 1;
     }
 
-    .trigger-label {
-      min-width: 60px;
-    }
-
+    .trigger-label,
     .trigger-icon {
-      width: 16px;
-      height: 16px;
+      display: none;
     }
 
     .language-selector-panel {
