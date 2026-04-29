@@ -453,21 +453,6 @@ function formatChapterNumber(id: number | string): string {
                       style="offset-path: path('M 4.5 0 L 4.5 1000'); animation-delay: 3.58s;"/>
             </svg>
 
-            {(chapter.sections ?? 0) > 0 && (
-              <button
-                type="button"
-                class="usb-toggle-btn"
-                data-action="toggle-sections"
-                data-chapter-id={chapter.id}
-                aria-label="Toggle sections"
-                aria-expanded={chapter.id === currentChapterId ? 'true' : 'false'}
-                title="Show sections"
-              >
-                <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
-                  <path d="M4 6.5l4 4 4-4" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-              </button>
-            )}
           </li>
         ))}
       </ol>
