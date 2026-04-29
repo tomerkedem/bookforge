@@ -453,7 +453,11 @@
   --color-text-active-subtitle:  #85B7EB;
   --color-text-locked:           #9aa8b8;
   --color-text-in-progress:      #B5D4F4;
-  --color-text-tertiary:         #2C4860;
+  /* Card meta (e.g. "10 דקות קריאה") — bumped from the original
+     #2C4860 which sat at ~1.6:1 against the #0e1a26 card bg
+     (essentially invisible). #94a3b8 (slate-400) reads at ~6.5:1
+     while staying clearly subordinate to the white chapter title. */
+  --color-text-tertiary:         #94a3b8;
   --color-completion-green:      #5DCAA5;
   --color-active-accent:         #4DA8E0;
 
