@@ -28,4 +28,5 @@ export default defineConfig({
   integrations: [tailwind(), copyBookAssets()],
   output: 'server',
   adapter: node({ mode: 'standalone' }),
+  devToolbar: { enabled: false },
 });

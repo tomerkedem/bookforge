@@ -341,6 +341,7 @@ export const translations: Translations = {
   'readingTools.bookmarks':     { he: 'סימניות',            en: 'Bookmarks',          es: 'Marcadores' },
   'readingTools.highlights':    { he: 'ההדגשות שלי',        en: 'My highlights',      es: 'Mis resaltados' },
   'readingTools.search':        { he: 'חיפוש בפרק',         en: 'Search in chapter',  es: 'Buscar en el capítulo' },
+  'readingTools.progress':      { he: 'התקדמות קריאה',      en: 'Reading progress',   es: 'Progreso de lectura' },
 
   // ── Image Lightbox ──────────────────────────────────────────────────────────
   'lightbox.close':        { he: 'סגור',              en: 'Close',            es: 'Cerrar' },

@@ -26,19 +26,6 @@
         values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 1 0"
       />
     </filter>
-    <!-- Active arc gradient for the progress ring. The ring is
-         rotated -90deg in CSS so the arc starts at 12 o'clock; the
-         gradient runs along its visible sweep, picking up purple at
-         the start and electric cyan at the end. -->
-    <!-- Soft Yuval-brand gradient: gold (matches the right TOC
-         active accent #b8923f) → lighter gold → warm gold (the
-         header ornament tone). Ties the dock to both the menu-on-
-         the-right and the logo-up-top without electric blue. -->
-    <linearGradient id="rldock-progress-arc" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%"   stop-color="#b8923f"/>
-      <stop offset="60%"  stop-color="#e6c98a"/>
-      <stop offset="100%" stop-color="#d4c4a8"/>
-    </linearGradient>
   </defs>
 </svg>
 
@@ -61,22 +48,6 @@
 </button>
 
 <aside id="left-sidebar" class="reading-left-dock left-sidebar" aria-label="Reading tools">
-
-  <!-- ── Progress ring ────────────────────────────────────────── -->
-  <div class="reading-left-dock__progress">
-    <svg class="reading-left-dock__progress-ring" viewBox="0 0 48 48" aria-hidden="true">
-      <!-- Track + active arc share the same circle geometry.
-           r = 20, circumference ≈ 125.66. Arc length is
-           controlled in left-sidebar.ts via stroke-dasharray. -->
-      <circle class="reading-left-dock__progress-track"
-              cx="24" cy="24" r="20"/>
-      <circle class="reading-left-dock__progress-fill"
-              cx="24" cy="24" r="20"
-              pathLength="100"
-              stroke-dasharray="0 100"/>
-    </svg>
-    <span class="reading-left-dock__progress-percent" id="rldock-progress-percent">0%</span>
-  </div>
 
   <!-- ── Menu items ───────────────────────────────────────────── -->
   <ul class="reading-left-dock__menu" role="list">
@@ -325,22 +296,8 @@
       inset 0 1px 0 rgba(255, 255, 255, 0.85);
   }
 
-  /* Progress percent: switch to the same metallic Yuval cream-gold
-     as the header letter for full brand harmony. */
-  :global(:root:not(.dark)) .reading-left-dock__progress-percent {
-    color: #8b7355;
-    text-shadow: none;
-  }
-
-  /* Progress ring track — needs more contrast against cream than
-     against navy. */
-  :global(:root:not(.dark)) .reading-left-dock__progress-track {
-    stroke: rgba(0, 0, 0, 0.08);
-  }
-
-  /* Hairline divider tones below progress + above collapse: darker
-     so the line is visible on cream. */
-  :global(:root:not(.dark)) .reading-left-dock__progress::after,
+  /* Hairline divider above the collapse cluster: darker so it
+     stays visible on cream. */
   :global(:root:not(.dark)) .reading-left-dock__controls::before {
     background: linear-gradient(
       90deg,
@@ -476,100 +433,24 @@
     }
   }
 
-  /* ── Progress ring ──────────────────────────────────────────── */
-  .reading-left-dock__progress {
-    position: relative;
-    margin: 6px auto 24px;
-    width: 76px;
-    height: 76px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  /* Hairline divider below the ring — separates progress from
-     the action menu, matching the divider above the collapse
-     button at the bottom. */
-  .reading-left-dock__progress::after {
-    content: '';
-    position: absolute;
-    bottom: -14px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 56px;
-    height: 1px;
-    background: linear-gradient(
-      90deg,
-      transparent 0%,
-      rgba(255, 255, 255, 0.10) 50%,
-      transparent 100%
-    );
-    pointer-events: none;
-  }
-
-  .reading-left-dock__progress-ring {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    transform: rotate(-90deg); /* arc starts at 12 o'clock */
-    overflow: visible;
-  }
-
-  .reading-left-dock__progress-track {
-    fill: none;
-    stroke: rgba(255, 255, 255, 0.08);
-    stroke-width: 4;
-  }
-
-  .reading-left-dock__progress-fill {
-    fill: none;
-    stroke: url(#rldock-progress-arc);
-    stroke-width: 4;
-    stroke-linecap: round;
-    filter: drop-shadow(0 0 5px rgba(184, 146, 63, 0.35));
-    transition: stroke-dasharray 500ms cubic-bezier(0.33, 1, 0.68, 1);
-  }
-
-  .reading-left-dock__progress-percent {
-    position: relative;
-    z-index: 1;
-    font-family: 'Fraunces', 'Playfair Display', Georgia, serif;
-    font-size: 1.05rem;
-    font-weight: 600;
-    color: #d4c4a8;          /* warm cream — matches header ornament */
-    text-shadow: 0 0 8px rgba(212, 196, 168, 0.25);
-    letter-spacing: 0.02em;
-    line-height: 1;
-    direction: ltr;
-    unicode-bidi: isolate;
-  }
-
-  .reading-left-dock__progress-label {
-    position: absolute;
-    bottom: -18px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 0.72rem;
-    font-weight: 500;
-    color: rgba(230, 235, 255, 0.78);
-    white-space: nowrap;
-    letter-spacing: 0.02em;
-  }
+  /* Progress ring removed from the dock — reading progress now
+     surfaces in the global header. The dock is tool-only chrome.
+     left-sidebar.ts's syncReadingProgress() early-returns when the
+     ring elements are absent, so no script change is needed. */
 
   /* ── Menu list ──────────────────────────────────────────────── */
-  /* Tight vertical stack — items pack right under the progress
-     divider with a small consistent gap. We DO NOT distribute them
-     across the remaining capsule height; empty space below the last
-     tile (down to the collapse button) is fine and intentional. */
+  /* Tools start at the top of the capsule (the dock's `padding-top`
+     handles top breathing room). The bottom controls cluster uses
+     `margin-top: auto` to anchor itself to the bottom — empty space
+     between the last tile and the collapse button is intentional. */
   .reading-left-dock__menu {
     list-style: none;
-    margin: 14px 0 0;
+    margin: 0;
     padding: 0;
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
-    gap: 6px;
+    gap: 16px;
     flex: 0 0 auto;
     min-height: 0;
     overflow: visible;
