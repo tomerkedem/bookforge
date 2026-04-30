@@ -88,13 +88,9 @@ const isRtl = getLanguageDirection(language) === 'rtl';
 </header>
 
 <div class="mobile-quote-bar sm:hidden" id="mobile-quote-bar">
-  <div class="mobile-quote-track">
+  <div class="mobile-quote-track" id="mobile-quote-track">
     <span class="mobile-quote-text" id="mobile-quote"></span>
     <span class="mobile-quote-author-inline" id="mobile-quote-author"></span>
-    <span class="mobile-quote-separator">✦</span>
-    <span class="mobile-quote-text" id="mobile-quote-duplicate"></span>
-    <span class="mobile-quote-author-inline" id="mobile-quote-author-duplicate"></span>
-    <span class="mobile-quote-separator">✦</span>
   </div>
 </div>
 
@@ -647,15 +643,23 @@ const isRtl = getLanguageDirection(language) === 'rtl';
     display: flex;
     align-items: center;
     white-space: nowrap;
-    animation: marquee 25s linear infinite;
     padding-left: 100%;
+    transform: translateX(0);
+  }
+
+  .mobile-quote-track.is-animating {
+    animation: marquee 10.4s linear forwards;
   }
 
   :global([dir="rtl"]) .mobile-quote-track,
   .mobile-quote-bar.rtl .mobile-quote-track {
-    animation: marquee-rtl 25s linear infinite;
     padding-left: 0;
     padding-right: 100%;
+  }
+
+  :global([dir="rtl"]) .mobile-quote-track.is-animating,
+  .mobile-quote-bar.rtl .mobile-quote-track.is-animating {
+    animation: marquee-rtl 10.4s linear forwards;
   }
 
   @keyframes marquee {
@@ -663,7 +667,7 @@ const isRtl = getLanguageDirection(language) === 'rtl';
       transform: translateX(0);
     }
     100% {
-      transform: translateX(-50%);
+      transform: translateX(-100%);
     }
   }
 
@@ -672,7 +676,7 @@ const isRtl = getLanguageDirection(language) === 'rtl';
       transform: translateX(0);
     }
     100% {
-      transform: translateX(50%);
+      transform: translateX(100%);
     }
   }
 
@@ -867,10 +871,9 @@ const isRtl = getLanguageDirection(language) === 'rtl';
     const quoteEl = document.getElementById('header-quote');
     const authorEl = document.getElementById('header-quote-author');
     const mobileQuote = document.getElementById('mobile-quote');
-    const mobileQuoteDup = document.getElementById('mobile-quote-duplicate');
     const mobileAuthor = document.getElementById('mobile-quote-author');
-    const mobileAuthorDup = document.getElementById('mobile-quote-author-duplicate');
     const mobileBar = document.getElementById('mobile-quote-bar');
+    const mobileTrack = document.getElementById('mobile-quote-track');
     const logoLink = document.getElementById('site-logo-link');
 
     const lang = getCurrentLanguage();
@@ -930,12 +933,15 @@ const isRtl = getLanguageDirection(language) === 'rtl';
     }
 
     if (mobileQuote) mobileQuote.textContent = quoteWithMarks;
-    if (mobileQuoteDup) mobileQuoteDup.textContent = quoteWithMarks;
     if (mobileAuthor) mobileAuthor.textContent = author;
-    if (mobileAuthorDup) mobileAuthorDup.textContent = author;
 
     applyFontToEl(mobileQuote as HTMLElement | null, font);
-    applyFontToEl(mobileQuoteDup as HTMLElement | null, font);
+
+    if (mobileTrack) {
+      mobileTrack.classList.remove('is-animating');
+      void mobileTrack.offsetWidth;
+      mobileTrack.classList.add('is-animating');
+    }
   }
 
   function initHeaderQuotes() {
@@ -947,7 +953,7 @@ const isRtl = getLanguageDirection(language) === 'rtl';
     window.__yuvalHeaderQuotesInitialized = true;
 
     showQuote();
-    window.__yuvalHeaderQuotesInterval = window.setInterval(showQuote, 10000);
+    window.__yuvalHeaderQuotesInterval = window.setInterval(showQuote, 12500);
 
     window.addEventListener('language-changed', showQuote);
     document.addEventListener('astro:page-load', showQuote);
