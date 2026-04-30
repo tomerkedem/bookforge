@@ -231,47 +231,86 @@ function confirmAddBookmark(el: Element): void {
   if (document.getElementById('bm-confirm')) return;
 
   const existing = isBookmarked(el);
-  const rect = el.getBoundingClientRect();
+
+  const titleText = existing
+    ? tr('bookmarks.removePrompt')
+    : tr('reading.bookmarkDialog.title');
+  const descriptionText = existing ? '' : tr('reading.bookmarkDialog.description');
+  const confirmText = existing
+    ? tr('bookmarks.remove')
+    : tr('reading.bookmarkDialog.confirm');
+  const cancelText = tr('reading.bookmarkDialog.cancel');
+
+  const overlay = document.createElement('div');
+  overlay.id = 'bm-confirm-backdrop';
+  overlay.className = 'bookmark-dialog-backdrop';
 
   const host = document.createElement('div');
   host.id = 'bm-confirm';
+  host.className = 'bookmark-dialog';
+  host.setAttribute('role', 'dialog');
+  host.setAttribute('aria-modal', 'true');
+  host.setAttribute('aria-labelledby', 'bm-confirm-title');
+  if (descriptionText) host.setAttribute('aria-describedby', 'bm-confirm-desc');
   host.setAttribute('dir', getDir());
 
-  const titleKey = existing ? 'bookmarks.removePrompt' : 'bookmarks.addPrompt';
-  const confirmKey = existing ? 'bookmarks.remove' : 'bookmarks.add';
+  const iconSvg = `
+    <svg class="bookmark-dialog__icon" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M7 4.5C7 3.67 7.67 3 8.5 3h7c.83 0 1.5.67 1.5 1.5V21l-5-3.2L7 21V4.5Z"
+            fill="none" stroke="currentColor" stroke-width="1.6"
+            stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  `;
 
   host.innerHTML = `
-    <div class="bm-confirm-arrow"></div>
-    <div class="bm-confirm-title">🔖 ${tr(titleKey)}</div>
-    <div class="bm-confirm-actions">
-      <button class="bm-confirm-cancel">${tr('bookmarks.cancel')}</button>
-      <button class="bm-confirm-ok">${tr(confirmKey)}</button>
+    <div class="bookmark-dialog__header">
+      ${iconSvg}
+      <h2 id="bm-confirm-title" class="bookmark-dialog__title">${titleText}</h2>
+    </div>
+    ${descriptionText
+      ? `<p id="bm-confirm-desc" class="bookmark-dialog__description">${descriptionText}</p>`
+      : ''}
+    <div class="bookmark-dialog__divider" aria-hidden="true"></div>
+    <div class="bookmark-dialog__actions">
+      <button type="button"
+              class="bookmark-dialog__button bookmark-dialog__button--secondary bm-confirm-cancel">
+        ${cancelText}
+      </button>
+      <button type="button"
+              class="bookmark-dialog__button bookmark-dialog__button--primary bm-confirm-ok">
+        ${confirmText}
+      </button>
     </div>
   `;
 
+  document.body.appendChild(overlay);
   document.body.appendChild(host);
 
-  const top = window.scrollY + rect.top - host.offsetHeight - 10;
-  const left = window.scrollX + rect.left + rect.width / 2 - host.offsetWidth / 2;
-  host.style.top = `${Math.max(window.scrollY + 8, top)}px`;
-  host.style.left = `${Math.max(8, Math.min(left, window.innerWidth - host.offsetWidth - 8))}px`;
+  // Defer focus to the primary action so keyboard users can confirm immediately.
+  requestAnimationFrame(() => {
+    (host.querySelector('.bm-confirm-ok') as HTMLButtonElement | null)?.focus();
+  });
 
-  const close = () => host.remove();
+  const close = () => {
+    host.remove();
+    overlay.remove();
+    document.removeEventListener('keydown', onKey);
+  };
+
+  function onKey(e: KeyboardEvent) {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      close();
+    }
+  }
 
   host.querySelector('.bm-confirm-cancel')?.addEventListener('click', close);
   host.querySelector('.bm-confirm-ok')?.addEventListener('click', () => {
     addBookmark(el);
     close();
   });
-
-  setTimeout(() => {
-    document.addEventListener('click', function onDoc(e) {
-      if (!host.contains(e.target as Node)) {
-        close();
-        document.removeEventListener('click', onDoc);
-      }
-    });
-  }, 0);
+  overlay.addEventListener('click', close);
+  document.addEventListener('keydown', onKey);
 }
 
 function restoreMarks(): void {

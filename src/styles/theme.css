@@ -963,77 +963,272 @@ body.reading-engaged #tts-fab {
   transform: translate(-50%, 0);
 }
 
-#bm-confirm {
-  position: absolute;
+/* ── Bookmark "add" dialog (Yuval premium glass variant) ────────────────────
+   Centered floating dialog with backdrop blur, soft purple-blue glow, and
+   gradient primary button. Adapts automatically to light/dark via tokens
+   declared on this rule and overridden under `.dark`. */
+
+.bookmark-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  background: rgba(15, 23, 42, 0.28);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: bookmark-dialog-fade-in 180ms var(--ease-accelerated, ease-out);
+}
+
+.dark .bookmark-dialog-backdrop {
+  background: rgba(2, 6, 18, 0.55);
+}
+
+.bookmark-dialog {
+  /* Light-mode tokens (default) — warm cream paper, matches the
+     reading-left-dock light surface. Dark overrides below. */
+  --bd-bg-from: rgba(252, 250, 246, 0.94);
+  --bd-bg-to:   rgba(245, 242, 235, 0.96);
+  --bd-border: var(--yuval-border, rgba(201, 169, 110, 0.30));
+  --bd-shadow:
+    0 18px 40px -16px rgba(60, 50, 30, 0.22),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.85);
+  --bd-title: #2c2c34;
+  --bd-description: rgba(60, 50, 70, 0.72);
+  --bd-icon: #b8923f;
+  --bd-divider: rgba(60, 50, 30, 0.12);
+  --bd-secondary-bg: rgba(60, 50, 30, 0.04);
+  --bd-secondary-bg-hover: rgba(201, 169, 110, 0.10);
+  --bd-secondary-border: rgba(60, 50, 30, 0.14);
+  --bd-secondary-text: rgba(60, 50, 70, 0.85);
+  --bd-focus-ring: rgba(184, 146, 63, 0.55);
+  --bd-blur: 20px;
+
+  position: fixed;
   z-index: 9999;
-  background: var(--yuval-bg, #fff);
-  color: var(--yuval-text, #111);
-  border: 1px solid var(--yuval-border, #e5e7eb);
-  border-radius: 0.5rem;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
-  padding: 0.85rem 1rem;
-  min-width: 220px;
-  max-width: 90vw;
-  animation: bm-confirm-in 150ms var(--ease-accelerated);
-}
-
-@keyframes bm-confirm-in {
-  from { opacity: 0; transform: translateY(4px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-.bm-confirm-arrow {
-  position: absolute;
-  bottom: -6px;
+  top: 50%;
   left: 50%;
-  transform: translateX(-50%) rotate(45deg);
-  width: 10px;
-  height: 10px;
-  background: var(--yuval-bg, #fff);
-  border-right: 1px solid var(--yuval-border, #e5e7eb);
-  border-bottom: 1px solid var(--yuval-border, #e5e7eb);
+  transform: translate(-50%, -50%);
+
+  width: min(340px, calc(100vw - 32px));
+  min-width: 280px;
+  padding: 22px;
+
+  background: linear-gradient(180deg, var(--bd-bg-from) 0%, var(--bd-bg-to) 100%);
+  color: var(--bd-title);
+  border: 1px solid var(--bd-border);
+  border-radius: 18px;
+  box-shadow: var(--bd-shadow);
+  backdrop-filter: blur(var(--bd-blur)) saturate(140%);
+  -webkit-backdrop-filter: blur(var(--bd-blur)) saturate(140%);
+
+  font-family: inherit;
+  animation: bookmark-dialog-in 200ms var(--ease-accelerated, cubic-bezier(0.2, 0.8, 0.2, 1));
 }
 
-.bm-confirm-title {
-  font-size: 0.9rem;
-  font-weight: 600;
-  margin-bottom: 0.7rem;
-  line-height: 1.3;
+.dark .bookmark-dialog {
+  /* Warm charcoal — same family as .reading-left-dock dark surface. */
+  --bd-bg-from: rgba(28, 28, 34, 0.90);
+  --bd-bg-to:   rgba(20, 20, 26, 0.94);
+  --bd-border: var(--yuval-border, rgba(127, 127, 127, 0.18));
+  --bd-shadow:
+    0 24px 60px -18px rgba(0, 0, 0, 0.65),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.035),
+    inset 0 1px 0 rgba(212, 196, 168, 0.06);
+  --bd-title: rgba(240, 235, 225, 0.96);
+  --bd-description: rgba(212, 196, 168, 0.62);
+  --bd-icon: #d4af37;
+  --bd-divider: rgba(255, 255, 255, 0.06);
+  --bd-secondary-bg: rgba(255, 255, 255, 0.035);
+  --bd-secondary-bg-hover: rgba(255, 255, 255, 0.07);
+  --bd-secondary-border: rgba(255, 255, 255, 0.10);
+  --bd-secondary-text: rgba(230, 225, 215, 0.85);
+  --bd-focus-ring: rgba(212, 175, 55, 0.55);
+  --bd-blur: 20px;
 }
 
-.bm-confirm-actions {
+@keyframes bookmark-dialog-in {
+  from { opacity: 0; transform: translate(-50%, calc(-50% + 6px)) scale(0.98); }
+  to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+@keyframes bookmark-dialog-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bookmark-dialog,
+  .bookmark-dialog-backdrop {
+    animation: none;
+  }
+}
+
+.bookmark-dialog__header {
   display: flex;
-  gap: 0.5rem;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.bookmark-dialog__icon {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  color: var(--bd-icon);
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--bd-icon) 35%, transparent));
+}
+
+.bookmark-dialog__title {
+  margin: 0;
+  font-size: 1.0625rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+  color: var(--bd-title);
+}
+
+.bookmark-dialog__description {
+  margin: 0 0 16px 0;
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: var(--bd-description);
+}
+
+.bookmark-dialog__divider {
+  height: 1px;
+  margin: 0 0 16px 0;
+  background: var(--bd-divider);
+}
+
+.bookmark-dialog__actions {
+  display: flex;
+  gap: 10px;
   justify-content: flex-end;
 }
 
-.bm-confirm-actions button {
-  padding: 0.4rem 0.9rem;
-  border-radius: 0.375rem;
-  font-size: 0.85rem;
+.bookmark-dialog__button {
+  flex: 1 1 auto;
+  min-height: 40px;
+  padding: 0 16px;
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 0.9rem;
   font-weight: 600;
+  letter-spacing: 0.005em;
   cursor: pointer;
   border: 1px solid transparent;
-  transition: background 0.15s, border-color 0.15s;
+  transition:
+    transform 160ms var(--ease-accelerated, ease-out),
+    background 160ms ease-out,
+    box-shadow 200ms ease-out,
+    border-color 160ms ease-out;
 }
 
-.bm-confirm-cancel {
-  background: transparent;
-  color: var(--yuval-text-secondary, #6b7280);
-  border-color: var(--yuval-border, #e5e7eb) !important;
+.bookmark-dialog__button:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--bd-bg, #fff),
+    0 0 0 4px var(--bd-focus-ring);
 }
 
-.bm-confirm-cancel:hover {
-  background: var(--yuval-bg-secondary, #f3f4f6);
+.bookmark-dialog__button--secondary {
+  background: var(--bd-secondary-bg);
+  border-color: var(--bd-secondary-border);
+  color: var(--bd-secondary-text);
 }
 
-.bm-confirm-ok {
-  background: var(--yuval-accent, #2563eb);
-  color: #fff;
+.bookmark-dialog__button--secondary:hover {
+  background: var(--bd-secondary-bg-hover);
 }
 
-.bm-confirm-ok:hover {
-  filter: brightness(1.08);
+/* Primary action: warm-gold accent on a dark substrate (dark) /
+   warm-gold on a cream substrate (light) — matches the gold language
+   used by the reading-left-dock and the chapter ornament. Premium
+   feels like gold-leaf, not neon. */
+
+/* Light mode: cream tile with gold-leaf gradient + gold border. */
+.bookmark-dialog__button--primary {
+  background: linear-gradient(
+    180deg,
+    rgba(230, 201, 138, 0.32) 0%,
+    rgba(184, 146, 63, 0.18) 100%
+  );
+  color: #4a3a14;
+  border: 1px solid rgba(184, 146, 63, 0.55);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.55) inset,
+    0 -1px 0 rgba(60, 50, 30, 0.06) inset,
+    0 4px 14px -4px rgba(184, 146, 63, 0.30);
+  letter-spacing: 0.01em;
+}
+
+.bookmark-dialog__button--primary:hover {
+  transform: translateY(-1px);
+  background: linear-gradient(
+    180deg,
+    rgba(230, 201, 138, 0.46) 0%,
+    rgba(184, 146, 63, 0.28) 100%
+  );
+  border-color: rgba(212, 175, 55, 0.70);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.70) inset,
+    0 -1px 0 rgba(60, 50, 30, 0.08) inset,
+    0 6px 18px -4px rgba(212, 175, 55, 0.45);
+}
+
+/* Dark mode: deep charcoal pill (matches dock dark) with a warm
+   gold-leaf gradient sitting on top — same gold family as
+   .reading-left-dock__golden-target. */
+.dark .bookmark-dialog__button--primary {
+  background: linear-gradient(
+    180deg,
+    rgba(212, 175, 55, 0.22) 0%,
+    rgba(184, 146, 63, 0.10) 100%
+  );
+  color: #f0e3c2;
+  border: 1px solid rgba(184, 146, 63, 0.45);
+  box-shadow:
+    0 1px 0 rgba(255, 235, 180, 0.10) inset,
+    0 -1px 0 rgba(0, 0, 0, 0.35) inset,
+    0 6px 16px -6px rgba(212, 175, 55, 0.22);
+}
+
+.dark .bookmark-dialog__button--primary:hover {
+  transform: translateY(-1px);
+  background: linear-gradient(
+    180deg,
+    rgba(212, 175, 55, 0.34) 0%,
+    rgba(184, 146, 63, 0.18) 100%
+  );
+  border-color: rgba(212, 175, 55, 0.70);
+  color: #fbeec6;
+  box-shadow:
+    0 1px 0 rgba(255, 235, 180, 0.16) inset,
+    0 -1px 0 rgba(0, 0, 0, 0.40) inset,
+    0 8px 22px -8px rgba(212, 175, 55, 0.45),
+    inset 0 0 12px rgba(212, 175, 55, 0.12);
+}
+
+.bookmark-dialog__button--primary:active {
+  transform: translateY(0);
+  filter: brightness(0.97);
+}
+
+@media (max-width: 420px) {
+  .bookmark-dialog__actions {
+    flex-direction: column-reverse;
+  }
+  .bookmark-dialog__button {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bookmark-dialog__button,
+  .bookmark-dialog__button--primary:hover {
+    transform: none;
+    transition: none;
+  }
 }
 
 /* BAN #1 fix: side-stripe border-inline-start: 3px removed.

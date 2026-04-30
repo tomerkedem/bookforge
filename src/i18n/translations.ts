@@ -187,6 +187,12 @@ export const translations: Translations = {
   'bookmarks.step2':       { he: 'בחר "הוסף סימנייה"', en: 'Choose "Add bookmark"', es: 'Elige "Añadir marcador"' },
   'bookmarks.step3':       { he: 'לחץ על הסימנייה לקפיצה אליה', en: 'Click bookmark to jump there', es: 'Clic en el marcador para saltar' },
 
+  // ── Bookmark "add" dialog (premium variant) ─────────────────────────────────
+  'reading.bookmarkDialog.title':       { he: 'הוסף סימניה?',                                              en: 'Add bookmark?',                                                  es: '¿Añadir marcador?' },
+  'reading.bookmarkDialog.description': { he: 'שמור את המיקום הנוכחי כדי לחזור אליו במהירות בהמשך', en: 'Save your current position so you can return to it quickly later.', es: 'Guarda tu posición actual para volver rápidamente más tarde.' },
+  'reading.bookmarkDialog.confirm':     { he: 'הוסף סימניה',                                               en: 'Add bookmark',                                                   es: 'Añadir marcador' },
+  'reading.bookmarkDialog.cancel':      { he: 'ביטול',                                                     en: 'Cancel',                                                         es: 'Cancelar' },
+
   // ── Onboarding Tour ─────────────────────────────────────────────────────────
   'onboarding.next':       { he: 'הבא ←',          en: 'Next →',           es: 'Siguiente →' },
   'onboarding.skip':       { he: 'דלג',            en: 'Skip',             es: 'Omitir' },
