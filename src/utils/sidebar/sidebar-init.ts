@@ -21,6 +21,7 @@ import { updateSidebarText } from './sidebar-i18n';
 import {
   initSidebarNavigation,
   initScrollListener,
+  initSidebarAutoHideScrollbar,
 } from './sidebar-events';
 import {
   getLastPosition,
@@ -61,6 +62,7 @@ export function initializeSidebar(): void {
   const lang = getCurrentLang();
   updateSidebarText(lang);
   initSidebarNavigation();
+  initSidebarAutoHideScrollbar();
   updateActiveChapterRow();
   ensureSectionsContainer();
 

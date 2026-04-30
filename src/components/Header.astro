@@ -113,13 +113,13 @@ const isRtl = getLanguageDirection(language) === 'rtl';
     left: 0;
     right: 0;
     height: 1px;
-    background: linear-gradient(
-      90deg,
-      transparent 0%,
-      rgba(201, 169, 110, 0.5) 20%,
-      rgba(201, 169, 110, 0.5) 80%,
-      transparent 100%
-    );
+    /* Uniform gold hairline — runs edge-to-edge at the same alpha so
+       the line that visually separates the navbar from the chapter
+       strip below reads as a single, continuous boundary. The earlier
+       gradient (transparent at 0-20 % + 80-100 %) made the line
+       "fade out" at the screen edges, which read as inconsistent
+       across the width. */
+    background: rgba(201, 169, 110, 0.5);
     z-index: 2;
   }
 
@@ -149,13 +149,8 @@ const isRtl = getLanguageDirection(language) === 'rtl';
   }
 
   :global(.dark) .yuval-header::before {
-    background: linear-gradient(
-      90deg,
-      transparent 0%,
-      rgba(139, 115, 85, 0.5) 20%,
-      rgba(139, 115, 85, 0.5) 80%,
-      transparent 100%
-    );
+    /* Same uniform-line treatment as light mode. */
+    background: rgba(139, 115, 85, 0.5);
   }
 
   :global(.dark) .yuval-header::after {

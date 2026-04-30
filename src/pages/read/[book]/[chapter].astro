@@ -345,6 +345,14 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
   overflow: visible;
 }
 
+/* Light-mode harmonization with the right-sidebar header (.usb-header)
+   and the left dock — all three top-chrome regions share the same
+   bg + bottom border so the band across the page reads as one. */
+:global(:root:not(.dark)) .strip-row {
+  background: #F5F4EF;
+  border-bottom-color: rgba(184, 146, 63, 0.20);
+}
+
 .strip-row.hidden {
   display: none !important;
 }
@@ -356,18 +364,24 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
    strip is sliding out from under the header.
    Pointer-events: none so it doesn't block taps; positioned absolute
    in the row's relative box, painted above .strip-row's solid
-   background but below its text. */
+   background but below its text.
+
+   Default = light-mode tone: warm gold-brown at very low alpha so the
+   shadow blends with the cream surface and gold accents. The earlier
+   navy tone (`rgba(17, 24, 39, 0.18)`) read as a foreign dark band
+   stamped onto cream. Dark mode overrides below with the deeper black
+   gradient that reads correctly on the near-black surface. */
 .strip-row::before {
   content: '';
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
-  height: 10px;
+  height: 8px;
   background: linear-gradient(
     to bottom,
-    rgba(17, 24, 39, 0.18) 0%,
-    rgba(17, 24, 39, 0.06) 55%,
+    rgba(120, 90, 30, 0.10) 0%,
+    rgba(120, 90, 30, 0.04) 55%,
     transparent 100%
   );
   pointer-events: none;
@@ -375,6 +389,7 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
 }
 
 :global(.dark) .strip-row::before {
+  height: 10px;
   background: linear-gradient(
     to bottom,
     rgba(0, 0, 0, 0.55) 0%,

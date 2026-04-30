@@ -331,3 +331,121 @@ export function initScrollListener(): void {
     }, 120);
   }, { passive: true });
 }
+
+/**
+ * Auto-hide scrollbar wiring for the chapter sidebar.
+ *
+ * Native webkit-scrollbar pseudo-elements don't transition smoothly,
+ * so the CSS hides the OS scrollbar entirely (scrollbar-width:none
+ * + ::-webkit-scrollbar{display:none}) and we draw our own thumb as
+ * a regular <div> appended to <body>. Opacity transitions on a real
+ * div animate cleanly, which is what gives this its Notion/Linear/
+ * Slack-style "exhale" feel.
+ *
+ * Position is updated on every scroll/resize via getBoundingClientRect:
+ *   thumbHeight = clientHeight × (clientHeight / scrollHeight)
+ *   thumbTop    = scrollRatio × (clientHeight − thumbHeight)
+ * fixed-positioned, so it stays glued to the sidebar's visible edge
+ * while the content slides underneath.
+ *
+ * Visibility lifecycle:
+ *   - on scroll: show now, schedule hide after SCROLL_VISIBLE_MS
+ *   - on mouseenter: show now, cancel any pending hide (sticky while
+ *     the cursor is over the sidebar)
+ *   - on mouseleave: schedule hide after SCROLL_VISIBLE_MS
+ *
+ * Runs at most once per call (guard via dataset flag) —
+ * initializeSidebar is invoked on every view-transition swap, but
+ * the listener only needs to bind once.
+ */
+const SCROLL_VISIBLE_MS = 1100;
+
+export function initSidebarAutoHideScrollbar(): void {
+  const sidebar = document.querySelector<HTMLElement>('.unified-sidebar');
+  if (!sidebar) return;
+  if (sidebar.dataset.autohideBound === '1') return;
+  sidebar.dataset.autohideBound = '1';
+
+  /* Reuse an existing thumb if a previous mount left one behind
+     (defensive — view-transition swaps shouldn't double-create, but
+     hot-module reload or duplicate calls could). */
+  let thumb = document.querySelector<HTMLDivElement>('.usb-custom-thumb');
+  if (!thumb) {
+    thumb = document.createElement('div');
+    thumb.className = 'usb-custom-thumb';
+    thumb.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(thumb);
+  }
+
+  let hideTimer: number | undefined;
+  let hovering = false;
+
+  function updatePosition(): void {
+    const scrollHeight = sidebar!.scrollHeight;
+    const clientHeight = sidebar!.clientHeight;
+    if (scrollHeight <= clientHeight) {
+      thumb!.style.display = 'none';
+      return;
+    }
+    thumb!.style.display = '';
+
+    const rect = sidebar!.getBoundingClientRect();
+    const ratio = clientHeight / scrollHeight;
+    const thumbHeight = Math.max(40, clientHeight * ratio);
+    const maxScroll = scrollHeight - clientHeight;
+    const scrollRatio = maxScroll > 0 ? sidebar!.scrollTop / maxScroll : 0;
+    const thumbTop = scrollRatio * (clientHeight - thumbHeight);
+
+    thumb!.style.height = `${thumbHeight}px`;
+    thumb!.style.top = `${rect.top + thumbTop}px`;
+    /* Park the thumb 6 px in from the inline-end edge of the sidebar
+       (which is the screen-LEFT edge in RTL Hebrew, screen-RIGHT in
+       LTR). That edge is the one facing the reading content. */
+    const isRtl = getComputedStyle(sidebar!).direction === 'rtl';
+    if (isRtl) {
+      thumb!.style.left = `${rect.left + 6}px`;
+      thumb!.style.right = '';
+    } else {
+      thumb!.style.right = `${window.innerWidth - rect.right + 6}px`;
+      thumb!.style.left = '';
+    }
+  }
+
+  function show(): void {
+    updatePosition();
+    thumb!.classList.add('is-active');
+    if (hideTimer !== undefined) clearTimeout(hideTimer);
+  }
+
+  function scheduleHide(): void {
+    if (hovering) return;
+    if (hideTimer !== undefined) clearTimeout(hideTimer);
+    hideTimer = window.setTimeout(() => {
+      thumb!.classList.remove('is-active');
+    }, SCROLL_VISIBLE_MS);
+  }
+
+  sidebar.addEventListener('scroll', () => {
+    show();
+    scheduleHide();
+  }, { passive: true });
+
+  sidebar.addEventListener('mouseenter', () => {
+    hovering = true;
+    show();
+  });
+
+  sidebar.addEventListener('mouseleave', () => {
+    hovering = false;
+    scheduleHide();
+  });
+
+  /* Resize / orientation change shifts the sidebar bounds; reposition
+     the thumb so it doesn't desync. The thumb stays at whatever
+     visibility state it was in. */
+  window.addEventListener('resize', updatePosition);
+
+  /* Initial position so the thumb is correctly placed if it briefly
+     becomes visible right after mount. */
+  updatePosition();
+}

@@ -449,7 +449,8 @@ export async function renderChapterSections(chapterId: string | number): Promise
         <line x1="0" y1="0" x2="30" y2="0" stroke="var(--pipe-glass-edge-line)" stroke-width="0.6" opacity="0.7"/>
         <line x1="0" y1="5" x2="30" y2="5" stroke="var(--pipe-glass-edge-line)" stroke-width="0.6" opacity="0.7"/>
         <line x1="0" y1="0" x2="0" y2="5" stroke="var(--pipe-glass-edge-line)" stroke-width="0.7" opacity="0.75"/>
-      </svg>`,
+      </svg>
+      <span class="usb-junction-gem" aria-hidden="true"></span>`,
     );
 
     if (isActive) {

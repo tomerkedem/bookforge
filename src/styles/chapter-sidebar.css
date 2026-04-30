@@ -84,70 +84,65 @@
 
    Firefox: scrollbar-color only accepts two flat colors, so we pick
    the gradient's midpoint as a single graphite tone. */
+/* Auto-hide scrollbar — custom overlay implementation.
+   Native ::-webkit-scrollbar pseudo-elements don't transition
+   smoothly in any browser (the renderer is on a different layer),
+   so we hide them entirely and have sidebar-events.ts inject a
+   custom <div class="usb-custom-thumb"> appended to <body>. That
+   div is a normal element — opacity transitions on it work cleanly,
+   giving the gentle fade Notion/Linear/Slack-style sidebars use.
+
+   Position is updated by JS on scroll/resize via getBoundingClientRect,
+   so the thumb stays glued to the visible right edge of the sidebar
+   while the content scrolls underneath. */
 .unified-sidebar {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(95, 102, 118, 0.85) rgba(20, 18, 32, 0.25);
+  scrollbar-width: none;            /* Firefox: hide native bar */
+}
+.unified-sidebar::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;                    /* Webkit: hide native bar */
 }
 
-.unified-sidebar::-webkit-scrollbar {
-  width: 3px;
-}
-.unified-sidebar::-webkit-scrollbar-track {
-  background: rgba(20, 18, 32, 0.25);
+/* The custom thumb element — fixed-positioned overlay that JS
+   slides into place. Asymmetric timing creates a natural rhythm:
+   fade IN at 450 ms (responsive to user input) with an ease-out
+   curve, fade OUT at 900 ms with a gentle deceleration so the bar
+   "exhales" away rather than snapping. */
+.usb-custom-thumb {
+  position: fixed;
+  width: 4px;
   border-radius: 99px;
-  margin: 6px 0;
-}
-.unified-sidebar::-webkit-scrollbar-thumb {
   background: linear-gradient(
     180deg,
     rgba(180, 188, 205, 0.95) 0%,
     rgba(120, 128, 145, 0.9) 35%,
     rgba(70, 75, 90, 0.9) 100%
   );
-  border-radius: 99px;
-  /* Neutral halo — keeps the "lit metal" feel without tinting nearby
-     text. Two layers: a tight white edge + a wider cool falloff. */
   box-shadow:
     0 0 2px rgba(255, 255, 255, 0.18),
     0 0 6px rgba(120, 128, 145, 0.28);
-}
-.unified-sidebar::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(
-    180deg,
-    rgba(210, 218, 232, 1) 0%,
-    rgba(150, 158, 175, 1) 35%,
-    rgba(85, 90, 105, 1) 100%
-  );
-  box-shadow:
-    0 0 3px rgba(255, 255, 255, 0.28),
-    0 0 10px rgba(150, 158, 175, 0.45);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 9999;
+  /* Default transition is the slow OUT curve. The .is-active state
+     overrides with the fast IN curve. */
+  transition: opacity 900ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Light mode: lighter track recess + slightly darker graphite thumb so
-   it stays visible against a near-white sidebar background. */
-:root:not(.dark) .unified-sidebar {
-  scrollbar-color: rgba(85, 92, 108, 0.75) rgba(60, 50, 90, 0.06);
+.usb-custom-thumb.is-active {
+  opacity: 1;
+  transition: opacity 450ms cubic-bezier(0.33, 1, 0.68, 1);
 }
-:root:not(.dark) .unified-sidebar::-webkit-scrollbar-track {
-  background: rgba(60, 50, 90, 0.06);
-}
-:root:not(.dark) .unified-sidebar::-webkit-scrollbar-thumb {
+
+/* Light-mode palette — same shape, slightly darker graphite that
+   reads against the near-white sidebar surface. */
+:root:not(.dark) .usb-custom-thumb {
   background: linear-gradient(
     180deg,
     rgba(140, 148, 165, 0.95) 0%,
     rgba(95, 102, 118, 0.92) 35%,
     rgba(55, 60, 75, 0.9) 100%
-  );
-  box-shadow:
-    0 0 2px rgba(255, 255, 255, 0.5),
-    0 0 6px rgba(95, 102, 118, 0.22);
-}
-:root:not(.dark) .unified-sidebar::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(
-    180deg,
-    rgba(160, 168, 185, 1) 0%,
-    rgba(110, 118, 135, 1) 35%,
-    rgba(65, 70, 85, 1) 100%
   );
   box-shadow:
     0 0 3px rgba(255, 255, 255, 0.6),
@@ -171,11 +166,28 @@
   background: var(--yuval-surface, #fff);
   margin: 0 -16px 8px;
   padding: 8px 16px 6px;
-  border-bottom: 1px solid var(--yuval-border, rgba(127, 127, 127, 0.18));
 }
 
+/* Dark-mode separator: light hairline + deep falloff shadow so the
+   chapter cards visibly slide UNDER the header. */
 .dark .usb-header {
   background: var(--yuval-surface, #1a1a1a);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  box-shadow: 0 8px 16px -10px rgba(0, 0, 0, 0.55);
+}
+
+/* Light-mode harmonization: this header, the chapter top strip, and
+   the left dock all share the same top-chrome look so the band
+   across the page reads as a single continuous header layer rather
+   than three "islands". The bg matches .strip-row's effective
+   rendered color (rgba(201,162,39,0.04) over #F7F7F7 → ~#F5F4EF)
+   and the bottom border uses the same subtle gold hairline that
+   .strip-row uses. No drop-shadow — flat chrome lets the three
+   sections read as one. */
+:root:not(.dark) .usb-header {
+  background: #F5F4EF;
+  border-bottom: 0.5px solid rgba(184, 146, 63, 0.20);
+  box-shadow: none;
 }
 
 .usb-header-row {
@@ -866,67 +878,94 @@
   }
 }
 
-/* ─── Junction gem: diamond at the feeder ↔ main pipe joint ─────────
-   A small rotated square sits centered on the main pipe wall where
-   the horizontal feeder enters it. Reads as a brass/gold fitting on
-   a glass tube — the kind of joint hardware you'd see on real
-   plumbing. Only renders for active-chapter sections (same gating
-   as the feeders themselves) so it never floats orphaned next to a
-   collapsed chapter.
+/* ─── Junction gem: blue diamond at the feeder ↔ main pipe joint ─────
+   Junction gem — a real DOM element (NOT a pseudo-element) injected
+   right next to the feeder in sidebar-render.ts. Going through a real
+   element bypasses the half-dozen `.usb-sections li::before` rules
+   that style the inactive-state section nodes (per-data-level sizes,
+   .active state, etc.) — those used to fight the gem on every
+   property by source order, even with matching specificity.
 
-   Geometry: the main pipe inline-end edge sits at section <li>
-   inline-start x = -34.5px. The gem is 7×7 rotated 45°, so its
-   inline-start anchor is offset by half its width (-3.5px) to land
-   the visual CENTER of the diamond exactly on the pipe wall. */
-.usb-chapter-active .usb-sections li::before {
-  content: '';
+   The gem is anchored to the SAME `top: 50%` + `translateY(-50%)`
+   the feeder uses, so its vertical center is structurally pinned
+   to the feeder's vertical center — not "computed", just identical
+   layout. Horizontally it sits centered on the main pipe's wall. */
+.usb-junction-gem {
   position: absolute;
-  inset-inline-start: -38px;
-  top: 50%;
-  width: 7px;
-  height: 7px;
-  transform: translateY(-50%) rotate(45deg);
-  background: linear-gradient(
-    135deg,
-    #fff7d4 0%,
-    #e6c98a 35%,
-    #b8923f 100%
+  /* Anchor STRUCTURALLY to the feeder, not via top: 50%. The feeder
+     overrides its base `top: 50%` with `top: 13px; transform: none;`
+     in the active-chapter context (line ~2333 of this file) because
+     the active row's <li> grows tall when the preview pane mounts.
+     Matching the feeder's vertical math 1:1 keeps the gem locked to
+     the feeder line regardless of <li> height:
+       feeder spans y=13..18 (5px tall) → center y=15.5
+       gem is 8px tall → top = 15.5 − 4 = 11.5  → center y=15.5 ✓
+     transform drops the translateY because top is now absolute. */
+  top: 11.5px;
+  /* Anchor HORIZONTALLY to the feeder's inline-start edge (= the
+     right physical edge in RTL, i.e. the edge that meets the main
+     pipe). Feeder uses inset-inline-start: -40.5px → its inline-
+     start edge sits at section <li>.right + 40.5. For an 8px gem
+     centered exactly on that point:
+       inset-inline-start = −(40.5 + 4) = −44.5 */
+  inset-inline-start: -44.5px;
+  width: 8px;
+  height: 8px;
+  transform: rotate(45deg);
+  /* Glassy blue gem — radial highlight (top-left), pale cyan body,
+     deep-blue edge. Theme vars adapt for light/dark modes. */
+  background: radial-gradient(
+    ellipse at 28% 22%,
+    #ffffff 0%,
+    #e0f5ff 18%,
+    var(--water-flow-stripe-2) 45%,
+    var(--water-flow-stripe-1) 75%,
+    var(--water-stop-deep) 100%
   );
-  border: 0.5px solid #8a6d2b;
-  border-radius: 1px;
+  border: 0.5px solid var(--water-stop-deep);
+  border-radius: 1.2px;
   box-shadow:
-    0 0 5px rgba(212, 175, 55, 0.55),
-    inset 0 0.5px 0 rgba(255, 255, 255, 0.55);
-  /* Sits ABOVE both the main pipe (z-pipe: 1) and the feeder
-     (z-feeder: 2) so the joint cap visually finishes the T-junction. */
+    0 0 6px rgba(56, 189, 248, 0.65),
+    0 0 1px rgba(255, 255, 255, 0.85),
+    inset 0 0.5px 0 rgba(255, 255, 255, 0.7);
+  /* Above main pipe (z-pipe: 1) AND feeder (z-feeder: 2). */
   z-index: 3;
   pointer-events: none;
   animation: usbJointShimmer 4.2s ease-in-out infinite;
 }
 
-/* Slow gold shimmer — the joint catches light occasionally. Box
-   shadow alpha pulses gently between calm and bright. */
+/* Hide the gem on non-active chapters — feeders are display:none
+   there, so the gem would otherwise float orphaned. */
+.usb-chapter:not(.usb-chapter-active) .usb-junction-gem {
+  display: none;
+}
+
+/* Cyan glow pulse — outer halo ramps up mid-cycle for life. */
 @keyframes usbJointShimmer {
   0%, 100% {
     box-shadow:
-      0 0 5px rgba(212, 175, 55, 0.45),
-      inset 0 0.5px 0 rgba(255, 255, 255, 0.45);
+      0 0 5px rgba(56, 189, 248, 0.50),
+      0 0 1px rgba(255, 255, 255, 0.75),
+      inset 0 0.5px 0 rgba(255, 255, 255, 0.55);
   }
   50% {
     box-shadow:
-      0 0 10px rgba(212, 175, 55, 0.78),
-      inset 0 0.5px 0 rgba(255, 255, 255, 0.65);
+      0 0 12px rgba(56, 189, 248, 0.95),
+      0 0 2px rgba(255, 255, 255, 1),
+      inset 0 0.5px 0 rgba(255, 255, 255, 0.80);
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .usb-chapter-active .usb-sections li::before { animation: none; }
-}
+/* Per-section shimmer phase — each gem pulses independently. */
+.usb-sections li:nth-child(5n+1) .usb-junction-gem { animation-delay: 0s;     }
+.usb-sections li:nth-child(5n+2) .usb-junction-gem { animation-delay: -0.85s; }
+.usb-sections li:nth-child(5n+3) .usb-junction-gem { animation-delay: -1.70s; }
+.usb-sections li:nth-child(5n+4) .usb-junction-gem { animation-delay: -2.55s; }
+.usb-sections li:nth-child(5n+5) .usb-junction-gem { animation-delay: -3.40s; }
 
-/* Light mode: same gold gradient — gold reads well against both
-   the dark cyan (night) and pale cyan (day) water columns. The
-   stagger between the lighter highlight and the darker base gives
-   it a faceted-gem look in both. */
+@media (prefers-reduced-motion: reduce) {
+  .usb-junction-gem { animation: none; }
+}
 
 .usb-chapter-list {
   list-style: none;
@@ -1831,9 +1870,14 @@
   text-overflow: ellipsis;
 }
 
-/* Hide the inactive-state thread + dots on the active chapter — the
-   pipe takes over their visual job. Non-active chapters keep the
-   existing thin thread + dots when expanded. */
+/* Hide the inactive-state thread + dots on the active chapter —
+   the main pipe + junction gems take over their visual job. The
+   `.usb-sections li::before` rule paints small section-node
+   circles (white for inactive, BLUE #2563EB for the .active row)
+   that previously had to stay un-hidden because the gem was a
+   pseudo-element ON THIS SAME slot. Now that the gem is a real
+   DOM element (.usb-junction-gem), we hide the old ::before
+   circles cleanly without killing the gems. */
 .usb-chapter-active .usb-sections::before,
 .usb-chapter-active .usb-sections li::before {
   display: none;
