@@ -789,13 +789,18 @@
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  /* Section <li> inline-start sits at .usb-timeline x=68.5 in active
-     mode (.usb-sections.margin-inline-start: 40.5 + <ul>.padding:
-     28). Main pipe inline-end is at .usb-timeline x=34. So the
-     feeder's inline-start (right physical edge in RTL) needs
-     34 − 68.5 = −34.5 from the section <li>. */
-  inset-inline-start: -34.5px;
-  width: 30px;
+  /* The feeder's inline-start edge (visual right side in RTL) is
+     pushed 6px past the main chapters-pipe so it visibly OVERLAPS
+     the pipe wall — no gap is possible. The pipe is at a lower
+     z-index (--z-pipe: 1) than the feeder (--z-feeder: 2), so the
+     overlap renders as a clean T-junction: horizontal feeder water
+     meets the vertical column with no seam.
+     Geometry: pipe inline-end sits at <li>-relative x ≈ -34.5;
+     starting the feeder at -40.5 with width 36 keeps its inline-end
+     edge exactly where it was (no impact on the gap to section
+     text), while extending the inline-start edge 6px into the pipe. */
+  inset-inline-start: -40.5px;
+  width: 36px;
   height: 5px;
   pointer-events: none;
   z-index: var(--z-feeder);
