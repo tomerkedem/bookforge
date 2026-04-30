@@ -372,7 +372,10 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
    and the left dock — all three top-chrome regions share the same
    bg + bottom border so the band across the page reads as one. */
 :global(:root:not(.dark)) .strip-row {
-  background: #F5F4EF;
+  /* Shell surface — parchment cream (--bg-shell: #F3EEE0). Same value
+     as the platform header, the unified sidebar, the LeftSidebar dock,
+     the status bar, and the body gutter. */
+  background: #F3EEE0;
   border-bottom-color: rgba(184, 146, 63, 0.20);
 }
 

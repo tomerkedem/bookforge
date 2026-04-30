@@ -270,14 +270,28 @@
     background: var(--yuval-surface, #1a1a1a);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
-    /* Neutral hairline matching the right TOC's --yuval-border.
-       The gold inner-shadow hint echoes the header's gold ornament
-       without ever reading as decoration. */
-    border: 1px solid var(--yuval-border, rgba(127, 127, 127, 0.18));
+    /* Royal floating frame — a thin warm-gold rim around the capsule
+       suggesting polished metal, paired with a layered drop shadow
+       that lets the dock visibly hover above the shell. The inner
+       highlights (white-sheen on top edge, faint gold rim on bottom)
+       give the frame a beveled "jewelry" quality without crossing
+       into ornamentation. */
+    border: 1px solid rgba(184, 146, 63, 0.42);
     box-shadow:
-      0 20px 50px -14px rgba(0, 0, 0, 0.55),
-      inset 0 0 0 1px rgba(255, 255, 255, 0.035),
-      inset 0 1px 0 rgba(212, 196, 168, 0.06);
+      /* Atmospheric warm gold halo — barely perceptible, just enough
+         to make the dock feel embedded in a luminous field rather
+         than pasted onto the shell. */
+      0 0 32px -4px rgba(212, 178, 110, 0.14),
+      /* Far ambient drop shadow — soft, wide, gives the levitation. */
+      0 28px 56px -18px rgba(0, 0, 0, 0.55),
+      /* Closer key shadow — sharper, defines the bottom edge. */
+      0 10px 24px -8px rgba(0, 0, 0, 0.32),
+      /* Inset bright top-edge gleam — light catching polished metal. */
+      inset 0 1px 0 rgba(255, 240, 200, 0.10),
+      /* Inset thin warm rim — the inner edge of the gold frame. */
+      inset 0 0 0 1px rgba(255, 240, 200, 0.045),
+      /* Inset deeper gold along the bottom — frame "weight". */
+      inset 0 -1px 0 rgba(184, 146, 63, 0.22);
   }
 
   /* ─────────── Light theme ────────────────────────────────────
@@ -287,15 +301,31 @@
      users navigating between the right TOC and the left dock see
      the same brand color in both menus. */
   :global(:root:not(.dark)) .reading-left-dock {
-    /* Same flat cream surface as the strip + TOC (#F5F4EF) so the
-       dock reads as part of the same shell, not a floating cream
-       island with its own gradient. */
-    background: #F5F4EF;
-    border-color: rgba(201, 169, 110, 0.30);
+    /* Shell surface — warmer parchment cream (--bg-shell: #F3EEE0).
+       Slightly more saturated than the previous #F5F4EF so the dock
+       reads as "parchment" rather than off-white paper. */
+    background: #F3EEE0;
+    /* Royal floating frame (light) — deeper gold rim that reads
+       against the cream surface, paired with multi-layer drop
+       shadows so the dock hovers visibly above the shell. The inset
+       highlights translate the dark-mode "polished metal" treatment
+       into a paper-and-ink idiom: bright white sheen on the top edge
+       (page-light reflection), faint gold rim on the bottom (the
+       frame's weight), warm halo around (atmospheric levitation). */
+    border-color: rgba(184, 146, 63, 0.50);
     box-shadow:
-      0 18px 40px -16px rgba(60, 50, 30, 0.18),
-      inset 0 0 0 1px rgba(255, 255, 255, 0.55),
-      inset 0 1px 0 rgba(255, 255, 255, 0.85);
+      /* Outer warm gold halo — gentle, like candlelight. */
+      0 0 36px -6px rgba(184, 146, 63, 0.20),
+      /* Far ambient drop shadow — wide and soft. */
+      0 28px 56px -20px rgba(60, 50, 30, 0.32),
+      /* Closer key shadow — sharper. */
+      0 12px 26px -10px rgba(60, 50, 30, 0.22),
+      /* Inner bright frame edge — like polished metal. */
+      inset 0 0 0 1px rgba(255, 252, 240, 0.7),
+      /* Top-edge gleam — strongest highlight. */
+      inset 0 1px 0 rgba(255, 255, 255, 0.95),
+      /* Bottom gold rim — frame weight. */
+      inset 0 -1px 0 rgba(184, 146, 63, 0.32);
   }
 
   /* Hairline divider above the collapse cluster: darker so it

@@ -102,6 +102,10 @@ const isRtl = getLanguageDirection(currentLang.code) === 'rtl';
   .language-selector-container {
     position: relative;
     display: inline-block;
+    /* Visual nudge 15 px to the physical right. transform doesn't
+       trigger layout, so the ThemeToggle and the rest of the header
+       row stay exactly where they were. */
+    transform: translateX(15px);
   }
 
   /* ─────────────────────────────────────────────────────────────────── */
@@ -111,30 +115,33 @@ const isRtl = getLanguageDirection(currentLang.code) === 'rtl';
   .language-selector-trigger {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 10px 16px;
+    gap: 7px;
+    padding: 7px 12px;
     background: linear-gradient(135deg,
       rgba(201, 162, 39, 0.08) 0%,
       rgba(232, 197, 71, 0.04) 100%
     );
-    border: 1.5px solid rgba(201, 162, 39, 0.3);
-    border-radius: 12px;
+    border: 1px solid rgba(201, 162, 39, 0.3);
+    border-radius: 9px;
     cursor: pointer;
     transition: all 0.3s var(--ease-emphasized);
     font-family: var(--font-heading);
-    font-size: 14px;
+    font-size: 11px;
     font-weight: 600;
     color: var(--yuval-text);
     letter-spacing: 0.02em;
     position: relative;
     z-index: 100;
+    /* Lift 1px so the smaller trigger optically aligns with the
+       ThemeToggle's centerline in the header row. */
+    transform: translateY(-1px);
   }
 
   .language-selector-trigger::before {
     content: '';
     position: absolute;
     inset: 0;
-    border-radius: 12px;
+    border-radius: 9px;
     background: linear-gradient(135deg,
       rgba(232, 197, 71, 0.15) 0%,
       rgba(201, 162, 39, 0.08) 100%
@@ -176,7 +183,7 @@ const isRtl = getLanguageDirection(currentLang.code) === 'rtl';
   }
 
   .trigger-flag {
-    font-size: 18px;
+    font-size: 14px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -186,12 +193,12 @@ const isRtl = getLanguageDirection(currentLang.code) === 'rtl';
   .trigger-label {
     font-weight: 700;
     letter-spacing: 0.03em;
-    min-width: 70px;
+    min-width: 52px;
   }
 
   .trigger-icon {
-    width: 18px;
-    height: 18px;
+    width: 14px;
+    height: 14px;
     display: flex;
     align-items: center;
     justify-content: center;
