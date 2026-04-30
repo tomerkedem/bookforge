@@ -135,6 +135,18 @@
   transition: opacity 450ms cubic-bezier(0.33, 1, 0.68, 1);
 }
 
+/* When the chapter sidebar is collapsed, the custom auto-hide thumb
+   belongs to a panel that's no longer on screen — fade it out in
+   lockstep with the sidebar's own collapse so it doesn't linger
+   floating in the middle of the reading area. Higher specificity
+   than `.is-active` so a mid-collapse scroll doesn't flash it back. */
+body.sidebar-collapsed .usb-custom-thumb,
+body.sidebar-collapsed .usb-custom-thumb.is-active {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 320ms cubic-bezier(0.4, 0, 0.6, 1);
+}
+
 /* Light-mode palette — same shape, slightly darker graphite that
    reads against the near-white sidebar surface. */
 :root:not(.dark) .usb-custom-thumb {
