@@ -34,6 +34,19 @@ const { threshold = 300 } = Astro.props;
   @media (min-width: 1024px) {
     #back-to-top {
       inset-inline-start: calc(320px + 6px);
+      transition:
+        inset-inline-start 380ms cubic-bezier(0.33, 1, 0.68, 1),
+        opacity 300ms ease,
+        transform 300ms ease,
+        background-color 200ms ease;
+    }
+
+    /* Chapter sidebar collapsed → slide into the freed sidebar gutter
+       so the button stays anchored to the screen edge instead of
+       hovering mid-page. RTL: moves toward the right edge.
+       LTR: moves toward the left edge. */
+    body.sidebar-collapsed #back-to-top {
+      inset-inline-start: 12px;
     }
   }
 </style>

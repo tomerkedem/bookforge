@@ -291,6 +291,29 @@
     left: 28px;
   }
 
+  /* When the chapter sidebar (`body.sidebar-collapsed`) is hidden,
+     slide the reading FAB toward the freed sidebar gutter so it stays
+     anchored to the screen edge instead of floating mid-page. Smooth
+     glide matches the sidebar's own collapse animation cadence. */
+  @media (min-width: 1024px) {
+    .reading-fab {
+      transition:
+        opacity 300ms var(--ease-standard),
+        right 380ms cubic-bezier(0.33, 1, 0.68, 1),
+        left 380ms cubic-bezier(0.33, 1, 0.68, 1);
+    }
+
+    body.sidebar-collapsed .reading-fab {
+      right: 28px;
+      left: auto;
+    }
+    [dir="rtl"] body.sidebar-collapsed .reading-fab,
+    body.sidebar-collapsed [dir="rtl"] .reading-fab {
+      left: auto;
+      right: 28px;
+    }
+  }
+
   [dir="rtl"] .fab-label {
     transform: translate(-8px, -50%);
   }
