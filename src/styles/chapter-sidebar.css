@@ -86,43 +86,12 @@
    logical inset so it lands on the correct side in both LTR and RTL.
    width: 0.5px matches the strip's bottom hairline weight; the gold
    tone matches its color in light mode. */
-.unified-sidebar::before {
-  content: '';
-  position: fixed;
-  top: var(--reading-sticky-top, 68px);
-  /* 320px (sidebar width) - 0.5px (hairline width) → sits flush with
-     the inner edge in both directions. inset-inline-start resolves to
-     left in LTR and right in RTL, mirroring the sidebar's anchor. */
-  inset-inline-start: calc(320px - 0.5px);
-  width: 0.5px;
-  height: calc(100vh - var(--reading-sticky-top, 68px));
-  background: linear-gradient(
-    to bottom,
-    transparent 0,
-    transparent 56px,
-    rgba(184, 146, 63, 0.20) 110px,
-    rgba(184, 146, 63, 0.20) 100%
-  );
-  pointer-events: none;
-  z-index: 31;
-}
 
 /* Dark-mode shell — matches the strip-row's dark bg (--yuval-surface)
    so all three header regions share one surface across the top of the
-   page. Inner-edge fade swaps to a low-alpha white tint matching the
-   strip's bottom hairline. */
+   page. */
 .dark .unified-sidebar {
   background: var(--yuval-surface, #1a1a1a);
-}
-
-.dark .unified-sidebar::before {
-  background: linear-gradient(
-    to bottom,
-    transparent 0,
-    transparent 56px,
-    rgba(255, 255, 255, 0.07) 110px,
-    rgba(255, 255, 255, 0.07) 100%
-  );
 }
 
 /* Collapsed sidebar: hide the inner-edge hairline alongside the sidebar
