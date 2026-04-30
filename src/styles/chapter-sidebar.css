@@ -3459,18 +3459,15 @@ body.sidebar-collapsed .unified-sidebar {
 }
 
 /* ─── Focus toggle (sits next to the collapse button) ────────────
-   Same 28px footprint as `.usb-collapse-btn`, but gold-accented
-   so it reads as the *primary* "give me space" action. Click
-   collapses BOTH sidebars in lockstep (focus mode). */
+   28px footprint, neutral charcoal-glass in INACTIVE state to match
+   .usb-collapse-btn beside it. Gold lights up only in `.active` state
+   — focus mode engaged — preserving gold-as-active-signal across the
+   platform (same logic applied to .reading-left-dock__focus). */
 .usb-focus-btn {
   appearance: none;
-  background: linear-gradient(
-    135deg,
-    rgba(230, 201, 138, 0.16) 0%,
-    rgba(184, 146, 63, 0.06) 100%
-  );
-  border: 1px solid rgba(184, 146, 63, 0.40);
-  color: #e6c98a;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(230, 235, 255, 0.78);
   width: 28px;
   height: 28px;
   border-radius: 8px;
@@ -3487,23 +3484,20 @@ body.sidebar-collapsed .unified-sidebar {
 }
 
 .usb-focus-btn:hover {
-  background: linear-gradient(
-    135deg,
-    rgba(230, 201, 138, 0.28) 0%,
-    rgba(184, 146, 63, 0.14) 100%
-  );
-  border-color: rgba(212, 175, 55, 0.65);
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(230, 201, 138, 0.35);
   color: #ffffff;
-  box-shadow: 0 4px 12px -4px rgba(212, 175, 55, 0.40);
 }
 
 .usb-focus-btn:active { transform: scale(0.94); }
 
 .usb-focus-btn:focus-visible {
-  outline: 2px solid rgba(212, 175, 55, 0.7);
+  outline: 2px solid rgba(230, 201, 138, 0.7);
   outline-offset: 2px;
 }
 
+/* Active state — focus mode is ON. Gold appears here, and ONLY here,
+   so the colour change carries unambiguous meaning. */
 .usb-focus-btn.active {
   background: linear-gradient(
     135deg,
@@ -3517,6 +3511,30 @@ body.sidebar-collapsed .unified-sidebar {
     inset 0 0 10px rgba(212, 175, 55, 0.18);
 }
 
+/* Light-mode INACTIVE — cream surface, neutral border. Mirrors
+   .reading-left-dock__focus light-mode treatment. */
+:root:not(.dark) .usb-focus-btn {
+  background: rgba(255, 255, 255, 0.55);
+  border-color: rgba(60, 50, 30, 0.14);
+  color: rgba(60, 50, 70, 0.7);
+}
+
+:root:not(.dark) .usb-focus-btn:hover {
+  background: rgba(184, 146, 63, 0.10);
+  border-color: rgba(184, 146, 63, 0.40);
+  color: #2c2c34;
+}
+
+:root:not(.dark) .usb-focus-btn.active {
+  background: linear-gradient(
+    135deg,
+    rgba(184, 146, 63, 0.36) 0%,
+    rgba(184, 146, 63, 0.18) 100%
+  );
+  border-color: rgba(184, 146, 63, 0.72);
+  color: #2c2c34;
+}
+
 .usb-focus-btn.active svg { transform: scaleX(-1); }
 
 @media (max-width: 1023px) {
@@ -3528,18 +3546,15 @@ body.sidebar-collapsed .unified-sidebar {
 }
 
 /* ─── Collapse button (in usb-header) ─────────────────────────────
-   Visually identical to .usb-focus-btn — same 28px footprint, same
-   gold-gradient surface + border, same hover/active/focus states.
-   The two buttons differ only in their action; their chrome is one. */
+   Visually identical to .usb-focus-btn (inactive state) — same 28px
+   footprint, same neutral charcoal-glass surface. No gold accent here:
+   this button has no `.active` analogue, so gold reservation logic is
+   simpler — it's always neutral. */
 .usb-collapse-btn {
   appearance: none;
-  background: linear-gradient(
-    135deg,
-    rgba(230, 201, 138, 0.16) 0%,
-    rgba(184, 146, 63, 0.06) 100%
-  );
-  border: 1px solid rgba(184, 146, 63, 0.40);
-  color: #e6c98a;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(230, 235, 255, 0.78);
   width: 28px;
   height: 28px;
   border-radius: 8px;
@@ -3556,14 +3571,9 @@ body.sidebar-collapsed .unified-sidebar {
 }
 
 .usb-collapse-btn:hover {
-  background: linear-gradient(
-    135deg,
-    rgba(230, 201, 138, 0.28) 0%,
-    rgba(184, 146, 63, 0.14) 100%
-  );
-  border-color: rgba(212, 175, 55, 0.65);
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(230, 201, 138, 0.35);
   color: #ffffff;
-  box-shadow: 0 4px 12px -4px rgba(212, 175, 55, 0.40);
 }
 
 .usb-collapse-btn:active {
@@ -3571,8 +3581,21 @@ body.sidebar-collapsed .unified-sidebar {
 }
 
 .usb-collapse-btn:focus-visible {
-  outline: 2px solid rgba(212, 175, 55, 0.7);
+  outline: 2px solid rgba(230, 201, 138, 0.7);
   outline-offset: 2px;
+}
+
+/* Light-mode — cream surface, neutral border, mirrors .usb-focus-btn. */
+:root:not(.dark) .usb-collapse-btn {
+  background: rgba(255, 255, 255, 0.55);
+  border-color: rgba(60, 50, 30, 0.14);
+  color: rgba(60, 50, 70, 0.7);
+}
+
+:root:not(.dark) .usb-collapse-btn:hover {
+  background: rgba(184, 146, 63, 0.10);
+  border-color: rgba(184, 146, 63, 0.40);
+  color: #2c2c34;
 }
 
 /* The chevron points inline-START (toward the outer screen edge)
