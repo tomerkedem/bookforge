@@ -4,7 +4,7 @@
  * string + DOM updates - no framework.
  */
 
-import { t } from '../i18n';
+import { t, type TranslationKey } from '../i18n';
 import { icon } from './tts-icons';
 import type { TtsState, TtsRate } from './text-to-speech';
 
@@ -23,7 +23,7 @@ function getLang(): string {
     || 'he';
 }
 
-function tr(key: string): string {
+function tr(key: TranslationKey): string {
   return t(key, getLang()) || key;
 }
 

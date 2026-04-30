@@ -2,7 +2,7 @@
  * Highlight Replay - dynamic i18n version
  */
 
-import { t, getI18nDirection, resolveLanguage } from '../i18n';
+import { t, type TranslationKey, getI18nDirection, resolveLanguage } from '../i18n';
 
 // ── Language ────────────────────────────────────────────────────────────────
 
@@ -14,7 +14,7 @@ function getLang(): string {
   );
 }
 
-function tr(key: string, params?: Record<string, string | number>): string {
+function tr(key: TranslationKey, params?: Record<string, string | number>): string {
   return t(key, getLang(), params);
 }
 

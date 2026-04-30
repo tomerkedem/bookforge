@@ -8,12 +8,12 @@
  *  - Click existing highlight → remove it
  */
 
-import { t } from '../i18n';
+import { t, type TranslationKey } from '../i18n';
 import { getLang, nearestSectionHeading, nearestBmAnchor } from './reading-location';
 
 // ── i18n helpers ─────────────────────────────────────────────────────────────
 
-function tr(key: string, params?: Record<string, string | number>): string {
+function tr(key: TranslationKey, params?: Record<string, string | number>): string {
   return t(key, getLang(), params);
 }
 

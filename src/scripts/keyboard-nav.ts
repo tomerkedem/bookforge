@@ -1,4 +1,4 @@
-import { t, getI18nDirection, resolveLanguage } from '../i18n';
+import { t, type TranslationKey, getI18nDirection, resolveLanguage } from '../i18n';
 
 const TOAST_DURATION = 1800;
 
@@ -10,7 +10,7 @@ function getLang(): string {
   );
 }
 
-function tr(key: string, params?: Record<string, string | number>) {
+function tr(key: TranslationKey, params?: Record<string, string | number>) {
   return t(key, getLang(), params);
 }
 

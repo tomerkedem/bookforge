@@ -7,7 +7,7 @@
  * Dynamic language support via central i18n + search-index.json
  */
 
-import { t, getI18nDirection, resolveLanguage } from '../i18n';
+import { t, type TranslationKey, getI18nDirection, resolveLanguage } from '../i18n';
 import { SOURCE_LANGUAGE, SUPPORTED_LANGUAGES } from '../utils/language';
 
 // ── Language helpers ─────────────────────────────────────────────────────────
@@ -20,7 +20,7 @@ function getLang(): string {
   );
 }
 
-function tr(key: string, params?: Record<string, string | number>): string {
+function tr(key: TranslationKey, params?: Record<string, string | number>): string {
   return t(key, getLang(), params);
 }
 

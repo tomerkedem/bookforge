@@ -1,4 +1,4 @@
-import { t } from '../i18n';
+import { t, type TranslationKey } from '../i18n';
 import { mountTtsPanel, openTtsPanel, closeTtsPanel, mountMiniPlayer, unmountMiniPlayer } from './tts-panel';
 import { icon } from './tts-icons';
 
@@ -86,7 +86,7 @@ function getLang(): string {
     || 'he';
 }
 
-function tr(key: string): string {
+function tr(key: TranslationKey): string {
   return t(key, getLang()) || key;
 }
 

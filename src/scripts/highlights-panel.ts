@@ -1,4 +1,4 @@
-import { t, getI18nDirection } from '../i18n';
+import { t, type TranslationKey, getI18nDirection } from '../i18n';
 import {
   getLang,
   getCurrentBook,
@@ -12,7 +12,7 @@ import {
 
 // ── Language ────────────────────────────────────────────────────────────────
 
-function tr(key: string, params?: Record<string, string | number>): string {
+function tr(key: TranslationKey, params?: Record<string, string | number>): string {
   return t(key, getLang(), params);
 }
 

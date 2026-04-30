@@ -2,7 +2,7 @@
  * Reading hints - dynamic i18n version
  */
 
-import { t, getI18nDirection, resolveLanguage } from '../i18n';
+import { t, type TranslationKey, getI18nDirection, resolveLanguage } from '../i18n';
 
 const HINT_SEEN_KEY = 'yuval_hint_seen_v2';
 const ONBOARD_DELAY = 2500;
@@ -20,7 +20,7 @@ function getLang(): string {
   );
 }
 
-function tr(key: string): string {
+function tr(key: TranslationKey): string {
   return t(key, getLang());
 }
 
