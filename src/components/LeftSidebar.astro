@@ -92,7 +92,7 @@
       >
         <span class="reading-left-dock__item-dot" aria-hidden="true"></span>
         <span class="reading-left-dock__item-icon">
-          <img src="/assets/icons/sidebar/target.svg" alt="" aria-hidden="true" />
+          <img src="/assets/icons/sidebar/target.png" alt="" aria-hidden="true" />
         </span>
         <span class="reading-left-dock__item-label"
               data-i18n="readingTools.dailyGoal">יעד יומי</span>
@@ -110,7 +110,7 @@
       >
         <span class="reading-left-dock__item-dot" aria-hidden="true"></span>
         <span class="reading-left-dock__item-icon">
-          <img src="/assets/icons/sidebar/audio.svg" alt="" aria-hidden="true" />
+          <img src="/assets/icons/sidebar/audio.png" alt="" aria-hidden="true" />
         </span>
         <span class="reading-left-dock__item-label"
               data-i18n="readingTools.audioReading">הקראה בקול רם</span>
@@ -128,7 +128,7 @@
       >
         <span class="reading-left-dock__item-dot" aria-hidden="true"></span>
         <span class="reading-left-dock__item-icon">
-          <img src="/assets/icons/sidebar/stats.svg" alt="" aria-hidden="true" />
+          <img src="/assets/icons/sidebar/stats.png" alt="" aria-hidden="true" />
         </span>
         <span class="reading-left-dock__item-label"
               data-i18n="readingTools.readingStats">סטטיסטיקות קריאה</span>
@@ -146,7 +146,7 @@
       >
         <span class="reading-left-dock__item-dot" aria-hidden="true"></span>
         <span class="reading-left-dock__item-icon">
-          <img src="/assets/icons/sidebar/bookmarks.svg" alt="" aria-hidden="true" />
+          <img src="/assets/icons/sidebar/bookmarks.png" alt="" aria-hidden="true" />
         </span>
         <span class="reading-left-dock__item-label"
               data-i18n="readingTools.bookmarks">סימניות</span>
@@ -164,7 +164,7 @@
       >
         <span class="reading-left-dock__item-dot" aria-hidden="true"></span>
         <span class="reading-left-dock__item-icon">
-          <img src="/assets/icons/sidebar/highlight.svg" alt="" aria-hidden="true" />
+          <img src="/assets/icons/sidebar/highlight.png" alt="" aria-hidden="true" />
         </span>
         <span class="reading-left-dock__item-label"
               data-i18n="readingTools.highlights">ההדגשות שלי</span>
@@ -183,7 +183,7 @@
       >
         <span class="reading-left-dock__item-dot" aria-hidden="true"></span>
         <span class="reading-left-dock__item-icon">
-          <img src="/assets/icons/sidebar/search.svg" alt="" aria-hidden="true" />
+          <img src="/assets/icons/sidebar/search.png" alt="" aria-hidden="true" />
         </span>
         <span class="reading-left-dock__item-label"
               data-i18n="readingTools.search">חיפוש</span>
@@ -191,24 +191,47 @@
     </li>
   </ul>
 
-  <!-- ── Collapse button (bottom of dock) ─────────────────────── -->
-  <button
-    type="button"
-    class="reading-left-dock__collapse lsb-collapse-btn"
-    data-left-sidebar-toggle="collapse"
-    aria-controls="left-sidebar"
-    aria-expanded="true"
-    title="Collapse"
-    data-i18n-title="reading.leftDock.collapse"
-  >
-    <span class="sr-only" data-i18n="reading.leftDock.collapse">Collapse</span>
-    <svg class="lsb-collapse-chev" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
-      <!-- Double chevron pointing inline-END (outward). RTL flips. -->
-      <path d="M3 4l4 4-4 4M8 4l4 4-4 4"
-            stroke="currentColor" stroke-width="1.8" fill="none"
-            stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
-  </button>
+  <!-- ── Bottom controls: Focus toggle + Collapse ──────────────── -->
+  <div class="reading-left-dock__controls">
+    <!-- Focus toggle: collapses BOTH sidebars in lockstep for
+         distraction-free reading. Sits next to the per-sidebar
+         collapse button so it's discoverable in the same place. -->
+    <button
+      type="button"
+      class="reading-left-dock__focus sidebar-focus-btn"
+      aria-label="Toggle focus mode"
+      data-i18n-aria-label="fab.focus"
+      title="Focus mode"
+      data-i18n-title="fab.focus"
+    >
+      <span class="sr-only" data-i18n="fab.focus">Focus</span>
+      <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+        <!-- Two arrows pointing inward — focus / minimize. -->
+        <path d="M4 7 L9 12 L4 17" stroke="currentColor" stroke-width="2"
+              fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M20 7 L15 12 L20 17" stroke="currentColor" stroke-width="2"
+              fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+
+    <button
+      type="button"
+      class="reading-left-dock__collapse lsb-collapse-btn"
+      data-left-sidebar-toggle="collapse"
+      aria-controls="left-sidebar"
+      aria-expanded="true"
+      title="Collapse"
+      data-i18n-title="reading.leftDock.collapse"
+    >
+      <span class="sr-only" data-i18n="reading.leftDock.collapse">Collapse</span>
+      <svg class="lsb-collapse-chev" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
+        <!-- Double chevron pointing inline-END (outward). RTL flips. -->
+        <path d="M3 4l4 4-4 4M8 4l4 4-4 4"
+              stroke="currentColor" stroke-width="1.8" fill="none"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+  </div>
 </aside>
 
 <!-- Hide legacy floating buttons on desktop. Kept as a separate is:global
@@ -318,7 +341,7 @@
   /* Hairline divider tones below progress + above collapse: darker
      so the line is visible on cream. */
   :global(:root:not(.dark)) .reading-left-dock__progress::after,
-  :global(:root:not(.dark)) .reading-left-dock__collapse::before {
+  :global(:root:not(.dark)) .reading-left-dock__controls::before {
     background: linear-gradient(
       90deg,
       transparent 0%,
@@ -350,20 +373,40 @@
     color: #2c2c34;
   }
 
-  /* Active state: same gold as dark theme but the inset glow is
-     milder (cream surface doesn't need much glow to read). */
-  :global(:root:not(.dark)) .lsb-btn.reading-left-dock__item.active {
-    background: rgba(184, 146, 63, 0.10);
-    border-color: rgba(184, 146, 63, 0.45);
-    color: #2c2c34;
-    box-shadow:
-      inset 0 0 14px rgba(184, 146, 63, 0.10),
-      inset 0 1px 0 rgba(255, 255, 255, 0.5);
-  }
+  /* (Removed) Active-state styling for the cream surface — the user
+     prefers no visual selection marker. The .active class is still
+     applied by left-sidebar.ts for ARIA/JS reasons; it just no
+     longer changes how the tile looks. */
 
-  :global(:root:not(.dark)) .lsb-btn.reading-left-dock__item.active
-    .reading-left-dock__item-label {
-    color: #2c2c34;
+  /* ── Light-mode icon swap ──────────────────────────────────────
+     Designer-supplied light-mode variants (target-day.png etc.) —
+     authored to read on the cream surface, with their own colors
+     tuned for daylight contrast. We swap to them via `content: url()`
+     so the dark-mode <img src=""> in markup, the i18n alt text, and
+     the existing ts wiring all stay untouched. */
+  :global(:root:not(.dark))
+    .reading-left-dock__item[data-action="daily-goal"] img {
+    content: url('/assets/icons/sidebar/target-day.png');
+  }
+  :global(:root:not(.dark))
+    .reading-left-dock__item[data-action="tts"] img {
+    content: url('/assets/icons/sidebar/audio-day.png');
+  }
+  :global(:root:not(.dark))
+    .reading-left-dock__item[data-action="statistics"] img {
+    content: url('/assets/icons/sidebar/stats-day.png');
+  }
+  :global(:root:not(.dark))
+    .reading-left-dock__item[data-action="bookmarks"] img {
+    content: url('/assets/icons/sidebar/bookmarks-day.png');
+  }
+  :global(:root:not(.dark))
+    .reading-left-dock__item[data-action="highlights"] img {
+    content: url('/assets/icons/sidebar/highlight-day.png');
+  }
+  :global(:root:not(.dark))
+    .reading-left-dock__item[data-action="search"] img {
+    content: url('/assets/icons/sidebar/search-day.png');
   }
 
   /* Collapse button: light surface, dark icon. */
@@ -376,6 +419,37 @@
   :global(:root:not(.dark)) .reading-left-dock__collapse:hover {
     background: rgba(184, 146, 63, 0.10);
     border-color: rgba(184, 146, 63, 0.40);
+    color: #2c2c34;
+  }
+
+  /* Focus toggle in light mode: deeper gold ink, cream surface. */
+  :global(:root:not(.dark)) .reading-left-dock__focus {
+    background: linear-gradient(
+      135deg,
+      rgba(184, 146, 63, 0.16) 0%,
+      rgba(184, 146, 63, 0.06) 100%
+    );
+    border-color: rgba(184, 146, 63, 0.45);
+    color: #6d5320;
+  }
+
+  :global(:root:not(.dark)) .reading-left-dock__focus:hover {
+    background: linear-gradient(
+      135deg,
+      rgba(184, 146, 63, 0.28) 0%,
+      rgba(184, 146, 63, 0.12) 100%
+    );
+    border-color: rgba(184, 146, 63, 0.65);
+    color: #2c2c34;
+  }
+
+  :global(:root:not(.dark)) .reading-left-dock__focus.active {
+    background: linear-gradient(
+      135deg,
+      rgba(184, 146, 63, 0.36) 0%,
+      rgba(184, 146, 63, 0.18) 100%
+    );
+    border-color: rgba(184, 146, 63, 0.72);
     color: #2c2c34;
   }
 
@@ -540,32 +614,11 @@
     outline-offset: 2px;
   }
 
-  /* Thin gold vertical indicator on the LEFT edge of the active
-     tile (screen-edge side). Tone matches the right TOC's active
-     chapter color (#b8923f/#e6c98a) so the two menus feel like
-     siblings. Hidden by default via scaleY(0). */
+  /* (Removed) Thin gold vertical edge indicator. Was triggered by
+     .active; the user no longer wants any selection marker, so the
+     pseudo-element is suppressed entirely. */
   .reading-left-dock__item::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: -1px;
-    right: auto;
-    width: 3px;
-    height: 24px;
-    border-radius: 2px;
-    background: linear-gradient(
-      180deg,
-      #e6c98a 0%,
-      #b8923f 100%
-    );
-    box-shadow: 0 0 6px rgba(184, 146, 63, 0.45);
-    transform: translateY(-50%) scaleY(0);
-    transform-origin: center;
-    opacity: 0;
-    pointer-events: none;
-    transition:
-      transform 220ms cubic-bezier(0.33, 1, 0.68, 1),
-      opacity 180ms ease;
+    display: none;
   }
 
   .reading-left-dock__item-icon {
@@ -588,6 +641,7 @@
     display: block;
   }
 
+
   /* Labels are hidden — tile is icon-only; the existing tooltip
      (data-i18n-tooltip → .lsb-tooltip) is the only label surface
      visible to sighted users, while aria-label keeps the button
@@ -596,25 +650,13 @@
     display: none;
   }
 
-  /* Small gold dot indicator — sits inside the tile near the
-     content-facing (right) edge of the active item. Physical right
-     so it never flips by language. Matches Yuval's brand gold. */
+  /* (Removed) Small gold corner dot. Was the secondary "you are
+     here" cue alongside the edge indicator and inset glow. The user
+     no longer wants any selection marker, so the dot element is
+     suppressed in CSS. The <span> stays in markup so we don't
+     break any future selection logic that might query it. */
   .reading-left-dock__item-dot {
-    position: absolute;
-    top: 9px;
-    right: 9px;
-    left: auto;
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: #e6c98a;
-    box-shadow: 0 0 5px rgba(230, 201, 138, 0.6);
-    transform: scale(0);
-    opacity: 0;
-    pointer-events: none;
-    transition:
-      transform 220ms cubic-bezier(0.33, 1, 0.68, 1),
-      opacity 180ms ease;
+    display: none;
   }
 
   /* ── Hover (inactive only) ──────────────────────────────────── */
@@ -639,32 +681,11 @@
      dot + INSET gold glow only inside the tile. The tone matches
      the Yuval brand gold (#b8923f) used by the right TOC for the
      active chapter, so the two sidebars share one accent color. */
-  .lsb-btn.reading-left-dock__item.active {
-    background: rgba(184, 146, 63, 0.16);
-    border-color: rgba(230, 201, 138, 0.42);
-    color: #ffffff;
-    box-shadow:
-      inset 0 0 18px rgba(184, 146, 63, 0.18),
-      inset 0 1px 0 rgba(255, 255, 255, 0.05);
-  }
-
-  .lsb-btn.reading-left-dock__item.active::before {
-    transform: translateY(-50%) scaleY(1);
-    opacity: 1;
-  }
-
-  .lsb-btn.reading-left-dock__item.active .reading-left-dock__item-icon {
-    opacity: 1;
-  }
-
-  .lsb-btn.reading-left-dock__item.active .reading-left-dock__item-label {
-    color: #ffffff;
-  }
-
-  .lsb-btn.reading-left-dock__item.active .reading-left-dock__item-dot {
-    transform: scale(1);
-    opacity: 1;
-  }
+  /* (Removed) Active-state styling for the dark surface — the user
+     prefers no visual selection marker. The .active class is still
+     applied by left-sidebar.ts for ARIA/JS reasons; it just no
+     longer changes how the tile looks (no bg/border/glow shift, no
+     left-edge bar, no corner dot). */
 
   /* ── Search tile — special "panel-toggle" treatment ───────────
      The search tile owns a connected overlay (the find-in-chapter
@@ -672,42 +693,10 @@
      amplify the tile's active state — stronger inset glow, a small
      -2px lift — so the user feels the spatial connection between
      the icon and the panel above it. */
-  .lsb-btn.reading-left-dock__item.lsb-btn-search.active {
-    transform: translateY(-2px);
-    box-shadow:
-      inset 0 0 22px rgba(184, 146, 63, 0.28),
-      inset 0 1px 0 rgba(255, 255, 255, 0.07),
-      0 6px 20px -8px rgba(184, 146, 63, 0.45);
-  }
-
-  .lsb-btn.reading-left-dock__item.lsb-btn-search.active
-    .reading-left-dock__item-icon {
-    filter: drop-shadow(0 0 6px rgba(230, 201, 138, 0.55));
-  }
-
-  /* One-shot click pulse — fires the moment the search tile is
-     activated. Echoes the overlay's slide-in (200ms opacity / ~320ms
-     transform) by lifting + glowing slightly more for a brief beat. */
-  @keyframes lsb-search-pulse {
-    0%   { transform: translateY(0);    box-shadow: inset 0 0 0 rgba(184, 146, 63, 0); }
-    35%  { transform: translateY(-3px); box-shadow:
-              inset 0 0 26px rgba(184, 146, 63, 0.35),
-              0 8px 22px -6px rgba(184, 146, 63, 0.55); }
-    100% { transform: translateY(-2px); box-shadow:
-              inset 0 0 22px rgba(184, 146, 63, 0.28),
-              inset 0 1px 0 rgba(255, 255, 255, 0.07),
-              0 6px 20px -8px rgba(184, 146, 63, 0.45); }
-  }
-
-  .lsb-btn.reading-left-dock__item.lsb-btn-search.lsb-pulse {
-    animation: lsb-search-pulse 320ms cubic-bezier(0.33, 1, 0.68, 1);
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .lsb-btn.reading-left-dock__item.lsb-btn-search.lsb-pulse {
-      animation: none;
-    }
-  }
+  /* (Removed) Search-tile active lift + drop-shadow + click pulse
+     animation — same reasoning as the other tiles: no visual
+     selection marker. The overlay panel above already communicates
+     "search is open" on its own, the tile no longer needs to. */
 
   /* ── Badge — preserved from the previous activity-bar API ──── */
   /* Anchored to the top-RIGHT corner of the button (toward the
@@ -796,10 +785,85 @@
      `margin-top: auto` anchors it to the bottom of the flex column
      so any empty space sits between the menu and the button — the
      menu can stay tight at the top, the button stays grounded. */
+  /* Controls cluster: focus button stacked above the collapse button.
+     `margin-top: auto` on the cluster (was on the lone collapse btn)
+     anchors it to the bottom of the dock flex column. */
+  .reading-left-dock__controls {
+    margin: auto auto 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* Focus toggle: same 40×40 footprint as the collapse button, but
+     gold-accented to read as the *primary* "give me space" action.
+     Sits visually grouped with the collapse button so users find both
+     in the same place. */
+  .reading-left-dock__focus {
+    appearance: none;
+    position: relative;
+    width: 40px;
+    height: 40px;
+    box-sizing: border-box;
+    border-radius: 12px;
+    display: inline-grid;
+    place-items: center;
+    background: linear-gradient(
+      135deg,
+      rgba(230, 201, 138, 0.18) 0%,
+      rgba(184, 146, 63, 0.08) 100%
+    );
+    border: 1px solid rgba(184, 146, 63, 0.40);
+    color: #e6c98a;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition:
+      background-color 180ms ease,
+      border-color 180ms ease,
+      color 180ms ease,
+      box-shadow 180ms ease,
+      transform 180ms ease;
+  }
+
+  .reading-left-dock__focus:hover {
+    background: linear-gradient(
+      135deg,
+      rgba(230, 201, 138, 0.30) 0%,
+      rgba(184, 146, 63, 0.16) 100%
+    );
+    border-color: rgba(212, 175, 55, 0.65);
+    color: #ffffff;
+    box-shadow: 0 4px 14px -4px rgba(212, 175, 55, 0.40);
+  }
+
+  .reading-left-dock__focus:active { transform: scale(0.94); }
+
+  .reading-left-dock__focus:focus-visible {
+    outline: 2px solid rgba(212, 175, 55, 0.7);
+    outline-offset: 2px;
+  }
+
+  /* Active state — toggled on while focus mode is on (both
+     sidebars collapsed). Stronger gold to read as "engaged". */
+  .reading-left-dock__focus.active {
+    background: linear-gradient(
+      135deg,
+      rgba(212, 175, 55, 0.36) 0%,
+      rgba(184, 146, 63, 0.18) 100%
+    );
+    border-color: rgba(212, 175, 55, 0.72);
+    color: #ffffff;
+    box-shadow:
+      0 4px 14px -4px rgba(212, 175, 55, 0.55),
+      inset 0 0 10px rgba(212, 175, 55, 0.18);
+  }
+
+  .reading-left-dock__focus.active svg { transform: scaleX(-1); }
+
   .reading-left-dock__collapse {
     appearance: none;
     position: relative;
-    margin: auto auto 0;
     width: 40px;
     height: 40px;
     box-sizing: border-box;
@@ -819,9 +883,12 @@
       transform 180ms ease;
   }
 
-  /* Hairline divider sits in the margin above the button, not
-     inside it — keeps the button itself a tight 40×40 square. */
-  .reading-left-dock__collapse::before {
+  /* Hairline divider sits in the margin above the controls cluster,
+     not inside any single button — keeps each button a tight 40×40
+     square. The cluster needs `position: relative` for the absolute
+     pseudo-element to anchor to it. */
+  .reading-left-dock__controls { position: relative; }
+  .reading-left-dock__controls::before {
     content: '';
     position: absolute;
     top: -10px;

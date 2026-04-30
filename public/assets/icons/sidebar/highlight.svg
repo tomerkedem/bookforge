@@ -1,6 +1,20 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
-  <path d="M17 47L28 36L38 46L27 57H17V47Z" stroke="#EAB308" stroke-width="3.2" stroke-linejoin="round"/>
-  <path d="M30 34L45 19C47.2 16.8 50.8 16.8 53 19C55.2 21.2 55.2 24.8 53 27L38 42" stroke="#EAB308" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M43 21L51 29" stroke="#EAB308" stroke-width="3.2" stroke-linecap="round"/>
-  <path d="M14 56H42" stroke="#EAB308" stroke-width="3.2" stroke-linecap="round"/>
+<svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="markerStroke" x1="17" y1="58" x2="64" y2="16" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFE63A"/>
+      <stop offset="0.5" stop-color="#FFFF3D"/>
+      <stop offset="1" stop-color="#FFF24A"/>
+    </linearGradient>
+  </defs>
+
+  <g stroke="url(#markerStroke)" stroke-linecap="round" stroke-linejoin="round" fill="none" stroke-width="2.6">
+    <!-- Elongated marker body with chisel tip -->
+    <path d="M51 16 L64 29 L34 59 L17 51 Z"/>
+
+    <!-- Ferrule — separator between body and chisel tip -->
+    <path d="M24 44 L36 56"/>
+
+    <!-- Highlighted underline below the tip -->
+    <path d="M12 67 L38 67"/>
+  </g>
 </svg>

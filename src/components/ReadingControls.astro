@@ -215,6 +215,34 @@
   <span data-i18n="focus.toExit">to exit</span>
 </div>
 
+<!-- Return-both pill: rises from the bottom edge of the screen when
+     BOTH sidebars are collapsed, and slides back below the fold once
+     they're restored. The "handle bar" above the pill mimics a drawer
+     grab, hinting that the pill itself can be "pulled up" to restore.
+     Pure CSS visibility — keyed to body classes set by sidebar-collapse.
+     Click handler is the same `.sidebar-focus-btn` delegate. -->
+<button
+  type="button"
+  id="return-both-pill"
+  class="return-both-pill sidebar-focus-btn"
+  aria-label="Restore panels"
+  data-i18n-aria-label="reading.restorePanels"
+  title="Restore panels"
+  data-i18n-title="reading.restorePanels"
+>
+  <span class="return-both-handle" aria-hidden="true"></span>
+  <span class="return-both-glow" aria-hidden="true"></span>
+  <svg class="return-both-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+    <!-- Two arrows pointing outward — restore / expand. Mirror of
+         the inward focus icon. -->
+    <path d="M9 7 L4 12 L9 17" stroke="currentColor" stroke-width="2"
+          fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M15 7 L20 12 L15 17" stroke="currentColor" stroke-width="2"
+          fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+  <span class="return-both-label" data-i18n="reading.restorePanels">החזר תפריטים</span>
+</button>
+
 <style>
   /* ══════════════════════════════════════
      FAB CLUSTER
@@ -735,9 +763,206 @@
     from { opacity: 0; transform: translate(-50%, -10px); }
     to   { opacity: 1; transform: translate(-50%, 0); }
   }
+
+  /* ══════════════════════════════════════
+     RETURN-BOTH PILL
+     A drawer-handle-shaped affordance that lives just below the
+     fold while both sidebars are visible, and rises into view at
+     bottom-center the moment the user collapses both. Click =
+     restore both. The "handle bar" up top is the visual hint —
+     reads as a grab handle on a drawer you can pull up.
+  ══════════════════════════════════════ */
+  .return-both-pill {
+    position: fixed;
+    bottom: 22px;
+    left: 50%;
+    transform: translate(-50%, calc(100% + 40px));
+    z-index: 60;
+    appearance: none;
+    border: 1px solid rgba(184, 146, 63, 0.50);
+    background: linear-gradient(
+      180deg,
+      rgba(40, 30, 14, 0.92) 0%,
+      rgba(28, 22, 10, 0.88) 100%
+    );
+    backdrop-filter: blur(14px) saturate(150%);
+    -webkit-backdrop-filter: blur(14px) saturate(150%);
+    color: #e6c98a;
+    /* Asymmetric inline padding: tighter on the icon side, more
+       breathing room on the label side. Logical properties so RTL
+       (icon naturally on the right) gets the same effect for free. */
+    padding-block: 10px;
+    padding-inline-start: 18px;
+    padding-inline-end: 22px;
+    border-radius: 999px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    opacity: 0;
+    pointer-events: none;
+    box-shadow:
+      0 12px 30px -8px rgba(0, 0, 0, 0.55),
+      0 4px 12px -4px rgba(212, 175, 55, 0.25),
+      inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    transition:
+      opacity 380ms ease,
+      transform 520ms cubic-bezier(0.22, 1, 0.36, 1),
+      background 220ms ease,
+      border-color 220ms ease,
+      box-shadow 220ms ease;
+  }
+
+  /* Reveal: slide up into view + soft initial pulse to catch the eye
+     for the first beat after both sidebars collapse. */
+  body.sidebar-collapsed.left-sidebar-collapsed .return-both-pill {
+    opacity: 1;
+    transform: translate(-50%, 0);
+    pointer-events: auto;
+    animation: return-pill-pulse 2.4s ease-in-out 0.6s 2;
+  }
+
+  @keyframes return-pill-pulse {
+    0%, 100% {
+      box-shadow:
+        0 12px 30px -8px rgba(0, 0, 0, 0.55),
+        0 4px 12px -4px rgba(212, 175, 55, 0.25),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    }
+    50% {
+      box-shadow:
+        0 14px 36px -8px rgba(0, 0, 0, 0.55),
+        0 8px 22px -2px rgba(212, 175, 55, 0.55),
+        inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    }
+  }
+
+  .return-both-pill:hover {
+    background: linear-gradient(
+      180deg,
+      rgba(50, 38, 18, 0.94) 0%,
+      rgba(36, 28, 12, 0.92) 100%
+    );
+    border-color: rgba(212, 175, 55, 0.78);
+    color: #ffffff;
+    box-shadow:
+      0 16px 36px -8px rgba(0, 0, 0, 0.60),
+      0 8px 22px -4px rgba(212, 175, 55, 0.45),
+      inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  }
+
+  body.sidebar-collapsed.left-sidebar-collapsed .return-both-pill:hover {
+    transform: translate(-50%, -2px);
+    /* Stop the attention-pulse the moment the user has clearly
+       found the pill (mouse is on it). */
+    animation: none;
+  }
+
+  .return-both-pill:active {
+    transform: translate(-50%, 0) scale(0.97);
+  }
+
+  .return-both-pill:focus-visible {
+    outline: 2px solid rgba(212, 175, 55, 0.8);
+    outline-offset: 3px;
+  }
+
+  /* Drawer-handle bar above the pill — pure visual affordance.
+     Sits centered, 36px wide, breathing softly so the eye lands
+     on it before the label registers. */
+  .return-both-handle {
+    position: absolute;
+    top: -7px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 36px;
+    height: 3px;
+    border-radius: 2px;
+    background: linear-gradient(
+      90deg,
+      rgba(212, 175, 55, 0.0) 0%,
+      rgba(212, 175, 55, 0.85) 50%,
+      rgba(212, 175, 55, 0.0) 100%
+    );
+    pointer-events: none;
+    animation: return-handle-breathe 2.6s ease-in-out infinite;
+  }
+
+  @keyframes return-handle-breathe {
+    0%, 100% { opacity: 0.55; width: 32px; }
+    50%      { opacity: 1.0;  width: 44px; }
+  }
+
+  /* Soft halo behind the pill — same gold key, larger blur, very
+     low opacity. Adds depth without adding visual weight. */
+  .return-both-glow {
+    position: absolute;
+    inset: -8px -16px;
+    border-radius: 999px;
+    background: radial-gradient(
+      ellipse at center,
+      rgba(212, 175, 55, 0.25) 0%,
+      rgba(212, 175, 55, 0) 70%
+    );
+    pointer-events: none;
+    z-index: -1;
+    opacity: 0.7;
+  }
+
+  .return-both-icon {
+    flex-shrink: 0;
+  }
+
+  .return-both-label {
+    white-space: nowrap;
+  }
+
+  /* Light-mode palette: cream surface, dark gold ink. */
+  :global(:root:not(.dark)) .return-both-pill {
+    background: linear-gradient(
+      180deg,
+      rgba(255, 248, 232, 0.95) 0%,
+      rgba(248, 240, 220, 0.92) 100%
+    );
+    border-color: rgba(184, 146, 63, 0.55);
+    color: #6d5320;
+    box-shadow:
+      0 12px 30px -8px rgba(80, 60, 20, 0.30),
+      0 4px 12px -4px rgba(184, 146, 63, 0.30),
+      inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  }
+
+  :global(:root:not(.dark)) .return-both-pill:hover {
+    background: linear-gradient(
+      180deg,
+      rgba(255, 250, 235, 0.98) 0%,
+      rgba(250, 240, 215, 0.96) 100%
+    );
+    border-color: rgba(184, 146, 63, 0.85);
+    color: #2c2410;
+  }
+
+  /* Mobile: hide the return pill — sidebars are off-canvas drawers
+     there with their own restore mechanics. */
+  @media (max-width: 1023px) {
+    .return-both-pill { display: none !important; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .return-both-pill,
+    .return-both-handle {
+      transition-duration: 0ms !important;
+      animation: none !important;
+    }
+  }
 </style>
 
 <script>
+  import { rightSidebar, leftSidebar } from '../scripts/sidebar-collapse';
+
   /* ════════════════════════════════════════
      State
   ════════════════════════════════════════ */
@@ -796,11 +1021,48 @@
     typoPanelOpen ? closeTypoPanel() : openTypoPanel();
   }
 
-  /* ── Focus mode ── */
+  /* ── Focus mode ──
+     Two distinct toggles share the "Focus" label but do different
+     things — the in-sidebar gold buttons collapse BOTH sidebars only
+     (the cleanest distraction-free reading), while the FAB Focus
+     button additionally activates body.focus-mode (dims chrome,
+     centers the article). Keeping them separate so the in-sidebar
+     toggle doesn't override the user's typography settings. */
+  function bothSidebarsCollapsed(): boolean {
+    return document.body.classList.contains('sidebar-collapsed') &&
+           document.body.classList.contains('left-sidebar-collapsed');
+  }
+
+  function syncFocusButtons() {
+    const sidebarsHidden = bothSidebarsCollapsed();
+    $('focus-mode-btn')?.classList.toggle('active', focusActive);
+    document.querySelectorAll('.sidebar-focus-btn').forEach((b) => {
+      b.classList.toggle('active', sidebarsHidden);
+      b.setAttribute('aria-pressed', String(sidebarsHidden));
+    });
+  }
+
+  /* Sidebar-only focus: collapses (or restores) both sidebars in
+     lockstep. Does NOT touch body.focus-mode — pure sidebar action,
+     mirroring what the original top-center button did. */
+  function toggleSidebars() {
+    if (!window.matchMedia('(min-width: 1024px)').matches) return;
+    const next = !bothSidebarsCollapsed();
+    rightSidebar.setCollapsed(next);
+    leftSidebar.setCollapsed(next);
+  }
+
+  /* Full focus mode (FAB Focus / F key): dims chrome AND collapses
+     both sidebars. Original behavior preserved. */
   function toggleFocus() {
     focusActive = !focusActive;
     document.body.classList.toggle('focus-mode', focusActive);
-    $('focus-mode-btn')?.classList.toggle('active', focusActive);
+    syncFocusButtons();
+
+    if (window.matchMedia('(min-width: 1024px)').matches) {
+      rightSidebar.setCollapsed(focusActive);
+      leftSidebar.setCollapsed(focusActive);
+    }
 
     const toast = $('focus-indicator');
     if (toast) {
@@ -850,6 +1112,28 @@
     });
 
     $('focus-mode-btn')?.addEventListener('click', toggleFocus);
+
+    /* Sidebar-mounted focus toggles (one in each sidebar header) —
+       collapse-only, delegated so it survives Astro view transitions
+       without rebinding per element. */
+    document.addEventListener('click', (e) => {
+      const btn = (e.target as HTMLElement | null)?.closest('.sidebar-focus-btn');
+      if (btn) {
+        e.preventDefault();
+        toggleSidebars();
+      }
+    });
+
+    /* Keep the in-sidebar focus button's "active" pill in sync with
+       reality (both sidebars collapsed). Watching <body class> covers
+       all paths — the gold button stays correct even if the user
+       collapses one side via its own button. */
+    new MutationObserver(syncFocusButtons).observe(document.body, {
+      attributes: true,
+      attributeFilter: ['class'],
+    });
+
+    syncFocusButtons();
 
     $('typography-btn')?.addEventListener('click', () => {
       toggleTypoPanel();

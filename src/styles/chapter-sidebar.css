@@ -3083,6 +3083,75 @@ body.sidebar-collapsed .unified-sidebar {
   flex-shrink: 0;
 }
 
+/* ─── Focus toggle (sits next to the collapse button) ────────────
+   Same 28px footprint as `.usb-collapse-btn`, but gold-accented
+   so it reads as the *primary* "give me space" action. Click
+   collapses BOTH sidebars in lockstep (focus mode). */
+.usb-focus-btn {
+  appearance: none;
+  background: linear-gradient(
+    135deg,
+    rgba(230, 201, 138, 0.16) 0%,
+    rgba(184, 146, 63, 0.06) 100%
+  );
+  border: 1px solid rgba(184, 146, 63, 0.40);
+  color: #e6c98a;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: inline-grid;
+  place-items: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.usb-focus-btn:hover {
+  background: linear-gradient(
+    135deg,
+    rgba(230, 201, 138, 0.28) 0%,
+    rgba(184, 146, 63, 0.14) 100%
+  );
+  border-color: rgba(212, 175, 55, 0.65);
+  color: #ffffff;
+  box-shadow: 0 4px 12px -4px rgba(212, 175, 55, 0.40);
+}
+
+.usb-focus-btn:active { transform: scale(0.94); }
+
+.usb-focus-btn:focus-visible {
+  outline: 2px solid rgba(212, 175, 55, 0.7);
+  outline-offset: 2px;
+}
+
+.usb-focus-btn.active {
+  background: linear-gradient(
+    135deg,
+    rgba(212, 175, 55, 0.36) 0%,
+    rgba(184, 146, 63, 0.18) 100%
+  );
+  border-color: rgba(212, 175, 55, 0.72);
+  color: #ffffff;
+  box-shadow:
+    0 4px 12px -4px rgba(212, 175, 55, 0.55),
+    inset 0 0 10px rgba(212, 175, 55, 0.18);
+}
+
+.usb-focus-btn.active svg { transform: scaleX(-1); }
+
+@media (max-width: 1023px) {
+  .usb-focus-btn { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .usb-focus-btn { transition-duration: 0ms !important; }
+}
+
 /* ─── Collapse button (in usb-header) ───────────────────────────── */
 .usb-collapse-btn {
   /* Sits at the inline-end edge of the header row, after the

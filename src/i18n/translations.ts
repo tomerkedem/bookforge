@@ -332,7 +332,7 @@ export const translations: Translations = {
   // ── Reading Left Dock (premium vertical floating dock) ────────────────────
   'reading.leftDock.progress':   { he: 'התקדמות',   en: 'Progress',   es: 'Progreso' },
   'reading.leftDock.collapse':   { he: 'כווץ',      en: 'Collapse',   es: 'Contraer' },
-  'reading.focus.toggle':        { he: 'מצב קריאה', en: 'Focus mode', es: 'Modo lectura' },
+  'reading.restorePanels':       { he: 'החזר תפריטים', en: 'Restore panels', es: 'Restaurar paneles' },
 
   // ── Reading Tools (six-action toolbar in the left dock) ───────────────────
   'readingTools.dailyGoal':     { he: 'יעד יומי',           en: 'Daily goal',         es: 'Objetivo diario' },

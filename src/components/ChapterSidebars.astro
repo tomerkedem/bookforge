@@ -176,6 +176,25 @@ function formatChapterNumber(id: number | string): string {
             <span class="usb-completion-done" id="usb-completion-done">0</span><span class="usb-completion-sep">/</span><span class="usb-completion-total">{chapters.length}</span>
             <span class="usb-completion-suffix" data-i18n="sidebar.completed">הושלמו</span>
           </span>
+          <!-- Focus toggle: collapses BOTH sidebars in lockstep for
+               distraction-free reading. Sits next to the per-sidebar
+               collapse button so it's discoverable in the same place. -->
+          <button
+            type="button"
+            class="usb-focus-btn sidebar-focus-btn"
+            aria-label="Toggle focus mode"
+            data-i18n-aria-label="fab.focus"
+            title="Focus mode"
+            data-i18n-title="fab.focus"
+          >
+            <span class="sr-only" data-i18n="fab.focus">Focus</span>
+            <svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true">
+              <path d="M4 7 L9 12 L4 17" stroke="currentColor" stroke-width="2"
+                    fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M20 7 L15 12 L20 17" stroke="currentColor" stroke-width="2"
+                    fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
           <!-- Collapse button: triggers chromatic-shift hide. Chevron
                always points toward the outer screen edge (inline-start
                of viewport). The CSS flips it for RTL via scaleX. -->

@@ -81,8 +81,9 @@ export function isRtlLang(lang: string): boolean {
 
 /**
  * Apply translations to DOM nodes marked with:
- * - data-i18n="key"
- * - data-i18n-title="key"
+ * - data-i18n="key"            → textContent
+ * - data-i18n-title="key"      → title attribute
+ * - data-i18n-aria-label="key" → aria-label attribute
  */
 export function applyTranslations(root: ParentNode, lang: string): void {
   const resolvedLang = resolveLanguage(lang);
@@ -99,5 +100,12 @@ export function applyTranslations(root: ParentNode, lang: string): void {
     const key = node.dataset.i18nTitle;
     if (!key) return;
     node.title = t(key, resolvedLang);
+  });
+
+  const ariaNodes = root.querySelectorAll<HTMLElement>('[data-i18n-aria-label]');
+  ariaNodes.forEach(node => {
+    const key = node.dataset.i18nAriaLabel;
+    if (!key) return;
+    node.setAttribute('aria-label', t(key, resolvedLang));
   });
 }
