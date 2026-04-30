@@ -1478,12 +1478,14 @@ const { class: className } = Astro.props;
     host.appendChild(cloud);
   }
 
-  /* Cadence: clouds spawn every 3.5–7.5s, with each lasting 22–34s
-     across the window. That gives ~4–8 clouds visible at any time
-     — continuous ambient sky cover, but every cloud unique. Hover
-     speeds the cadence up. */
-  const CLOUD_INTERVAL_S: [number, number] = [3.5, 7.5];
-  const CLOUD_INTERVAL_HOVER_S: [number, number] = [2.0, 4.5];
+  /* Cadence: clouds spawn every 7–18 s with a wide random spread —
+     was 3.5–7.5 s which gave 4–8 simultaneous clouds (over-cluttered
+     for the small window). The wider variance creates moments of
+     genuine sparseness alternating with brief gatherings, which reads
+     as a real sky rather than a steady stream. Hover keeps a similar
+     2× ratio so cadence speeds up but stays varied. */
+  const CLOUD_INTERVAL_S: [number, number] = [7, 18];
+  const CLOUD_INTERVAL_HOVER_S: [number, number] = [4, 9];
 
   let cloudTimer: number | undefined;
   let cloudHoverActive = false;
@@ -1506,15 +1508,16 @@ const { class: className } = Astro.props;
   }
 
   /* Bootstrap: when the page first opens (or theme flips back to
-     dark), the cloud host is empty. Pre-seed 4 clouds with negative
-     animation-delays so they appear already mid-flight, distributed
-     across the window. The user sees a populated sky immediately. */
+     dark), the cloud host is empty. Pre-seed 2 clouds (was 4) with
+     negative animation-delays so they appear already mid-flight.
+     Fewer initial clouds matches the new sparser cadence — the sky
+     starts quiet and fills slowly rather than already-populated. */
   function bootstrapClouds(host: HTMLElement) {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     if (!document.documentElement.classList.contains('dark')) return;
     if (document.documentElement.dataset.disableSkyClouds === 'true') return;
 
-    const seedCount = 4;
+    const seedCount = 2;
     for (let i = 0; i < seedCount; i++) {
       // Each seed is "already X seconds into its drift" — distributed
       // evenly across the cycle so they spread across the window.
