@@ -1428,4 +1428,18 @@ _output_capture = OutputCapture()
     // Fetch-based chapter navigation (TOC clicks)
     window.addEventListener('chapter-content-swapped', reinitAll);
   </script>
+
+  <!-- Reading Mode signal — body.reading-mode is consumed by Header.astro
+       to dim/compress the global navbar into a quiet contextual layer.
+       Removed before navigating away so non-reading pages get the full
+       header back; re-added when another ReadingLayout page mounts. -->
+  <script is:inline>
+    (function () {
+      function enable() { document.body.classList.add('reading-mode'); }
+      function disable() { document.body.classList.remove('reading-mode'); }
+      enable();
+      document.addEventListener('astro:page-load', enable);
+      document.addEventListener('astro:before-swap', disable);
+    })();
+  </script>
 </BaseLayout>

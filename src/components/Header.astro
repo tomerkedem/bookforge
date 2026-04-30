@@ -738,6 +738,104 @@ const isRtl = getLanguageDirection(language) === 'rtl';
   .mobile-quote-bar:active .mobile-quote-track {
     animation-play-state: paused;
   }
+
+  /* ═════════════════════════════════════════════════════════════
+     READING MODE — calm, contextual header
+     Active when ReadingLayout adds body.reading-mode. The header
+     stops competing with content: thinner strip, no gradient, soft
+     blur, and a low resting opacity that lifts to full on hover or
+     keyboard focus so the language switch / theme toggle stay
+     reachable without friction.
+     ═════════════════════════════════════════════════════════════ */
+  :global(body.reading-mode) .yuval-header {
+    background: linear-gradient(to bottom, #faf8f5, #f5f3f0);
+    backdrop-filter: blur(6px) saturate(115%);
+    -webkit-backdrop-filter: blur(6px) saturate(115%);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+    transition: background-color 220ms var(--ease-standard);
+  }
+
+  :global(.dark body.reading-mode) .yuval-header {
+    background: linear-gradient(to bottom, #1a1a1f, #141418);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+  }
+
+  /* Drop the warm under-glow; soften the gold hairline. */
+  :global(body.reading-mode) .yuval-header::after { display: none; }
+  :global(body.reading-mode) .yuval-header::before {
+    background: rgba(201, 169, 110, 0.22);
+  }
+  :global(.dark body.reading-mode) .yuval-header::before {
+    background: rgba(139, 115, 85, 0.28);
+  }
+
+  /* Compact strip — ~52px vs the default 64px. */
+  :global(body.reading-mode) .header-inner {
+    height: 52px;
+    transition: height 220ms var(--ease-standard);
+  }
+
+  /* Slightly soften logo + trailing controls — quiet, not invisible.
+     Restored to full on header hover / keyboard focus. */
+  :global(body.reading-mode) .yuval-logo,
+  :global(body.reading-mode) .header-inner > div:last-child {
+    opacity: 0.85;
+    transition: opacity 220ms var(--ease-standard);
+  }
+
+  :global(body.reading-mode) .yuval-header:hover .yuval-logo,
+  :global(body.reading-mode) .yuval-header:hover .header-inner > div:last-child,
+  :global(body.reading-mode) .yuval-header:focus-within .yuval-logo,
+  :global(body.reading-mode) .yuval-header:focus-within .header-inner > div:last-child {
+    opacity: 1;
+  }
+
+  /* Quote softens — lighter weight, a touch smaller, generous tracking,
+     no text-shadow. The quote stays — it just whispers instead of speaks. */
+  :global(body.reading-mode) .quote-text {
+    font-size: calc(0.96rem * var(--quote-scale, 1));
+    font-weight: 300;
+    opacity: 0.85;
+    letter-spacing: 0.025em;
+    text-shadow: none;
+  }
+
+  :global([dir="rtl"] body.reading-mode) .quote-text {
+    font-weight: 400;
+  }
+
+  @media (min-width: 768px) {
+    :global(body.reading-mode) .quote-text {
+      font-size: calc(1.06rem * var(--quote-scale, 1));
+    }
+  }
+
+  @media (min-width: 1024px) {
+    :global(body.reading-mode) .quote-text {
+      font-size: calc(1.18rem * var(--quote-scale, 1));
+    }
+  }
+
+  :global(body.reading-mode) .quote-author {
+    opacity: 0.75;
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+  }
+
+  @media (min-width: 768px) {
+    :global(body.reading-mode) .quote-author {
+      font-size: 0.76rem;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :global(body.reading-mode) .yuval-header,
+    :global(body.reading-mode) .header-inner,
+    :global(body.reading-mode) .yuval-logo,
+    :global(body.reading-mode) .header-inner > div:last-child {
+      transition: none !important;
+    }
+  }
 </style>
 
 <script>
