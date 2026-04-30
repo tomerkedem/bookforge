@@ -486,24 +486,15 @@
 .tts-mini-eq > span:nth-child(4) { transition-duration: 180ms; }
 #tts-mini[data-status="playing"] .tts-mini-eq > span { opacity: 1; }
 
-.tts-mini-label {
-  font-family: 'Inter', 'IBM Plex Sans Hebrew', system-ui, sans-serif;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--tts-panel-text);
-  opacity: 0.65;
-  white-space: nowrap;
-}
-
+/* Label + counter ("הקראה X / Y") hidden — redundant chrome.
+   The equalizer icon already signals "now reading", and the seek
+   bar shows position — both the textual label and the X / Y count
+   added noise the user explicitly flagged as unnecessary. The
+   elements stay in the DOM so the JS that updates the counter
+   keeps running without null checks. */
+.tts-mini-label,
 .tts-mini-counter {
-  font-family: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
-  font-size: 11px;
-  font-variant-numeric: tabular-nums;
-  color: var(--tts-panel-text);
-  opacity: 0.55;
-  white-space: nowrap;
+  display: none;
 }
 
 /* ── Transport (prev / play / next) ── */

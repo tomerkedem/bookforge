@@ -154,6 +154,7 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
       if (typeof a === 'string') return a;
       return a[language] ?? a[SOURCE_LANGUAGE] ?? Object.values(a).find(Boolean) ?? '';
     })()}
+    coverImage={bookData.coverImage || ''}
     chapterCount={chapters.length}
   />
   {/* Unified top strip: sticky band between the sidebars that merges what

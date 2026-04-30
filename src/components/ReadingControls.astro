@@ -249,7 +249,12 @@
   ══════════════════════════════════════ */
   .reading-fab {
     position: fixed;
-    bottom: 32px;
+    /* Lift well above the platform status bar so NO FAB in the stack
+     — including the topmost when the panel is open — is ever hidden
+       behind the bar. Generous 72px clearance above the bar; falls
+       back to 56px (the bar's default height) so the math holds even
+       if the CSS var hasn't been set yet. */
+    bottom: calc(72px + var(--platform-status-bar-height, 56px));
     right: 28px;
     z-index: 45;
     display: flex;
@@ -277,7 +282,9 @@
 
   @media (max-width: 639px) {
     .reading-fab {
-      bottom: 24px;
+      /* Same lift logic as desktop — generous clearance above the
+         (mobile-height) status bar so no FAB ever sits behind it. */
+      bottom: calc(56px + var(--platform-status-bar-height, 48px));
       right: 20px;
     }
     [dir="rtl"] .reading-fab {

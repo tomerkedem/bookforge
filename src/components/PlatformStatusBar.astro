@@ -19,47 +19,64 @@ interface Props {
   /** Author name (already localised). Renders below the title in the
       "by [author]" form using the `book.by` translation key. */
   bookAuthor?: string;
+  /** Cover image URL — small thumbnail rendered on the inline-start
+      side of the title, mirroring the cover that opens each book. */
+  coverImage?: string;
   /** Total chapter count for the X / Y completion ratio. */
   chapterCount: number;
 }
 
-const { bookTitle = '', bookAuthor = '', chapterCount } = Astro.props;
+const { bookTitle = '', bookAuthor = '', coverImage = '', chapterCount } = Astro.props;
 ---
 
 <aside class="platform-status-bar" aria-label="Reading progress">
   <div class="psb-inner">
-    <!-- Inline-start: book context, secondary text. Title sits above
-         the author line so the bar mirrors a book cover hierarchy. -->
+    <!-- Inline-start: cover thumbnail + book context. The thumb sits
+         on the inline-start side (visual right in RTL, visual left in
+         LTR) so it precedes the title text in reading flow — mirroring
+         how a book is presented on a shelf or library page. -->
     <div class="psb-context">
-      {bookTitle && <span class="psb-book-title">{bookTitle}</span>}
-      {bookAuthor && (
-        <span class="psb-book-author">
-          <span class="psb-author-prefix" data-i18n="book.by">מאת:</span>
-          <span class="psb-author-name">{bookAuthor}</span>
-        </span>
+      {coverImage && (
+        <img class="psb-cover" src={coverImage} alt="" aria-hidden="true" loading="lazy" />
       )}
+      <div class="psb-context-text">
+        {bookTitle && <span class="psb-book-title">{bookTitle}</span>}
+        {bookAuthor && (
+          <span class="psb-book-author">
+            <span class="psb-author-prefix" data-i18n="book.by">מאת:</span>
+            <span class="psb-author-name">{bookAuthor}</span>
+          </span>
+        )}
+      </div>
     </div>
 
     <!-- Center: the pencil — the hero of this strip. The .usb-progress-track
          class carries the full pencil artwork (clip-path + ::before tip +
          ::after ferrule) defined in chapter-sidebar.css; the canvas inside
-         renders the NeuronBar particles. -->
+         renders the NeuronBar particles.
+         The percentage is absolutely-positioned just past the pencil's
+         right edge (physical), so the pencil itself stays exactly
+         centered on screen while the % sits flush against it as a
+         "leading number" — visual cohesion without offsetting the
+         pencil from screen center. -->
     <div class="psb-pencil-wrap">
       <div class="usb-progress-track">
         <canvas class="usb-toc-progress-canvas" id="usb-progress-canvas" aria-hidden="true"></canvas>
       </div>
-    </div>
-
-    <!-- Inline-end: stats trio. -->
-    <div class="psb-stats">
-      <span class="usb-completion-count">
-        <span class="usb-completion-done" id="usb-completion-done">0</span><span class="usb-completion-sep">/</span><span class="usb-completion-total">{chapterCount}</span>
-        <span class="usb-completion-suffix" data-i18n="sidebar.completed">הושלמו</span>
-      </span>
-      <span class="psb-stat-sep" aria-hidden="true">·</span>
-      <span class="usb-progress-percent" id="usb-progress-percent">0%</span>
-      <span class="psb-stat-sep" aria-hidden="true">·</span>
-      <span class="usb-time-remaining" id="usb-time-remaining"></span>
+      <!-- Headline % flush against the physical right edge of the pencil
+           (eraser side in RTL Hebrew). -->
+      <span class="usb-progress-percent psb-percent-headline" id="usb-progress-percent">0%</span>
+      <!-- Caption stats flush against the physical left edge of the pencil
+           (V-tip side in RTL Hebrew). Both wings hug the pencil so the
+           data clearly belongs to it. -->
+      <div class="psb-stats">
+        <span class="usb-completion-count">
+          <span class="usb-completion-done" id="usb-completion-done">0</span><span class="usb-completion-sep">/</span><span class="usb-completion-total">{chapterCount}</span>
+          <span class="usb-completion-suffix" data-i18n="sidebar.completed">הושלמו</span>
+        </span>
+        <span class="psb-stat-sep" aria-hidden="true">·</span>
+        <span class="usb-time-remaining" id="usb-time-remaining"></span>
+      </div>
     </div>
   </div>
 </aside>
@@ -147,6 +164,11 @@ const { bookTitle = '', bookAuthor = '', chapterCount } = Astro.props;
   .psb-inner {
     position: relative;
     display: grid;
+    /* Pencil dead-centre on screen via 1fr / auto / 1fr. Both the
+       headline % and the caption stats float off the pencil-wrap as
+       absolute elements (one per side) — they're not in the grid, so
+       the pencil's horizontal position never shifts regardless of
+       caption length. */
     grid-template-columns: 1fr auto 1fr;
     align-items: center;
     column-gap: 24px;
@@ -155,11 +177,44 @@ const { bookTitle = '', bookAuthor = '', chapterCount } = Astro.props;
     z-index: 1;
   }
 
-  /* Inline-start: book title, muted secondary text. */
+  /* Inline-start cluster: small cover thumb + stacked title/author. */
   .psb-context {
     min-width: 0;
     overflow: hidden;
     justify-self: start;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  /* Cover thumbnail — small portrait rectangle echoing a real book
+     spine + cover. Subtle gold rim ties it to the rest of the chrome
+     vocabulary; thin shadow gives it depth so it reads as an object,
+     not a flat sticker. */
+  .psb-cover {
+    flex-shrink: 0;
+    width: 26px;
+    height: 38px;
+    object-fit: cover;
+    border-radius: 3px;
+    border: 1px solid rgba(184, 146, 63, 0.25);
+    box-shadow:
+      0 1px 3px rgba(0, 0, 0, 0.20),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+
+  :global(.dark) .psb-cover {
+    border-color: rgba(184, 146, 63, 0.30);
+    box-shadow:
+      0 1px 3px rgba(0, 0, 0, 0.45),
+      inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  }
+
+  /* Text column: title + author stacked, with min-width: 0 so
+     `text-overflow: ellipsis` actually works inside the flex parent. */
+  .psb-context-text {
+    min-width: 0;
+    overflow: hidden;
   }
 
   .psb-book-title {
@@ -217,22 +272,28 @@ const { bookTitle = '', bookAuthor = '', chapterCount } = Astro.props;
      size on narrow tablets; max raised to 720 so wide screens
      finally see the artwork at the scale it deserves. */
   .psb-pencil-wrap {
+    position: relative; /* anchor for the absolute .psb-percent-headline */
     width: clamp(380px, 55vw, 720px);
     flex-shrink: 0;
     justify-self: center;
   }
 
-  /* Inline-end: stats. Uses the same .usb-completion-* / .usb-progress-*
-     classes the original TOC header used so existing colour/typography
-     rules in chapter-sidebar.css apply unchanged. */
+  /* Caption stats — floats off the pencil's physical-LEFT edge (V-tip
+     side in RTL Hebrew) so it visually belongs to the pencil instead
+     of drifting to the far inline-end of the bar. Symmetric counterpart
+     to the absolute headline %. */
   .psb-stats {
+    position: absolute;
+    right: calc(100% + 12px);
+    top: 50%;
+    transform: translateY(-50%);
     display: inline-flex;
     align-items: baseline;
     gap: 8px;
-    justify-self: end;
     font-size: 13px;
     color: var(--yuval-text-muted, #6b7280);
     white-space: nowrap;
+    pointer-events: none;
   }
 
   .psb-stats :global(.usb-completion-count) {
@@ -242,6 +303,30 @@ const { bookTitle = '', bookAuthor = '', chapterCount } = Astro.props;
   .psb-stat-sep {
     opacity: 0.4;
     font-size: 13px;
+  }
+
+  /* Headline percent — large serif numeral floating just past the
+     pencil's PHYSICAL right edge (which in RTL = visual right of the
+     pencil, the eraser side). Absolute positioning keeps it visually
+     attached to the pencil without shifting the pencil's grid centre.
+     `left: calc(100% + 12px)` is physical-right of the wrap regardless
+     of writing direction, matching the user's "right of pencil" intent
+     in their RTL view. */
+  .psb-percent-headline {
+    position: absolute;
+    left: calc(100% + 12px);
+    top: 50%;
+    transform: translateY(-50%);
+    font-family: 'Cormorant Garamond', 'EB Garamond', Garamond, Georgia,
+                 'Times New Roman', serif;
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1;
+    font-variant-numeric: tabular-nums lining-nums;
+    font-feature-settings: "tnum" 1, "lnum" 1;
+    white-space: nowrap;
+    pointer-events: none; /* purely informational, not interactive */
   }
 
   /* Narrow desktop / tablet: hide the verbose "הושלמו / completed"
@@ -290,22 +375,54 @@ const { bookTitle = '', bookAuthor = '', chapterCount } = Astro.props;
         0 -1px 4px rgba(0, 0, 0, 0.08),
         0 -2px 8px rgba(0, 0, 0, 0.04);
     }
+    /* Mobile grid: context | percent | caption-stats. The pencil-wrap
+       evaporates via `display: contents` so its child % becomes a
+       direct grid item; the pencil track itself is hidden. */
     .psb-inner {
-      grid-template-columns: 1fr auto;
+      grid-template-columns: 1fr auto auto;
       height: 48px;
-      column-gap: 12px;
+      column-gap: 10px;
       padding: 0 16px;
-    }
-    .psb-pencil-wrap {
-      display: none;
     }
     .psb-context {
       grid-column: 1;
+      gap: 8px;
+    }
+    /* Mobile: hide the cover thumb to free horizontal room for the
+       title + author stack. Reading the title is the priority. */
+    .psb-cover {
+      display: none;
+    }
+    .psb-pencil-wrap {
+      display: contents;
+    }
+    .psb-pencil-wrap > .usb-progress-track {
+      display: none;
+    }
+    .psb-percent-headline {
+      /* Drops out of absolute positioning into the regular grid flow.
+         Pencil metaphor doesn't apply on mobile, so the headline
+         shrinks back to caption size and joins the stats line. */
+      position: static;
+      transform: none;
+      grid-column: 2;
+      align-self: center;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0;
+      line-height: 1.3;
     }
     .psb-stats {
-      grid-column: 2;
+      /* Caption stats also drop out of absolute on mobile — they join
+         the inline grid flow as col 3. */
+      position: static;
+      transform: none;
+      grid-column: 3;
+      align-self: center;
       gap: 6px;
       font-size: 12px;
+      pointer-events: auto;
     }
     .psb-stats :global(.usb-completion-count) {
       font-size: 12px;
