@@ -259,14 +259,15 @@
     padding: 16px 8px 14px;
     box-sizing: border-box;
     border-radius: 28px;
-    background:
-      linear-gradient(
-        180deg,
-        rgba(28, 28, 34, 0.82) 0%,
-        rgba(20, 20, 26, 0.86) 100%
-      );
-    backdrop-filter: blur(20px) saturate(140%);
-    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    /* Shell surface — flat, matches the chapter top strip and the
+       unified sidebar exactly so all three regions read as one
+       continuous frame around the reading content. The previous
+       gradient (28,28,34 → 20,20,26) and backdrop blur made the dock
+       a slightly cooler, slightly translucent tone than the rest of
+       the shell, which broke the "single surface" illusion. */
+    background: var(--yuval-surface, #1a1a1a);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     /* Neutral hairline matching the right TOC's --yuval-border.
        The gold inner-shadow hint echoes the header's gold ornament
        without ever reading as decoration. */
@@ -284,11 +285,10 @@
      users navigating between the right TOC and the left dock see
      the same brand color in both menus. */
   :global(:root:not(.dark)) .reading-left-dock {
-    background: linear-gradient(
-      180deg,
-      rgba(252, 250, 246, 0.92) 0%,
-      rgba(245, 242, 235, 0.94) 100%
-    );
+    /* Same flat cream surface as the strip + TOC (#F5F4EF) so the
+       dock reads as part of the same shell, not a floating cream
+       island with its own gradient. */
+    background: #F5F4EF;
     border-color: rgba(201, 169, 110, 0.30);
     box-shadow:
       0 18px 40px -16px rgba(60, 50, 30, 0.18),
@@ -579,33 +579,100 @@
      selection marker. The overlay panel above already communicates
      "search is open" on its own, the tile no longer needs to. */
 
-  /* ── Badge — preserved from the previous activity-bar API ──── */
-  /* Anchored to the top-RIGHT corner of the button (toward the
-     reading content) regardless of language. */
+  /* ── Badge — gilt parchment medallion ───────────────────────────
+     Inspired by book gilt-edge ornaments and luxury edition seals:
+     a warm cream disc with a thin gold rim and a deep ink-brown
+     SERIF numeral. The serif typeface is what carries the luxury
+     read; sans-serif always slips toward "notification dot" no
+     matter how the colour is tuned. Dark serif on cream is also
+     the most legible text combination there is — same logic as a
+     book page — so the count is unambiguous at a glance.
+
+     Anchored to the top-RIGHT corner regardless of language so
+     it always faces the reading content. */
   .lsb-btn[data-badge]::after {
     content: attr(data-badge);
     position: absolute;
-    top: 4px;
-    right: 6px;
+    top: 2px;
+    right: 4px;
     left: auto;
-    min-width: 18px;
-    height: 18px;
-    padding: 0 5px;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 6px;
     box-sizing: border-box;
-    border-radius: 9px;
-    border: 1.5px solid rgba(7, 13, 28, 0.85);
-    background: #d4af37;
-    color: #ffffff;
-    font-size: 0.68rem;
-    font-weight: 700;
-    line-height: 15px;
+    border-radius: 11px;
+
+    /* Cream parchment with a soft sheen at the top — reads as an
+       applied medallion, not a flat sticker. */
+    background:
+      radial-gradient(
+        circle at 50% 30%,
+        rgba(255, 248, 220, 0.85) 0%,
+        rgba(255, 248, 220, 0) 60%
+      ),
+      linear-gradient(180deg, #f4e6bd 0%, #e2cf95 100%);
+
+    /* Old-style serif numeral, tabular for vertical alignment.
+       Slightly heavier weight gives the engraved feel without
+       turning into a chunky display face. */
+    color: #2e1f0a;
+    font-family: 'Cormorant Garamond', 'EB Garamond', Garamond, Georgia,
+                 'Times New Roman', serif;
+    font-size: 0.92rem;
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: 0;
+    font-variant-numeric: tabular-nums lining-nums;
+    font-feature-settings: "tnum" 1, "lnum" 1;
     text-align: center;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    /* Sheen highlight on the numeral itself — subtle "engraving"
+       cue that catches the eye and reinforces the medallion read. */
+    text-shadow: 0 1px 0 rgba(255, 250, 235, 0.70);
+
+    /* Gilt rim + tonal drop. The rim is what ties the medallion
+       into the dock's gold accent family. */
+    border: 1px solid rgba(140, 100, 30, 0.55);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 250, 235, 0.70),
+      inset 0 -1px 0 rgba(80, 50, 10, 0.18),
+      0 2px 4px rgba(0, 0, 0, 0.40),
+      0 0 0 1px rgba(0, 0, 0, 0.20);
+
     pointer-events: none;
-    box-shadow: 0 0 8px rgba(212, 175, 55, 0.6);
   }
 
-  .lsb-btn[data-badge-color="green"]::after { background: #1f8a4d; }
-  .lsb-btn[data-badge-color="purple"]::after { background: #a78bfa; color: #1a1632; }
+  /* Light theme: same medallion, but the surrounding paper is
+     already cream — saturate the disc one step deeper and bring
+     the rim to full strength so the badge reads as its own object
+     instead of melting into the dock surface. */
+  :global(:root:not(.dark)) .lsb-btn[data-badge]::after {
+    background:
+      radial-gradient(
+        circle at 50% 30%,
+        rgba(255, 245, 210, 0.85) 0%,
+        rgba(255, 245, 210, 0) 60%
+      ),
+      linear-gradient(180deg, #e8d39a 0%, #d4ba74 100%);
+    border-color: rgba(140, 100, 30, 0.70);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 250, 235, 0.70),
+      inset 0 -1px 0 rgba(80, 50, 10, 0.20),
+      0 2px 4px rgba(60, 40, 8, 0.32),
+      0 0 0 1px rgba(60, 40, 8, 0.18);
+  }
+
+  /* Variants — same parchment, different ink alloy. The disc and
+     rim stay gold so the system reads as one set of medallions. */
+  .lsb-btn[data-badge-color="green"]::after {
+    color: #1d4a2c;
+  }
+
+  .lsb-btn[data-badge-color="purple"]::after {
+    color: #2e1d5a;
+  }
 
   /* ── Tooltip (rendered as a single floating element, see script) ─ */
   :global(.lsb-tooltip) {

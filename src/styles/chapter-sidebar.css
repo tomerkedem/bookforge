@@ -40,12 +40,27 @@
    outward. */
 .unified-sidebar {
   position: fixed;
-  top: 68px;
+  /* Dock flush against the platform header's bottom edge. sticky-header.ts
+     keeps --reading-sticky-top in sync with #site-header.offsetHeight
+     via a ResizeObserver, so the sidebar's top edge always sits exactly
+     under the header — no gap at any breakpoint or font/quote change.
+     The same variable docks the chapter top strip, so strip and TOC
+     share one horizontal seam. Fallback 68px ≈ default header height. */
+  top: var(--reading-sticky-top, 68px);
   inset-inline-start: 0;
   width: 320px;
-  height: calc(100vh - 68px);
-  background: var(--yuval-surface, #fff);
-  border-inline-end: 1px solid var(--yuval-border, rgba(127, 127, 127, 0.18));
+  height: calc(100vh - var(--reading-sticky-top, 68px));
+  /* Shell surface — must match .usb-header and the chapter top strip
+     exactly so header + sidebar + content frame read as one continuous
+     surface (the "puzzle" effect). Light: warm cream that the strip
+     and usb-header already use (#F5F4EF). */
+  background: #F5F4EF;
+  /* No CSS border on the inline-end edge — the inner-facing hairline
+     is drawn by ::before below as a vertical gradient that fades to
+     transparent at the top. That way the corner where the strip's
+     bottom border meets the TOC's inner border has no hard junction:
+     the strip's hairline runs across, and the TOC's hairline appears
+     ~80px below it, dissolving in. */
   /* No padding-top — the sticky .usb-header owns the top inset so it
      pins flush to the sidebar's visual top edge. Bottom + sides keep
      their original padding. */
@@ -57,14 +72,62 @@
   box-sizing: border-box;
 }
 
-/* Dark-mode safe fallback: if --yuval-surface isn't defined,
-   use a near-black instead of white so we don't paint a white
-   box inside a dark page. */
+/* Inner-facing hairline — fades in from transparent at the top so the
+   corner where the chapter top strip meets the TOC reads as one
+   continuous surface. Fixed positioning (mirrors the sidebar) so the
+   line stays put while sidebar content scrolls underneath, and uses
+   logical inset so it lands on the correct side in both LTR and RTL.
+   width: 0.5px matches the strip's bottom hairline weight; the gold
+   tone matches its color in light mode. */
+.unified-sidebar::before {
+  content: '';
+  position: fixed;
+  top: var(--reading-sticky-top, 68px);
+  /* 320px (sidebar width) - 0.5px (hairline width) → sits flush with
+     the inner edge in both directions. inset-inline-start resolves to
+     left in LTR and right in RTL, mirroring the sidebar's anchor. */
+  inset-inline-start: calc(320px - 0.5px);
+  width: 0.5px;
+  height: calc(100vh - var(--reading-sticky-top, 68px));
+  background: linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 56px,
+    rgba(184, 146, 63, 0.20) 110px,
+    rgba(184, 146, 63, 0.20) 100%
+  );
+  pointer-events: none;
+  z-index: 31;
+}
+
+/* Dark-mode shell — matches the strip-row's dark bg (--yuval-surface)
+   so all three header regions share one surface across the top of the
+   page. Inner-edge fade swaps to a low-alpha white tint matching the
+   strip's bottom hairline. */
 .dark .unified-sidebar {
   background: var(--yuval-surface, #1a1a1a);
 }
 
-/* Soft fade at the bottom to hint that there's more to scroll. */
+.dark .unified-sidebar::before {
+  background: linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 56px,
+    rgba(255, 255, 255, 0.07) 110px,
+    rgba(255, 255, 255, 0.07) 100%
+  );
+}
+
+/* Collapsed sidebar: hide the inner-edge hairline alongside the sidebar
+   so it doesn't hang in the middle of the screen with no panel behind it. */
+body.sidebar-collapsed .unified-sidebar::before {
+  display: none;
+}
+
+/* Soft fade at the bottom to hint that there's more to scroll.
+   Base color matches the sidebar surface — #F5F4EF in light,
+   --yuval-surface in dark — so the fade dissolves into the shell
+   instead of revealing a white seam. */
 .unified-sidebar::after {
   content: '';
   position: sticky;
@@ -72,8 +135,12 @@
   display: block;
   height: 24px;
   margin-top: -24px;
-  background: linear-gradient(to bottom, transparent, var(--yuval-surface, #fff) 80%);
+  background: linear-gradient(to bottom, transparent, #F5F4EF 80%);
   pointer-events: none;
+}
+
+.dark .unified-sidebar::after {
+  background: linear-gradient(to bottom, transparent, var(--yuval-surface, #1a1a1a) 80%);
 }
 
 /* Polished-graphite scrollbar — 3px hair-thin capsule with a vertical
