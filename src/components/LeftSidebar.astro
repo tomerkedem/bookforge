@@ -242,59 +242,28 @@
      `#1a1a1f → #141418` header gradient). The container reads as
      part of the same brand environment instead of a colder
      navy-purple intruder. */
-  .reading-left-dock {
-    position: fixed;
-    left: 16px;
-    right: auto;
-    /* 68px = global site header height; +16px gap so the dock
-       sits beneath the header without overlap. Bottom adds the
-       platform-status-bar height (var falls back to 0 on pages
-       without the bar) plus a 16px breathing gap. */
-    top: 84px;
-    bottom: calc(16px + var(--platform-status-bar-height, 0px));
-    height: auto;
-    width: 96px;
-    z-index: 40;
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    padding: 16px 8px 14px;
-    box-sizing: border-box;
-    border-radius: 28px;
-    /* Shell surface — flat, matches the chapter top strip and the
-       unified sidebar exactly so all three regions read as one
-       continuous frame around the reading content. The previous
-       gradient (28,28,34 → 20,20,26) and backdrop blur made the dock
-       a slightly cooler, slightly translucent tone than the rest of
-       the shell, which broke the "single surface" illusion. */
-    background: var(--yuval-surface, #1a1a1a);
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-    /* True royal hairline — the frame is now a 0.5px gold rim drawn
-       via box-shadow (border removed entirely). 0.5px renders as a
-       single device pixel on retina, half a logical pixel on standard
-       displays — the thinnest line a browser can paint. Less is more:
-       what reads as "royal" in physical jewelry isn't a thick gold
-       band, it's a precise, almost-invisible edge that catches light. */
-    border: none;
-    box-shadow:
-      /* Hairline gold rim — even quieter (was 0.35, now 0.18). At
-         this alpha the line only registers when the eye is on it
-         directly; in peripheral vision it dissolves into the dock's
-         dark surface. That's the truly royal idiom — implied frame,
-         not declared. */
-      0 0 0 0.5px rgba(184, 146, 63, 0.18),
-      /* Atmospheric warm gold halo — barely perceptible. */
-      0 0 32px -4px rgba(212, 178, 110, 0.04),
-      /* Far ambient drop shadow — soft, wide, gives the levitation. */
-      0 28px 56px -18px rgba(0, 0, 0, 0.55),
-      /* Closer key shadow — sharper, defines the bottom edge. */
-      0 10px 24px -8px rgba(0, 0, 0, 0.32),
-      /* Inset bright top-edge gleam — softened. */
-      inset 0 1px 0 rgba(255, 240, 200, 0.04),
-      /* Inset facet — almost gone. */
-      inset 0 0 0 1px rgba(255, 240, 200, 0.015);
-  }
+    .reading-left-dock {
+     position: fixed;
+     left: 16px;
+     right: auto;
+     top: 84px;
+     bottom: calc(16px + var(--platform-status-bar-height, 0px));
+     height: auto;
+     width: 96px;
+     z-index: 40;
+     display: flex;
+     flex-direction: column;
+     align-items: stretch;
+     padding: 16px 8px 14px;
+     box-sizing: border-box;
+     border-radius: 28px;
+     background: var(--yuval-surface, #1a1a1a);
+     backdrop-filter: none;
+     -webkit-backdrop-filter: none;
+     border: none;
+    /* אין צל, אין הילה, אין מסגרת */
+    box-shadow: none;
+    }
 
   /* ─────────── Light theme ────────────────────────────────────
      The dock fully flips to a cream-paper surface that harmonizes
