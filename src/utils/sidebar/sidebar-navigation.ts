@@ -66,16 +66,18 @@ export async function loadChapterContent(url: string): Promise<void> {
     return;
   }
 
-  /* Smooth chapter swap: fade container + header + top strip together,
-     wait for the fade-out to actually complete, then swap DOM, then
-     fade-in. Previous version faded only the container at 100 ms and
-     swapped the header/strip instantly — that was the visible flicker
-     the user complained about. */
-  const FADE_OUT_MS = 200;
-  const FADE_IN_MS = 260;
-  const SWAP_TARGETS = [container, header, topStrip].filter(
-    (el): el is HTMLElement => !!el,
-  );
+  /* Smooth chapter swap.
+     Strategy: the strip's content is replaced INSTANTLY (no fade-out
+     or fade-in on it). Previous fade-based attempts left a visible
+     ~half-second gap where the strip went blank — that's what the
+     user perceived as "everything disappears". With min-height: 40 px
+     on the strip and a stable chrome (bg + border + sticky position),
+     the inner text simply morphs to the new chapter in a single frame.
+     The article (#chapter-container) still fades with a subtle motion
+     so the body content transitions smoothly — that part was never
+     the source of complaints. */
+  const FADE_OUT_MS = 180;
+  const FADE_IN_MS = 220;
 
   const reducedMotion =
     typeof window !== 'undefined' &&
@@ -84,46 +86,32 @@ export async function loadChapterContent(url: string): Promise<void> {
 
   function fadeOut(): void {
     if (reducedMotion) return;
-    for (const el of SWAP_TARGETS) {
-      el.style.willChange = 'opacity, transform';
-      el.style.transition = `opacity ${FADE_OUT_MS}ms var(--ease-standard), transform ${FADE_OUT_MS}ms var(--ease-standard)`;
-      el.style.opacity = '0';
-      el.style.transform = 'translateY(-3px)';
-    }
+    container!.style.willChange = 'opacity, transform';
+    container!.style.transition = `opacity ${FADE_OUT_MS}ms var(--ease-standard), transform ${FADE_OUT_MS}ms var(--ease-standard)`;
+    container!.style.opacity = '0';
+    container!.style.transform = 'translateY(-3px)';
   }
 
   function fadeIn(): void {
     if (reducedMotion) {
-      for (const el of SWAP_TARGETS) {
-        el.style.opacity = '1';
-        el.style.transform = '';
-      }
+      container!.style.opacity = '1';
+      container!.style.transform = '';
       return;
     }
-    /* Reset to "below + transparent" without animating, then animate
-       back to default. This produces a gentle slide-up feeling for
-       the new content without a visible jump from the old position. */
-    for (const el of SWAP_TARGETS) {
-      el.style.transition = 'none';
-      el.style.transform = 'translateY(3px)';
-      el.style.opacity = '0';
-    }
+    container!.style.transition = 'none';
+    container!.style.transform = 'translateY(3px)';
+    container!.style.opacity = '0';
+
     /* Force a reflow so the no-transition state actually flushes
        before we set the target state. */
     void container!.offsetHeight;
     requestAnimationFrame(() => {
-      for (const el of SWAP_TARGETS) {
-        el.style.transition = `opacity ${FADE_IN_MS}ms var(--ease-standard), transform ${FADE_IN_MS}ms var(--ease-standard)`;
-        el.style.opacity = '1';
-        el.style.transform = '';
-      }
-      /* Drop the inline styles after the animation finishes so they
-         don't leak into later interactions (e.g. focus mode toggles). */
+      container!.style.transition = `opacity ${FADE_IN_MS}ms var(--ease-standard), transform ${FADE_IN_MS}ms var(--ease-standard)`;
+      container!.style.opacity = '1';
+      container!.style.transform = '';
       window.setTimeout(() => {
-        for (const el of SWAP_TARGETS) {
-          el.style.transition = '';
-          el.style.willChange = '';
-        }
+        container!.style.transition = '';
+        container!.style.willChange = '';
       }, FADE_IN_MS + 20);
     });
   }
@@ -199,10 +187,12 @@ export async function loadChapterContent(url: string): Promise<void> {
     /* Restore visibility on the fade-out targets before falling back
        so the user doesn't see an empty / transparent page during the
        hard navigation. */
-    for (const el of SWAP_TARGETS) {
+    for (const el of [container, header, topStrip]) {
+      if (!el) continue;
       el.style.transition = '';
       el.style.opacity = '1';
       el.style.transform = '';
+      el.style.visibility = '';
       el.style.willChange = '';
     }
     window.location.href = url;
