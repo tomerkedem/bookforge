@@ -198,23 +198,31 @@ const isRtl = getLanguageDirection(language) === 'rtl';
        the gradient onto the glyph; no text-shadow here — with a
        transparent fill, any shadow leaks behind the glyph and
        reads as a black smudge on the WONK curl. */
-    color: #2c2c34;
-    /* 110deg = nearly horizontal, gold ramps up across the right
-       half of the glyph instead of the bottom corner. The deep
-       gold stop at 100% lands on the WONK curl. */
+    color: #6b4f1c;
+    /* Royal-gold engraving (light mode). Diagonal bevel: deep umber
+       shadow upper-left → warm gold body → cream highlight at 55%
+       (the polish) → deep gold lower-right. drop-shadow stack fakes
+       3D relief: bright top edge + dark inner shadow + warm halo. */
     background: linear-gradient(
-      110deg,
-      #2c2c34 0%,
-      #4a4a54 30%,
-      #8b7355 55%,
-      #c9a96e 80%,
-      #b8923f 100%
+      135deg,
+      #6b4f1c 0%,
+      #a07a30 18%,
+      #d4af55 40%,
+      #f4e0a0 55%,
+      #d4af55 70%,
+      #a07a30 88%,
+      #5a3f14 100%
     );
     background-size: 100% 100%;
     background-repeat: no-repeat;
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
+    filter:
+      drop-shadow(0 1px 0 rgba(255, 240, 200, 0.6))
+      drop-shadow(0 -1px 0 rgba(91, 64, 20, 0.45))
+      drop-shadow(0 2px 4px rgba(91, 64, 20, 0.35))
+      drop-shadow(0 0 12px rgba(212, 175, 85, 0.35));
     margin-right: -1px;
     line-height: 1;
     transition: filter 300ms var(--ease-standard),
@@ -231,19 +239,27 @@ const isRtl = getLanguageDirection(language) === 'rtl';
     font-size: 1.5rem;
     font-weight: 400;
     letter-spacing: 0.18em;
-    color: #4a4a54;
+    color: #6b4f1c;
     line-height: 1;
-    /* Echo the Y's metallic finish — slightly cooler stops so the
-       wordmark reads as one piece without competing with the
-       statement Y. */
+    /* Same royal-gold bevel as the Y so the wordmark reads as one
+       continuous engraved metal inscription. */
     background: linear-gradient(
-      150deg,
-      #4a4a54 0%,
-      #6b5a48 100%
+      135deg,
+      #6b4f1c 0%,
+      #a07a30 22%,
+      #d4af55 50%,
+      #f4e0a0 62%,
+      #c9a052 80%,
+      #6b4f1c 100%
     );
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
+    filter:
+      drop-shadow(0 1px 0 rgba(255, 240, 200, 0.55))
+      drop-shadow(0 -1px 0 rgba(91, 64, 20, 0.40))
+      drop-shadow(0 1px 3px rgba(91, 64, 20, 0.30))
+      drop-shadow(0 0 10px rgba(212, 175, 85, 0.28));
     transition: letter-spacing 300ms var(--ease-standard),
                 filter 300ms var(--ease-standard);
   }
@@ -295,48 +311,74 @@ const isRtl = getLanguageDirection(language) === 'rtl';
     .logo-ornament { display: none; }
   }
 
-  /* Dark mode: cream → warm gold across the horizontal axis, with
-     a richer gold landing on the WONK curl on the right side. */
+  /* Dark mode: same royal-gold engraving as light mode — the bevel
+     reads as carved metal regardless of the surrounding atmosphere.
+     Slightly warmer mid-tones because the surface behind it is dark,
+     so the highlight needs more presence to stay legible. */
   :global(.dark) .logo-letter {
     background: linear-gradient(
-      110deg,
-      #f5f1e8 0%,
-      #e6dcc4 25%,
-      #d4c4a8 50%,
-      #c9a96e 78%,
-      #b8923f 100%
+      135deg,
+      #6b4f1c 0%,
+      #a07a30 18%,
+      #d4af55 40%,
+      #f4e0a0 55%,
+      #d4af55 70%,
+      #a07a30 88%,
+      #5a3f14 100%
     );
     background-size: 100% 100%;
     background-repeat: no-repeat;
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
+    filter:
+      drop-shadow(0 1px 0 rgba(255, 240, 200, 0.45))
+      drop-shadow(0 -1px 0 rgba(0, 0, 0, 0.55))
+      drop-shadow(0 2px 4px rgba(0, 0, 0, 0.45))
+      drop-shadow(0 0 14px rgba(212, 175, 85, 0.45));
   }
 
   :global(.dark) .logo-rest {
     background: linear-gradient(
-      150deg,
-      #d8d8de 0%,
-      #b8a890 100%
+      135deg,
+      #6b4f1c 0%,
+      #a07a30 22%,
+      #d4af55 50%,
+      #f4e0a0 62%,
+      #c9a052 80%,
+      #6b4f1c 100%
     );
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
+    filter:
+      drop-shadow(0 1px 0 rgba(255, 240, 200, 0.40))
+      drop-shadow(0 -1px 0 rgba(0, 0, 0, 0.50))
+      drop-shadow(0 1px 3px rgba(0, 0, 0, 0.40))
+      drop-shadow(0 0 12px rgba(212, 175, 85, 0.35));
   }
 
-  /* Hover (light): brighten the gold range so the wordmark
-     warms up on hover. */
+  /* Hover (light): brighten the bevel — push the cream highlight
+     wider so the metal looks freshly polished. */
   .yuval-logo:hover .logo-letter {
     background: linear-gradient(
-      150deg,
-      #4a4a54 0%,
-      #8b7355 50%,
-      #c9a96e 100%
+      135deg,
+      #8b6829 0%,
+      #c9a052 18%,
+      #f4e0a0 45%,
+      #fff4c8 58%,
+      #f4e0a0 70%,
+      #c9a052 88%,
+      #6b4f1c 100%
     );
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
-    filter: drop-shadow(0 0 6px rgba(201, 169, 110, 0.18));
+    filter:
+      drop-shadow(0 1px 0 rgba(255, 248, 220, 0.75))
+      drop-shadow(0 -1px 0 rgba(91, 64, 20, 0.45))
+      drop-shadow(0 2px 5px rgba(91, 64, 20, 0.35))
+      drop-shadow(0 0 16px rgba(244, 224, 160, 0.55));
   }
 
   .yuval-logo:hover .logo-rest {
