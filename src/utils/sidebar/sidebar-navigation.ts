@@ -66,8 +66,69 @@ export async function loadChapterContent(url: string): Promise<void> {
     return;
   }
 
-  container.style.transition = 'opacity 100ms var(--ease-standard)';
-  container.style.opacity = '0';
+  /* Smooth chapter swap: fade container + header + top strip together,
+     wait for the fade-out to actually complete, then swap DOM, then
+     fade-in. Previous version faded only the container at 100 ms and
+     swapped the header/strip instantly — that was the visible flicker
+     the user complained about. */
+  const FADE_OUT_MS = 200;
+  const FADE_IN_MS = 260;
+  const SWAP_TARGETS = [container, header, topStrip].filter(
+    (el): el is HTMLElement => !!el,
+  );
+
+  const reducedMotion =
+    typeof window !== 'undefined' &&
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function fadeOut(): void {
+    if (reducedMotion) return;
+    for (const el of SWAP_TARGETS) {
+      el.style.willChange = 'opacity, transform';
+      el.style.transition = `opacity ${FADE_OUT_MS}ms var(--ease-standard), transform ${FADE_OUT_MS}ms var(--ease-standard)`;
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(-3px)';
+    }
+  }
+
+  function fadeIn(): void {
+    if (reducedMotion) {
+      for (const el of SWAP_TARGETS) {
+        el.style.opacity = '1';
+        el.style.transform = '';
+      }
+      return;
+    }
+    /* Reset to "below + transparent" without animating, then animate
+       back to default. This produces a gentle slide-up feeling for
+       the new content without a visible jump from the old position. */
+    for (const el of SWAP_TARGETS) {
+      el.style.transition = 'none';
+      el.style.transform = 'translateY(3px)';
+      el.style.opacity = '0';
+    }
+    /* Force a reflow so the no-transition state actually flushes
+       before we set the target state. */
+    void container!.offsetHeight;
+    requestAnimationFrame(() => {
+      for (const el of SWAP_TARGETS) {
+        el.style.transition = `opacity ${FADE_IN_MS}ms var(--ease-standard), transform ${FADE_IN_MS}ms var(--ease-standard)`;
+        el.style.opacity = '1';
+        el.style.transform = '';
+      }
+      /* Drop the inline styles after the animation finishes so they
+         don't leak into later interactions (e.g. focus mode toggles). */
+      window.setTimeout(() => {
+        for (const el of SWAP_TARGETS) {
+          el.style.transition = '';
+          el.style.willChange = '';
+        }
+      }, FADE_IN_MS + 20);
+    });
+  }
+
+  fadeOut();
 
   try {
     /* Cache-bust aggressively: unique query defeats Cache API match,
@@ -76,7 +137,16 @@ export async function loadChapterContent(url: string): Promise<void> {
        chapters are actively edited. */
     const bust = `_swbust=${Date.now()}`;
     const fetchUrl = url + (url.includes('?') ? '&' : '?') + bust;
-    const response = await fetch(fetchUrl, { cache: 'reload' });
+
+    /* Run fetch + fade-out in parallel. The DOM swap waits for both
+       so the user always sees the fade-out finish before the new
+       content paints — avoids the "instant header swap" flicker. */
+    const [response] = await Promise.all([
+      fetch(fetchUrl, { cache: 'reload' }),
+      reducedMotion
+        ? Promise.resolve()
+        : new Promise<void>(resolve => setTimeout(resolve, FADE_OUT_MS)),
+    ]);
     if (!response.ok) throw new Error('Failed to fetch chapter');
 
     const html = await response.text();
@@ -123,10 +193,18 @@ export async function loadChapterContent(url: string): Promise<void> {
     }
 
     window.dispatchEvent(new CustomEvent('chapter-content-swapped'));
-    container.style.opacity = '1';
+    fadeIn();
   } catch (error) {
     console.error('Error loading chapter:', error);
-    container.style.opacity = '1';
+    /* Restore visibility on the fade-out targets before falling back
+       so the user doesn't see an empty / transparent page during the
+       hard navigation. */
+    for (const el of SWAP_TARGETS) {
+      el.style.transition = '';
+      el.style.opacity = '1';
+      el.style.transform = '';
+      el.style.willChange = '';
+    }
     window.location.href = url;
   }
 }
