@@ -72,7 +72,7 @@ function formatChapterNumber(id: number | string): string {
        "bring me back". Hidden + non-interactive when expanded. -->
   <button
     type="button"
-    class="usb-return-btn"
+    class:list={['usb-return-btn', isRtl ? 'usb-return-btn--rtl' : 'usb-return-btn--ltr']}
     data-sidebar-toggle="expand"
     aria-controls="unified-sidebar"
     aria-expanded="true"

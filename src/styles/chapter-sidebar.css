@@ -3579,25 +3579,26 @@ body.sidebar-collapsed .unified-sidebar {
   transform: scaleX(-1);
 }
 
-/* ─── Return button (floating, on inline-start edge) ────────────── */
+/* ─── Return button (floating, hugs the screen edge) ─────────────
+   Half-pill anchored to the screen edge nearest the (collapsed)
+   sidebar. The flat side hugs the edge; the rounded side faces
+   the text content. Hidden + non-interactive when sidebar is
+   open; reveals via opacity + nudge-in on collapse. The pulse
+   glow is a sibling pseudo-element behind the button.
+
+   Physical properties are used (instead of logical) because we
+   need an unambiguous flat-vs-rounded mapping per dir — some
+   browsers cascade `border-*-*-radius` logical resolutions in
+   ways that surprised us, leaving the rounded side on the edge.
+*/
 .usb-return-btn {
-  /* Half-pill anchored to the inline-start edge of the viewport.
-     Hidden + non-interactive when sidebar is open; reveals via
-     opacity + nudge-in on collapse. The pulse glow is a sibling
-     pseudo-element behind the button. */
   position: fixed;
   inset-block-start: 50%;
-  inset-inline-start: 0;
   z-index: 35;
   width: 32px;
   height: 64px;
   padding: 0;
   border: 1px solid var(--yuval-border, rgba(127, 127, 127, 0.22));
-  border-inline-start: none;
-  border-start-end-radius: 14px;
-  border-end-end-radius: 14px;
-  border-start-start-radius: 0;
-  border-end-start-radius: 0;
   background: linear-gradient(
     135deg,
     rgba(93, 202, 165, 0.14),
@@ -3616,16 +3617,38 @@ body.sidebar-collapsed .unified-sidebar {
     background 220ms ease;
 }
 
-/* RTL mirror: button anchors to right screen edge. Flat side hugs
-   the edge (right), rounded corners face the content (left). */
-.usb-return-btn:dir(rtl),
-[dir="rtl"] .usb-return-btn {
-  border-inline-start: none;
-  border-inline-end: 1px solid var(--yuval-border, rgba(127, 127, 127, 0.22));
-  border-start-end-radius: 14px;
-  border-end-end-radius: 14px;
-  border-start-start-radius: 0;
-  border-end-start-radius: 0;
+/* LTR variant (default): sidebar lives on the left → button hugs
+   the left edge, flat-left (against the edge), rounded-right
+   (toward the text). The `--ltr` / `--rtl` modifier classes are
+   set at server-render time from `isRtl`, so steady-state styling
+   never depends on dir-attribute resolution or `:dir()` matching
+   (which broke during Astro `transition:persist` swaps). */
+.usb-return-btn,
+.usb-return-btn--ltr {
+  --usb-collapse-exit: -1;
+  left: 0;
+  right: auto;
+  border-left: none;
+  border-right: 1px solid var(--yuval-border, rgba(127, 127, 127, 0.22));
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  border-top-right-radius: 14px;
+  border-bottom-right-radius: 14px;
+}
+
+/* RTL variant: sidebar lives on the right → button hugs the right
+   edge, flat-right (against the edge / right menu), rounded-left
+   (toward the text). */
+.usb-return-btn--rtl {
+  --usb-collapse-exit: 1;
+  left: auto;
+  right: 0;
+  border-right: none;
+  border-left: 1px solid var(--yuval-border, rgba(127, 127, 127, 0.22));
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  border-top-left-radius: 14px;
+  border-bottom-left-radius: 14px;
 }
 
 body.sidebar-collapsed .usb-return-btn {
@@ -3658,16 +3681,18 @@ body.sidebar-collapsed .usb-return-btn:hover {
 }
 
 /* The bundled chevron path points inline-END in LTR (away from edge,
-   into the page = "I'll pop out"). Flip for RTL. */
-[dir="rtl"] .usb-return-chev {
+   into the page = "I'll pop out"). Flip for RTL via the modifier
+   class (set at server-render time, no dir-attribute resolution). */
+.usb-return-btn--rtl .usb-return-chev {
   transform: scaleX(-1);
 }
 
-.usb-return-btn:hover .usb-return-chev {
-  transform: translateX(calc(var(--usb-collapse-exit, -1) * -2px));
+.usb-return-btn--ltr:hover .usb-return-chev,
+.usb-return-btn:not(.usb-return-btn--rtl):hover .usb-return-chev {
+  transform: translateX(2px);
 }
 
-[dir="rtl"] .usb-return-btn:hover .usb-return-chev {
+.usb-return-btn--rtl:hover .usb-return-chev {
   transform: scaleX(-1) translateX(2px);
 }
 

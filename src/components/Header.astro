@@ -94,6 +94,31 @@ const isRtl = getLanguageDirection(language) === 'rtl';
   </div>
 </div>
 
+<script is:inline>
+  /* Trigger the one-time gold shimmer on the Yuval wordmark.
+     Adds .is-mounted to .yuval-logo on initial load AND on every
+     Astro view transition, then removes it after 1.8 s so the
+     shimmer animation runs once. Hover-driven shimmer is pure CSS
+     (`.yuval-logo:hover` selectors) — no JS needed for that. */
+  (function () {
+    function fireShimmer() {
+      document.querySelectorAll('.yuval-logo').forEach(function (el) {
+        el.classList.remove('is-mounted');
+        // force reflow so the animation restarts on each navigation
+        void el.offsetWidth;
+        el.classList.add('is-mounted');
+        setTimeout(function () { el.classList.remove('is-mounted'); }, 1800);
+      });
+    }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', fireShimmer, { once: true });
+    } else {
+      fireShimmer();
+    }
+    document.addEventListener('astro:page-load', fireShimmer);
+  })();
+</script>
+
 <style>
   .yuval-header {
     background: linear-gradient(to bottom, #faf8f5, #f5f3f0);
@@ -199,22 +224,32 @@ const isRtl = getLanguageDirection(language) === 'rtl';
        transparent fill, any shadow leaks behind the glyph and
        reads as a black smudge on the WONK curl. */
     color: #6b4f1c;
-    /* Royal-gold engraving (light mode). Diagonal bevel: deep umber
-       shadow upper-left → warm gold body → cream highlight at 55%
-       (the polish) → deep gold lower-right. drop-shadow stack fakes
-       3D relief: bright top edge + dark inner shadow + warm halo. */
-    background: linear-gradient(
-      135deg,
-      #6b4f1c 0%,
-      #a07a30 18%,
-      #d4af55 40%,
-      #f4e0a0 55%,
-      #d4af55 70%,
-      #a07a30 88%,
-      #5a3f14 100%
-    );
-    background-size: 100% 100%;
-    background-repeat: no-repeat;
+    /* Royal-gold engraving (light mode). Two-layer background:
+       (1) shimmer stripe — bright cream sliver, 220% wide, parked
+           off-screen at -110% by default. Animates across the text
+           on page load and hover.
+       (2) base bevel — diagonal deep umber → warm gold → cream
+           highlight at 55% → deep gold (unchanged from before). */
+    background:
+      linear-gradient(
+        105deg,
+        transparent 35%,
+        rgba(255, 248, 220, 0.85) 50%,
+        transparent 65%
+      ),
+      linear-gradient(
+        135deg,
+        #6b4f1c 0%,
+        #a07a30 18%,
+        #d4af55 40%,
+        #f4e0a0 55%,
+        #d4af55 70%,
+        #a07a30 88%,
+        #5a3f14 100%
+      );
+    background-size: 220% 100%, 100% 100%;
+    background-position: -110% 0%, 0% 0%;
+    background-repeat: no-repeat, no-repeat;
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -241,17 +276,27 @@ const isRtl = getLanguageDirection(language) === 'rtl';
     letter-spacing: 0.18em;
     color: #6b4f1c;
     line-height: 1;
-    /* Same royal-gold bevel as the Y so the wordmark reads as one
-       continuous engraved metal inscription. */
-    background: linear-gradient(
-      135deg,
-      #6b4f1c 0%,
-      #a07a30 22%,
-      #d4af55 50%,
-      #f4e0a0 62%,
-      #c9a052 80%,
-      #6b4f1c 100%
-    );
+    /* Same royal-gold bevel as the Y, plus the same animated shimmer
+       stripe layered on top so the whole wordmark sweeps as a unit. */
+    background:
+      linear-gradient(
+        105deg,
+        transparent 35%,
+        rgba(255, 248, 220, 0.85) 50%,
+        transparent 65%
+      ),
+      linear-gradient(
+        135deg,
+        #6b4f1c 0%,
+        #a07a30 22%,
+        #d4af55 50%,
+        #f4e0a0 62%,
+        #c9a052 80%,
+        #6b4f1c 100%
+      );
+    background-size: 220% 100%, 100% 100%;
+    background-position: -110% 0%, 0% 0%;
+    background-repeat: no-repeat, no-repeat;
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -309,6 +354,66 @@ const isRtl = getLanguageDirection(language) === 'rtl';
 
   @media (max-width: 640px) {
     .logo-ornament { display: none; }
+  }
+
+  /* ── Yuval logo shimmer ────────────────────────────────────────
+     Single sweep of a bright cream stripe across the engraved gold
+     wordmark. Triggers on:
+       (1) initial page load (via .is-mounted class added by the
+           inline script at the bottom of this file, removed after
+           the animation completes);
+       (2) hover, every time the user re-hovers the logo.
+     The stripe is the first background layer (animates `background-
+     position`); the base gold bevel is the second layer (static).
+     Reduced motion: animation is disabled and the stripe stays
+     parked off-screen — the wordmark looks identical to before. */
+  @keyframes yuval-shimmer-sweep {
+    0%   { background-position: -110% 0%, 0% 0%; }
+    100% { background-position:  220% 0%, 0% 0%; }
+  }
+
+  /* Page-load shimmer — a bit slower (1.4s) and slightly delayed so
+     the effect lands AFTER the page chrome has settled. The Y leads,
+     "uval" follows ~0.15s behind for a natural left-to-right read. */
+  .yuval-logo.is-mounted .logo-letter {
+    animation: yuval-shimmer-sweep 1.4s cubic-bezier(0.4, 0, 0.2, 1) 0.30s 1 backwards;
+  }
+  .yuval-logo.is-mounted .logo-rest {
+    animation: yuval-shimmer-sweep 1.4s cubic-bezier(0.4, 0, 0.2, 1) 0.45s 1 backwards;
+  }
+
+  /* Hover shimmer — quicker (1s), lands on the Y first. */
+  .yuval-logo:hover .logo-letter {
+    animation: yuval-shimmer-sweep 1.0s cubic-bezier(0.4, 0, 0.2, 1) 1;
+  }
+  .yuval-logo:hover .logo-rest {
+    animation: yuval-shimmer-sweep 1.0s cubic-bezier(0.4, 0, 0.2, 1) 0.05s 1;
+  }
+
+  /* The ornament gets a one-time glow pulse alongside the shimmer
+     so the whole wordmark animates as a unit. */
+  @keyframes yuval-ornament-pulse {
+    0%   { text-shadow:
+             0 0 6px rgba(201, 169, 110, 0.55),
+             0 0 14px rgba(201, 169, 110, 0.25); }
+    50%  { text-shadow:
+             0 0 14px rgba(255, 235, 170, 1),
+             0 0 28px rgba(212, 175, 85, 0.65),
+             0 0 44px rgba(212, 175, 85, 0.30); }
+    100% { text-shadow:
+             0 0 6px rgba(201, 169, 110, 0.55),
+             0 0 14px rgba(201, 169, 110, 0.25); }
+  }
+  .yuval-logo.is-mounted .logo-ornament {
+    animation: yuval-ornament-pulse 1.4s cubic-bezier(0.4, 0, 0.2, 1) 0.85s 1 both;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .yuval-logo .logo-letter,
+    .yuval-logo .logo-rest,
+    .yuval-logo .logo-ornament {
+      animation: none !important;
+    }
   }
 
   /* Dark mode: same royal-gold engraving as light mode — the bevel
