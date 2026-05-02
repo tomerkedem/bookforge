@@ -1,37 +1,210 @@
 ---
 /**
- * Book Overview — Summary region.
+ * Book Overview — Summary section.
  *
- * Renders the description paragraphs that wrap around the floated cover
- * figure rendered by BookOverviewHero. The subtitle is repeated as
- * sr-only here because the hero's visible subtitle is in a separate
- * paragraph; this gives screen readers the context up-front when the
- * image figure is announced.
+ * Renders the localized book description under a "Book summary"
+ * heading. Long descriptions clip to a fixed height with a fade mask
+ * and a "Read more" toggle; short ones render fully without a button.
+ *
+ * Fallback behavior is preserved at the call site: the page resolves
+ * `description` via getLocalizedText (lang → source → first non-empty),
+ * so this component just renders whatever it receives.
  *
  * Inline markdown (**bold**, *italic*, `code`) is rendered via
- * renderInlineMarkdown to match what the manifest authors write in Word.
+ * renderInlineMarkdown to match what manifest authors write in Word.
  */
 
+import type { Language } from '../../types/index';
+import { t } from '../../i18n';
 import { renderInlineMarkdown } from './utils';
 
 interface Props {
   description: string;
   subtitle: string;
+  language: Language;
 }
 
-const { description, subtitle } = Astro.props;
+const { description, subtitle, language } = Astro.props;
 
 const paragraphs = description.split(/\n\s*\n/).filter((p) => p.trim());
+
+// Threshold tuned to "fits in a card without forcing a scroll" —
+// roughly 4–5 lines of body text on a typical desktop column.
+// Below this we render fully and skip the toggle.
+const TRUNCATE_THRESHOLD = 500;
+const truncatable = description.length > TRUNCATE_THRESHOLD;
 ---
 
-<div class="chapter-content space-y-2 sm:space-y-2.5 mb-3 sm:mb-4">
-  {subtitle && (
-    <p class="sr-only">{subtitle}</p>
+<section class="bos" aria-labelledby="bos-title">
+  <h2 id="bos-title" class="bos-heading" data-i18n="bookOverview.bookSummary">
+    {t('bookOverview.bookSummary', language)}
+  </h2>
+
+  <div
+    class:list={['bos-content', 'chapter-content', 'space-y-2', 'sm:space-y-2.5']}
+    data-truncatable={truncatable ? 'true' : undefined}
+    data-collapsed={truncatable ? 'true' : undefined}
+  >
+    {subtitle && (
+      <p class="sr-only">{subtitle}</p>
+    )}
+    {paragraphs.map((para) => (
+      <p
+        class="text-base sm:text-lg text-yuval-text-secondary leading-relaxed"
+        set:html={renderInlineMarkdown(para.trim())}
+      />
+    ))}
+  </div>
+
+  {truncatable && (
+    <button
+      type="button"
+      class="bos-toggle"
+      data-bos-toggle
+      data-i18n="bookOverview.readMore"
+      aria-expanded="false"
+    >
+      {t('bookOverview.readMore', language)}
+    </button>
   )}
-  {paragraphs.map((para) => (
-    <p
-      class="text-base sm:text-lg text-yuval-text-secondary leading-relaxed"
-      set:html={renderInlineMarkdown(para.trim())}
-    />
-  ))}
-</div>
+</section>
+
+<script>
+  // Wire the expand/collapse toggle. Each button flips
+  // `data-collapsed` on the sibling content + swaps its own `data-i18n`
+  // key so the platform's language-changed handler keeps the label in
+  // sync if the user toggles language while expanded.
+  import { t, resolveLanguage, type TranslationKey } from '../../i18n';
+
+  const COLLAPSED_KEY: TranslationKey = 'bookOverview.readMore';
+  const EXPANDED_KEY: TranslationKey = 'bookOverview.showLess';
+
+  function bind(): void {
+    const buttons = document.querySelectorAll<HTMLButtonElement>(
+      '[data-bos-toggle]',
+    );
+    buttons.forEach((btn) => {
+      if (btn.dataset.bound === '1') return;
+      btn.dataset.bound = '1';
+      btn.addEventListener('click', () => {
+        const section = btn.closest('section');
+        if (!section) return;
+        const content = section.querySelector<HTMLElement>('.bos-content');
+        if (!content) return;
+
+        const isCollapsed = content.dataset.collapsed === 'true';
+        const next = !isCollapsed;
+
+        content.dataset.collapsed = next ? 'true' : 'false';
+        btn.setAttribute('aria-expanded', next ? 'false' : 'true');
+        btn.dataset.i18n = next ? COLLAPSED_KEY : EXPANDED_KEY;
+
+        const lang = resolveLanguage(document.documentElement.lang);
+        btn.textContent = t(btn.dataset.i18n as TranslationKey, lang);
+      });
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bind, { once: true });
+  } else {
+    bind();
+  }
+
+  document.addEventListener('astro:after-swap', bind);
+</script>
+
+<style>
+  .bos {
+    margin-block-start: 0;
+  }
+
+  /* Section heading — small gold-tinted serif label, mirrors the
+     "Chapters" rule used by BookOverviewChapters but at section
+     scale rather than column-scale. */
+  .bos-heading {
+    margin: 0 0 0.65rem 0;
+    font-family: 'Spectral', 'Frank Ruhl Libre', ui-serif, Georgia, serif;
+    font-weight: 600;
+    font-size: 1.05rem;
+    letter-spacing: 0.01em;
+    color: rgba(245, 239, 225, 0.92);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+  .bos-heading::after {
+    content: '';
+    display: block;
+    inline-size: 2.5rem;
+    block-size: 1px;
+    background: linear-gradient(
+      to inline-end,
+      rgba(232, 197, 71, 0.6),
+      transparent
+    );
+  }
+  :root:not(.dark) .bos-heading {
+    color: #2c2418;
+  }
+  :root:not(.dark) .bos-heading::after {
+    background: linear-gradient(
+      to inline-end,
+      rgba(184, 146, 63, 0.6),
+      transparent
+    );
+  }
+
+  /* Collapsed state. The fade mask keeps the lower edge soft so it
+     reads as "more below" rather than a hard cut. */
+  .bos-content[data-truncatable='true'][data-collapsed='true'] {
+    max-block-size: 12em;
+    overflow: hidden;
+    -webkit-mask-image: linear-gradient(
+      180deg,
+      #000 60%,
+      transparent 100%
+    );
+    mask-image: linear-gradient(180deg, #000 60%, transparent 100%);
+  }
+  .bos-content[data-truncatable='true'][data-collapsed='false'] {
+    max-block-size: none;
+    overflow: visible;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+
+  /* Toggle — small text-style button, gold underline on hover. Not a
+     CTA pill on purpose: the hero already owns the primary action,
+     this is a tertiary affordance. */
+  .bos-toggle {
+    margin-block-start: 0.4rem;
+    padding: 0.25rem 0;
+    background: transparent;
+    border: 0;
+    color: #f5e4a3;
+    font: inherit;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    border-block-end: 1px dashed rgba(232, 197, 71, 0.4);
+    transition: color 160ms ease, border-color 160ms ease;
+  }
+  .bos-toggle:hover {
+    color: #ffe9a8;
+    border-block-end-color: rgba(232, 197, 71, 0.75);
+  }
+  .bos-toggle:focus-visible {
+    outline: 2px solid #e8c547;
+    outline-offset: 3px;
+    border-block-end-color: transparent;
+  }
+  :root:not(.dark) .bos-toggle {
+    color: #6a4f12;
+    border-block-end-color: rgba(184, 146, 63, 0.5);
+  }
+  :root:not(.dark) .bos-toggle:hover {
+    color: #4a3712;
+    border-block-end-color: rgba(184, 146, 63, 0.85);
+  }
+</style>

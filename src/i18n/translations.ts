@@ -101,6 +101,14 @@ export const translations: Translations = {
   'book.minutesRead':      { he: '{{n}} דקות קריאה', en: '{{n}} min read',  es: '{{n}} min de lectura' },
   'book.availableIn':      { he: 'זמין ב',          en: 'Available in',     es: 'Disponible en' },
 
+  // Book Overview — progress and summary sections.
+  'bookOverview.bookSummary':       { he: 'סיכום הספר',                       en: 'Book summary',                           es: 'Resumen del libro' },
+  'bookOverview.readMore':          { he: 'קרא עוד',                          en: 'Read more',                              es: 'Leer más' },
+  'bookOverview.showLess':          { he: 'הצג פחות',                         en: 'Show less',                              es: 'Mostrar menos' },
+  'bookOverview.notStarted':        { he: 'טרם התחלת',                        en: 'Not started yet',                        es: 'Aún no empezado' },
+  'bookOverview.chaptersCompleted': { he: '{{n}} מתוך {{total}} פרקים הושלמו', en: '{{n}} of {{total}} chapters completed', es: '{{n}} de {{total}} capítulos completados' },
+  'bookOverview.currentChapter':    { he: 'הפרק הנוכחי',                       en: 'Current chapter',                        es: 'Capítulo actual' },
+
   // ── Courses (learning) section ──────────────────────────────────────────────
   'courses.title':         { he: 'למידה מקורסים',    en: 'Learning from Courses', es: 'Aprendizaje de cursos' },
   'courses.subtitle':      { he: 'סיכומי שיעורים בתהליך', en: 'Lecture summaries in progress', es: 'Resúmenes de clases en curso' },

@@ -1,0 +1,427 @@
+---
+/**
+ * Book Overview — Progress section.
+ *
+ * Server-renders a clean not-started state. A scoped client script
+ * scans `localStorage` for `yuval_reading_progress_<slug>_ch<id>` keys
+ * (same shape used by updateChapterProgress in the page) and swaps in
+ *   - overall percentage  (avg of clamped chapter percentages)
+ *   - completed-chapters count  (chapters with pct >= 85)
+ *   - current chapter line  (most recently updated unfinished chapter,
+ *     falling back to the first not-yet-completed chapter)
+ *
+ * The chapter id+titles map travels via a `data-chapters` JSON attribute
+ * so the client can localize the current-chapter title without another
+ * server hop on language toggle.
+ *
+ * Deliberately minimal — single thin bar + one stat line. No dashboard.
+ */
+
+import type { Chapter, Language } from '../../types/index';
+import { t } from '../../i18n';
+
+interface Props {
+  chapters: Chapter[];
+  slug: string;
+  language: Language;
+  isRtl: boolean;
+}
+
+const { chapters, slug, language, isRtl } = Astro.props;
+
+// Strip down to what the client script actually needs (id + titles).
+// Keeps the inline JSON small even on long books.
+const chaptersData = JSON.stringify(
+  chapters.map((c) => ({ id: c.id, titles: c.titles })),
+);
+---
+
+<section
+  class:list={['bop', isRtl && 'is-rtl']}
+  aria-label={t('bookOverview.notStarted', language)}
+  data-book-slug={slug}
+  data-chapters={chaptersData}
+>
+  <div class="bop-card">
+    <div class="bop-stats" data-bop-stats data-bop-state="empty">
+      <span class="bop-empty" data-i18n="bookOverview.notStarted">
+        {t('bookOverview.notStarted', language)}
+      </span>
+    </div>
+
+    <div class="bop-bar" aria-hidden="true">
+      <div class="bop-bar-fill" data-bop-fill style="width: 0%"></div>
+    </div>
+
+    <p class="bop-current" data-bop-current hidden>
+      <span class="bop-current-label" data-i18n="bookOverview.currentChapter">
+        {t('bookOverview.currentChapter', language)}
+      </span>
+      <span class="bop-current-sep" aria-hidden="true">·</span>
+      <a class="bop-current-link" data-bop-current-link href="#"></a>
+    </p>
+  </div>
+</section>
+
+<script>
+  // Hydrate from localStorage. Storage shape is set by the reading page's
+  // progress tracker:
+  //   yuval_reading_progress_<slug>_ch<id>  =>
+  //     { percentage?: number, scrollPosition?: number, lastUpdated?: number }
+  // Re-runs on view transitions, language toggles, and tab focus.
+  import { t, resolveLanguage } from '../../i18n';
+
+  const COMPLETED_THRESHOLD = 85;
+
+  type ChapterEntry = { id: string | number; titles: Record<string, string> };
+  type ChapterProgress = { pct: number; updated: number };
+
+  function pickLocalized(titles: Record<string, string>, lang: string): string {
+    return (
+      titles[lang] ||
+      titles['he'] ||
+      Object.values(titles).find(Boolean) ||
+      ''
+    );
+  }
+
+  function readProgress(slug: string): Map<string, ChapterProgress> {
+    const fragment = `reading_progress_${slug}_ch`;
+    const out = new Map<string, ChapterProgress>();
+
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (!k || !k.includes(fragment)) continue;
+      try {
+        const d = JSON.parse(localStorage.getItem(k) || '{}');
+        const m = k.match(/_ch(.+)$/);
+        if (!m) continue;
+        const id = m[1];
+
+        let pct =
+          typeof d.percentage === 'number' && d.percentage > 0
+            ? Math.min(100, d.percentage)
+            : 0;
+        if (
+          pct === 0 &&
+          typeof d.scrollPosition === 'number' &&
+          d.scrollPosition > 200
+        ) {
+          // Old entry without `percentage`. Estimate roughly from pixels.
+          pct = Math.min(95, Math.round((d.scrollPosition / 3000) * 100));
+        }
+        const updated = typeof d.lastUpdated === 'number' ? d.lastUpdated : 0;
+
+        const prev = out.get(id);
+        if (!prev || updated > prev.updated) out.set(id, { pct, updated });
+      } catch {
+        /* skip malformed */
+      }
+    }
+    return out;
+  }
+
+  function update(): void {
+    const root = document.querySelector<HTMLElement>('.bop[data-book-slug]');
+    if (!root) return;
+
+    const slug = root.dataset.bookSlug;
+    const raw = root.dataset.chapters;
+    if (!slug || !raw) return;
+
+    let chapters: ChapterEntry[] = [];
+    try {
+      chapters = JSON.parse(raw);
+    } catch {
+      return;
+    }
+
+    const lang = resolveLanguage(document.documentElement.lang);
+    const progress = readProgress(slug);
+    const total = chapters.length;
+
+    let completed = 0;
+    let sumPct = 0;
+    let bestCurrent: ChapterEntry | null = null;
+    let bestUpdated = -Infinity;
+
+    for (const ch of chapters) {
+      const idStr = String(ch.id);
+      const entry = progress.get(idStr);
+      const pct = entry?.pct ?? 0;
+      sumPct += pct;
+      if (pct >= COMPLETED_THRESHOLD) {
+        completed += 1;
+      } else if (pct > 0 && entry && entry.updated > bestUpdated) {
+        bestUpdated = entry.updated;
+        bestCurrent = ch;
+      }
+    }
+
+    // Fall back to the first not-yet-completed chapter when nothing is
+    // mid-read but some chapters are done — gives the user a target.
+    if (!bestCurrent && completed > 0 && completed < total) {
+      bestCurrent =
+        chapters.find((c) => {
+          const e = progress.get(String(c.id));
+          return !e || e.pct < COMPLETED_THRESHOLD;
+        }) || null;
+    }
+
+    const overallPct = total > 0 ? Math.round(sumPct / total) : 0;
+    const hasAnyProgress = sumPct > 0 || completed > 0;
+
+    // Bar fill — single source of truth, drives both visual and aria.
+    const fill = root.querySelector<HTMLElement>('[data-bop-fill]');
+    if (fill) fill.style.width = `${overallPct}%`;
+
+    const stats = root.querySelector<HTMLElement>('[data-bop-stats]');
+    const currentEl = root.querySelector<HTMLElement>('[data-bop-current]');
+    const currentLink = root.querySelector<HTMLAnchorElement>(
+      '[data-bop-current-link]',
+    );
+
+    if (stats) {
+      if (!hasAnyProgress) {
+        stats.dataset.bopState = 'empty';
+        stats.replaceChildren();
+        const span = document.createElement('span');
+        span.className = 'bop-empty';
+        span.dataset.i18n = 'bookOverview.notStarted';
+        span.textContent = t('bookOverview.notStarted', lang);
+        stats.appendChild(span);
+      } else {
+        stats.dataset.bopState = 'progress';
+        stats.replaceChildren();
+
+        const pctSpan = document.createElement('span');
+        pctSpan.className = 'bop-pct';
+        pctSpan.textContent = `${overallPct}%`;
+
+        const sep = document.createElement('span');
+        sep.className = 'bop-sep';
+        sep.setAttribute('aria-hidden', 'true');
+        sep.textContent = '·';
+
+        const completedSpan = document.createElement('span');
+        completedSpan.className = 'bop-completed';
+        completedSpan.textContent = t(
+          'bookOverview.chaptersCompleted',
+          lang,
+          { n: String(completed), total: String(total) },
+        );
+
+        stats.append(pctSpan, sep, completedSpan);
+      }
+    }
+
+    if (currentEl && currentLink) {
+      if (bestCurrent) {
+        currentLink.textContent = pickLocalized(bestCurrent.titles, lang);
+        currentLink.href = `/read/${slug}/${bestCurrent.id}`;
+        currentEl.hidden = false;
+      } else {
+        currentEl.hidden = true;
+      }
+    }
+
+    root.setAttribute(
+      'aria-label',
+      hasAnyProgress
+        ? `${overallPct}% — ${t('bookOverview.chaptersCompleted', lang, {
+            n: String(completed),
+            total: String(total),
+          })}`
+        : t('bookOverview.notStarted', lang),
+    );
+  }
+
+  function boot(): void {
+    update();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot, { once: true });
+  } else {
+    boot();
+  }
+
+  document.addEventListener('astro:after-swap', boot);
+  window.addEventListener('language-changed', boot);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') boot();
+  });
+  window.addEventListener('pageshow', boot);
+</script>
+
+<style>
+  /* Light-weight section. Sits between hero and summary; visual weight
+     stays well below the hero card so the page hierarchy reads
+     hero → progress → summary → chapters. */
+  .bop {
+    width: 100%;
+  }
+
+  .bop-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+    padding: 0.85rem 1rem;
+    border-radius: 12px;
+    background: rgba(232, 197, 71, 0.04);
+    border: 1px solid rgba(232, 197, 71, 0.16);
+  }
+  :root:not(.dark) .bop-card {
+    background: rgba(184, 146, 63, 0.06);
+    border-color: rgba(184, 146, 63, 0.22);
+  }
+
+  /* Stats row — single line. Either the muted "not started" pill or
+     "{pct} · {n}/{total} chapters" once progress exists. */
+  .bop-stats {
+    display: inline-flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    line-height: 1.2;
+    color: rgba(245, 239, 225, 0.78);
+  }
+  :root:not(.dark) .bop-stats {
+    color: rgba(44, 36, 24, 0.78);
+  }
+
+  .bop-stats[data-bop-state='empty'] .bop-empty {
+    font-style: italic;
+    color: rgba(245, 239, 225, 0.55);
+  }
+  :root:not(.dark) .bop-stats[data-bop-state='empty'] .bop-empty {
+    color: rgba(44, 36, 24, 0.55);
+  }
+
+  .bop-pct {
+    font-family: 'Spectral', 'Frank Ruhl Libre', ui-serif, Georgia, serif;
+    font-weight: 600;
+    font-size: 1rem;
+    color: #f5e4a3;
+    font-feature-settings: 'tnum';
+  }
+  :root:not(.dark) .bop-pct {
+    color: #6a4f12;
+  }
+
+  .bop-sep {
+    color: rgba(232, 197, 71, 0.45);
+  }
+  :root:not(.dark) .bop-sep {
+    color: rgba(184, 146, 63, 0.55);
+  }
+
+  /* Thin horizontal bar — 4px tall track, gold fill with subtle inner
+     gradient. The fill width is set inline by the script so the
+     transition picks up changes on language toggles too. */
+  .bop-bar {
+    position: relative;
+    height: 4px;
+    border-radius: 999px;
+    background: rgba(232, 197, 71, 0.12);
+    overflow: hidden;
+  }
+  :root:not(.dark) .bop-bar {
+    background: rgba(184, 146, 63, 0.16);
+  }
+
+  .bop-bar-fill {
+    height: 100%;
+    width: 0%;
+    border-radius: inherit;
+    background: linear-gradient(
+      90deg,
+      #c9a227 0%,
+      #ddb52f 50%,
+      #f4d97a 100%
+    );
+    box-shadow: 0 0 8px rgba(232, 197, 71, 0.35);
+    transition: width 600ms cubic-bezier(0.22, 0.61, 0.36, 1);
+  }
+  :root:not(.dark) .bop-bar-fill {
+    background: linear-gradient(
+      90deg,
+      #b8923f 0%,
+      #c9a227 50%,
+      #ecc967 100%
+    );
+    box-shadow: 0 0 8px rgba(184, 146, 63, 0.35);
+  }
+
+  /* RTL: visually flip the gradient so the brighter end aligns with the
+     reading direction's leading edge. The fill still grows from the
+     inline-start side because width-from-start is direction-agnostic. */
+  .bop.is-rtl .bop-bar-fill {
+    background: linear-gradient(
+      270deg,
+      #c9a227 0%,
+      #ddb52f 50%,
+      #f4d97a 100%
+    );
+  }
+  :root:not(.dark) .bop.is-rtl .bop-bar-fill {
+    background: linear-gradient(
+      270deg,
+      #b8923f 0%,
+      #c9a227 50%,
+      #ecc967 100%
+    );
+  }
+
+  /* Current-chapter line. Hidden when no chapter is mid-read; shown as
+     "Current chapter · <link>" otherwise. */
+  .bop-current {
+    margin: 0;
+    font-size: 0.85rem;
+    color: rgba(245, 239, 225, 0.72);
+    display: flex;
+    align-items: baseline;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+  }
+  :root:not(.dark) .bop-current {
+    color: rgba(44, 36, 24, 0.72);
+  }
+  .bop-current-label {
+    font-weight: 500;
+    color: rgba(245, 239, 225, 0.85);
+  }
+  :root:not(.dark) .bop-current-label {
+    color: rgba(44, 36, 24, 0.85);
+  }
+  .bop-current-sep {
+    opacity: 0.5;
+  }
+  .bop-current-link {
+    color: #f5e4a3;
+    text-decoration: none;
+    border-block-end: 1px solid transparent;
+    transition: border-color 160ms ease, color 160ms ease;
+  }
+  .bop-current-link:hover {
+    color: #ffe9a8;
+    border-block-end-color: rgba(232, 197, 71, 0.6);
+  }
+  :root:not(.dark) .bop-current-link {
+    color: #6a4f12;
+  }
+  :root:not(.dark) .bop-current-link:hover {
+    color: #4a3712;
+    border-block-end-color: rgba(184, 146, 63, 0.7);
+  }
+  .bop-current[hidden] {
+    display: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .bop-bar-fill {
+      transition: none;
+    }
+  }
+</style>

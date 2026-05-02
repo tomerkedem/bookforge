@@ -414,6 +414,12 @@ const levelKey: TranslationKey | undefined = level ? (`library.level.${level}` a
       0 0 0 1px rgba(232, 197, 71, 0.32),
       inset 0 1px 0 rgba(255, 255, 255, 0.05);
     align-self: auto;
+    /* Override the global .tts-inline-btn flex defaults (start-aligned
+       with a 0.5rem gap meant for icon+label). With label hidden and a
+       fixed square footprint, we need explicit centering so the icon
+       sits in the middle in both RTL and LTR. */
+    justify-content: center;
+    gap: 0;
   }
   .boh-tts.tts-inline-btn:hover {
     background: rgba(232, 197, 71, 0.20);

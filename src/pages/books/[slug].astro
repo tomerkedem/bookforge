@@ -2,6 +2,7 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Breadcrumbs from '../../components/Breadcrumbs.astro';
 import BookOverviewHero from '../../components/book-overview/BookOverviewHero.astro';
+import BookOverviewProgress from '../../components/book-overview/BookOverviewProgress.astro';
 import BookOverviewSummary from '../../components/book-overview/BookOverviewSummary.astro';
 import BookOverviewChapters from '../../components/book-overview/BookOverviewChapters.astro';
 import { getLocalizedText } from '../../components/book-overview/utils';
@@ -158,10 +159,20 @@ const description = getLocalizedText(book.descriptions, language);
             isRtl={isRtl}
           />
 
+          <div class="mt-5 sm:mt-6">
+            <BookOverviewProgress
+              chapters={book.chapters}
+              slug={slug}
+              language={language}
+              isRtl={isRtl}
+            />
+          </div>
+
           <div class="mt-6 sm:mt-8">
             <BookOverviewSummary
               description={description}
               subtitle={subtitle}
+              language={language}
             />
           </div>
         </div>
