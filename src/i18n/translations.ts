@@ -114,6 +114,7 @@ export const translations: Translations = {
   'bookOverview.showFewerChapters': { he: 'הצג פחות פרקים',                    en: 'Show fewer chapters',                     es: 'Mostrar menos capítulos' },
   'bookOverview.locked':            { he: 'פרק נעול',                           en: 'Chapter locked',                          es: 'Capítulo bloqueado' },
   'bookOverview.whatYouWillLearn':  { he: 'מה תלמדו',                            en: 'What you will learn',                     es: 'Lo que aprenderás' },
+  'bookOverview.listenSummary':     { he: 'האזן לסיכום',                         en: 'Listen to summary',                       es: 'Escuchar resumen' },
 
   // ── Courses (learning) section ──────────────────────────────────────────────
   'courses.title':         { he: 'למידה מקורסים',    en: 'Learning from Courses', es: 'Aprendizaje de cursos' },

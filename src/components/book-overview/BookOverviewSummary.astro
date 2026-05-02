@@ -49,10 +49,31 @@ const truncatable = description.length > TRUNCATE_THRESHOLD;
       <h2 id="bos-title" class="bos-heading" data-i18n="bookOverview.bookSummary">
         {t('bookOverview.bookSummary', language)}
       </h2>
+
+      <!-- TTS control. Reuses the existing inline-trigger contract:
+           the page-level boot script in src/pages/books/[slug].astro
+           looks for `#tts-inline-trigger` and calls
+           initTextToSpeech(signal, { trigger: 'inline', inlineEl }).
+           The script reads paragraphs from `.chapter-content` (added
+           below) and writes the icon into `.tts-inline-icon`, toggling
+           an `is-active` class for the playing/paused state. -->
+      <button
+        id="tts-inline-trigger"
+        class="bos-tts tts-inline-btn"
+        type="button"
+        aria-label={t('bookOverview.listenSummary', language)}
+        aria-pressed="false"
+        data-i18n-aria-label="bookOverview.listenSummary"
+      >
+        <span class="tts-inline-icon" aria-hidden="true"></span>
+        <span class="tts-inline-label sr-only" data-i18n="bookOverview.listenSummary">
+          {t('bookOverview.listenSummary', language)}
+        </span>
+      </button>
     </header>
 
     <div
-      class:list={['bos-content']}
+      class:list={['bos-content', 'chapter-content']}
       data-truncatable={truncatable ? 'true' : undefined}
       data-collapsed={truncatable ? 'true' : undefined}
     >
@@ -141,11 +162,17 @@ const truncatable = description.length > TRUNCATE_THRESHOLD;
   }
 
   /* ── Heading row ──────────────────────────────────────────────── */
+  /* Three slots: icon · heading · TTS. The heading uses
+     margin-inline-end:auto to push the TTS control to the inline-end
+     edge, so [icon][heading]…………[tts] reads in both LTR and RTL. */
   .bos-heading-row {
     display: flex;
     align-items: center;
     gap: 0.65rem;
     margin: 0 0 0.85rem 0;
+  }
+  .bos-heading {
+    margin-inline-end: auto;
   }
 
   .bos-icon {
@@ -172,6 +199,79 @@ const truncatable = description.length > TRUNCATE_THRESHOLD;
     font-size: 1.1rem;
     letter-spacing: 0.01em;
     color: var(--bo-text-primary);
+  }
+
+  /* ── TTS control ─────────────────────────────────────────────────
+     Icon-only square. Sits at the inline-end of the heading row so it
+     never competes with the primary CTAs in the Hero. The button
+     reuses the existing inline-trigger DOM contract (id, classes,
+     icon slot) so the global TTS engine binds and updates it without
+     any new wiring; these scoped styles just override the platform's
+     global `.tts-inline-btn` (gold pill) with the BO palette.
+     The pulse-wave pseudo-elements from the global rule are hidden —
+     active state shows a calm cyan glow instead. */
+  .bos-tts.tts-inline-btn {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border-radius: 8px;
+    background: transparent;
+    border: 1px solid var(--bo-border);
+    color: var(--bo-text-muted);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    cursor: pointer;
+    opacity: 0.75;
+    box-shadow: none;
+    transition:
+      opacity 160ms ease,
+      color 160ms ease,
+      border-color 160ms ease,
+      background-color 160ms ease,
+      box-shadow 160ms ease;
+  }
+  .bos-tts.tts-inline-btn:hover {
+    opacity: 1;
+    color: var(--bo-cyan);
+    border-color: var(--bo-cyan);
+    background: transparent;
+    transform: none;
+    filter: none;
+    box-shadow: none;
+  }
+  .bos-tts.tts-inline-btn:focus-visible {
+    outline: 2px solid var(--bo-focus-ring);
+    outline-offset: 2px;
+  }
+  /* `is-active` is toggled by syncInlineState() in text-to-speech.ts
+     whenever status is `playing` or `paused`. Cyan glow + subtle fill
+     signal "audio is active" without competing with the page CTAs. */
+  .bos-tts.tts-inline-btn.is-active {
+    opacity: 1;
+    color: var(--bo-cyan);
+    border-color: var(--bo-cyan);
+    background: var(--bo-cyan-soft);
+    box-shadow: var(--bo-glow-cyan);
+  }
+  .bos-tts.tts-inline-btn .tts-inline-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+  }
+  .bos-tts.tts-inline-btn .tts-inline-icon svg {
+    width: 18px;
+    height: 18px;
+  }
+  .bos-tts.tts-inline-btn .tts-inline-label { display: none; }
+  /* Suppress the platform's gold pulse-wave rings (`::before` / `::after`
+     on `.tts-inline-btn.is-active`). The cyan glow above is enough. */
+  .bos-tts.tts-inline-btn::before,
+  .bos-tts.tts-inline-btn::after {
+    display: none !important;
   }
 
   /* ── Body content ─────────────────────────────────────────────
