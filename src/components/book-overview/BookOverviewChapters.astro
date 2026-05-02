@@ -1,0 +1,136 @@
+---
+/**
+ * Book Overview — Chapters list.
+ *
+ * Renders the gold-accented "Chapters" heading followed by the chapter
+ * cards. Each card is a real <a> to /read/<slug>/<chapter.id> and
+ * carries data-chapter-id + data-book-slug so the page-level script
+ * (updateChapterProgress) can read localStorage and paint progress
+ * bars / completion checks without any direct coupling to this file.
+ *
+ * Card classes (.chapter-link, .chapter-number-badge, etc.) are
+ * styled by the global <style is:global> block in the page —
+ * intentionally not duplicated here.
+ */
+
+import type { Chapter, Language } from '../../types/index';
+import { t } from '../../i18n';
+import {
+  getLocalizedText,
+  formatReadingTime,
+  formatSectionsLabel,
+} from './utils';
+
+interface Props {
+  chapters: Chapter[];
+  slug: string;
+  language: Language;
+  isRtl: boolean;
+}
+
+const { chapters, slug, language, isRtl } = Astro.props;
+---
+
+<div class:list={[
+  'lg:sticky',
+  'lg:top-4',
+  isRtl && 'text-right',
+]}>
+  <!-- Gold-accented chapters header to match the reading pane's
+       "CHAPTERS" typography. Thin bar underneath echoes the
+       accent line used in ReadingLayout. -->
+  <div class="mb-3 sm:mb-4 flex items-center gap-3">
+    <h2 class="font-heading font-bold text-xl sm:text-2xl text-yuval-text">
+      {t('sidebar.chapters', language)}
+    </h2>
+    <span
+      class="chapters-heading-rule flex-1 h-px"
+      aria-hidden="true"
+    ></span>
+  </div>
+
+  <div class="space-y-2 lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto lg:pr-1">
+    {
+      chapters.map((chapter: Chapter, idx: number) => {
+        const chapterTitle = getLocalizedText(chapter.titles, language);
+        const chapterNum = idx + 1;
+
+        return (
+          <a
+            href={`/read/${slug}/${chapter.id}`}
+            class:list={[
+              'chapter-link',
+              `chapter-link-${chapter.id}`,
+              'block',
+              'p-3',
+              'transition-all',
+              'duration-200',
+              'focus:outline-none',
+              'relative',
+              'overflow-hidden',
+            ]}
+            data-chapter-id={chapter.id}
+            data-book-slug={slug}
+          >
+            <div class="chapter-progress-bar absolute bottom-0 left-0 right-0 h-0.5">
+              <div
+                class="chapter-progress-fill h-full w-0 transition-all duration-700"
+              ></div>
+            </div>
+
+            <div
+              class:list={[
+                'flex',
+                'items-center',
+                'justify-between',
+                'gap-3',
+                isRtl && 'flex-row-reverse',
+              ]}
+            >
+              <div class:list={[isRtl && 'text-right', 'flex-1', 'min-w-0', 'flex', 'items-start', 'gap-3']}>
+                <span
+                  class="chapter-number-badge flex-shrink-0 inline-flex items-center justify-center w-9 h-9 rounded-full font-semibold text-sm tabular-nums"
+                  aria-hidden="true"
+                >
+                  {chapterNum.toString().padStart(2, '0')}
+                </span>
+
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-2">
+                    <svg class="chapter-status-check w-4 h-4 flex-shrink-0 text-green-600 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                      <circle cx="12" cy="12" r="10" stroke-width="1.8" fill="rgba(34,197,94,0.12)" />
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M8 12.5l2.5 2.5L16 9.5" />
+                    </svg>
+                    <h3 class="font-heading font-semibold text-sm sm:text-base text-yuval-text line-clamp-2">
+                      {chapterTitle}
+                    </h3>
+                  </div>
+
+                  <p class="text-xs text-yuval-text-tertiary mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+                    <span class="inline-flex items-center gap-1">
+                      <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <circle cx="12" cy="12" r="9" stroke-width="1.8" />
+                        <path stroke-linecap="round" stroke-width="1.8" d="M12 7v5l3 2" />
+                      </svg>
+                      <span>{formatReadingTime(chapter.word_count ?? 0, language)}</span>
+                    </span>
+
+                    <span class="text-yuval-text-muted" aria-hidden="true">·</span>
+
+                    <span class="inline-flex items-center gap-1">
+                      <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <rect x="4" y="4" width="16" height="16" rx="2" stroke-width="1.8" />
+                        <path stroke-width="1.8" d="M4 10h16M4 15h16M10 4v16" />
+                      </svg>
+                      <span>{formatSectionsLabel(chapter.sections ?? 0, language)}</span>
+                    </span>
+                  </p>
+                </div>
+              </div>
+            </div>
+          </a>
+        );
+      })
+    }
+  </div>
+</div>

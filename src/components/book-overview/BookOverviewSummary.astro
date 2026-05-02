@@ -1,0 +1,37 @@
+---
+/**
+ * Book Overview — Summary region.
+ *
+ * Renders the description paragraphs that wrap around the floated cover
+ * figure rendered by BookOverviewHero. The subtitle is repeated as
+ * sr-only here because the hero's visible subtitle is in a separate
+ * paragraph; this gives screen readers the context up-front when the
+ * image figure is announced.
+ *
+ * Inline markdown (**bold**, *italic*, `code`) is rendered via
+ * renderInlineMarkdown to match what the manifest authors write in Word.
+ */
+
+import { renderInlineMarkdown } from './utils';
+
+interface Props {
+  description: string;
+  subtitle: string;
+}
+
+const { description, subtitle } = Astro.props;
+
+const paragraphs = description.split(/\n\s*\n/).filter((p) => p.trim());
+---
+
+<div class="chapter-content space-y-2 sm:space-y-2.5 mb-3 sm:mb-4">
+  {subtitle && (
+    <p class="sr-only">{subtitle}</p>
+  )}
+  {paragraphs.map((para) => (
+    <p
+      class="text-base sm:text-lg text-yuval-text-secondary leading-relaxed"
+      set:html={renderInlineMarkdown(para.trim())}
+    />
+  ))}
+</div>

@@ -1,0 +1,131 @@
+---
+/**
+ * Book Overview — Hero region.
+ *
+ * Renders the title row (with the inline TTS pill), the subtitle, and
+ * the cover figure containing credits and the chapter-count meta line.
+ *
+ * The figure floats inside its parent column on lg+; the parent page
+ * is responsible for clearing the float after subsequent content.
+ *
+ * Markup is preserved verbatim from src/pages/books/[slug].astro to
+ * avoid any visual regression. The TTS button keeps its
+ * `id="tts-inline-trigger"` so the page-level boot script (which calls
+ * initTextToSpeech) finds it without changes.
+ */
+
+import type { Language } from '../../types/index';
+import type { BookCredits } from '../../utils/book-discovery';
+import { t } from '../../i18n';
+import {
+  getCreditText,
+  creditDataAttr,
+  formatChapterCount,
+} from './utils';
+
+interface Props {
+  title: string;
+  subtitle: string;
+  coverImage: string;
+  credits?: BookCredits;
+  chapterCount: number;
+  language: Language;
+  isRtl: boolean;
+}
+
+const { title, subtitle, coverImage, credits, chapterCount, language, isRtl } = Astro.props;
+---
+
+<!-- Title row: heading + inline "listen to description" trigger.
+     Wired to the TTS engine by the page script. The icon is
+     injected at init; the label stays translated here. -->
+<div class:list={['flex', 'items-start', 'gap-3', 'flex-wrap', 'mb-4', 'sm:mb-5']}>
+  <h1 class="font-heading font-bold text-2xl sm:text-3xl lg:text-4xl leading-tight text-yuval-text flex-1 min-w-0">
+    {title}
+  </h1>
+  <button
+    id="tts-inline-trigger"
+    class="tts-inline-btn"
+    type="button"
+    aria-label={t('tts.listenToDescription', language)}
+    aria-pressed="false"
+  >
+    <span class="tts-inline-icon" aria-hidden="true"></span>
+    <span class="tts-inline-label">{t('tts.listenToDescription', language)}</span>
+  </button>
+</div>
+
+{subtitle && (
+  <p class="text-sm sm:text-base text-yuval-text-tertiary leading-relaxed mb-5 sm:mb-6">
+    {subtitle}
+  </p>
+)}
+
+<!-- Cover image inside content flow, floated so text wraps around it -->
+<figure class:list={[
+  'mb-5',
+  'sm:mb-6',
+  'lg:mb-3',
+  'lg:max-w-[380px]',
+  'xl:max-w-[440px]',
+  isRtl ? 'lg:float-left lg:mr-6 xl:mr-8' : 'lg:float-right lg:ml-6 xl:ml-8',
+]}>
+  {credits && (
+    <figcaption class="mb-2 text-sm text-yuval-text-secondary">
+      {credits.type === 'lecture_summary' ? (
+        <div class="space-y-1.5">
+          <!-- Lecturer — person-outline icon -->
+          <p class="inline-flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="8" r="4" stroke-width="1.8" />
+              <path stroke-linecap="round" stroke-width="1.8" d="M4 20c0-4 4-6 8-6s8 2 8 6" />
+            </svg>
+            <span>
+              <span class="font-medium text-yuval-text">{t('book.lecturer', language)}:</span>{' '}
+              <span data-credit-localized={creditDataAttr(credits.lecturer)}>{getCreditText(credits.lecturer, language)}</span>
+            </span>
+          </p>
+          <!-- Editor — pencil/edit icon -->
+          <p class="inline-flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
+            </svg>
+            <span>
+              <span class="font-medium text-yuval-text">{t('book.editedBy', language)}:</span>{' '}
+              <span data-credit-localized={creditDataAttr(credits.editor)}>{getCreditText(credits.editor, language)}</span>
+            </span>
+          </p>
+        </div>
+      ) : (
+        <!-- Author — person-outline icon -->
+        <p class="inline-flex items-center gap-1.5">
+          <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="8" r="4" stroke-width="1.8" />
+            <path stroke-linecap="round" stroke-width="1.8" d="M4 20c0-4 4-6 8-6s8 2 8 6" />
+          </svg>
+          <span>
+            <span>{t('book.by', language)}</span> {' '}<span data-credit-localized={creditDataAttr(credits.author)}>{getCreditText(credits.author, language)}</span>
+          </span>
+        </p>
+      )}
+    </figcaption>
+  )}
+
+  <!-- Chapter count with book icon. Sits above the cover so the
+       metadata reads like a caption/heading to the image. -->
+  <p class="mb-3 inline-flex items-center gap-1.5 text-sm text-yuval-text-tertiary">
+    <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+    </svg>
+    <span>{formatChapterCount(chapterCount, language)}</span>
+  </p>
+
+  <img
+    src={coverImage}
+    alt={title}
+    loading="lazy"
+    decoding="async"
+    class="book-cover-img w-full h-auto rounded-lg shadow-lg object-contain"
+  />
+</figure>

@@ -190,10 +190,10 @@ const isDev = import.meta.env.DEV;
     </main>
 
     <BackToTop />
-    {/* Language bootstrap — extracted to a stand-alone .ts file so
-        Astro's bundler resolves the ../utils/language import correctly.
-        When the body lived inside a `<script type="module">` here it
-        was occasionally served raw, which exploded on the browser. */}
+    <!-- Language bootstrap — extracted to a stand-alone .ts file so
+         Astro's bundler resolves the ../utils/language import correctly.
+         When the body lived inside a script type="module" here it was
+         occasionally served raw, which exploded on the browser. -->
     <script>
       import '../scripts/language-bootstrap';
     </script>

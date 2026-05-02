@@ -1,94 +1,16 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Breadcrumbs from '../../components/Breadcrumbs.astro';
-import type { Language, Chapter } from '../../types/index';
+import BookOverviewHero from '../../components/book-overview/BookOverviewHero.astro';
+import BookOverviewSummary from '../../components/book-overview/BookOverviewSummary.astro';
+import BookOverviewChapters from '../../components/book-overview/BookOverviewChapters.astro';
+import { getLocalizedText } from '../../components/book-overview/utils';
+import type { Language } from '../../types/index';
 import { SOURCE_LANGUAGE, getLanguageDirection, isValidLanguage } from '../../utils/language';
 import { discoverAllBooks } from '../../utils/book-discovery';
-import { t } from '../../i18n';
 
 interface Props {
   language?: Language;
-}
-
-type LocalizedMap = Record<string, string | undefined>;
-
-function getLocalizedText(
-  value: LocalizedMap | undefined,
-  lang: string,
-  fallback = SOURCE_LANGUAGE
-): string {
-  if (!value) return '';
-  return value[lang] ?? value[fallback] ?? Object.values(value).find(Boolean) ?? '';
-}
-
-function getCreditText(
-  value: string | Record<string, string> | undefined,
-  lang: string,
-  fallback = SOURCE_LANGUAGE
-): string {
-  if (!value) return '';
-  if (typeof value === 'string') return value;
-  return value[lang] ?? value[fallback] ?? Object.values(value).find(Boolean) ?? '';
-}
-
-function creditDataAttr(value: string | Record<string, string> | undefined): string {
-  if (!value) return '';
-  if (typeof value === 'string') return JSON.stringify({ [SOURCE_LANGUAGE]: value });
-  return JSON.stringify(value);
-}
-
-function formatWordCount(count: number, lang: string): string {
-  return t('book.words', lang, { n: count.toString() });
-}
-
-function formatChapterCount(count: number, lang: string): string {
-  if (count === 1) return t('book.chapterOne', lang);
-  return t('book.chapters', lang, { n: count.toString() });
-}
-
-// Reading time estimate at ~200 wpm; min 1 minute.
-function formatReadingTime(wordCount: number, lang: string): string {
-  const minutes = Math.max(1, Math.ceil(wordCount / 200));
-  if (lang === 'he') return `${minutes} דקות קריאה`;
-  if (lang === 'es') return `${minutes} min de lectura`;
-  return `${minutes} min read`;
-}
-
-function formatSectionsLabel(sections: number, lang: string): string {
-  return sections === 1
-    ? t('book.sectionOne', lang)
-    : t('book.sections', lang, { n: sections.toString() });
-}
-
-/**
- * Convert a small subset of inline markdown to safe HTML.
- *
- * Supports the markers that show up in book descriptions written in Word:
- *   **text**  ->  <strong>text</strong>
- *   *text*    ->  <em>text</em>
- *   `text`    ->  <code>text</code>
- *
- * Everything else is escaped so there's no risk of injecting arbitrary
- * HTML from manifest data. The pattern order matters — ** must be
- * processed before * so "*" inside "**...**" isn't consumed first.
- */
-function renderInlineMarkdown(text: string): string {
-  // Escape HTML first so user content can't break out. We intentionally
-  // do NOT escape backticks, asterisks, or underscores here — they're
-  // markdown syntax we'll consume in the next step.
-  const escaped = text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-
-  return escaped
-    // Bold: **text**
-    .replace(/\*\*([^*\n]+?)\*\*/g, '<strong>$1</strong>')
-    // Italic: *text* (single asterisks, not consumed by bold)
-    .replace(/(^|[^*])\*([^*\n]+?)\*(?!\*)/g, '$1<em>$2</em>')
-    // Inline code: `text`
-    .replace(/`([^`\n]+?)`/g, '<code>$1</code>');
 }
 
 export async function getStaticPaths() {
@@ -145,6 +67,7 @@ const book = {
 
 
 const title = getLocalizedText(book.titles, language);
+const subtitle = getLocalizedText(book.subtitles, language);
 const description = getLocalizedText(book.descriptions, language);
 ---
 
@@ -208,217 +131,29 @@ const description = getLocalizedText(book.descriptions, language);
         ]}
       >
         <!-- Chapters sidebar -->
-        <div class:list={[
-          'lg:sticky',
-          'lg:top-4',
-          isRtl && 'text-right',
-        ]}>
-          <!-- Gold-accented chapters header to match the reading pane's
-               "CHAPTERS" typography. Thin bar underneath echoes the
-               accent line used in ReadingLayout. -->
-          <div class="mb-3 sm:mb-4 flex items-center gap-3">
-            <h2 class="font-heading font-bold text-xl sm:text-2xl text-yuval-text">
-              {t('sidebar.chapters', language)}
-            </h2>
-            <span
-              class="chapters-heading-rule flex-1 h-px"
-              aria-hidden="true"
-            ></span>
-          </div>
-
-          <div class="space-y-2 lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto lg:pr-1">
-            {
-              book.chapters.map((chapter: Chapter, idx: number) => {
-                const chapterTitle = getLocalizedText(chapter.titles, language);
-                const chapterNum = idx + 1;
-
-                return (
-                  <a
-                    href={`/read/${slug}/${chapter.id}`}
-                    class:list={[
-                      'chapter-link',
-                      `chapter-link-${chapter.id}`,
-                      'block',
-                      'p-3',
-                      'transition-all',
-                      'duration-200',
-                      'focus:outline-none',
-                      'relative',
-                      'overflow-hidden',
-                    ]}
-                    data-chapter-id={chapter.id}
-                    data-book-slug={slug}
-                  >
-                    <div class="chapter-progress-bar absolute bottom-0 left-0 right-0 h-0.5">
-                      <div
-                        class="chapter-progress-fill h-full w-0 transition-all duration-700"
-                      ></div>
-                    </div>
-
-                    <div
-                      class:list={[
-                        'flex',
-                        'items-center',
-                        'justify-between',
-                        'gap-3',
-                        isRtl && 'flex-row-reverse',
-                      ]}
-                    >
-                      <div class:list={[isRtl && 'text-right', 'flex-1', 'min-w-0', 'flex', 'items-start', 'gap-3']}>
-                        <span
-                          class="chapter-number-badge flex-shrink-0 inline-flex items-center justify-center w-9 h-9 rounded-full font-semibold text-sm tabular-nums"
-                          aria-hidden="true"
-                        >
-                          {chapterNum.toString().padStart(2, '0')}
-                        </span>
-
-                        <div class="flex-1 min-w-0">
-                          <div class="flex items-center gap-2">
-                            <svg class="chapter-status-check w-4 h-4 flex-shrink-0 text-green-600 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                              <circle cx="12" cy="12" r="10" stroke-width="1.8" fill="rgba(34,197,94,0.12)" />
-                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M8 12.5l2.5 2.5L16 9.5" />
-                            </svg>
-                            <h3 class="font-heading font-semibold text-sm sm:text-base text-yuval-text line-clamp-2">
-                              {chapterTitle}
-                            </h3>
-                          </div>
-
-                          <p class="text-xs text-yuval-text-tertiary mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
-                            <span class="inline-flex items-center gap-1">
-                              <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                <circle cx="12" cy="12" r="9" stroke-width="1.8" />
-                                <path stroke-linecap="round" stroke-width="1.8" d="M12 7v5l3 2" />
-                              </svg>
-                              <span>{formatReadingTime(chapter.word_count ?? 0, language)}</span>
-                            </span>
-
-                            <span class="text-yuval-text-muted" aria-hidden="true">·</span>
-
-                            <span class="inline-flex items-center gap-1">
-                              <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                <rect x="4" y="4" width="16" height="16" rx="2" stroke-width="1.8" />
-                                <path stroke-width="1.8" d="M4 10h16M4 15h16M10 4v16" />
-                              </svg>
-                              <span>{formatSectionsLabel(chapter.sections ?? 0, language)}</span>
-                            </span>
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </a>
-                );
-              })
-            }
-          </div>
-        </div>
+        <BookOverviewChapters
+          chapters={book.chapters}
+          slug={slug}
+          language={language}
+          isRtl={isRtl}
+        />
 
         <!-- Content column: title, subtitle, cover, description, meta -->
         <div class:list={[isRtl && 'text-right']}>
-          <!-- Title row: heading + inline "listen to description" trigger.
-               Wired to the TTS engine by the page script. The icon is
-               injected at init; the label stays translated here. -->
-          <div class:list={['flex', 'items-start', 'gap-3', 'flex-wrap', 'mb-4', 'sm:mb-5']}>
-            <h1 class="font-heading font-bold text-2xl sm:text-3xl lg:text-4xl leading-tight text-yuval-text flex-1 min-w-0">
-              {title}
-            </h1>
-            <button
-              id="tts-inline-trigger"
-              class="tts-inline-btn"
-              type="button"
-              aria-label={t('tts.listenToDescription', language)}
-              aria-pressed="false"
-            >
-              <span class="tts-inline-icon" aria-hidden="true"></span>
-              <span class="tts-inline-label">{t('tts.listenToDescription', language)}</span>
-            </button>
-          </div>
+          <BookOverviewHero
+            title={title}
+            subtitle={subtitle}
+            coverImage={book.coverImage}
+            credits={book.credits}
+            chapterCount={book.chapters.length}
+            language={language}
+            isRtl={isRtl}
+          />
 
-          {getLocalizedText(book.subtitles, language) && (
-            <p class="text-sm sm:text-base text-yuval-text-tertiary leading-relaxed mb-5 sm:mb-6">
-              {getLocalizedText(book.subtitles, language)}
-            </p>
-          )}
-
-          <!-- Cover image inside content flow, floated so text wraps around it -->
-          <figure class:list={[
-            'mb-5',
-            'sm:mb-6',
-            'lg:mb-3',
-            'lg:max-w-[380px]',
-            'xl:max-w-[440px]',
-            isRtl ? 'lg:float-left lg:mr-6 xl:mr-8' : 'lg:float-right lg:ml-6 xl:ml-8',
-          ]}>
-            {book.credits && (
-              <figcaption class="mb-2 text-sm text-yuval-text-secondary">
-                {book.credits.type === 'lecture_summary' ? (
-                  <div class="space-y-1.5">
-                    <!-- Lecturer — person-outline icon -->
-                    <p class="inline-flex items-center gap-1.5">
-                      <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                        <circle cx="12" cy="8" r="4" stroke-width="1.8" />
-                        <path stroke-linecap="round" stroke-width="1.8" d="M4 20c0-4 4-6 8-6s8 2 8 6" />
-                      </svg>
-                      <span>
-                        <span class="font-medium text-yuval-text">{t('book.lecturer', language)}:</span>{' '}
-                        <span data-credit-localized={creditDataAttr(book.credits.lecturer)}>{getCreditText(book.credits.lecturer, language)}</span>
-                      </span>
-                    </p>
-                    <!-- Editor — pencil/edit icon -->
-                    <p class="inline-flex items-center gap-1.5">
-                      <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
-                      </svg>
-                      <span>
-                        <span class="font-medium text-yuval-text">{t('book.editedBy', language)}:</span>{' '}
-                        <span data-credit-localized={creditDataAttr(book.credits.editor)}>{getCreditText(book.credits.editor, language)}</span>
-                      </span>
-                    </p>
-                  </div>
-                ) : (
-                  <!-- Author — person-outline icon -->
-                  <p class="inline-flex items-center gap-1.5">
-                    <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                      <circle cx="12" cy="8" r="4" stroke-width="1.8" />
-                      <path stroke-linecap="round" stroke-width="1.8" d="M4 20c0-4 4-6 8-6s8 2 8 6" />
-                    </svg>
-                    <span>
-                      <span>{t('book.by', language)}</span> {' '}<span data-credit-localized={creditDataAttr(book.credits.author)}>{getCreditText(book.credits.author, language)}</span>
-                    </span>
-                  </p>
-                )}
-              </figcaption>
-            )}
-
-            <!-- Chapter count with book icon. Sits above the cover so the
-                 metadata reads like a caption/heading to the image. -->
-            <p class="mb-3 inline-flex items-center gap-1.5 text-sm text-yuval-text-tertiary">
-              <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-              </svg>
-              <span>{formatChapterCount(book.chapters.length, language)}</span>
-            </p>
-
-            <img
-              src={book.coverImage}
-              alt={title}
-              loading="lazy"
-              decoding="async"
-              class="book-cover-img w-full h-auto rounded-lg shadow-lg object-contain"
-            />
-          </figure>
-
-          <div class="chapter-content space-y-2 sm:space-y-2.5 mb-3 sm:mb-4">
-            {getLocalizedText(book.subtitles, language) && (
-              <p class="sr-only">{getLocalizedText(book.subtitles, language)}</p>
-            )}
-            {description.split(/\n\s*\n/).filter((p: string) => p.trim()).map((para: string) => (
-              <p
-                class="text-base sm:text-lg text-yuval-text-secondary leading-relaxed"
-                set:html={renderInlineMarkdown(para.trim())}
-              />
-            ))}
-          </div>
+          <BookOverviewSummary
+            description={description}
+            subtitle={subtitle}
+          />
 
           <!-- Clear the float so anything below sits after image+text -->
           <div class="lg:clear-both"></div>
