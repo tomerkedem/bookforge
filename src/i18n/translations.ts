@@ -87,6 +87,13 @@ export const translations: Translations = {
   'library.category.ai-systems':  { he: 'מערכות AI', en: 'AI Systems',      es: 'Sistemas de IA' },
   'library.category.ai-engineering': { he: 'הנדסת מערכות AI', en: 'AI Systems Engineering', es: 'Ingeniería de Sistemas de IA' },
 
+  // Difficulty level — keys mirror BookLevel in src/types/index.ts.
+  // Resolved by discoverBook() from book-manifest.json → _catalog.json
+  // (book entry) → parent course. UI calls t('library.level.' + book.level).
+  'library.level.foundations':   { he: 'יסודות',  en: 'Foundations',  es: 'Fundamentos' },
+  'library.level.intermediate':  { he: 'ביניים',  en: 'Intermediate', es: 'Intermedio' },
+  'library.level.advanced':      { he: 'מתקדם',   en: 'Advanced',     es: 'Avanzado' },
+
   // ── Courses (learning) section ──────────────────────────────────────────────
   'courses.title':         { he: 'למידה מקורסים',    en: 'Learning from Courses', es: 'Aprendizaje de cursos' },
   'courses.subtitle':      { he: 'סיכומי שיעורים בתהליך', en: 'Lecture summaries in progress', es: 'Resúmenes de clases en curso' },

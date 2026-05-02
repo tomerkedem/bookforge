@@ -3,7 +3,7 @@
  * Version bump triggers cache refresh.
  */
 
-const VERSION = 'yuval-v3';
+const VERSION = 'yuval-v4';
 const STATIC_CACHE = `${VERSION}-static`;
 const PAGES_CACHE  = `${VERSION}-pages`;
 const PYODIDE_CACHE = `${VERSION}-pyodide`;

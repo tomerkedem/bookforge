@@ -151,6 +151,20 @@ export interface DesignRules {
 }
 
 // Content Types
+
+/**
+ * Difficulty level for a book. The key is machine-readable; the display
+ * label is resolved at view time through i18n (`library.level.<key>`),
+ * so adding a language never requires touching the data layer.
+ */
+export type BookLevel = 'foundations' | 'intermediate' | 'advanced';
+
+export const BOOK_LEVELS: readonly BookLevel[] = ['foundations', 'intermediate', 'advanced'] as const;
+
+export function isBookLevel(value: unknown): value is BookLevel {
+  return typeof value === 'string' && (BOOK_LEVELS as readonly string[]).includes(value);
+}
+
 export interface Book {
   titles: Record<string, string>;      // { he: '...', en: '...', fr: '...' }
   subtitles: Record<string, string>;
@@ -163,6 +177,7 @@ export interface Book {
   languages: string[];
   book_type: string;
   primary_focus: string;
+  level?: BookLevel;
 }
 
 export interface Chapter {

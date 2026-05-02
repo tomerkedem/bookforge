@@ -11,7 +11,8 @@
 
 import { readdirSync, readFileSync, existsSync, statSync } from 'fs';
 import { join } from 'path';
-import type { Chapter } from '../types/index';
+import type { BookLevel, Chapter } from '../types/index';
+import { isBookLevel } from '../types/index';
 import { PATHS } from '../config';
 import { SUPPORTED_LANGUAGES, DEFAULT_LANGUAGE, SOURCE_LANGUAGE } from './language';
 import { t } from '../i18n';
@@ -46,6 +47,12 @@ export interface DiscoveredBook {
   chapters: Chapter[];
   languages: string[];
   credits?: BookCredits;
+  /**
+   * Difficulty level key. Display labels live in i18n under
+   * `library.level.<key>`. Undefined when no level was declared in
+   * the manifest, the book's catalog entry, or the parent course.
+   */
+  level?: BookLevel;
   contentType: ContentType;
   /** Present when contentType === 'course_lesson'. */
   courseSlug?: string;
@@ -69,6 +76,8 @@ interface CatalogBookEntry {
   category?: string;
   course?: string;
   lessonNumber?: number;
+  /** Difficulty level key — see BookLevel. Validated at resolution time. */
+  level?: string;
 }
 
 interface CatalogCourseEntry {
@@ -80,6 +89,8 @@ interface CatalogCourseEntry {
   summaryAuthor?: Record<string, string>;
   /** Category key for the course; inherited by its lessons when they don't declare their own. */
   category?: string;
+  /** Difficulty level for the course; inherited by its lessons when they don't declare their own. */
+  level?: string;
 }
 
 interface Catalog {
@@ -134,6 +145,8 @@ interface ContentStructure {
     languages?: string[];
     credits?: BookCredits;
     category?: string | Record<string, string>;
+    /** Difficulty level key authored in book-manifest.json. */
+    level?: string;
     chapters: Array<{
       id: number | string;
       file_slug?: string;
@@ -279,6 +292,8 @@ function loadBookMeta(bookDir: string, slug: string): {
   category: Record<string, string>;
   languages: string[];
   credits?: BookCredits;
+  /** Level declared in book-manifest.json, validated against BOOK_LEVELS. */
+  level?: BookLevel;
 } {
   const formatted = slug.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 
@@ -330,6 +345,8 @@ function loadBookMeta(bookDir: string, slug: string): {
         };
       }
 
+      const manifestLevel = isBookLevel(book.level) ? book.level : undefined;
+
       return {
         titles,
         subtitles,
@@ -337,6 +354,7 @@ function loadBookMeta(bookDir: string, slug: string): {
         category,
         languages: languages.length > 0 ? languages : [SOURCE_LANGUAGE],
         credits: book.credits,
+        level: manifestLevel,
       };
     } catch {
       // fall through
@@ -356,6 +374,7 @@ function loadBookMeta(bookDir: string, slug: string): {
     },
     languages: [SOURCE_LANGUAGE],
     credits: undefined,
+    level: undefined,
   };
 }
 
@@ -409,6 +428,18 @@ export function discoverBook(slug: string): DiscoveredBook | null {
   const courseSlug = contentType === 'course_lesson' ? entry?.course : undefined;
   const lessonNumber = contentType === 'course_lesson' ? entry?.lessonNumber : undefined;
 
+  // Level resolution: manifest wins, then catalog book entry, then the
+  // parent course (for course lessons). Each candidate is validated
+  // against BOOK_LEVELS so an invalid value never reaches the UI —
+  // the badge just won't render.
+  const inheritedCourseLevel =
+    contentType === 'course_lesson' && entry?.course
+      ? catalog.courses[entry.course]?.level
+      : undefined;
+
+  const levelCandidates = [meta.level, entry?.level, inheritedCourseLevel];
+  const level = levelCandidates.find(isBookLevel);
+
   return {
     slug,
     titles: meta.titles,
@@ -421,6 +452,7 @@ export function discoverBook(slug: string): DiscoveredBook | null {
     chapters,
     languages: meta.languages,
     credits: meta.credits,
+    level,
     contentType,
     courseSlug,
     lessonNumber,

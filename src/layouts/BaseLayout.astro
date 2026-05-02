@@ -34,6 +34,11 @@ const {
 } = Astro.props;
 
 const isRtl = getLanguageDirection(language) === 'rtl';
+
+// Skip Service Worker in dev — it caches assets aggressively and makes
+// every static-file change require a manual cache bust. SW only runs
+// in production builds where its caching is actually wanted.
+const isDev = import.meta.env.DEV;
 ---
 
 <!doctype html>
@@ -102,14 +107,16 @@ const isRtl = getLanguageDirection(language) === 'rtl';
       }
     </script>
 
-    <!-- Service Worker registration -->
-    <script is:inline>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js').catch(() => {});
-        });
-      }
-    </script>
+    <!-- Service Worker registration — production only. -->
+    {!isDev && (
+      <script is:inline>
+        if ('serviceWorker' in navigator) {
+          window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/sw.js').catch(() => {});
+          });
+        }
+      </script>
+    )}
 
     <!-- Prevent FOUC: apply dark mode before paint -->
     <script is:inline>
