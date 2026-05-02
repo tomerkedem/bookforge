@@ -74,6 +74,13 @@ const levelKey: TranslationKey | undefined = level
 const levelLabel = level && levelKey ? t(levelKey, language) : '';
 ---
 
+<!-- Hidden context for the reading-page bookmarks system. The system's
+     getCurrentBook() reads `#chapter-container[data-book]`, so we expose
+     the slug here without rendering anything. The element is empty, so
+     the contextmenu/dblclick "add bookmark" hooks (which match
+     `#chapter-container p`) safely no-op on this page. -->
+<div id="chapter-container" data-book={slug} hidden aria-hidden="true"></div>
+
 <section class:list={['boh', isRtl && 'is-rtl']} aria-labelledby="boh-title">
   <div class="boh-card bo-premium-surface">
     <!-- Cover with subtle purple/blue aura behind it (`bo-hero-glow`
@@ -157,7 +164,9 @@ const levelLabel = level && levelKey ? t(levelKey, language) : '';
         )}
       </ul>
 
-      <!-- CTAs -->
+      <!-- CTAs + bookmark. Bookmark sits last in DOM so RTL flexes
+           it to the visual-left end of the row, after the secondary
+           CTA. -->
       <div class="boh-actions">
         <a
           href={startHref}
@@ -168,13 +177,24 @@ const levelLabel = level && levelKey ? t(levelKey, language) : '';
         >
           {t('book.startLearning', language)}
         </a>
-        <a
-          href="#chapters"
-          class="boh-cta boh-cta-secondary"
-          data-i18n="book.viewChapters"
+        <button
+          type="button"
+          class="boh-bookmark"
+          data-bookmark-trigger
+          data-book-slug={slug}
+          aria-label={t('bookmarks.title', language)}
+          data-i18n-aria-label="bookmarks.title"
         >
-          {t('book.viewChapters', language)}
-        </a>
+          <svg class="boh-bookmark-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </button>
       </div>
     </div>
   </div>
@@ -232,8 +252,48 @@ const levelLabel = level && levelKey ? t(levelKey, language) : '';
     cta.textContent = t(newKey, lang);
   }
 
+  // ── Bookmark trigger ──────────────────────────────────────────────
+  // Reuses the reading-page bookmarks system (src/scripts/bookmarks.ts).
+  // We initialize it once per page load, then delegate clicks from our
+  // Hero button to the system's invisible FAB (`#bm-fab-btn`). The
+  // panel that opens lists every paragraph the reader has bookmarked
+  // for this book, with a click-to-jump UX identical to the reading
+  // page.
+  let bookmarksInitialized = false;
+
+  async function ensureBookmarks(): Promise<void> {
+    if (bookmarksInitialized) return;
+    if (document.getElementById('bm-fab-btn')) {
+      bookmarksInitialized = true;
+      return;
+    }
+    const { initBookmarks } = await import('../../scripts/bookmarks');
+    // The FAB / overlay / panel are appended to <body>. We hide the
+    // FAB via global CSS in the page; the panel + overlay still render
+    // when triggered.
+    initBookmarks(new AbortController().signal);
+    bookmarksInitialized = true;
+  }
+
+  function bindBookmarkTrigger(): void {
+    const buttons = document.querySelectorAll<HTMLButtonElement>(
+      '[data-bookmark-trigger]',
+    );
+    buttons.forEach((btn) => {
+      if (btn.dataset.bound === '1') return;
+      btn.dataset.bound = '1';
+      btn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        await ensureBookmarks();
+        const fab = document.getElementById('bm-fab-btn');
+        if (fab) (fab as HTMLButtonElement).click();
+      });
+    });
+  }
+
   function boot(): void {
     updatePrimaryCta();
+    bindBookmarkTrigger();
   }
 
   if (document.readyState === 'loading') {
@@ -384,6 +444,42 @@ const levelLabel = level && levelKey ? t(levelKey, language) : '';
       inset 0 1px 0 rgba(255, 255, 255, 0.18);
   }
 
+  /* ── Bookmark — small dark outline square at the end of the
+     actions row. DOM order places it last, so RTL flex puts it on
+     the visual-left of the CTA group exactly per the screenshot. */
+  .boh-bookmark {
+    width: 2.5rem;
+    height: 2.5rem;
+    padding: 0;
+    border-radius: 8px;
+    background: var(--bo-surface);
+    border: 1px solid var(--bo-border-strong);
+    color: var(--bo-text-secondary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition:
+      background-color 160ms ease,
+      border-color 160ms ease,
+      color 160ms ease;
+  }
+  .boh-bookmark:hover {
+    color: var(--bo-text-primary);
+    border-color: var(--bo-cyan);
+  }
+  .boh-bookmark:focus-visible {
+    outline: 2px solid var(--bo-focus-ring);
+    outline-offset: 2px;
+  }
+  .boh-bookmark-icon {
+    width: 18px;
+    height: 18px;
+  }
+  .boh-bookmark-icon path {
+    fill: none;
+  }
+
   /* ── Title / subtitle / credits ──────────────────────────────── */
   .boh-title {
     margin: 0;
@@ -521,7 +617,8 @@ const levelLabel = level && levelKey ? t(levelKey, language) : '';
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .boh-cta {
+    .boh-cta,
+    .boh-bookmark {
       transition: none;
     }
     .boh-cta:hover {

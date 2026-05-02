@@ -407,6 +407,14 @@ const description = getLocalizedText(book.descriptions, language);
     scroll-margin-top: 5rem;
   }
 
+  /* Hide the bookmarks system's auto-created FAB on the Book Overview
+     page. Our Hero bookmark button delegates clicks to it via JS, so
+     it must exist in the DOM but never visibly. The panel + overlay
+     it controls still render normally when triggered. */
+  body:has(.bo-page-bg) #bm-fab-btn {
+    display: none !important;
+  }
+
   /* Inline TTS trigger — gold pill that sits beside the title.
      Replaces the floating FAB on the landing page: a short description
      doesn't justify a persistent floating control, and the role is

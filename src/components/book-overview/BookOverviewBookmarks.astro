@@ -1,0 +1,457 @@
+---
+/**
+ * Book Overview — Bookmarks quick-access.
+ *
+ * Floating dock on the visual-left edge of the viewport. Reads the
+ * existing reading-page bookmark store (`yuval_bookmarks_<slug>`)
+ * directly — no new storage shape, no new pipeline.
+ *
+ * UI:
+ *   - Compact icon button with a count badge.
+ *   - Click → opens a small panel listing each bookmark with its
+ *     localized chapter title and a short preview of the saved
+ *     paragraph text. Each row navigates to /read/<slug>/<chapterId>.
+ *
+ * The component renders nothing on the server beyond an empty shell;
+ * a scoped script hydrates the list from localStorage and re-runs on
+ * navigation, language toggles, and storage events from other tabs.
+ *
+ * Generic for every book — no slug, no language, no content hardcoded.
+ */
+
+import type { Chapter, Language } from '../../types/index';
+import { t } from '../../i18n';
+
+interface Props {
+  chapters: Chapter[];
+  slug: string;
+  language: Language;
+}
+
+const { chapters, slug, language } = Astro.props;
+
+// Strip down to what the client script needs (id + titles). Keeps the
+// inline JSON small even on long books.
+const chaptersData = JSON.stringify(
+  chapters.map((c) => ({ id: c.id, titles: c.titles })),
+);
+---
+
+<aside
+  class="bobm"
+  data-book-slug={slug}
+  data-chapters={chaptersData}
+  aria-label={t('bookmarks.title', language)}
+>
+  <button
+    type="button"
+    class="bobm-trigger"
+    aria-label={t('bookmarks.title', language)}
+    aria-expanded="false"
+    aria-controls="bobm-panel"
+    data-bobm-toggle
+    data-i18n-aria-label="bookmarks.title"
+  >
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+      <path
+        d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"
+        stroke-width="1.8"
+        stroke-linejoin="round"
+      />
+    </svg>
+    <span class="bobm-count" data-bobm-count hidden>0</span>
+  </button>
+
+  <div id="bobm-panel" class="bobm-panel" data-bobm-panel hidden>
+    <header class="bobm-panel-header">
+      <h3 class="bobm-panel-title" data-i18n="bookmarks.title">
+        {t('bookmarks.title', language)}
+      </h3>
+    </header>
+
+    <ul class="bobm-list" data-bobm-list></ul>
+
+    <p class="bobm-empty" data-bobm-empty data-i18n="bookmarks.empty" hidden>
+      {t('bookmarks.empty', language)}
+    </p>
+  </div>
+</aside>
+
+<script>
+  // Read bookmarks from the reading-page store and render the list.
+  // Storage key shape (set by src/scripts/bookmarks.ts):
+  //   yuval_bookmarks_<slug>  =>  Bookmark[]
+  // Bookmark fields used here:
+  //   - id
+  //   - chapterId
+  //   - chapterTitles  (Record<lang, title>)
+  //   - text
+  //   - timestamp
+  import { t, resolveLanguage } from '../../i18n';
+
+  type BookmarkEntry = {
+    id: string;
+    chapterId: string | number;
+    chapterTitles?: Record<string, string>;
+    text?: string;
+    timestamp?: number;
+  };
+
+  type ChapterEntry = { id: string | number; titles: Record<string, string> };
+
+  function pickLocalized(
+    titles: Record<string, string> | undefined,
+    lang: string,
+    fallback: string = '',
+  ): string {
+    if (!titles) return fallback;
+    return (
+      titles[lang] ||
+      titles['he'] ||
+      Object.values(titles).find(Boolean) ||
+      fallback
+    );
+  }
+
+  function readBookmarks(slug: string): BookmarkEntry[] {
+    try {
+      const raw = localStorage.getItem(`yuval_bookmarks_${slug}`);
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+
+  function truncate(text: string | undefined, max: number): string {
+    if (!text) return '';
+    const trimmed = text.trim();
+    if (trimmed.length <= max) return trimmed;
+    return trimmed.slice(0, max - 1).trimEnd() + '…';
+  }
+
+  function render(): void {
+    const root = document.querySelector<HTMLElement>('.bobm[data-book-slug]');
+    if (!root) return;
+
+    const slug = root.dataset.bookSlug;
+    const rawChapters = root.dataset.chapters;
+    if (!slug || !rawChapters) return;
+
+    let chapters: ChapterEntry[] = [];
+    try {
+      chapters = JSON.parse(rawChapters);
+    } catch {
+      return;
+    }
+
+    const lang = resolveLanguage(document.documentElement.lang);
+    const bookmarks = readBookmarks(slug);
+
+    // Sort newest first — the typical "what was I just reading" mental model.
+    bookmarks.sort((a, b) => (b.timestamp ?? 0) - (a.timestamp ?? 0));
+
+    const count = bookmarks.length;
+    const trigger = root.querySelector<HTMLButtonElement>('[data-bobm-toggle]');
+    const countEl = root.querySelector<HTMLElement>('[data-bobm-count]');
+    const list = root.querySelector<HTMLUListElement>('[data-bobm-list]');
+    const emptyEl = root.querySelector<HTMLElement>('[data-bobm-empty]');
+
+    if (countEl) {
+      if (count > 0) {
+        countEl.textContent = String(count);
+        countEl.hidden = false;
+      } else {
+        countEl.hidden = true;
+      }
+    }
+
+    if (trigger) {
+      trigger.dataset.bookmarkState = count > 0 ? 'has' : 'empty';
+    }
+
+    if (!list || !emptyEl) return;
+
+    list.replaceChildren();
+
+    if (count === 0) {
+      emptyEl.hidden = false;
+      return;
+    }
+    emptyEl.hidden = true;
+
+    // Build a quick chapter lookup so we can localize the chapter title
+    // even if the bookmark itself was saved before the user added more
+    // languages.
+    const chaptersById = new Map<string, ChapterEntry>();
+    for (const c of chapters) chaptersById.set(String(c.id), c);
+
+    for (const bm of bookmarks) {
+      const chId = String(bm.chapterId);
+      const fromChapters = chaptersById.get(chId);
+      const chapterTitle =
+        pickLocalized(bm.chapterTitles, lang) ||
+        pickLocalized(fromChapters?.titles, lang) ||
+        '';
+
+      const item = document.createElement('li');
+      item.className = 'bobm-item';
+
+      const link = document.createElement('a');
+      link.className = 'bobm-link';
+      link.href = `/read/${slug}/${bm.chapterId}`;
+
+      const titleEl = document.createElement('span');
+      titleEl.className = 'bobm-item-title';
+      titleEl.textContent = chapterTitle;
+
+      const previewEl = document.createElement('span');
+      previewEl.className = 'bobm-item-preview';
+      previewEl.textContent = truncate(bm.text, 90);
+
+      link.append(titleEl, previewEl);
+      item.appendChild(link);
+      list.appendChild(item);
+    }
+  }
+
+  function bindToggle(): void {
+    const root = document.querySelector<HTMLElement>('.bobm[data-book-slug]');
+    if (!root || root.dataset.bound === '1') return;
+    root.dataset.bound = '1';
+
+    const trigger = root.querySelector<HTMLButtonElement>('[data-bobm-toggle]');
+    const panel = root.querySelector<HTMLElement>('[data-bobm-panel]');
+    if (!trigger || !panel) return;
+
+    function setOpen(open: boolean): void {
+      panel!.hidden = !open;
+      trigger!.setAttribute('aria-expanded', open ? 'true' : 'false');
+      root!.dataset.open = open ? 'true' : 'false';
+    }
+
+    trigger.addEventListener('click', () => {
+      const isOpen = trigger.getAttribute('aria-expanded') === 'true';
+      setOpen(!isOpen);
+    });
+
+    // Close on outside click + Escape.
+    document.addEventListener('click', (e) => {
+      if (panel.hidden) return;
+      if (root!.contains(e.target as Node)) return;
+      setOpen(false);
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !panel.hidden) {
+        setOpen(false);
+        trigger.focus();
+      }
+    });
+  }
+
+  function boot(): void {
+    bindToggle();
+    render();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot, { once: true });
+  } else {
+    boot();
+  }
+
+  document.addEventListener('astro:after-swap', boot);
+  window.addEventListener('language-changed', render);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') render();
+  });
+  window.addEventListener('pageshow', render);
+
+  // React to bookmark changes from the reading page (cross-tab + same-tab).
+  window.addEventListener('storage', (e) => {
+    if (e.key && e.key.startsWith('yuval_bookmarks_')) render();
+  });
+  window.addEventListener('yuval-bookmarks-changed', render);
+</script>
+
+<style>
+  /* ── Floating dock on the visual LEFT of the viewport ──────────
+     Physical `left:` is intentional here — the user wants this on
+     the visual left in both RTL and LTR pages, which logical
+     properties can't express directly. */
+  .bobm {
+    position: fixed;
+    top: 50%;
+    left: 1rem;
+    transform: translateY(-50%);
+    z-index: 60;
+  }
+  @media (max-width: 640px) {
+    .bobm {
+      top: auto;
+      bottom: 1rem;
+      transform: none;
+    }
+  }
+
+  /* ── Trigger — small dark glass icon button ───────────────────── */
+  .bobm-trigger {
+    position: relative;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border-radius: 10px;
+    background: var(--bo-surface);
+    border: 1px solid var(--bo-border);
+    color: var(--bo-text-muted);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+    transition: color 160ms ease, border-color 160ms ease, background-color 160ms ease;
+  }
+  .bobm-trigger:hover {
+    color: var(--bo-text-primary);
+    border-color: var(--bo-cyan);
+  }
+  .bobm-trigger:focus-visible {
+    outline: 2px solid var(--bo-focus-ring);
+    outline-offset: 2px;
+  }
+  .bobm-trigger svg {
+    width: 18px;
+    height: 18px;
+  }
+  .bobm-trigger[data-bookmark-state='has'] {
+    color: var(--bo-cyan);
+    border-color: var(--bo-border-strong);
+  }
+  .bobm[data-open='true'] .bobm-trigger {
+    color: var(--bo-text-primary);
+    border-color: var(--bo-cyan);
+    background: var(--bo-surface-elevated);
+  }
+
+  /* Count badge — sits at the top-end of the trigger so it doesn't
+     fight the icon body. Cyan instead of red so it reads as "saved",
+     not as a notification/alert. */
+  .bobm-count {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: var(--bo-cyan);
+    color: #001019;
+    font-size: 0.7rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 0 2px var(--bo-bg);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ── Panel — opens to the visual right of the trigger ────────── */
+  .bobm-panel {
+    position: absolute;
+    top: 0;
+    left: calc(100% + 0.5rem);
+    width: min(20rem, calc(100vw - 5rem));
+    max-height: 60vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    background: var(--bo-surface);
+    border: 1px solid var(--bo-border);
+    border-radius: 12px;
+    box-shadow: 0 18px 48px rgba(0, 0, 0, 0.45);
+    color: var(--bo-text-primary);
+  }
+  .bobm-panel[hidden] { display: none; }
+  @media (max-width: 640px) {
+    .bobm-panel {
+      top: auto;
+      bottom: calc(100% + 0.5rem);
+      left: 0;
+      right: auto;
+    }
+  }
+
+  .bobm-panel-header {
+    padding: 0.75rem 1rem;
+    border-block-end: 1px solid var(--bo-border);
+  }
+  .bobm-panel-title {
+    margin: 0;
+    font-family: 'Assistant', system-ui, sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--bo-text-primary);
+  }
+
+  .bobm-list {
+    list-style: none;
+    margin: 0;
+    padding: 0.4rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  .bobm-item { margin: 0; }
+
+  .bobm-link {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    padding: 0.55rem 0.7rem;
+    border-radius: 8px;
+    text-decoration: none;
+    color: inherit;
+    transition: background-color 160ms ease;
+  }
+  .bobm-link:hover {
+    background: var(--bo-surface-elevated);
+  }
+  .bobm-link:focus-visible {
+    outline: 2px solid var(--bo-focus-ring);
+    outline-offset: 2px;
+  }
+  .bobm-item-title {
+    font-family: 'Assistant', system-ui, sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--bo-text-primary);
+    line-height: 1.3;
+  }
+  .bobm-item-preview {
+    font-size: 0.78rem;
+    line-height: 1.4;
+    color: var(--bo-text-muted);
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+
+  .bobm-empty {
+    margin: 0;
+    padding: 1rem;
+    text-align: center;
+    font-size: 0.85rem;
+    font-style: italic;
+    color: var(--bo-text-muted);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .bobm-trigger,
+    .bobm-link {
+      transition: none;
+    }
+  }
+</style>

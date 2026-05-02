@@ -97,7 +97,6 @@ export const translations: Translations = {
   // Book Overview — hero card CTAs and meta.
   'book.startLearning':    { he: 'התחל ללמוד',     en: 'Start learning',    es: 'Empezar a aprender' },
   'book.continueLearning': { he: 'המשך לימוד',     en: 'Continue learning', es: 'Continuar aprendiendo' },
-  'book.viewChapters':     { he: 'צפה בפרקים',     en: 'View chapters',     es: 'Ver capítulos' },
   'book.minutesRead':      { he: '{{n}} דקות קריאה', en: '{{n}} min read',  es: '{{n}} min de lectura' },
   'book.availableIn':      { he: 'זמין ב',          en: 'Available in',     es: 'Disponible en' },
   'book.bookmark':         { he: 'סמן ספר',         en: 'Bookmark book',    es: 'Marcar libro' },
