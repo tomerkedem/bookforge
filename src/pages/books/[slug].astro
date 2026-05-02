@@ -4,6 +4,7 @@ import Breadcrumbs from '../../components/Breadcrumbs.astro';
 import BookOverviewHero from '../../components/book-overview/BookOverviewHero.astro';
 import BookOverviewProgress from '../../components/book-overview/BookOverviewProgress.astro';
 import BookOverviewSummary from '../../components/book-overview/BookOverviewSummary.astro';
+import BookOverviewLearn from '../../components/book-overview/BookOverviewLearn.astro';
 import BookOverviewChapters from '../../components/book-overview/BookOverviewChapters.astro';
 import { getLocalizedText } from '../../components/book-overview/utils';
 import type { Language } from '../../types/index';
@@ -175,6 +176,13 @@ const description = getLocalizedText(book.descriptions, language);
               language={language}
             />
           </div>
+
+          <div class="mt-6 sm:mt-8">
+            <BookOverviewLearn
+              chapters={book.chapters}
+              language={language}
+            />
+          </div>
         </div>
       </div>
     </div>
@@ -227,19 +235,29 @@ const description = getLocalizedText(book.descriptions, language);
   }
 
   function updateChapterProgress() {
-    document.querySelectorAll<HTMLAnchorElement>('.chapter-link[data-chapter-id][data-book-slug]').forEach(link => {
+    // Two-pass: first collect (link, pct, lastUpdated) for every chapter
+    // card, then promote the most-recently-updated unfinished chapter
+    // to `current` so the list shows a single highlighted "you are here"
+    // even when several chapters have partial progress.
+    const cards = document.querySelectorAll<HTMLElement>('.chapter-link[data-chapter-id][data-book-slug]');
+
+    type Entry = { card: HTMLElement; pct: number; lastUpdated: number };
+    const entries: Entry[] = [];
+
+    cards.forEach(link => {
       const chapterId = link.dataset.chapterId;
       const bookSlug = link.dataset.bookSlug;
       if (!chapterId || !bookSlug) return;
 
       // Reading progress is saved by src/scripts/progress-tracker.ts under
-      // the key `yuval_reading_progress_{slug}_ch{chapterId}`. It stores the
-      // real `percentage` (0–100) computed against the chapter container
-      // height, plus the raw scrollPosition as a fallback for old entries
-      // saved before the percentage field existed.
+      // the key `yuval_reading_progress_{slug}_ch{chapterId}`. It stores
+      // the real `percentage` (0–100) plus a `scrollPosition` fallback
+      // for entries saved before percentage existed, and `lastUpdated`
+      // we use to pick a single "current" chapter below.
       const keyFragment = `reading_progress_${bookSlug}_ch${chapterId}`;
       let pct = 0;
       let scrollY = 0;
+      let lastUpdated = 0;
 
       for (let i = 0; i < localStorage.length; i++) {
         const k = localStorage.key(i);
@@ -252,34 +270,55 @@ const description = getLocalizedText(book.descriptions, language);
             if (typeof d.scrollPosition === 'number' && d.scrollPosition > scrollY) {
               scrollY = d.scrollPosition;
             }
+            if (typeof d.lastUpdated === 'number' && d.lastUpdated > lastUpdated) {
+              lastUpdated = d.lastUpdated;
+            }
           } catch {}
         }
       }
 
-      // If we don't have a stored percentage yet (old entry), estimate from
-      // scroll pixels as a rough fallback.
+      // Old entry without `percentage` — estimate from scroll pixels.
       if (pct === 0 && scrollY > 200) {
         pct = Math.min(95, Math.round((scrollY / 3000) * 100));
       }
 
-      const fill = link.querySelector<HTMLElement>('.chapter-progress-fill');
-      const check = link.querySelector<HTMLElement>('.chapter-status-check');
+      entries.push({ card: link, pct, lastUpdated });
+    });
+
+    // Pick the single "current" chapter: most-recently updated among
+    // those with progress but not yet completed. If everything is
+    // either untouched or completed, no card gets the `current` flag.
+    let currentCard: HTMLElement | null = null;
+    let currentBest = -Infinity;
+    for (const e of entries) {
+      if (e.pct > 0 && e.pct < 85 && e.lastUpdated > currentBest) {
+        currentBest = e.lastUpdated;
+        currentCard = e.card;
+      }
+    }
+
+    for (const { card, pct } of entries) {
+      const fill = card.querySelector<HTMLElement>('.chapter-progress-fill');
+      const check = card.querySelector<HTMLElement>('.chapter-status-check');
 
       if (pct > 0) {
         if (fill) fill.style.width = `${pct}%`;
         if (pct >= 85) {
-          link.dataset.readStatus = 'completed';
+          card.dataset.readStatus = 'completed';
           check?.classList.remove('hidden');
+        } else if (card === currentCard) {
+          card.dataset.readStatus = 'current';
+          check?.classList.add('hidden');
         } else {
-          link.dataset.readStatus = 'in-progress';
+          card.dataset.readStatus = 'in-progress';
           check?.classList.add('hidden');
         }
       } else {
         if (fill) fill.style.width = '0%';
-        delete link.dataset.readStatus;
+        delete card.dataset.readStatus;
         check?.classList.add('hidden');
       }
-    });
+    }
   }
 
   updateChapterLinks();

@@ -108,6 +108,10 @@ export const translations: Translations = {
   'bookOverview.notStarted':        { he: 'טרם התחלת',                        en: 'Not started yet',                        es: 'Aún no empezado' },
   'bookOverview.chaptersCompleted': { he: '{{n}} מתוך {{total}} פרקים הושלמו', en: '{{n}} of {{total}} chapters completed', es: '{{n}} de {{total}} capítulos completados' },
   'bookOverview.currentChapter':    { he: 'הפרק הנוכחי',                       en: 'Current chapter',                        es: 'Capítulo actual' },
+  'bookOverview.showAllChapters':   { he: 'הצג את כל הפרקים',                  en: 'Show all chapters',                       es: 'Mostrar todos los capítulos' },
+  'bookOverview.showFewerChapters': { he: 'הצג פחות פרקים',                    en: 'Show fewer chapters',                     es: 'Mostrar menos capítulos' },
+  'bookOverview.locked':            { he: 'פרק נעול',                           en: 'Chapter locked',                          es: 'Capítulo bloqueado' },
+  'bookOverview.whatYouWillLearn':  { he: 'מה תלמדו',                            en: 'What you will learn',                     es: 'Lo que aprenderás' },
 
   // ── Courses (learning) section ──────────────────────────────────────────────
   'courses.title':         { he: 'למידה מקורסים',    en: 'Learning from Courses', es: 'Aprendizaje de cursos' },

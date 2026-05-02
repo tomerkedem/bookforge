@@ -189,6 +189,11 @@ export interface Chapter {
   has_images: boolean;
   word_count: number;
   topics: string[];
+  /**
+   * Optional gate. When true, the chapter is shown dimmed in lists and
+   * cannot be opened. Books that don't gate content can omit the field.
+   */
+  locked?: boolean;
 }
 
 // Application Types

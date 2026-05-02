@@ -1,0 +1,154 @@
+---
+/**
+ * Book Overview — "What you will learn" list.
+ *
+ * Two-tier source of truth:
+ *   1. If any chapter declares non-empty `topics`, those are the
+ *      authored learning outcomes. Use up to MAX_ITEMS, in source order.
+ *   2. Otherwise derive a short list from chapter titles, skipping
+ *      `intro` / `cover` chapters since they're not learning outcomes.
+ *
+ * The component renders nothing when neither source yields any items
+ * (e.g. an empty book), so adding it to a page is safe regardless of
+ * whether a particular pipeline run produced topics yet.
+ *
+ * Generic for every book — no slug, no language, no topic strings are
+ * hardcoded. Topic strings come from the manifest as plain text in
+ * whatever language the pipeline wrote them in; chapter-title fallback
+ * is fully localized through getLocalizedText.
+ */
+
+import type { Chapter, Language } from '../../types/index';
+import { t } from '../../i18n';
+import { getLocalizedText } from './utils';
+
+interface Props {
+  chapters: Chapter[];
+  language: Language;
+}
+
+const { chapters, language } = Astro.props;
+
+const MAX_ITEMS = 6;
+
+// Authored topics win when present.
+const authoredTopics = chapters
+  .flatMap((ch) => (Array.isArray(ch.topics) ? ch.topics : []))
+  .map((s) => (typeof s === 'string' ? s.trim() : ''))
+  .filter(Boolean);
+
+let items: string[];
+let derived: boolean;
+
+if (authoredTopics.length > 0) {
+  items = authoredTopics.slice(0, MAX_ITEMS);
+  derived = false;
+} else {
+  // Fallback: chapter titles, minus intro/cover scaffolding.
+  items = chapters
+    .filter((ch) => ch.type !== 'intro' && ch.type !== 'cover')
+    .slice(0, MAX_ITEMS)
+    .map((ch) => getLocalizedText(ch.titles, language))
+    .filter(Boolean);
+  derived = true;
+}
+
+const shouldRender = items.length > 0;
+---
+
+{shouldRender && (
+  <section class="bol" aria-labelledby="bol-title" data-derived={derived ? 'true' : undefined}>
+    <h2 id="bol-title" class="bol-heading" data-i18n="bookOverview.whatYouWillLearn">
+      {t('bookOverview.whatYouWillLearn', language)}
+    </h2>
+
+    <ul class="bol-list" role="list">
+      {items.map((item) => (
+        <li class="bol-item">
+          <svg class="bol-bullet" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+            <circle cx="12" cy="12" r="10" stroke-width="1.6" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12.5l2.5 2.5L16 9.5" />
+          </svg>
+          <span class="bol-text">{item}</span>
+        </li>
+      ))}
+    </ul>
+  </section>
+)}
+
+<style>
+  .bol {
+    margin-block-start: 0;
+  }
+
+  /* Heading — same family/size as the summary heading so the two
+     sit at the same hierarchy level. */
+  .bol-heading {
+    margin: 0 0 0.65rem 0;
+    font-family: 'Spectral', 'Frank Ruhl Libre', ui-serif, Georgia, serif;
+    font-weight: 600;
+    font-size: 1.05rem;
+    letter-spacing: 0.01em;
+    color: rgba(245, 239, 225, 0.92);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+  .bol-heading::after {
+    content: '';
+    display: block;
+    inline-size: 2.5rem;
+    block-size: 1px;
+    background: linear-gradient(to inline-end, rgba(232, 197, 71, 0.6), transparent);
+  }
+  :root:not(.dark) .bol-heading {
+    color: #2c2418;
+  }
+  :root:not(.dark) .bol-heading::after {
+    background: linear-gradient(to inline-end, rgba(184, 146, 63, 0.6), transparent);
+  }
+
+  .bol-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.5rem 1rem;
+  }
+  /* Two columns once the card has the room. The cap keeps individual
+     items from stretching wide enough to look like paragraphs. */
+  @media (min-width: 640px) {
+    .bol-list {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  .bol-item {
+    display: grid;
+    grid-template-columns: 1.1rem 1fr;
+    align-items: start;
+    gap: 0.5rem;
+    font-size: 0.95rem;
+    line-height: 1.45;
+    color: rgba(245, 239, 225, 0.82);
+  }
+  :root:not(.dark) .bol-item {
+    color: rgba(44, 36, 24, 0.82);
+  }
+
+  .bol-bullet {
+    inline-size: 1.1rem;
+    block-size: 1.1rem;
+    margin-block-start: 0.15rem;
+    flex-shrink: 0;
+    color: rgba(232, 197, 71, 0.85);
+  }
+  :root:not(.dark) .bol-bullet {
+    color: rgba(184, 146, 63, 0.95);
+  }
+
+  .bol-text {
+    min-inline-size: 0;
+  }
+</style>
