@@ -303,17 +303,13 @@
 
   /* Menu item default state — dark text/icon on cream. */
   :global(:root:not(.dark)) .reading-left-dock__item {
-    /* Tile silhouette — a half-step deeper warm cream than the
-       parchment shell (#F3EEE0), so each icon sits on a visible
-       "stage" instead of dissolving into the dock's bg. Combined
-       with a gold hairline border, this gives every tool a clear
-       silhouette without resorting to saturated colored tiles. */
-    background: rgba(184, 146, 63, 0.07);
-    border-color: rgba(184, 146, 63, 0.22);
+    /* Tile fill — matches the light chapter header
+       (linear-gradient #faf8f5 → #f5f3f0). No border line; the tile
+       silhouette comes from the fill alone. */
+    background: linear-gradient(to bottom, #faf8f5, #f5f3f0);
+    border-color: transparent;
     color: rgba(60, 50, 70, 0.78);
-    /* Inset highlight on the top edge — same "polished metal" idiom
-       the dock frame uses, scaled down for tile-sized chrome. */
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
+    box-shadow: none;
   }
 
   /* Slight saturation + contrast bump on the colored PNG icons so
@@ -505,8 +501,12 @@
     align-items: center;
     justify-content: center;
     gap: 0;
-    background: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.045);
+    /* Tile fill — same charcoal as the chapter header, so each button
+       reads as an extension of the header chrome instead of a tile
+       sitting on the dock. No visible border line; the rounded shape
+       is defined purely by the fill on the dock's darker surface. */
+    background: #0d0d0d;
+    border: 0;
     border-radius: 16px;
     color: rgba(230, 235, 255, 0.78);
     cursor: pointer;
