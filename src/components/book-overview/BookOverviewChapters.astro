@@ -30,15 +30,30 @@ interface Props {
   slug: string;
   language: Language;
   isRtl: boolean;
+  /**
+   * "full"          — default reading-page timeline (collapsible after 6).
+   * "compact-full"  — Book Overview viewport-fit mode: shows ALL chapters
+   *                   in a tighter rhythm so nothing is hidden behind a
+   *                   "show all" toggle. Same design language, smaller
+   *                   row padding and fonts.
+   */
+  variant?: 'full' | 'compact-full';
 }
 
-const { chapters, slug, language, isRtl } = Astro.props;
+const { chapters, slug, language, isRtl, variant = 'full' } = Astro.props;
 
+const isCompactFull = variant === 'compact-full';
 const COLLAPSED_LIMIT = 6;
-const collapsible = chapters.length > COLLAPSED_LIMIT;
+// In compact-full we deliberately render every chapter — the whole point
+// of the mode is "no hidden tail behind a toggle".
+const collapsible = !isCompactFull && chapters.length > COLLAPSED_LIMIT;
 ---
 
-<section class:list={['boch', isRtl && 'is-rtl']} aria-labelledby="boch-title">
+<section
+  class:list={['boch', isRtl && 'is-rtl', isCompactFull && 'is-compact-full']}
+  data-variant={variant}
+  aria-labelledby="boch-title"
+>
   <div class="boch-card bo-premium-surface">
     <header class="boch-heading-row">
       <span class="boch-heading-icon" aria-hidden="true">
@@ -520,4 +535,207 @@ const collapsible = chapters.length > COLLAPSED_LIMIT;
       transition: none;
     }
   }
+
+  /* ════════════════════════════════════════════════════════════════
+     COMPACT-FULL VARIANT — Book Overview only.
+     Same timeline language, tighter rhythm so the entire chapter list
+     lives inside the viewport without an internal scrollbar and without
+     a "show all" tail. Tokens are pinned to the spec — no gold, no
+     warm tones, no neon glow.
+     ════════════════════════════════════════════════════════════════ */
+  .boch.is-compact-full {
+    /* Sticky stays on; the card is the height-bound element. */
+  }
+
+  .boch.is-compact-full .boch-card {
+    padding: 12px 14px;
+    max-block-size: calc(100vh - 220px);
+    /* No internal scroll inside the card (per spec). */
+    overflow: visible;
+    display: flex;
+    flex-direction: column;
+    /* Secondary navigation: softer surface and lighter border, no
+       elevation shadow. Summary is the focal element on this page —
+       the timeline supports it rather than competing with it. */
+    background: rgba(15, 23, 42, 0.4);
+    border-color: rgba(148, 163, 184, 0.12);
+    box-shadow: none;
+    opacity: 0.94;
+    transition: opacity 200ms ease;
+  }
+  .boch.is-compact-full .boch-card:hover,
+  .boch.is-compact-full .boch-card:focus-within {
+    opacity: 1;
+  }
+  @media (min-width: 640px) {
+    .boch.is-compact-full .boch-card {
+      padding: 12px 14px;
+    }
+  }
+
+  .boch.is-compact-full .boch-heading-row {
+    margin: 0 0 0.6rem 0;
+    gap: 0.5rem;
+  }
+  .boch.is-compact-full .boch-heading-icon {
+    inline-size: 1.65rem;
+    block-size: 1.65rem;
+  }
+  .boch.is-compact-full .boch-heading-icon svg {
+    inline-size: 0.9rem;
+    block-size: 0.9rem;
+  }
+  .boch.is-compact-full .boch-heading {
+    font-size: 0.95rem;
+  }
+
+  .boch.is-compact-full .boch-list {
+    /* Rows get spaced via the gap (per spec) — the timeline line is
+       redrawn so it bridges the gap cleanly. */
+    gap: 6px;
+    /* Override the default's max-block-size + scroll on lg breakpoints. */
+    max-block-size: none;
+    overflow: visible;
+    padding-inline-end: 0;
+  }
+  @media (min-width: 1024px) {
+    .boch.is-compact-full .boch-list {
+      max-block-size: none;
+      overflow: visible;
+      padding-inline-end: 0;
+    }
+  }
+
+  /* Timeline line — desaturated slate per spec. Extends past the row
+     into the gap so adjacent dots stay visually connected. */
+  .boch.is-compact-full .boch-item::before {
+    background: rgba(148, 163, 184, 0.10);
+    /* Bridge the 6px gap above this row so the line is continuous. */
+    inset-block-start: -6px;
+  }
+  .boch.is-compact-full .boch-item:first-child::before {
+    inset-block-start: 50%;
+  }
+  .boch.is-compact-full .boch-item:last-child::before {
+    inset-block-end: 50%;
+  }
+
+  /* ── Row — compact rhythm ─────────────────────────────────────── */
+  .boch.is-compact-full .boch-row {
+    /* Dot column matches new node size (~30px); rest is title. */
+    grid-template-columns: 30px minmax(0, 1fr);
+    gap: 0.6rem;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border-color: transparent;
+  }
+  .boch.is-compact-full .boch-row:hover {
+    background: rgba(59, 130, 246, 0.08);
+    border-color: transparent;
+  }
+
+  /* ── Node (circle) — default ─────────────────────────────────── */
+  .boch.is-compact-full .boch-dot {
+    inline-size: 30px;
+    block-size: 30px;
+    background: transparent;
+    border: 1px solid rgba(148, 163, 184, 0.22);
+    color: var(--bo-text-muted);
+  }
+
+  .boch.is-compact-full .boch-content {
+    gap: 0.45rem;
+  }
+  .boch.is-compact-full .boch-num {
+    font-size: 0.72rem;
+    color: var(--bo-text-muted);
+  }
+  .boch.is-compact-full .boch-title {
+    font-size: clamp(0.82rem, 0.9vw, 0.95rem);
+    line-height: 1.35;
+    -webkit-line-clamp: 1;
+  }
+
+  /* ── Status: CURRENT — calm purple, no neon ──────────────────── */
+  .boch.is-compact-full .boch-row[data-read-status='current'] {
+    background: linear-gradient(
+      135deg,
+      rgba(124, 58, 237, 0.14),
+      rgba(59, 130, 246, 0.10)
+    );
+    border: 1px solid rgba(124, 58, 237, 0.35);
+    border-radius: 12px;
+  }
+  .boch.is-compact-full .boch-row[data-read-status='current'] .boch-dot {
+    background: rgba(124, 58, 237, 0.12);
+    border-color: rgba(124, 58, 237, 0.45);
+    color: var(--bo-text-primary);
+    /* Reduced halo — chapters are secondary on the BO page, so the
+       active row stays identifiable without pulling focus from
+       the Summary. */
+    box-shadow:
+      0 0 0 1px rgba(124, 58, 237, 0.28),
+      0 3px 10px rgba(124, 58, 237, 0.10);
+  }
+  .boch.is-compact-full .boch-row[data-read-status='current'] .boch-dot::after {
+    border-inline-start-color: var(--bo-violet);
+  }
+
+  /* ── Status: COMPLETED — green per spec (NOT cyan) ───────────── */
+  .boch.is-compact-full .boch-row[data-read-status='completed'] {
+    opacity: 0.8;
+  }
+  .boch.is-compact-full .boch-row[data-read-status='completed']:hover {
+    opacity: 1;
+  }
+  .boch.is-compact-full .boch-row[data-read-status='completed'] .boch-dot {
+    background: rgba(34, 197, 94, 0.12);
+    border-color: rgba(34, 197, 94, 0.45);
+    color: #22c55e;
+  }
+  .boch.is-compact-full .boch-row[data-read-status='completed'] .boch-dot-check {
+    color: #22c55e;
+  }
+
+  /* In-progress kept consistent with rest of variant — soft, no glow. */
+  .boch.is-compact-full .boch-row[data-read-status='in-progress'] .boch-dot {
+    border-color: rgba(124, 58, 237, 0.35);
+    color: var(--bo-violet);
+  }
+
+  /* ── Status: LOCKED — quiet, per spec ────────────────────────── */
+  .boch.is-compact-full .boch-row[data-locked='true'] {
+    opacity: 0.55;
+    filter: none;
+  }
+  .boch.is-compact-full .boch-row[data-locked='true']:hover {
+    opacity: 0.6;
+    background: transparent;
+  }
+  .boch.is-compact-full .boch-row[data-locked='true'] .boch-dot {
+    background: rgba(148, 163, 184, 0.05);
+    border-color: rgba(148, 163, 184, 0.2);
+    color: var(--bo-text-muted);
+  }
+  .boch.is-compact-full .boch-row[data-locked='true'] .boch-dot-lock {
+    color: var(--bo-text-muted);
+  }
+
+  /* ── Bottom action — text link, no pill ──────────────────────── */
+  .boch.is-compact-full .boch-toggle {
+    margin-block-start: 0.5rem;
+    color: var(--bo-cyan);
+    background: transparent;
+    border: 0;
+    padding: 0;
+    text-decoration: none;
+  }
+  .boch.is-compact-full .boch-toggle:hover {
+    color: #67e8f9;
+    text-decoration: underline;
+    border-block-end-color: transparent;
+  }
+
+  /* Hide title clamp at very narrow widths — we still want all rows
+     visible; truncation handles overflow without growing the row. */
 </style>

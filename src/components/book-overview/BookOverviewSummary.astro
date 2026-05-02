@@ -144,15 +144,44 @@ const truncatable = description.length > TRUNCATE_THRESHOLD;
 
 <style>
   /* Surface (background, border, shadow, grain) comes from
-     `.bo-premium-surface` in theme.css. Only layout bits here. */
+     `.bo-premium-surface` in theme.css. The Summary is the page's
+     primary focus — generous padding, soft purple/blue ambient glow
+     behind the card, and stronger shadow give it visible weight over
+     the compact Hero above and the timeline at the side. */
+  .bos {
+    position: relative;
+  }
+  .bos::before {
+    content: '';
+    position: absolute;
+    inset: -2.5rem;
+    z-index: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(60% 55% at 30% 20%, rgba(124, 58, 237, 0.18), transparent 70%),
+      radial-gradient(55% 50% at 75% 85%, rgba(59, 130, 246, 0.16), transparent 72%);
+    filter: blur(14px);
+    opacity: 0.9;
+  }
   .bos-card {
-    border-radius: 14px;
-    padding: 1.25rem 1.5rem;
+    position: relative;
+    z-index: 1;
+    border-radius: 18px;
+    padding: 1.75rem 1.85rem;
     color: var(--bo-text-primary);
+    box-shadow:
+      0 24px 60px -22px rgba(2, 6, 23, 0.7),
+      0 0 0 1px var(--bo-border-strong),
+      inset 0 1px 0 rgba(255, 255, 255, 0.04);
   }
   @media (min-width: 640px) {
     .bos-card {
-      padding: 1.5rem 1.75rem;
+      padding: 2.25rem 2.5rem;
+    }
+  }
+  @media (min-width: 1024px) {
+    .bos-card {
+      padding: 2.5rem 3rem;
     }
   }
 
@@ -191,9 +220,14 @@ const truncatable = description.length > TRUNCATE_THRESHOLD;
     margin: 0;
     font-family: 'Assistant', system-ui, sans-serif;
     font-weight: 600;
-    font-size: 1.1rem;
+    font-size: 1.35rem;
     letter-spacing: 0.01em;
     color: var(--bo-text-primary);
+  }
+  @media (min-width: 1024px) {
+    .bos-heading {
+      font-size: 1.5rem;
+    }
   }
 
   /* ── TTS control ─────────────────────────────────────────────────
@@ -271,19 +305,27 @@ const truncatable = description.length > TRUNCATE_THRESHOLD;
 
   /* ── Body content ─────────────────────────────────────────────
      Reader-grade rhythm: line-height 1.85, generous paragraph gaps,
-     comfortable measure. Color comes from the card-level base so
+     comfortable measure. The max-width caps the line length around
+     the editorial sweet spot so paragraphs stay readable even when the
+     card itself is wide. Color comes from the card-level base so
      individual paragraphs don't need to repeat it. */
   .bos-content {
     color: var(--bo-text-secondary);
+    max-inline-size: 68ch;
   }
   .bos-para {
     margin: 0;
-    font-size: 1rem;
+    font-size: 1.075rem;
     line-height: 1.85;
     letter-spacing: 0.005em;
   }
+  @media (min-width: 1024px) {
+    .bos-para {
+      font-size: 1.125rem;
+    }
+  }
   .bos-para + .bos-para {
-    margin-block-start: 0.85rem;
+    margin-block-start: 1rem;
   }
   /* Inline elements rendered by renderInlineMarkdown — keep them on
      the same color family so emphasis reads as a tone shift, not a
@@ -307,12 +349,13 @@ const truncatable = description.length > TRUNCATE_THRESHOLD;
   }
 
   /* Collapsed state. The fade mask keeps the lower edge soft so it
-     reads as "more below" rather than a hard cut. */
+     reads as "more below" rather than a hard cut. Cap is generous —
+     Summary is the page's primary content, so we let it breathe. */
   .bos-content[data-truncatable='true'][data-collapsed='true'] {
-    max-block-size: 14em;
+    max-block-size: 22em;
     overflow: hidden;
-    -webkit-mask-image: linear-gradient(180deg, #000 60%, transparent 100%);
-    mask-image: linear-gradient(180deg, #000 60%, transparent 100%);
+    -webkit-mask-image: linear-gradient(180deg, #000 70%, transparent 100%);
+    mask-image: linear-gradient(180deg, #000 70%, transparent 100%);
   }
   .bos-content[data-truncatable='true'][data-collapsed='false'] {
     max-block-size: none;
