@@ -100,6 +100,8 @@ export const translations: Translations = {
   'book.viewChapters':     { he: 'צפה בפרקים',     en: 'View chapters',     es: 'Ver capítulos' },
   'book.minutesRead':      { he: '{{n}} דקות קריאה', en: '{{n}} min read',  es: '{{n}} min de lectura' },
   'book.availableIn':      { he: 'זמין ב',          en: 'Available in',     es: 'Disponible en' },
+  'book.bookmark':         { he: 'סמן ספר',         en: 'Bookmark book',    es: 'Marcar libro' },
+  'book.removeBookmark':   { he: 'הסר סימן',        en: 'Remove bookmark',  es: 'Quitar marcador' },
 
   // Book Overview — progress and summary sections.
   'bookOverview.bookSummary':       { he: 'סיכום הספר',                       en: 'Book summary',                           es: 'Resumen del libro' },

@@ -2,26 +2,29 @@
 /**
  * Book Overview — Hero card.
  *
- * Premium dark card. Cover on the inline-start side at lg+, content
- * (level badge, title, subtitle, credits, meta row, CTAs) on the
- * inline-end side. Stacks on mobile.
+ * Premium dark glass card on the new BO palette (purple / blue / cyan).
+ * Cover sits on the inline-start side at lg+, content (level badge,
+ * title, subtitle, credits, meta row, primary + secondary CTA, bookmark)
+ * on the inline-end. Stacks on mobile.
+ *
+ * All colors come from the `--bo-*` tokens in src/styles/theme.css.
+ * No gold is used here — gold is reserved for the Yuval brand mark in
+ * the global header.
  *
  * Generic for every book:
  *  - Title / subtitle / cover come from props (already localized).
- *  - Level badge renders only when `level` is defined; the label
- *    is resolved through i18n (`library.level.<key>`).
- *  - Reading time is computed from chapter word counts at ~200 wpm
- *    so it works for any book without a stored field.
- *  - Available languages come from the book's discovered language list
- *    and are displayed as native labels.
+ *  - Level badge renders only when `level` is defined; the label is
+ *    resolved through i18n (`library.level.<key>`).
+ *  - Reading time is computed from chapter word counts at ~200 wpm.
+ *  - Available languages are the book's discovered language list,
+ *    rendered as native labels.
  *
- * The primary CTA starts as "Start learning" and is upgraded client-side
- * to "Continue learning" if any chapter under this book has progress in
- * localStorage. Same key shape as updateChapterProgress() in the page.
+ * The primary CTA starts as "Start learning" and is upgraded
+ * client-side to "Continue learning" if any chapter under this book
+ * has progress in localStorage.
  *
- * The TTS pill from the previous design is preserved as a small icon
- * button so the page-level TTS init script (which targets
- * #tts-inline-trigger) keeps working without changes.
+ * The bookmark button toggles a per-book flag in localStorage under
+ * `yuval_bookmark_<slug>`. Visual state mirrors `aria-pressed`.
  */
 
 import type { BookLevel, Chapter, Language } from '../../types/index';
@@ -56,28 +59,26 @@ const {
   isRtl,
 } = Astro.props;
 
-// Reading time at ~200 wpm against the sum of chapter word counts.
-// Shown as one aggregate pill in the meta row; per-chapter time stays
-// in BookOverviewChapters for the per-row labels.
 const totalWords = chapters.reduce((sum, ch) => sum + (ch.word_count ?? 0), 0);
 const totalMinutes = Math.max(1, Math.ceil(totalWords / 200));
 
-// Default landing target for the primary CTA — the first chapter in
-// reading order. Client script may override to the most-recently-read
-// chapter once it inspects localStorage.
 const firstChapter = chapters[0];
 const startHref = firstChapter ? `/read/${slug}/${firstChapter.id}` : '#';
 
 const languageNames = languages.map((l) => getLanguageMeta(l).label).join(' · ');
 const languagesAriaLabel = `${t('book.availableIn', language)}: ${languageNames}`;
 
-const levelKey: TranslationKey | undefined = level ? (`library.level.${level}` as TranslationKey) : undefined;
+const levelKey: TranslationKey | undefined = level
+  ? (`library.level.${level}` as TranslationKey)
+  : undefined;
+const levelLabel = level && levelKey ? t(levelKey, language) : '';
 ---
 
 <section class:list={['boh', isRtl && 'is-rtl']} aria-labelledby="boh-title">
   <div class="boh-card">
-    <!-- Cover -->
-    <figure class="boh-cover-wrap">
+    <!-- Cover with subtle purple/blue aura behind it (`bo-hero-glow`
+         handles the radial aura via theme.css). -->
+    <figure class="boh-cover-wrap bo-hero-glow">
       <img
         src={coverImage}
         alt={title}
@@ -87,34 +88,43 @@ const levelKey: TranslationKey | undefined = level ? (`library.level.${level}` a
       />
     </figure>
 
-    <!-- Content column -->
     <div class="boh-content">
-      <!-- Top row: optional level badge + small TTS icon -->
+      <!-- Top row: optional level badge + bookmark button -->
       <div class="boh-top">
         {level && levelKey && (
           <span class="boh-level" data-i18n={levelKey}>
-            {t(levelKey, language)}
+            {levelLabel}
           </span>
         )}
         <span class="boh-top-spacer" aria-hidden="true"></span>
         <button
-          id="tts-inline-trigger"
-          class="boh-tts tts-inline-btn"
           type="button"
-          aria-label={t('tts.listenToDescription', language)}
+          class="boh-bookmark"
+          data-bookmark-btn
+          data-book-slug={slug}
           aria-pressed="false"
-          data-i18n-aria-label="tts.listenToDescription"
+          aria-label={t('book.bookmark', language)}
+          data-i18n-aria-label="book.bookmark"
         >
-          <span class="tts-inline-icon" aria-hidden="true"></span>
-          <span class="sr-only" data-i18n="tts.listenToDescription">{t('tts.listenToDescription', language)}</span>
+          <svg
+            class="boh-bookmark-icon"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linejoin="round"
+            />
+          </svg>
         </button>
       </div>
 
       <h1 id="boh-title" class="boh-title">{title}</h1>
 
-      {subtitle && (
-        <p class="boh-subtitle">{subtitle}</p>
-      )}
+      {subtitle && <p class="boh-subtitle">{subtitle}</p>}
 
       {credits && (
         <p class="boh-credits">
@@ -135,7 +145,7 @@ const levelKey: TranslationKey | undefined = level ? (`library.level.${level}` a
         </p>
       )}
 
-      <!-- Meta row -->
+      <!-- Meta row: chapter count · reading time · languages · level (if any) -->
       <ul class="boh-meta" role="list">
         <li class="boh-meta-item">
           <svg class="boh-meta-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -160,6 +170,16 @@ const levelKey: TranslationKey | undefined = level ? (`library.level.${level}` a
           </svg>
           <span aria-hidden="true">{languageNames}</span>
         </li>
+
+        {level && levelKey && (
+          <li class="boh-meta-item" data-meta-level>
+            <svg class="boh-meta-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M20 7L12 3 4 7v10l8 4 8-4V7z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 7l8 4 8-4M12 11v10" />
+            </svg>
+            <span data-i18n={levelKey}>{levelLabel}</span>
+          </li>
+        )}
       </ul>
 
       <!-- CTAs -->
@@ -186,14 +206,12 @@ const levelKey: TranslationKey | undefined = level ? (`library.level.${level}` a
 </section>
 
 <script>
-  // Upgrade the primary CTA from "Start learning" to "Continue learning"
-  // when any chapter under this book has progress in localStorage.
-  // Mirrors the key shape used by updateChapterProgress() in the page:
-  //   yuval_reading_progress_<slug>_ch<chapterId>
-  // Also re-points the href at the most recently updated chapter so a
-  // returning reader resumes where they left off.
-  import { t, resolveLanguage } from '../../i18n';
+  // Primary CTA progress upgrade + bookmark toggle.
+  // Both observe localStorage and re-run on view transitions, language
+  // toggles, tab focus, and pageshow.
+  import { t, resolveLanguage, type TranslationKey } from '../../i18n';
 
+  // ── Primary CTA: start vs continue ────────────────────────────────
   function updatePrimaryCta(): void {
     const cta = document.querySelector<HTMLAnchorElement>('[data-cta-primary]');
     if (!cta) return;
@@ -221,26 +239,75 @@ const levelKey: TranslationKey | undefined = level ? (`library.level.${level}` a
           bestKey = k;
         }
       } catch {
-        /* skip malformed entries */
+        /* skip malformed */
       }
     }
 
-    const newKey = hasProgress ? 'book.continueLearning' : 'book.startLearning';
+    const newKey: TranslationKey = hasProgress
+      ? 'book.continueLearning'
+      : 'book.startLearning';
     cta.dataset.i18n = newKey;
 
     if (hasProgress && bestKey) {
       const m = bestKey.match(/_ch(.+)$/);
-      if (m && m[1]) {
-        cta.href = `/read/${slug}/${m[1]}`;
-      }
+      if (m && m[1]) cta.href = `/read/${slug}/${m[1]}`;
     }
 
     const lang = resolveLanguage(document.documentElement.lang);
     cta.textContent = t(newKey, lang);
   }
 
-  function boot() {
+  // ── Bookmark toggle ───────────────────────────────────────────────
+  const BOOKMARK_KEY_PREFIX = 'yuval_bookmark_';
+
+  function readBookmark(slug: string): boolean {
+    return localStorage.getItem(BOOKMARK_KEY_PREFIX + slug) === '1';
+  }
+
+  function writeBookmark(slug: string, value: boolean): void {
+    if (value) {
+      localStorage.setItem(BOOKMARK_KEY_PREFIX + slug, '1');
+    } else {
+      localStorage.removeItem(BOOKMARK_KEY_PREFIX + slug);
+    }
+  }
+
+  function applyBookmarkState(
+    btn: HTMLButtonElement,
+    bookmarked: boolean,
+  ): void {
+    btn.dataset.bookmarked = bookmarked ? 'true' : 'false';
+    btn.setAttribute('aria-pressed', bookmarked ? 'true' : 'false');
+    const labelKey: TranslationKey = bookmarked
+      ? 'book.removeBookmark'
+      : 'book.bookmark';
+    btn.dataset.i18nAriaLabel = labelKey;
+    const lang = resolveLanguage(document.documentElement.lang);
+    btn.setAttribute('aria-label', t(labelKey, lang));
+  }
+
+  function syncBookmarkButtons(): void {
+    const buttons = document.querySelectorAll<HTMLButtonElement>(
+      '[data-bookmark-btn]',
+    );
+    buttons.forEach((btn) => {
+      const slug = btn.dataset.bookSlug;
+      if (!slug) return;
+      applyBookmarkState(btn, readBookmark(slug));
+
+      if (btn.dataset.bound === '1') return;
+      btn.dataset.bound = '1';
+      btn.addEventListener('click', () => {
+        const next = !readBookmark(slug);
+        writeBookmark(slug, next);
+        applyBookmarkState(btn, next);
+      });
+    });
+  }
+
+  function boot(): void {
     updatePrimaryCta();
+    syncBookmarkButtons();
   }
 
   if (document.readyState === 'loading') {
@@ -249,8 +316,6 @@ const levelKey: TranslationKey | undefined = level ? (`library.level.${level}` a
     boot();
   }
 
-  // Re-run on view transitions, language toggles, and tab focus so a
-  // chapter completed in another tab promotes the CTA on return.
   document.addEventListener('astro:after-swap', boot);
   window.addEventListener('language-changed', boot);
   document.addEventListener('visibilitychange', () => {
@@ -261,9 +326,10 @@ const levelKey: TranslationKey | undefined = level ? (`library.level.${level}` a
 
 <style>
   /* ── Card shell ───────────────────────────────────────────────────
-     Premium dark hero. Charcoal gradient + warm gold rim, deep shadow
-     so it floats above the page background. Light mode flips to a
-     warm cream surface to match the LeftSidebar palette. */
+     Dark glass surface, no gold. Cool-tinted shadow + subtle purple
+     bloom from --bo-shadow-lg. The `bo-hero-glow` class on the cover
+     wrapper handles the radial aura behind the image; nothing inside
+     this block paints a glow on its own. */
   .boh {
     container-type: inline-size;
   }
@@ -276,19 +342,19 @@ const levelKey: TranslationKey | undefined = level ? (`library.level.${level}` a
     padding: 1.25rem;
     border-radius: 18px;
     background:
-      radial-gradient(120% 80% at 0% 0%, rgba(232, 197, 71, 0.08), transparent 60%),
-      linear-gradient(135deg, #1c1c22 0%, #14141a 100%);
-    border: 1px solid rgba(232, 197, 71, 0.18);
-    box-shadow:
-      0 24px 60px -20px rgba(0, 0, 0, 0.5),
-      0 8px 20px -10px rgba(0, 0, 0, 0.35),
-      inset 0 1px 0 rgba(255, 255, 255, 0.04);
-    color: #f5efe1;
+      linear-gradient(
+        135deg,
+        var(--bo-surface) 0%,
+        var(--bo-surface-elevated) 100%
+      );
+    border: 1px solid var(--bo-border);
+    box-shadow: var(--bo-shadow-lg);
+    color: var(--bo-text-primary);
     overflow: hidden;
   }
 
-  /* Subtle gold edge sheen along the inline-start side. Pure decoration;
-     pointer-events disabled so it never blocks clicks. */
+  /* Subtle accent edge along the inline-start side. Cool blue/purple
+     instead of gold. */
   .boh-card::before {
     content: '';
     position: absolute;
@@ -296,30 +362,21 @@ const levelKey: TranslationKey | undefined = level ? (`library.level.${level}` a
     inset-block-start: 0;
     inset-block-end: 0;
     width: 3px;
-    background: linear-gradient(180deg, transparent, rgba(232, 197, 71, 0.55), transparent);
+    background: linear-gradient(
+      180deg,
+      transparent 0%,
+      var(--bo-purple) 35%,
+      var(--bo-cyan) 75%,
+      transparent 100%
+    );
     pointer-events: none;
-    opacity: 0.7;
-  }
-
-  :root:not(.dark) .boh-card {
-    background:
-      radial-gradient(120% 80% at 0% 0%, rgba(184, 146, 63, 0.10), transparent 60%),
-      linear-gradient(135deg, #faf6ec 0%, #f3eedc 100%);
-    color: #2c2418;
-    border-color: rgba(184, 146, 63, 0.32);
-    box-shadow:
-      0 18px 40px -16px rgba(70, 50, 10, 0.18),
-      0 4px 12px -6px rgba(70, 50, 10, 0.10),
-      inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    opacity: 0.6;
   }
 
   @media (min-width: 640px) {
     .boh-card { padding: 1.75rem; gap: 1.75rem; }
   }
 
-  /* Two-column layout above 720px container width. The cover lives on
-     the inline-start side; switching to grid columns here keeps the
-     stacked mobile layout untouched on phones. */
   @container (min-width: 720px) {
     .boh-card {
       grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
@@ -341,14 +398,8 @@ const levelKey: TranslationKey | undefined = level ? (`library.level.${level}` a
     border-radius: 12px;
     background: transparent;
     box-shadow:
-      0 18px 40px -12px rgba(0, 0, 0, 0.55),
-      0 0 0 1px rgba(232, 197, 71, 0.16);
-  }
-
-  :root:not(.dark) .boh-cover {
-    box-shadow:
-      0 14px 30px -10px rgba(70, 50, 10, 0.30),
-      0 0 0 1px rgba(184, 146, 63, 0.22);
+      0 18px 40px -12px rgba(2, 6, 23, 0.7),
+      0 0 0 1px var(--bo-border);
   }
 
   @container (min-width: 720px) {
@@ -363,6 +414,8 @@ const levelKey: TranslationKey | undefined = level ? (`library.level.${level}` a
     gap: 0.85rem;
     min-width: 0;
     text-align: start;
+    position: relative;
+    z-index: 1;
   }
 
   .boh-top {
@@ -372,8 +425,8 @@ const levelKey: TranslationKey | undefined = level ? (`library.level.${level}` a
   }
   .boh-top-spacer { flex: 1; }
 
-  /* Level badge — gold pill with subtle inner light. Renders only when
-     level is defined; otherwise the badge slot stays empty. */
+  /* ── Level badge ─────────────────────────────────────────────
+     Purple gradient pill with a soft cyan inner highlight. No gold. */
   .boh-level {
     display: inline-flex;
     align-items: center;
@@ -383,66 +436,61 @@ const levelKey: TranslationKey | undefined = level ? (`library.level.${level}` a
     font-size: 0.75rem;
     font-weight: 600;
     letter-spacing: 0.04em;
-    color: #2a1f08;
-    background: linear-gradient(145deg, #f4d97a 0%, #d4ae42 100%);
+    color: var(--bo-text-primary);
+    background: linear-gradient(
+      135deg,
+      var(--bo-purple) 0%,
+      var(--bo-violet) 60%,
+      var(--bo-blue) 100%
+    );
+    border: 1px solid var(--bo-border-strong);
     box-shadow:
-      0 1px 2px rgba(0, 0, 0, 0.25),
-      inset 0 1px 0 rgba(255, 255, 255, 0.55),
-      0 0 0 1px rgba(255, 220, 120, 0.35);
+      0 1px 2px rgba(2, 6, 23, 0.45),
+      inset 0 1px 0 rgba(255, 255, 255, 0.18);
   }
 
-  :root:not(.dark) .boh-level {
-    color: #2c2418;
-    background: linear-gradient(145deg, #ecc967 0%, #c9a227 100%);
-    box-shadow:
-      0 1px 2px rgba(70, 50, 10, 0.18),
-      inset 0 1px 0 rgba(255, 255, 255, 0.7),
-      0 0 0 1px rgba(184, 146, 63, 0.45);
-  }
-
-  /* Compact TTS button — subtle on the dark card, doesn't compete with
-     the primary CTA. The shared .tts-inline-btn class is overridden so
-     the global animations (pulse waves) still fire when active. */
-  .boh-tts.tts-inline-btn {
+  /* ── Bookmark button ─────────────────────────────────────────
+     Dark outline square. No gold. Filled-icon state when pressed. */
+  .boh-bookmark {
     width: 36px;
     height: 36px;
     padding: 0;
-    border-radius: 999px;
-    background: rgba(232, 197, 71, 0.12);
-    color: #f5e9c4;
-    box-shadow:
-      0 0 0 1px rgba(232, 197, 71, 0.32),
-      inset 0 1px 0 rgba(255, 255, 255, 0.05);
-    align-self: auto;
-    /* Override the global .tts-inline-btn flex defaults (start-aligned
-       with a 0.5rem gap meant for icon+label). With label hidden and a
-       fixed square footprint, we need explicit centering so the icon
-       sits in the middle in both RTL and LTR. */
+    border-radius: 8px;
+    background: var(--bo-surface-elevated);
+    border: 1px solid var(--bo-border);
+    color: var(--bo-text-secondary);
+    display: inline-flex;
+    align-items: center;
     justify-content: center;
-    gap: 0;
+    cursor: pointer;
+    transition:
+      background-color 160ms ease,
+      border-color 160ms ease,
+      color 160ms ease,
+      box-shadow 160ms ease,
+      transform 160ms ease;
   }
-  .boh-tts.tts-inline-btn:hover {
-    background: rgba(232, 197, 71, 0.20);
-    transform: none;
-    filter: none;
-    box-shadow:
-      0 0 0 1px rgba(232, 197, 71, 0.55),
-      0 0 16px rgba(232, 197, 71, 0.22);
+  .boh-bookmark:hover {
+    background: var(--bo-purple-soft);
+    border-color: var(--bo-border-strong);
+    color: var(--bo-text-primary);
   }
-  .boh-tts.tts-inline-btn .tts-inline-label { display: none; }
-
-  :root:not(.dark) .boh-tts.tts-inline-btn {
-    background: rgba(184, 146, 63, 0.12);
-    color: #6a4f12;
-    box-shadow:
-      0 0 0 1px rgba(184, 146, 63, 0.32),
-      inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  .boh-bookmark:focus-visible {
+    outline: 2px solid var(--bo-focus-ring);
+    outline-offset: 2px;
   }
-  :root:not(.dark) .boh-tts.tts-inline-btn:hover {
-    background: rgba(184, 146, 63, 0.22);
-    box-shadow:
-      0 0 0 1px rgba(184, 146, 63, 0.55),
-      0 0 16px rgba(184, 146, 63, 0.30);
+  .boh-bookmark[aria-pressed='true'] {
+    background: var(--bo-purple-soft);
+    border-color: var(--bo-border-accent);
+    color: var(--bo-cyan);
+    box-shadow: var(--bo-glow-cyan);
+  }
+  .boh-bookmark[aria-pressed='true'] .boh-bookmark-icon path {
+    fill: currentColor;
+  }
+  .boh-bookmark-icon {
+    width: 18px;
+    height: 18px;
   }
 
   /* ── Title / subtitle / credits ──────────────────────────────── */
@@ -453,40 +501,26 @@ const levelKey: TranslationKey | undefined = level ? (`library.level.${level}` a
     font-size: clamp(1.6rem, 2.4vw, 2.4rem);
     line-height: 1.15;
     letter-spacing: -0.01em;
-    color: #f8eed3;
-    text-shadow: 0 1px 0 rgba(0, 0, 0, 0.25);
-  }
-  :root:not(.dark) .boh-title {
-    color: #1f1808;
-    text-shadow: none;
+    color: var(--bo-text-primary);
   }
 
   .boh-subtitle {
     margin: 0;
     font-size: clamp(0.95rem, 1.3vw, 1.05rem);
     line-height: 1.55;
-    color: rgba(245, 239, 225, 0.72);
-  }
-  :root:not(.dark) .boh-subtitle {
-    color: rgba(44, 36, 24, 0.72);
+    color: var(--bo-text-secondary);
   }
 
   .boh-credits {
     margin: 0;
     font-size: 0.85rem;
-    color: rgba(245, 239, 225, 0.62);
+    color: var(--bo-text-muted);
     font-style: italic;
-  }
-  :root:not(.dark) .boh-credits {
-    color: rgba(44, 36, 24, 0.62);
   }
   .boh-credits-label {
     font-style: normal;
     font-weight: 500;
-    color: rgba(245, 239, 225, 0.85);
-  }
-  :root:not(.dark) .boh-credits-label {
-    color: rgba(44, 36, 24, 0.88);
+    color: var(--bo-text-secondary);
   }
   .boh-credits-sep { opacity: 0.55; }
 
@@ -495,19 +529,14 @@ const levelKey: TranslationKey | undefined = level ? (`library.level.${level}` a
     list-style: none;
     margin: 0;
     padding: 0.65rem 0;
-    border-block-start: 1px solid rgba(232, 197, 71, 0.14);
-    border-block-end: 1px solid rgba(232, 197, 71, 0.14);
+    border-block-start: 1px solid var(--bo-border);
+    border-block-end: 1px solid var(--bo-border);
     display: flex;
     flex-wrap: wrap;
     gap: 0.85rem 1.5rem;
     font-size: 0.875rem;
-    color: rgba(245, 239, 225, 0.78);
+    color: var(--bo-text-secondary);
   }
-  :root:not(.dark) .boh-meta {
-    border-color: rgba(184, 146, 63, 0.22);
-    color: rgba(44, 36, 24, 0.75);
-  }
-
   .boh-meta-item {
     display: inline-flex;
     align-items: center;
@@ -517,10 +546,10 @@ const levelKey: TranslationKey | undefined = level ? (`library.level.${level}` a
     width: 1rem;
     height: 1rem;
     flex-shrink: 0;
-    color: rgba(232, 197, 71, 0.72);
+    color: var(--bo-cyan);
   }
-  :root:not(.dark) .boh-meta-icon {
-    color: rgba(184, 146, 63, 0.85);
+  .boh-meta-item[data-meta-level] .boh-meta-icon {
+    color: var(--bo-violet);
   }
 
   /* ── CTAs ────────────────────────────────────────────────────── */
@@ -541,58 +570,55 @@ const levelKey: TranslationKey | undefined = level ? (`library.level.${level}` a
     font-size: 0.95rem;
     line-height: 1;
     text-decoration: none;
-    transition: transform 160ms ease, box-shadow 160ms ease, filter 160ms ease, background-color 160ms ease;
+    transition:
+      transform 160ms ease,
+      box-shadow 160ms ease,
+      filter 160ms ease,
+      background 160ms ease,
+      color 160ms ease,
+      border-color 160ms ease;
     white-space: nowrap;
   }
   .boh-cta:focus-visible {
-    outline: 2px solid #e8c547;
+    outline: 2px solid var(--bo-focus-ring);
     outline-offset: 3px;
   }
 
-  /* Primary — gold gradient pill. Same family as .tts-inline-btn so
-     the platform reads as one set of medallions. */
+  /* Primary — purple → indigo → cyan gradient pill, dominant. */
   .boh-cta-primary {
-    background: linear-gradient(145deg, #ddb52f 0%, #c9a227 100%);
-    color: #1f1808;
+    background: var(--bo-grad-cta);
+    color: var(--bo-text-primary);
+    border: 1px solid transparent;
     box-shadow:
-      0 4px 14px -4px rgba(0, 0, 0, 0.45),
-      0 0 0 1px rgba(232, 197, 71, 0.55),
-      inset 0 1px 0 rgba(255, 255, 255, 0.45);
+      0 4px 14px -4px rgba(2, 6, 23, 0.55),
+      0 0 0 1px var(--bo-border-accent),
+      inset 0 1px 0 rgba(255, 255, 255, 0.18);
   }
   .boh-cta-primary:hover {
     transform: translateY(-1px);
     filter: brightness(1.06);
     box-shadow:
-      0 8px 22px -6px rgba(0, 0, 0, 0.55),
-      0 0 0 1px rgba(232, 197, 71, 0.7),
-      0 0 24px rgba(232, 197, 71, 0.30),
-      inset 0 1px 0 rgba(255, 255, 255, 0.5);
+      0 8px 22px -6px rgba(2, 6, 23, 0.65),
+      0 0 0 1px var(--bo-border-accent),
+      var(--bo-glow-purple),
+      inset 0 1px 0 rgba(255, 255, 255, 0.22);
   }
 
-  /* Secondary — outlined pill. Lower visual weight than primary but
-     reads clearly on the dark card. */
+  /* Secondary — dark outline pill, lower visual weight. */
   .boh-cta-secondary {
     background: transparent;
-    color: rgba(245, 239, 225, 0.92);
-    box-shadow: 0 0 0 1px rgba(232, 197, 71, 0.45);
+    color: var(--bo-text-secondary);
+    border: 1px solid var(--bo-border-strong);
   }
   .boh-cta-secondary:hover {
-    background: rgba(232, 197, 71, 0.10);
-    color: #fff8d8;
-    box-shadow: 0 0 0 1px rgba(232, 197, 71, 0.7);
-  }
-  :root:not(.dark) .boh-cta-secondary {
-    color: #4a3712;
-    box-shadow: 0 0 0 1px rgba(184, 146, 63, 0.5);
-  }
-  :root:not(.dark) .boh-cta-secondary:hover {
-    background: rgba(184, 146, 63, 0.10);
-    color: #2c2418;
-    box-shadow: 0 0 0 1px rgba(184, 146, 63, 0.75);
+    background: var(--bo-surface-elevated);
+    color: var(--bo-text-primary);
+    border-color: var(--bo-cyan);
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .boh-cta {
+    .boh-cta,
+    .boh-bookmark {
       transition: none;
     }
     .boh-cta:hover {
