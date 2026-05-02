@@ -75,7 +75,7 @@ const levelLabel = level && levelKey ? t(levelKey, language) : '';
 ---
 
 <section class:list={['boh', isRtl && 'is-rtl']} aria-labelledby="boh-title">
-  <div class="boh-card">
+  <div class="boh-card bo-premium-surface">
     <!-- Cover with subtle purple/blue aura behind it (`bo-hero-glow`
          handles the radial aura via theme.css). -->
     <figure class="boh-cover-wrap bo-hero-glow">
@@ -334,21 +334,17 @@ const levelLabel = level && levelKey ? t(levelKey, language) : '';
     container-type: inline-size;
   }
 
+  /* Surface (background, border, shadow, grain) comes from the shared
+     `.bo-premium-surface` class in src/styles/theme.css. This rule
+     adds only the layout-specific bits: grid, gap, padding, radius,
+     and the `overflow: hidden` that clips the inline-start accent
+     strip below. */
   .boh-card {
-    position: relative;
     display: grid;
     grid-template-columns: 1fr;
     gap: 1.5rem;
     padding: 1.25rem;
     border-radius: 18px;
-    background:
-      linear-gradient(
-        135deg,
-        var(--bo-surface) 0%,
-        var(--bo-surface-elevated) 100%
-      );
-    border: 1px solid var(--bo-border);
-    box-shadow: var(--bo-shadow-lg);
     color: var(--bo-text-primary);
     overflow: hidden;
   }

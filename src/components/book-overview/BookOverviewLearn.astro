@@ -62,7 +62,7 @@ const shouldRender = items.length > 0;
 
 {shouldRender && (
   <section class="bol" aria-labelledby="bol-title" data-derived={derived ? 'true' : undefined}>
-    <div class="bol-card">
+    <div class="bol-card bo-premium-surface">
       <header class="bol-heading-row">
         <span class="bol-icon" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
@@ -92,14 +92,9 @@ const shouldRender = items.length > 0;
 )}
 
 <style>
-  /* ── Card shell — matches Summary/Hero/Progress ──────────────── */
+  /* Surface (background, border, shadow, grain) comes from
+     `.bo-premium-surface` in theme.css. Only layout bits here. */
   .bol-card {
-    background: linear-gradient(
-      135deg,
-      var(--bo-surface) 0%,
-      var(--bo-surface-elevated) 100%
-    );
-    border: 1px solid var(--bo-border);
     border-radius: 14px;
     padding: 1.25rem 1.5rem;
     color: var(--bo-text-primary);

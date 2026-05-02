@@ -47,7 +47,7 @@ const chaptersData = JSON.stringify(
   data-book-slug={slug}
   data-chapters={chaptersData}
 >
-  <div class="bop-card" data-bop-state="empty">
+  <div class="bop-card bo-premium-surface" data-bop-state="empty">
     <!-- LEFT: label + percentage -->
     <div class="bop-left">
       <span class="bop-label" data-i18n="reading.leftDock.progress">
@@ -291,6 +291,8 @@ const chaptersData = JSON.stringify(
     width: 100%;
   }
 
+  /* Surface comes from `.bo-premium-surface` (theme.css). Only layout
+     bits live here. */
   .bop-card {
     display: grid;
     grid-template-columns: 1fr;
@@ -298,12 +300,6 @@ const chaptersData = JSON.stringify(
     align-items: center;
     padding: 0.85rem 1.1rem;
     border-radius: 14px;
-    background: linear-gradient(
-      135deg,
-      var(--bo-surface) 0%,
-      var(--bo-surface-elevated) 100%
-    );
-    border: 1px solid var(--bo-border);
     color: var(--bo-text-primary);
   }
 

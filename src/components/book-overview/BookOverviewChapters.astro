@@ -39,7 +39,7 @@ const collapsible = chapters.length > COLLAPSED_LIMIT;
 ---
 
 <section class:list={['boch', isRtl && 'is-rtl']} aria-labelledby="boch-title">
-  <div class="boch-card">
+  <div class="boch-card bo-premium-surface">
     <header class="boch-heading-row">
       <span class="boch-heading-icon" aria-hidden="true">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
@@ -202,12 +202,10 @@ const collapsible = chapters.length > COLLAPSED_LIMIT;
     }
   }
 
-  /* Flat surface (no gradient) so the chapters card reads as a calmer
-     navigation tile, slightly less contrasty than Summary/Learn — Hero
-     stays the dominant visual element on the page. */
+  /* Surface (background, border, shadow, grain) comes from the shared
+     `.bo-premium-surface` class in theme.css — applied via the markup
+     so all five Book Overview cards share the same recipe. */
   .boch-card {
-    background: var(--bo-surface);
-    border: 1px solid var(--bo-border);
     border-radius: 14px;
     padding: 1.25rem 1.25rem;
     color: var(--bo-text-primary);

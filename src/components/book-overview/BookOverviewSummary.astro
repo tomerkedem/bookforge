@@ -37,7 +37,7 @@ const truncatable = description.length > TRUNCATE_THRESHOLD;
 ---
 
 <section class="bos" aria-labelledby="bos-title">
-  <div class="bos-card">
+  <div class="bos-card bo-premium-surface">
     <header class="bos-heading-row">
       <span class="bos-icon" aria-hidden="true">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
@@ -143,14 +143,9 @@ const truncatable = description.length > TRUNCATE_THRESHOLD;
 </script>
 
 <style>
-  /* ── Card shell — same depth language as Hero/Progress ──────── */
+  /* Surface (background, border, shadow, grain) comes from
+     `.bo-premium-surface` in theme.css. Only layout bits here. */
   .bos-card {
-    background: linear-gradient(
-      135deg,
-      var(--bo-surface) 0%,
-      var(--bo-surface-elevated) 100%
-    );
-    border: 1px solid var(--bo-border);
     border-radius: 14px;
     padding: 1.25rem 1.5rem;
     color: var(--bo-text-primary);
