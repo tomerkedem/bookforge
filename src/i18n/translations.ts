@@ -464,4 +464,172 @@ export const translations: Translations = {
   'timeAgo.weeksDual':     { he: 'לפני שבועיים',     en: '2 weeks ago',        es: 'hace 2 semanas' },
   'timeAgo.weeks':         { he: 'לפני {{n}} שבועות', en: '{{n}} weeks ago',   es: 'hace {{n}} semanas' },
   'timeAgo.moreThanMonth': { he: 'לפני יותר מחודש',  en: 'more than a month ago', es: 'hace más de un mes' },
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ── Living Library (future /library screen) ────────────────────────────────
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Namespace map (Open/Closed: add new sub-namespaces here without touching
+  // existing `library.title`, `library.subtitle`, `library.category.*`,
+  // `library.level.*` keys above):
+  //   library.galaxy.*           main screen chrome
+  //   library.itemType.*         display label per LibraryItemType
+  //   library.status.*           display label per LibraryItemStatus
+  //   library.sourceKind.*       display label per LibrarySourceKind
+  //   library.filter.*           filter chips and toggles
+  //   library.sort.*             sort options
+  //   library.continueReading.*  resume card
+  //   library.stats.*            stats panel
+  //   library.recommendation.*   recommendation strip
+  //   library.action.*           AI assistant toolbar actions
+  //   library.search.*           search affordances
+  //   library.empty.*            empty states
+  //   library.processing.*       processing / failed / archived helper text
+  //   library.a11y.*             aria labels
+  //   library.mobile.*           mobile-only UI
+  //
+  // SOLID: keys mirror machine values from src/types/library.ts so any
+  // LibraryItem can be displayed via `t('library.itemType.' + item.type, lang)`
+  // (Liskov: every type renders through the same key pattern).
+  // ───────────────────────────────────────────────────────────────────────────
+
+  // ── library.galaxy.* — main screen chrome ──────────────────────────────────
+  'library.galaxy.title':           { he: 'הספרייה החיה שלך',                                                 en: 'Your Living Library',                                                          es: 'Tu biblioteca viva' },
+  'library.galaxy.subtitle':        { he: 'כל ספר, קורס, סדרה, סיכום או מאמר שאתה מעלה הופך לחלק ממערכת ידע חכמה', en: 'Every book, course, series, summary or article you add becomes part of one smart knowledge system', es: 'Cada libro, curso, serie, resumen o artículo que añades se vuelve parte de un sistema de conocimiento inteligente' },
+  'library.galaxy.welcome':         { he: 'ברוך הבא למרחב הידע שלך',                                          en: 'Welcome to your knowledge space',                                              es: 'Bienvenido a tu espacio de conocimiento' },
+  'library.galaxy.searchPlaceholder': { he: 'חפש ספרים, קורסים, סדרות, מאמרים ונושאים',                       en: 'Search books, courses, series, articles and topics',                            es: 'Busca libros, cursos, series, artículos y temas' },
+  'library.galaxy.primaryCta':      { he: 'הוסף ספר, מאמר או קורס',                                           en: 'Add a book, article or course',                                                 es: 'Añadir un libro, artículo o curso' },
+  'library.galaxy.secondaryCta':    { he: 'גלה איך זה עובד',                                                 en: 'See how it works',                                                              es: 'Descubre cómo funciona' },
+  'library.galaxy.loading':         { he: 'טוען את הספרייה שלך',                                              en: 'Loading your library',                                                          es: 'Cargando tu biblioteca' },
+  'library.galaxy.error':           { he: 'לא הצלחנו לטעון את הספרייה. נסה שוב בעוד רגע',                     en: "We couldn't load your library. Try again in a moment",                          es: 'No pudimos cargar tu biblioteca. Inténtalo de nuevo en un momento' },
+
+  // ── library.itemType.* — display label per LibraryItemType ─────────────────
+  'library.itemType.book':            { he: 'ספר',              en: 'Book',             es: 'Libro' },
+  'library.itemType.course':          { he: 'קורס',             en: 'Course',           es: 'Curso' },
+  'library.itemType.course_lesson':   { he: 'שיעור בקורס',      en: 'Course lesson',    es: 'Clase del curso' },
+  'library.itemType.article':         { he: 'מאמר',             en: 'Article',          es: 'Artículo' },
+  'library.itemType.series':          { he: 'סדרה',             en: 'Series',           es: 'Serie' },
+  'library.itemType.lesson_summary':  { he: 'סיכום שיעור',      en: 'Lesson summary',   es: 'Resumen de clase' },
+  'library.itemType.slides':          { he: 'מצגת',             en: 'Slides',           es: 'Diapositivas' },
+  'library.itemType.lab':             { he: 'מעבדה',            en: 'Lab',              es: 'Laboratorio' },
+  'library.itemType.transcript':      { he: 'תמלול',            en: 'Transcript',       es: 'Transcripción' },
+  'library.itemType.document':        { he: 'מסמך',             en: 'Document',         es: 'Documento' },
+
+  // ── library.status.* — display label per LibraryItemStatus ─────────────────
+  'library.status.new':           { he: 'חדש',         en: 'New',         es: 'Nuevo' },
+  'library.status.processing':    { he: 'בעיבוד',      en: 'Processing',  es: 'Procesando' },
+  'library.status.ready':         { he: 'מוכן',        en: 'Ready',       es: 'Listo' },
+  'library.status.failed':        { he: 'נכשל',        en: 'Failed',      es: 'Falló' },
+  'library.status.archived':      { he: 'בארכיון',     en: 'Archived',    es: 'Archivado' },
+
+  // ── library.processing.* — short helper text per non-ready status ──────────
+  'library.processing.processingText': { he: 'הפריט הזה עדיין בעיבוד. נציג אותו ברגע שיהיה מוכן',          en: 'This item is still being processed. We will show it as soon as it is ready', es: 'Este elemento aún se está procesando. Lo mostraremos en cuanto esté listo' },
+  'library.processing.failedText':     { he: 'העיבוד נכשל. אפשר לנסות שוב או למחוק את הפריט',              en: 'Processing failed. You can retry or remove this item',                       es: 'El procesamiento falló. Puedes reintentarlo o eliminar este elemento' },
+  'library.processing.archivedText':   { he: 'הפריט בארכיון. הוא לא מופיע בתוצאות חיפוש רגילות',           en: 'This item is archived. It will not appear in regular search results',        es: 'Este elemento está archivado. No aparecerá en los resultados de búsqueda normales' },
+  'library.processing.retry':          { he: 'נסה שוב',                                                    en: 'Retry',                                                                       es: 'Reintentar' },
+
+  // ── library.sourceKind.* — display label per LibrarySourceKind ─────────────
+  'library.sourceKind.pipeline':   { he: 'מהפייפליין',     en: 'From pipeline',   es: 'Del pipeline' },
+  'library.sourceKind.manual':     { he: 'ידני',           en: 'Manual',          es: 'Manual' },
+  'library.sourceKind.generated':  { he: 'נוצר ע"י AI',     en: 'AI generated',    es: 'Generado por IA' },
+  'library.sourceKind.external':   { he: 'חיצוני',          en: 'External',        es: 'Externo' },
+
+  // ── library.filter.* — filter chips and toggles ────────────────────────────
+  'library.filter.all':              { he: 'הכל',                  en: 'All items',          es: 'Todos los elementos' },
+  'library.filter.books':            { he: 'ספרים',                en: 'Books',              es: 'Libros' },
+  'library.filter.courses':          { he: 'קורסים',               en: 'Courses',            es: 'Cursos' },
+  'library.filter.series':           { he: 'סדרות',                en: 'Series',             es: 'Series' },
+  'library.filter.articles':         { he: 'מאמרים',               en: 'Articles',           es: 'Artículos' },
+  'library.filter.lessonSummaries':  { he: 'סיכומי שיעורים',       en: 'Lesson summaries',   es: 'Resúmenes de clases' },
+  'library.filter.ready':            { he: 'מוכנים',               en: 'Ready',              es: 'Listos' },
+  'library.filter.new':              { he: 'חדשים',                en: 'New',                es: 'Nuevos' },
+  'library.filter.processing':       { he: 'בעיבוד',               en: 'Processing',         es: 'En proceso' },
+  'library.filter.archived':         { he: 'בארכיון',              en: 'Archived',           es: 'Archivados' },
+  'library.filter.failed':           { he: 'נכשלו',                en: 'Failed',             es: 'Fallidos' },
+  'library.filter.includeArchived':  { he: 'כלול פריטים בארכיון',  en: 'Include archived',   es: 'Incluir archivados' },
+  'library.filter.includeFailed':    { he: 'כלול פריטים שנכשלו',   en: 'Include failed',     es: 'Incluir fallidos' },
+  'library.filter.clear':            { he: 'נקה סינון',            en: 'Clear filters',      es: 'Limpiar filtros' },
+
+  // ── library.sort.* — sort options (mirror LibrarySortKey) ──────────────────
+  'library.sort.recent':       { he: 'עודכן לאחרונה',     en: 'Recently updated',   es: 'Actualizado recientemente' },
+  'library.sort.created':      { he: 'נוצר לאחרונה',      en: 'Recently created',   es: 'Creado recientemente' },
+  'library.sort.title':        { he: 'לפי כותרת',          en: 'Title',              es: 'Título' },
+  'library.sort.readingTime':  { he: 'לפי זמן קריאה',      en: 'Reading time',       es: 'Tiempo de lectura' },
+  'library.sort.type':         { he: 'לפי סוג',            en: 'Type',               es: 'Tipo' },
+  'library.sort.status':       { he: 'לפי סטטוס',          en: 'Status',             es: 'Estado' },
+
+  // ── library.continueReading.* — resume card ────────────────────────────────
+  'library.continueReading.title':         { he: 'המשך מהמקום שעצרת',         en: 'Continue where you left off',  es: 'Continúa donde lo dejaste' },
+  'library.continueReading.cta':           { he: 'המשך קריאה',                 en: 'Continue reading',             es: 'Continuar leyendo' },
+  'library.continueReading.lastOpened':    { he: 'נפתח לאחרונה {{when}}',       en: 'Last opened {{when}}',         es: 'Abierto por última vez {{when}}' },
+  'library.continueReading.noActive':      { he: 'אין פריט פעיל כרגע',          en: 'Nothing in progress right now', es: 'Nada en progreso ahora mismo' },
+  'library.continueReading.startLearning': { he: 'התחל ללמוד',                  en: 'Start learning',               es: 'Empezar a aprender' },
+
+  // ── library.stats.* — stats panel (interpolated counts) ────────────────────
+  'library.stats.title':            { he: 'סטטיסטיקות הספרייה',     en: 'Library stats',                  es: 'Estadísticas de la biblioteca' },
+  'library.stats.totalItems':       { he: '{{n}} פריטים בסך הכל',    en: '{{n}} items in total',           es: '{{n}} elementos en total' },
+  'library.stats.booksCount':       { he: '{{n}} ספרים',             en: '{{n}} books',                    es: '{{n}} libros' },
+  'library.stats.coursesCount':     { he: '{{n}} קורסים',            en: '{{n}} courses',                  es: '{{n}} cursos' },
+  'library.stats.seriesCount':      { he: '{{n}} סדרות',             en: '{{n}} series',                   es: '{{n}} series' },
+  'library.stats.articlesCount':    { he: '{{n}} מאמרים',            en: '{{n}} articles',                 es: '{{n}} artículos' },
+  'library.stats.readingMinutes':   { he: '{{n}} דקות קריאה',        en: '{{n}} reading minutes',          es: '{{n}} minutos de lectura' },
+  'library.stats.words':            { he: '{{n}} מילים',              en: '{{n}} words',                    es: '{{n}} palabras' },
+  'library.stats.updatedRecently':  { he: 'עודכן לאחרונה {{when}}',   en: 'Updated {{when}}',               es: 'Actualizado {{when}}' },
+
+  // ── library.recommendation.* — recommendation strip ────────────────────────
+  'library.recommendation.forYou':            { he: 'מומלץ עבורך',                       en: 'Recommended for you',                 es: 'Recomendado para ti' },
+  'library.recommendation.basedOnYourLibrary':{ he: 'על בסיס הספרייה שלך',               en: 'Based on your library',                es: 'Basado en tu biblioteca' },
+  'library.recommendation.becauseRelatedTo':  { he: 'כי זה קשור ל"{{title}}"',           en: 'Because it is related to "{{title}}"',  es: 'Porque está relacionado con "{{title}}"' },
+  'library.recommendation.more':              { he: 'עוד המלצות',                         en: 'More recommendations',                  es: 'Más recomendaciones' },
+  'library.recommendation.none':              { he: 'אין עדיין המלצות. הוסף עוד תכנים והמלצות יופיעו כאן', en: 'No recommendations yet. Add more content and they will appear here', es: 'Aún no hay recomendaciones. Añade más contenido y aparecerán aquí' },
+
+  // ── library.action.* — AI assistant toolbar ────────────────────────────────
+  'library.action.aiAssistant':       { he: 'עוזר AI',                       en: 'AI assistant',                  es: 'Asistente IA' },
+  'library.action.bookmarks':         { he: 'סימניות',                        en: 'Bookmarks',                     es: 'Marcadores' },
+  'library.action.history':           { he: 'היסטוריה',                       en: 'History',                       es: 'Historial' },
+  'library.action.openAssistant':     { he: 'פתח עוזר AI',                    en: 'Open AI assistant',             es: 'Abrir asistente IA' },
+  'library.action.closeAssistant':    { he: 'סגור עוזר AI',                   en: 'Close AI assistant',            es: 'Cerrar asistente IA' },
+  'library.action.askAboutItem':      { he: 'שאל על הפריט הזה',              en: 'Ask about this item',           es: 'Preguntar sobre este elemento' },
+  'library.action.summarizeArticle':  { he: 'סכם את המאמר הזה',              en: 'Summarize this article',        es: 'Resumir este artículo' },
+  'library.action.findRelated':       { he: 'מצא פריטים קשורים',             en: 'Find related items',            es: 'Encontrar elementos relacionados' },
+  'library.action.whatNext':          { he: 'מה כדאי לי לקרוא עכשיו',         en: 'What should I read next',       es: 'Qué debería leer a continuación' },
+
+  // ── library.search.* — search affordances ──────────────────────────────────
+  'library.search.placeholder':   { he: 'חפש בספרייה',                en: 'Search the library',         es: 'Buscar en la biblioteca' },
+  'library.search.results':       { he: 'תוצאות חיפוש',               en: 'Search results',             es: 'Resultados de búsqueda' },
+  'library.search.resultsFor':    { he: 'תוצאות עבור "{{q}}"',         en: 'Results for "{{q}}"',        es: 'Resultados para "{{q}}"' },
+  'library.search.noResults':     { he: 'לא נמצאו תוצאות',             en: 'No results',                  es: 'Sin resultados' },
+  'library.search.tryAnother':    { he: 'נסה חיפוש אחר',               en: 'Try another search',          es: 'Prueba otra búsqueda' },
+  'library.search.clear':         { he: 'נקה חיפוש',                   en: 'Clear search',                es: 'Limpiar búsqueda' },
+
+  // ── library.empty.* — empty states per content kind ────────────────────────
+  'library.empty.items':       { he: 'אין עדיין פריטים בספרייה. הוסף ספר, מאמר או קורס כדי להתחיל', en: 'No items yet. Add a book, article or course to get started',                  es: 'Aún no hay elementos. Añade un libro, artículo o curso para empezar' },
+  'library.empty.articles':    { he: 'עדיין אין מאמרים',                                              en: 'No articles yet',                                                              es: 'Aún no hay artículos' },
+  'library.empty.series':      { he: 'עדיין אין סדרות',                                               en: 'No series yet',                                                                es: 'Aún no hay series' },
+  'library.empty.processing':  { he: 'אין כרגע פריטים בעיבוד',                                       en: 'No items currently processing',                                                es: 'No hay elementos en proceso ahora' },
+  'library.empty.failed':      { he: 'אין פריטים שנכשלו',                                            en: 'No failed items',                                                              es: 'No hay elementos fallidos' },
+
+  // ── library.a11y.* — aria labels (no visible text) ─────────────────────────
+  'library.a11y.mainRegion':            { he: 'אזור הספרייה הראשי',          en: 'Library main region',           es: 'Región principal de la biblioteca' },
+  'library.a11y.searchInput':           { he: 'שדה חיפוש בספרייה',           en: 'Library search input',          es: 'Campo de búsqueda de la biblioteca' },
+  'library.a11y.openFilters':           { he: 'פתח מסננים',                   en: 'Open filters',                  es: 'Abrir filtros' },
+  'library.a11y.closeFilters':          { he: 'סגור מסננים',                  en: 'Close filters',                 es: 'Cerrar filtros' },
+  'library.a11y.openAssistant':         { he: 'פתח את עוזר ה-AI',             en: 'Open AI assistant',             es: 'Abrir asistente IA' },
+  'library.a11y.closeAssistant':        { he: 'סגור את עוזר ה-AI',            en: 'Close AI assistant',            es: 'Cerrar asistente IA' },
+  'library.a11y.carouselNext':          { he: 'הבא בקרוסלה',                  en: 'Next in carousel',              es: 'Siguiente en el carrusel' },
+  'library.a11y.carouselPrev':          { he: 'הקודם בקרוסלה',                en: 'Previous in carousel',          es: 'Anterior en el carrusel' },
+  'library.a11y.selectItem':            { he: 'בחר פריט',                     en: 'Select item',                   es: 'Seleccionar elemento' },
+  'library.a11y.openItem':              { he: 'פתח פריט',                     en: 'Open item',                     es: 'Abrir elemento' },
+  'library.a11y.bookmarkItem':          { he: 'סמן פריט בסימנייה',            en: 'Bookmark item',                 es: 'Marcar elemento' },
+  'library.a11y.recommendationCarousel':{ he: 'קרוסלת המלצות',                en: 'Recommendation carousel',       es: 'Carrusel de recomendaciones' },
+  'library.a11y.continueReadingCard':   { he: 'כרטיס המשך קריאה',             en: 'Continue reading card',         es: 'Tarjeta de continuar leyendo' },
+  'library.a11y.libraryStatsPanel':     { he: 'פאנל סטטיסטיקות הספרייה',      en: 'Library stats panel',           es: 'Panel de estadísticas de la biblioteca' },
+
+  // ── library.mobile.* — mobile-only UI ──────────────────────────────────────
+  'library.mobile.openMenu':          { he: 'פתח תפריט ספרייה',         en: 'Open library menu',         es: 'Abrir menú de biblioteca' },
+  'library.mobile.closeMenu':         { he: 'סגור תפריט ספרייה',        en: 'Close library menu',        es: 'Cerrar menú de biblioteca' },
+  'library.mobile.openQuickActions':  { he: 'פתח פעולות מהירות',        en: 'Open quick actions',        es: 'Abrir acciones rápidas' },
+  'library.mobile.closeQuickActions': { he: 'סגור פעולות מהירות',       en: 'Close quick actions',       es: 'Cerrar acciones rápidas' },
+  'library.mobile.swipeToBrowse':     { he: 'החלק כדי לעיין',             en: 'Swipe to browse',           es: 'Desliza para explorar' },
+  'library.mobile.showFilters':       { he: 'הצג מסננים',                  en: 'Show filters',              es: 'Mostrar filtros' },
+  'library.mobile.hideFilters':       { he: 'הסתר מסננים',                 en: 'Hide filters',              es: 'Ocultar filtros' },
 };
