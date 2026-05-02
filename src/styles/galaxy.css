@@ -1,0 +1,350 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   YUVAL GALAXY THEME — Living Library Token Layer
+   ═══════════════════════════════════════════════════════════════════════════
+   Dedicated, namespaced design tokens for the future /library "living
+   library" screen. Isolated from src/styles/theme.css on purpose:
+
+   - Existing reading experience uses --yuval-* tokens (theme.css).
+   - Living library uses --yuval-galaxy-* tokens (this file).
+   - Names never collide; reading pages are unaffected even though this
+     file is imported globally from BaseLayout.astro.
+
+   Architecture:
+   - :root, .library-dark-showcase  → DARK MODE values (the primary,
+                     polished design). Galaxy is dark-first: the
+                     futuristic space metaphor is built around deep
+                     navy + ambient purple/blue glow. The same dark
+                     token block is shared by two scopes — see the
+                     "LOCAL DARK SHOWCASE" note below.
+   - :root:not(.dark) override block → LIGHT MODE placeholder values.
+                     Usable, readable, but NOT the final light design
+                     — to be polished later. Applies only when no
+                     local override is present.
+   - @media (prefers-reduced-motion: reduce) → motion-token overrides
+                     (the global rule in theme.css already neutralises
+                     animations/transitions; here we just align the
+                     duration *tokens* so components reading
+                     --yuval-galaxy-motion-* get a consistent reduced
+                     value to consume in calc()/inline styles).
+                     The override is on :root and inherits down through
+                     .library-dark-showcase subtrees automatically.
+   - @media (max-width: 767px) → mobile performance overrides
+                     (lower blur radii and glow opacity to keep
+                     compositing cheap on phones). Same inheritance
+                     story: declared on :root, inherits into the
+                     showcase subtree.
+
+   LOCAL DARK SHOWCASE (.library-dark-showcase) — v1 decision:
+   The /library route is dark-first as a "showcase" experience because
+   the cosmic visual language (radial galaxy glow, glassmorphism,
+   cyan/purple accents) does not translate cleanly to a light surface
+   yet. Rather than forcing the global theme to dark (which would
+   hijack the user's preference for /read and the rest of the app),
+   we apply the class .library-dark-showcase on the /library page
+   subtree only. Inside that subtree, the dark token values cascade
+   regardless of whether <html> has the .dark class or not. Outside
+   the subtree, the user's global theme preference is fully respected.
+
+   This is a v1 decision. When a polished light galaxy design exists
+   and a per-library theme toggle is wired up, this class can be
+   replaced with a JS-controlled .galaxy-theme-light / .galaxy-theme-dark
+   pair without touching components — they read tokens, not selectors.
+   Do NOT implement that toggle now.
+
+   SOLID notes:
+   - Single Responsibility: this file only declares tokens. No layout,
+     no animation keyframes, no component selectors.
+   - Open/Closed: new statuses or item types extend by adding a new
+     --yuval-galaxy-status-* / --yuval-galaxy-type-* token; existing
+     tokens are not edited.
+   - Liskov: every LibraryItemType maps to --yuval-galaxy-type-<type>
+     so any item renders through the same token pattern.
+   - Dependency Inversion: future components consume semantic tokens
+     (--yuval-galaxy-accent, --yuval-galaxy-status-failed) and never
+     hardcode hex values.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+
+/* ───────────────────────────────────────────────────────────────────────────
+   DARK MODE — primary design
+
+   Two scopes share the SAME dark token values:
+
+     1. :root                       → applies globally when the user's
+                                      global theme is dark (html.dark).
+     2. .library-dark-showcase      → applies locally inside any subtree
+                                      with this class, regardless of the
+                                      global theme. The /library v1 page
+                                      uses this on its <main> wrapper so
+                                      the cosmic visual language always
+                                      reads correctly even when the user
+                                      is in light or sepia mode globally.
+
+   Why combine them in one rule? Because the values are identical and
+   we want a single source of truth — adding a new --yuval-galaxy-* token
+   should require touching one place, not two.
+
+   Cascade safety:
+   - The light-mode rule below uses the selector :root:not(.dark). It only
+     redeclares tokens on the <html> element, so a descendant carrying
+     .library-dark-showcase wins via normal CSS inheritance (custom
+     properties redeclared on a deeper element shadow the inherited
+     values on its subtree). No specificity battle, no !important needed.
+   - Reduced-motion and mobile @media blocks below also target :root
+     and rely on the same inheritance — they reach into the showcase
+     subtree automatically.
+
+   Palette intent:
+   - Background: deep navy with a soft cosmic undertone (#070b1b → #0c1226)
+   - Ambient: purple (#7c3aed) and blue (#3b82f6) radial glows for the
+     "galaxy" mood
+   - Accent: cyan (#22d3ee) leads the futuristic reading; purple/gold
+     used sparingly for highlights
+   - Cards: glassmorphism — translucent surface + backdrop-filter blur
+   - Text: high-contrast off-white, muted variants for hierarchy
+   ─────────────────────────────────────────────────────────────────────────── */
+:root,
+.library-dark-showcase {
+
+  /* ── 1. Background tokens ───────────────────────────────────────────────── */
+  --yuval-galaxy-bg:                 #070b1b;
+  --yuval-galaxy-bg-soft:            #0c1226;
+  --yuval-galaxy-bg-radial-primary:  radial-gradient(
+                                       ellipse at 20% 10%,
+                                       rgba(124, 58, 237, 0.28) 0%,
+                                       rgba(124, 58, 237, 0.00) 55%
+                                     );
+  --yuval-galaxy-bg-radial-secondary: radial-gradient(
+                                       ellipse at 80% 90%,
+                                       rgba(59, 130, 246, 0.22) 0%,
+                                       rgba(59, 130, 246, 0.00) 60%
+                                     );
+  --yuval-galaxy-surface:            rgba(18, 22, 44, 0.72);
+  --yuval-galaxy-surface-elevated:   rgba(28, 34, 64, 0.82);
+  --yuval-galaxy-surface-muted:      rgba(12, 16, 32, 0.55);
+
+  /* ── 2. Text tokens ─────────────────────────────────────────────────────── */
+  --yuval-galaxy-text:               #eaf0ff;
+  --yuval-galaxy-text-muted:         #aab5d6;
+  --yuval-galaxy-text-soft:          #7e8aae;
+  --yuval-galaxy-text-inverse:       #0a0f24;
+
+  /* ── 3. Border tokens ───────────────────────────────────────────────────── */
+  --yuval-galaxy-border:             rgba(255, 255, 255, 0.08);
+  --yuval-galaxy-border-strong:      rgba(255, 255, 255, 0.16);
+  --yuval-galaxy-border-glow:        rgba(34, 211, 238, 0.45);
+
+  /* ── 4. Accent tokens ───────────────────────────────────────────────────── */
+  --yuval-galaxy-accent:             #22d3ee; /* cyan, primary lead */
+  --yuval-galaxy-accent-secondary:   #a78bfa; /* lavender, secondary lead */
+  --yuval-galaxy-accent-cyan:        #22d3ee;
+  --yuval-galaxy-accent-purple:      #a78bfa;
+  --yuval-galaxy-accent-blue:        #60a5fa;
+  --yuval-galaxy-accent-gold:        #f6c560;
+  --yuval-galaxy-accent-green:       #34d399;
+  --yuval-galaxy-accent-danger:      #f87171;
+
+  /* ── 5. Glow tokens ─────────────────────────────────────────────────────── */
+  /* Each glow is a *box-shadow value* so components can apply it directly:
+     box-shadow: var(--yuval-galaxy-glow-primary); */
+  --yuval-galaxy-glow-primary:       0 0 32px 0 rgba(34, 211, 238, 0.35);
+  --yuval-galaxy-glow-secondary:     0 0 28px 0 rgba(167, 139, 250, 0.30);
+  --yuval-galaxy-glow-soft:          0 0 16px 0 rgba(96, 165, 250, 0.18);
+  --yuval-galaxy-glow-card:          0 8px 40px 0 rgba(7, 11, 27, 0.55),
+                                     0 0 1px 0 rgba(255, 255, 255, 0.08) inset;
+  --yuval-galaxy-glow-core:          0 0 64px 0 rgba(124, 58, 237, 0.45),
+                                     0 0 24px 0 rgba(34, 211, 238, 0.30);
+  --yuval-galaxy-glow-danger:        0 0 24px 0 rgba(248, 113, 113, 0.40);
+
+  /* ── 6. Card tokens ─────────────────────────────────────────────────────── */
+  --yuval-galaxy-card-surface:        rgba(20, 25, 50, 0.62);
+  --yuval-galaxy-card-surface-hover:  rgba(28, 34, 68, 0.78);
+  --yuval-galaxy-card-border:         rgba(255, 255, 255, 0.10);
+  --yuval-galaxy-card-shadow:         0 12px 36px 0 rgba(2, 4, 14, 0.55),
+                                      0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+  --yuval-galaxy-card-radius:         18px;
+  --yuval-galaxy-card-blur:           18px; /* used as backdrop-filter: blur(var(--yuval-galaxy-card-blur)) */
+
+  /* ── 7. Status tokens (mirror LibraryItemStatus values) ─────────────────── */
+  /* Pattern: components use t() for the label and read
+     `var(--yuval-galaxy-status-${item.status})` for the visual cue. */
+  --yuval-galaxy-status-new:         #22d3ee; /* cyan — fresh, just landed */
+  --yuval-galaxy-status-processing:  #fbbf24; /* amber — in flight */
+  --yuval-galaxy-status-ready:       #34d399; /* green — done */
+  --yuval-galaxy-status-failed:      #f87171; /* red — needs attention */
+  --yuval-galaxy-status-archived:    #6b7390; /* muted slate — out of view */
+
+  /* ── 8. Item-type accent tokens (mirror LibraryItemType values) ─────────── */
+  /* One distinct hue per type; each is harmonised with the galaxy palette
+     so the screen reads as a cohesive constellation, not a colour bingo. */
+  --yuval-galaxy-type-book:           #f6c560; /* warm gold — classic, anchored */
+  --yuval-galaxy-type-course:         #22d3ee; /* cyan — structured learning */
+  --yuval-galaxy-type-course_lesson:  #67e8f9; /* lighter cyan — child of course */
+  --yuval-galaxy-type-article:        #a78bfa; /* lavender — writerly, ideas */
+  --yuval-galaxy-type-series:         #f0abfc; /* magenta — continuum */
+  --yuval-galaxy-type-lesson_summary: #6ee7b7; /* mint — distilled */
+  --yuval-galaxy-type-slides:         #fb923c; /* orange — presentation */
+  --yuval-galaxy-type-lab:            #fb7185; /* coral — hands-on, lively */
+  --yuval-galaxy-type-transcript:     #93c5fd; /* sky blue — verbatim */
+  --yuval-galaxy-type-document:       #cbd5e1; /* neutral slate — formal */
+
+  /* ── 9. Motion tokens ───────────────────────────────────────────────────── */
+  /* Durations are CSS time values (ms). Easings are bezier curves.
+     No keyframes are defined here — components own their own animations
+     and just *consume* these tokens to stay consistent. */
+  --yuval-galaxy-motion-fast:        140ms;
+  --yuval-galaxy-motion-normal:      280ms;
+  --yuval-galaxy-motion-slow:        520ms;
+  --yuval-galaxy-motion-ambient:     7200ms; /* slow drifts: orbiting cards, breathing core */
+  --yuval-galaxy-ease-out:           cubic-bezier(0.22, 1, 0.36, 1);
+  --yuval-galaxy-ease-soft:          cubic-bezier(0.4, 0, 0.2, 1);
+  --yuval-galaxy-ease-orbit:         cubic-bezier(0.45, 0.05, 0.55, 0.95);
+
+  /* ── 10. Responsive / performance helper tokens ─────────────────────────── */
+  /* Defaults are the desktop values. The mobile @media block below
+     overrides them. Components should read these tokens and never
+     hardcode `blur(20px)` directly. */
+  --yuval-galaxy-mobile-blur:        8px;
+  --yuval-galaxy-desktop-blur:       18px;
+  --yuval-galaxy-mobile-glow-opacity:  0.45;
+  --yuval-galaxy-desktop-glow-opacity: 1;
+}
+
+
+/* ───────────────────────────────────────────────────────────────────────────
+   LIGHT MODE — placeholder values (NOT the final design)
+
+   Activated when .dark is NOT present on <html>. Mirrors the existing
+   theme.css convention (where :root is the light default and .dark
+   overrides). Using `:root:not(.dark)` keeps these light-only without
+   needing JS to add a `.light-galaxy` class.
+
+   These values aim to be:
+   - readable on a white-ish background
+   - not pure white anywhere (uses #f4f6fb instead)
+   - much softer glow than dark mode
+   - safe enough for a quick prototype demo
+
+   They are NOT polished; the real light-mode pass happens later.
+   ─────────────────────────────────────────────────────────────────────────── */
+:root:not(.dark) {
+
+  /* Backgrounds — soft off-white with a faint cosmic tint */
+  --yuval-galaxy-bg:                 #f4f6fb;
+  --yuval-galaxy-bg-soft:            #eef1f9;
+  --yuval-galaxy-bg-radial-primary:  radial-gradient(
+                                       ellipse at 20% 10%,
+                                       rgba(124, 58, 237, 0.10) 0%,
+                                       rgba(124, 58, 237, 0.00) 55%
+                                     );
+  --yuval-galaxy-bg-radial-secondary: radial-gradient(
+                                       ellipse at 80% 90%,
+                                       rgba(59, 130, 246, 0.08) 0%,
+                                       rgba(59, 130, 246, 0.00) 60%
+                                     );
+  --yuval-galaxy-surface:            rgba(255, 255, 255, 0.78);
+  --yuval-galaxy-surface-elevated:   rgba(255, 255, 255, 0.92);
+  --yuval-galaxy-surface-muted:      rgba(244, 246, 251, 0.72);
+
+  /* Text — near-black, not pitch */
+  --yuval-galaxy-text:               #0f172a;
+  --yuval-galaxy-text-muted:         #475569;
+  --yuval-galaxy-text-soft:          #64748b;
+  --yuval-galaxy-text-inverse:       #ffffff;
+
+  /* Borders */
+  --yuval-galaxy-border:             rgba(15, 23, 42, 0.08);
+  --yuval-galaxy-border-strong:      rgba(15, 23, 42, 0.16);
+  --yuval-galaxy-border-glow:        rgba(8, 145, 178, 0.35);
+
+  /* Accents — same hues, slightly darker for contrast on white */
+  --yuval-galaxy-accent:             #0891b2;
+  --yuval-galaxy-accent-secondary:   #7c3aed;
+  --yuval-galaxy-accent-cyan:        #0891b2;
+  --yuval-galaxy-accent-purple:      #7c3aed;
+  --yuval-galaxy-accent-blue:        #2563eb;
+  --yuval-galaxy-accent-gold:        #d97706;
+  --yuval-galaxy-accent-green:       #059669;
+  --yuval-galaxy-accent-danger:      #dc2626;
+
+  /* Glows — much softer in light mode (lower alpha, smaller spread) */
+  --yuval-galaxy-glow-primary:       0 0 18px 0 rgba(8, 145, 178, 0.18);
+  --yuval-galaxy-glow-secondary:     0 0 16px 0 rgba(124, 58, 237, 0.14);
+  --yuval-galaxy-glow-soft:          0 0 10px 0 rgba(37, 99, 235, 0.08);
+  --yuval-galaxy-glow-card:          0 8px 24px 0 rgba(15, 23, 42, 0.08);
+  --yuval-galaxy-glow-core:          0 0 32px 0 rgba(124, 58, 237, 0.18),
+                                     0 0 12px 0 rgba(8, 145, 178, 0.14);
+  --yuval-galaxy-glow-danger:        0 0 14px 0 rgba(220, 38, 38, 0.20);
+
+  /* Cards */
+  --yuval-galaxy-card-surface:        rgba(255, 255, 255, 0.86);
+  --yuval-galaxy-card-surface-hover:  rgba(255, 255, 255, 0.96);
+  --yuval-galaxy-card-border:         rgba(15, 23, 42, 0.10);
+  --yuval-galaxy-card-shadow:         0 8px 24px 0 rgba(15, 23, 42, 0.08);
+  /* card-radius stays the same across themes */
+  /* card-blur stays the same across themes */
+
+  /* Status — same semantics, slightly darker for white-bg contrast */
+  --yuval-galaxy-status-new:         #0891b2;
+  --yuval-galaxy-status-processing:  #d97706;
+  --yuval-galaxy-status-ready:       #059669;
+  --yuval-galaxy-status-failed:      #dc2626;
+  --yuval-galaxy-status-archived:    #64748b;
+
+  /* Type accents — slightly darker variants */
+  --yuval-galaxy-type-book:           #b45309;
+  --yuval-galaxy-type-course:         #0891b2;
+  --yuval-galaxy-type-course_lesson:  #0e7490;
+  --yuval-galaxy-type-article:        #7c3aed;
+  --yuval-galaxy-type-series:         #c026d3;
+  --yuval-galaxy-type-lesson_summary: #059669;
+  --yuval-galaxy-type-slides:         #ea580c;
+  --yuval-galaxy-type-lab:            #e11d48;
+  --yuval-galaxy-type-transcript:     #2563eb;
+  --yuval-galaxy-type-document:       #475569;
+}
+
+
+/* ───────────────────────────────────────────────────────────────────────────
+   REDUCED MOTION — token-level overrides
+
+   The global rule in theme.css already neutralises CSS transitions and
+   animations across the whole app. This block additionally aligns the
+   *motion duration tokens themselves* so any component that reads
+   var(--yuval-galaxy-motion-normal) inside e.g. an inline style or a
+   calc() expression also gets a near-instant value, instead of the
+   designed 280ms one.
+
+   Easing tokens are left alone — easing curves are harmless when the
+   duration is effectively zero.
+   ─────────────────────────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --yuval-galaxy-motion-fast:    1ms;
+    --yuval-galaxy-motion-normal:  1ms;
+    --yuval-galaxy-motion-slow:    1ms;
+    --yuval-galaxy-motion-ambient: 1ms;
+  }
+}
+
+
+/* ───────────────────────────────────────────────────────────────────────────
+   MOBILE PERFORMANCE — token-level overrides
+
+   Backdrop-filter blur and large box-shadow glows are the most
+   expensive operations in this design. On phones we cut blur radius
+   and glow opacity rather than redesigning the screen. Components
+   should consume the `card-blur` and `mobile-glow-opacity` tokens —
+   they will scale automatically.
+   ─────────────────────────────────────────────────────────────────────────── */
+@media (max-width: 767px) {
+  :root {
+    --yuval-galaxy-card-blur:            var(--yuval-galaxy-mobile-blur);
+    --yuval-galaxy-desktop-glow-opacity: var(--yuval-galaxy-mobile-glow-opacity);
+
+    /* Soften the heaviest box-shadows on mobile to keep scrolling smooth. */
+    --yuval-galaxy-glow-core:    0 0 28px 0 rgba(124, 58, 237, 0.30),
+                                 0 0 12px 0 rgba(34, 211, 238, 0.20);
+    --yuval-galaxy-glow-card:    0 4px 16px 0 rgba(7, 11, 27, 0.40);
+  }
+}
