@@ -1,0 +1,97 @@
+---
+/**
+ * RecommendationStrip — horizontally-scrollable rail of recommended items.
+ *
+ * Composition only: wraps each item in a compact LibraryCard. No carousel
+ * JS, no animation. Pure CSS overflow + scroll-snap so the affordance is
+ * native and accessible (keyboard arrows, touch swipe, screen-reader
+ * tab order).
+ *
+ * Empty state uses library.recommendation.none — never shows an empty rail.
+ */
+import type { Language } from '../../types/index';
+import type { LibraryItem } from '../../types/library';
+import { t } from '../../i18n';
+import LibraryCard from './LibraryCard.astro';
+
+interface Props {
+  items: LibraryItem[];
+  language: Language;
+}
+const { items, language } = Astro.props;
+const hasItems = items.length > 0;
+---
+
+<section
+  class="rs"
+  aria-label={t('library.a11y.recommendationCarousel', language)}
+>
+  <h2 class="rs-title">{t('library.recommendation.forYou', language)}</h2>
+
+  {hasItems ? (
+    <>
+      <p class="rs-eyebrow">{t('library.recommendation.basedOnYourLibrary', language)}</p>
+      <div class="rs-strip" role="list">
+        {items.map((item) => (
+          <div class="rs-item" role="listitem">
+            <LibraryCard item={item} language={language} variant="compact" />
+          </div>
+        ))}
+      </div>
+    </>
+  ) : (
+    <p class="rs-empty">{t('library.recommendation.none', language)}</p>
+  )}
+</section>
+
+<style>
+  .rs {
+    max-width: 1200px;
+    margin: 1.5rem auto 0;
+    padding: 1.25rem;
+    border: 1px solid var(--yuval-galaxy-border);
+    border-radius: var(--yuval-galaxy-card-radius);
+    background-color: var(--yuval-galaxy-surface);
+    backdrop-filter: blur(var(--yuval-galaxy-card-blur));
+    -webkit-backdrop-filter: blur(var(--yuval-galaxy-card-blur));
+    box-shadow: var(--yuval-galaxy-glow-card);
+  }
+  .rs-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin: 0 0 0.375rem;
+    color: var(--yuval-galaxy-text);
+  }
+  .rs-eyebrow {
+    font-size: 0.8125rem;
+    color: var(--yuval-galaxy-text-soft);
+    margin: 0 0 0.875rem;
+  }
+  .rs-empty {
+    font-size: 0.9375rem;
+    color: var(--yuval-galaxy-text-muted);
+    margin: 0;
+  }
+
+  .rs-strip {
+    display: flex;
+    gap: 0.875rem;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    padding-block-end: 0.5rem;
+    -webkit-overflow-scrolling: touch;
+  }
+  .rs-item {
+    flex: 0 0 80%;
+    max-width: 320px;
+    scroll-snap-align: start;
+    min-width: 0;
+  }
+
+  @media (min-width: 640px) {
+    .rs-item { flex-basis: 45%; }
+  }
+  @media (min-width: 1024px) {
+    .rs-item { flex-basis: 30%; }
+  }
+</style>

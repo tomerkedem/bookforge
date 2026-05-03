@@ -1,0 +1,87 @@
+---
+/**
+ * LibraryQuickActions — placeholder rail for AI assistant, bookmarks,
+ * history, and item-level AI actions.
+ *
+ * v1: every button is `disabled` because no behavior is wired yet.
+ * Compact area on mobile (single column), right rail on desktop.
+ *
+ * Renders inside an <aside> so screen readers treat it as complementary
+ * to the main library content, not navigation.
+ */
+import type { Language } from '../../types/index';
+import type { TranslationKey } from '../../i18n';
+import { t } from '../../i18n';
+
+interface Props {
+  language: Language;
+}
+const { language } = Astro.props;
+
+const actionKeys: TranslationKey[] = [
+  'library.action.askAboutItem',
+  'library.action.summarizeArticle',
+  'library.action.findRelated',
+  'library.action.whatNext',
+  'library.action.bookmarks',
+  'library.action.history',
+];
+---
+
+<aside
+  class="lqa"
+  aria-label={t('library.a11y.openAssistant', language)}
+>
+  <h2 class="lqa-title">{t('library.action.aiAssistant', language)}</h2>
+  <ul class="lqa-list">
+    {actionKeys.map((key) => (
+      <li>
+        <button type="button" class="lqa-btn" disabled aria-disabled="true">
+          {t(key, language)}
+        </button>
+      </li>
+    ))}
+  </ul>
+</aside>
+
+<style>
+  .lqa {
+    padding: 1.25rem;
+    border: 1px solid var(--yuval-galaxy-border);
+    border-radius: var(--yuval-galaxy-card-radius);
+    background-color: var(--yuval-galaxy-surface);
+    backdrop-filter: blur(var(--yuval-galaxy-card-blur));
+    -webkit-backdrop-filter: blur(var(--yuval-galaxy-card-blur));
+    box-shadow: var(--yuval-galaxy-glow-card);
+  }
+  .lqa-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin: 0 0 0.875rem;
+    color: var(--yuval-galaxy-text);
+  }
+  .lqa-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .lqa-btn {
+    width: 100%;
+    text-align: start;
+    padding: 0.625rem 0.875rem;
+    font-size: 0.875rem;
+    color: var(--yuval-galaxy-text);
+    background-color: var(--yuval-galaxy-surface-muted);
+    border: 1px solid var(--yuval-galaxy-border);
+    border-radius: 12px;
+    cursor: not-allowed;
+  }
+  .lqa-btn:disabled { opacity: 0.7; }
+  .lqa-btn:focus-visible {
+    outline: none;
+    box-shadow: var(--yuval-galaxy-glow-soft);
+  }
+</style>

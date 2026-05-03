@@ -1,0 +1,75 @@
+---
+/**
+ * LibraryStatsPanel — total + by-type counts + reading minutes + words.
+ *
+ * Defensive: every count falls back to 0 if the corresponding bucket
+ * is missing from LibraryStats. The panel never blanks out; the worst
+ * case is "0 books, 0 courses..." which is informative on its own.
+ *
+ * Interface Segregation: receives only `stats` and `language`, not the
+ * full catalog or items array.
+ */
+import type { Language } from '../../types/index';
+import type { LibraryStats } from '../../types/library';
+import { t } from '../../i18n';
+
+interface Props {
+  stats: LibraryStats;
+  language: Language;
+}
+const { stats, language } = Astro.props;
+
+const counts = {
+  total:    stats.total ?? 0,
+  books:    stats.byType.book ?? 0,
+  courses:  stats.byType.course ?? 0,
+  series:   stats.byType.series ?? 0,
+  articles: stats.byType.article ?? 0,
+  minutes:  stats.totalReadingMinutes ?? 0,
+  words:    stats.totalWordCount ?? 0,
+};
+---
+
+<section class="lsp" aria-label={t('library.a11y.libraryStatsPanel', language)}>
+  <h2 class="lsp-title">{t('library.stats.title', language)}</h2>
+  <ul class="lsp-list">
+    <li>{t('library.stats.totalItems',     language, { n: counts.total })}</li>
+    <li>{t('library.stats.booksCount',     language, { n: counts.books })}</li>
+    <li>{t('library.stats.coursesCount',   language, { n: counts.courses })}</li>
+    <li>{t('library.stats.seriesCount',    language, { n: counts.series })}</li>
+    <li>{t('library.stats.articlesCount',  language, { n: counts.articles })}</li>
+    <li>{t('library.stats.readingMinutes', language, { n: counts.minutes })}</li>
+    <li>{t('library.stats.words',          language, { n: counts.words })}</li>
+  </ul>
+</section>
+
+<style>
+  .lsp {
+    padding: 1.25rem;
+    border: 1px solid var(--yuval-galaxy-border);
+    border-radius: var(--yuval-galaxy-card-radius);
+    background-color: var(--yuval-galaxy-surface);
+    backdrop-filter: blur(var(--yuval-galaxy-card-blur));
+    -webkit-backdrop-filter: blur(var(--yuval-galaxy-card-blur));
+    box-shadow: var(--yuval-galaxy-glow-card);
+  }
+  .lsp-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin: 0 0 0.875rem;
+    color: var(--yuval-galaxy-text);
+  }
+  .lsp-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem 1rem;
+  }
+  .lsp-list li {
+    font-size: 0.875rem;
+    color: var(--yuval-galaxy-text-muted);
+    padding-block: 0.25rem;
+  }
+</style>
