@@ -1,12 +1,18 @@
 ---
 /**
- * LibraryHero — title, subtitle, visual search placeholder, two CTA placeholders.
+ * LibraryHero — futuristic knowledge-hub anchor for the /library page.
  *
- * Pure presentation. No data, no state, no behavior. Receives only `language`.
+ * Visual upgrade (Prompt 7):
+ *   - Stronger title hierarchy via background-clip:text gradient.
+ *   - Decorative "knowledge core" preview: a CSS-only orb with three
+ *     concentric orbit rings and a soft purple aura. Static — no
+ *     animation, no canvas, no SVG. aria-hidden, pointer-events:none.
+ *   - Subtle inner halo at the top edge of the hero panel using a
+ *     radial-gradient overlay.
+ *   - Search input keeps `readonly` (honest non-functional state).
+ *   - Premium pill CTAs that are clearly disabled.
  *
- * v1: search input is `readonly` (not `disabled`) so screen-reader users
- * still discover the field; CTAs are real `<button disabled>` to make the
- * non-functional state honest.
+ * Search and CTAs are still inert. Behavior arrives in a later prompt.
  */
 import type { Language } from '../../types/index';
 import { t } from '../../i18n';
@@ -18,11 +24,25 @@ const { language } = Astro.props;
 ---
 
 <section class="lh" aria-label={t('library.a11y.mainRegion', language)}>
-  <header class="lh-header">
-    <p class="lh-eyebrow">{t('library.galaxy.welcome', language)}</p>
-    <h1 class="lh-title">{t('library.galaxy.title', language)}</h1>
-    <p class="lh-subtitle">{t('library.galaxy.subtitle', language)}</p>
-  </header>
+  {/* Decorative inner halo — sits above bg, below content. */}
+  <div class="lh-halo" aria-hidden="true"></div>
+
+  <div class="lh-header">
+    <div class="lh-text">
+      <p class="lh-eyebrow">{t('library.galaxy.welcome', language)}</p>
+      <h1 class="lh-title">{t('library.galaxy.title', language)}</h1>
+      <p class="lh-subtitle">{t('library.galaxy.subtitle', language)}</p>
+    </div>
+
+    {/* Knowledge-core preview: CSS-only, decorative, static. */}
+    <div class="lh-core" aria-hidden="true">
+      <div class="lh-core-aura"></div>
+      <div class="lh-core-ring lh-core-ring-1"></div>
+      <div class="lh-core-ring lh-core-ring-2"></div>
+      <div class="lh-core-ring lh-core-ring-3"></div>
+      <div class="lh-core-orb"></div>
+    </div>
+  </div>
 
   <form class="lh-search" role="search" onsubmit="return false;">
     <label for="library-search-input" class="sr-only">
@@ -39,10 +59,10 @@ const { language } = Astro.props;
   </form>
 
   <div class="lh-ctas">
-    <button type="button" class="lh-cta lh-cta-primary" disabled>
+    <button type="button" class="lh-cta lh-cta-primary" disabled aria-disabled="true">
       {t('library.galaxy.primaryCta', language)}
     </button>
-    <button type="button" class="lh-cta lh-cta-secondary" disabled>
+    <button type="button" class="lh-cta lh-cta-secondary" disabled aria-disabled="true">
       {t('library.galaxy.secondaryCta', language)}
     </button>
   </div>
@@ -50,16 +70,44 @@ const { language } = Astro.props;
 
 <style>
   .lh {
+    position: relative;
     max-width: 1200px;
     margin: 0 auto 2rem;
-    padding: 1.5rem;
+    padding: 1.75rem 1.5rem 1.75rem;
     border: 1px solid var(--yuval-galaxy-border);
-    border-radius: var(--yuval-galaxy-card-radius);
+    border-radius: var(--yuval-galaxy-panel-radius);
     background-color: var(--yuval-galaxy-surface);
     backdrop-filter: blur(var(--yuval-galaxy-card-blur));
     -webkit-backdrop-filter: blur(var(--yuval-galaxy-card-blur));
     box-shadow: var(--yuval-galaxy-glow-card);
+    overflow: hidden;
+    isolation: isolate;
   }
+  .lh-halo {
+    position: absolute;
+    inset-block-start: -40%;
+    inset-inline-start: 50%;
+    transform: translateX(-50%);
+    width: 120%;
+    aspect-ratio: 2 / 1;
+    background: radial-gradient(ellipse at center,
+      var(--yuval-galaxy-accent-purple) 0%,
+      transparent 60%);
+    opacity: 0.18;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .lh-header {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.25rem;
+    margin-block-end: 1.25rem;
+  }
+  .lh-text { min-width: 0; flex: 1 1 auto; }
+
   .sr-only {
     position: absolute;
     width: 1px; height: 1px;
@@ -69,64 +117,145 @@ const { language } = Astro.props;
     white-space: nowrap;
     border: 0;
   }
+
   .lh-eyebrow {
-    font-size: 0.8125rem;
+    font-size: 0.75rem;
     color: var(--yuval-galaxy-text-soft);
-    margin: 0 0 0.5rem;
-    letter-spacing: 0.04em;
+    margin: 0 0 0.625rem;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
+    font-weight: 600;
   }
   .lh-title {
-    font-size: clamp(1.75rem, 5vw, 2.75rem);
+    font-size: clamp(2rem, 5.5vw, 3rem);
     font-weight: 700;
-    line-height: 1.15;
-    margin: 0 0 0.75rem;
-    color: var(--yuval-galaxy-text);
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+    margin: 0 0 0.875rem;
+    background: var(--yuval-galaxy-title-gradient);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
   }
   .lh-subtitle {
     font-size: 1rem;
     line-height: 1.55;
     color: var(--yuval-galaxy-text-muted);
-    margin: 0 0 1.25rem;
+    margin: 0;
     max-width: 56ch;
   }
-  .lh-search { margin: 0 0 1rem; }
+
+  /* ── Knowledge-core preview ──────────────────────────────────────── */
+  .lh-core {
+    position: relative;
+    width: 110px;
+    height: 110px;
+    flex-shrink: 0;
+    pointer-events: none;
+    align-self: center;
+  }
+  .lh-core-aura {
+    position: absolute;
+    inset: -16px;
+    border-radius: 50%;
+    background: radial-gradient(circle,
+      var(--yuval-galaxy-accent-purple) 0%,
+      transparent 65%);
+    opacity: 0.45;
+    filter: blur(14px);
+  }
+  .lh-core-orb {
+    position: absolute;
+    inset: 38%;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%,
+      var(--yuval-galaxy-accent-cyan) 0%,
+      var(--yuval-galaxy-accent-purple) 75%);
+    box-shadow: var(--yuval-galaxy-glow-core);
+  }
+  .lh-core-ring {
+    position: absolute;
+    border-radius: 50%;
+    border: 1px solid var(--yuval-galaxy-border-strong);
+  }
+  .lh-core-ring-1 { inset: 0;   opacity: 0.45; }
+  .lh-core-ring-2 { inset: 16%; opacity: 0.35; border-color: var(--yuval-galaxy-border-glow); }
+  .lh-core-ring-3 { inset: 28%; opacity: 0.30; }
+
+  /* ── Search ─────────────────────────────────────────────────────── */
+  .lh-search { position: relative; z-index: 1; margin: 0 0 1rem; }
   .lh-search-input {
     width: 100%;
-    padding: 0.75rem 1rem;
-    font-size: 0.9375rem;
+    /* 16px font-size prevents iOS Safari from auto-zooming on focus. */
+    font-size: 1rem;
+    padding: 0.875rem 1.125rem;
     color: var(--yuval-galaxy-text);
     background-color: var(--yuval-galaxy-surface-muted);
     border: 1px solid var(--yuval-galaxy-border);
     border-radius: 999px;
     outline: none;
+    box-shadow: var(--yuval-galaxy-glow-soft);
   }
   .lh-search-input::placeholder { color: var(--yuval-galaxy-text-soft); }
   .lh-search-input:focus-visible {
     border-color: var(--yuval-galaxy-border-glow);
-    box-shadow: var(--yuval-galaxy-glow-soft);
+    box-shadow: var(--yuval-galaxy-glow-primary);
   }
-  .lh-ctas { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+
+  /* ── CTAs ───────────────────────────────────────────────────────── */
+  .lh-ctas {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.625rem;
+  }
   .lh-cta {
     appearance: none;
+    /* 44px touch target via padding */
+    min-height: 44px;
     border: 1px solid var(--yuval-galaxy-border-strong);
     border-radius: 999px;
-    padding: 0.625rem 1.125rem;
+    padding: 0.75rem 1.25rem;
     font-size: 0.9375rem;
     font-weight: 600;
     cursor: not-allowed;
-    transition: transform var(--yuval-galaxy-motion-fast) var(--yuval-galaxy-ease-out),
-                box-shadow var(--yuval-galaxy-motion-fast) var(--yuval-galaxy-ease-out);
+    transition:
+      transform var(--yuval-galaxy-motion-fast) var(--yuval-galaxy-ease-out),
+      box-shadow var(--yuval-galaxy-motion-fast) var(--yuval-galaxy-ease-out);
   }
   .lh-cta-primary {
     background-color: var(--yuval-galaxy-accent);
     color: var(--yuval-galaxy-text-inverse);
     border-color: transparent;
+    box-shadow: var(--yuval-galaxy-glow-primary);
   }
   .lh-cta-secondary {
-    background-color: transparent;
+    background-color: var(--yuval-galaxy-surface-muted);
     color: var(--yuval-galaxy-text);
   }
   .lh-cta:disabled { opacity: 0.7; }
   .lh-cta:focus-visible { box-shadow: var(--yuval-galaxy-glow-primary); }
+
+  /* ── Tablet & up: hero header becomes a row, core grows. ─────────── */
+  @media (min-width: 768px) {
+    .lh { padding: 2.5rem 2.25rem; }
+    .lh-header {
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      gap: 2rem;
+      margin-block-end: 1.75rem;
+    }
+    .lh-core {
+      width: 160px;
+      height: 160px;
+      align-self: auto;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .lh-core { width: 180px; height: 180px; }
+  }
 </style>

@@ -1,17 +1,24 @@
 ---
 /**
- * LibraryStatsPanel — total + by-type counts + reading minutes + words.
+ * LibraryStatsPanel — premium analytics tile dashboard.
  *
- * Defensive: every count falls back to 0 if the corresponding bucket
- * is missing from LibraryStats. The panel never blanks out; the worst
- * case is "0 books, 0 courses..." which is informative on its own.
+ * Visual upgrade (Prompt 7):
+ *   - Total-items hero tile spans full width with a calmly tinted glow.
+ *   - Type counts presented as 2×2 mini tiles, each with its type-accent
+ *     stripe (book / course / series / article — drives only --tile-accent,
+ *     not per-type CSS branches).
+ *   - Reading minutes + words shown as a quieter footer row separated
+ *     by a hairline divider.
+ *   - Defensive: every count falls back to 0; the panel never blanks.
  *
- * Interface Segregation: receives only `stats` and `language`, not the
- * full catalog or items array.
+ * Each tile uses the existing fully-formatted i18n string (e.g.
+ * "5 books"). We do not split the number from the label — that would
+ * require new keys per language and is out of scope here.
  */
 import type { Language } from '../../types/index';
 import type { LibraryStats } from '../../types/library';
 import { t } from '../../i18n';
+import { getTypeAccentVar } from '../../utils/library-display';
 
 interface Props {
   stats: LibraryStats;
@@ -28,48 +35,152 @@ const counts = {
   minutes:  stats.totalReadingMinutes ?? 0,
   words:    stats.totalWordCount ?? 0,
 };
+
+// Tile config — single source of truth keeps the markup loop clean
+// and Liskov-safe: each tile is constructed identically.
+const typeTiles = [
+  { key: 'library.stats.booksCount'   as const, n: counts.books,    accent: getTypeAccentVar('book')    },
+  { key: 'library.stats.coursesCount' as const, n: counts.courses,  accent: getTypeAccentVar('course')  },
+  { key: 'library.stats.seriesCount'  as const, n: counts.series,   accent: getTypeAccentVar('series')  },
+  { key: 'library.stats.articlesCount' as const, n: counts.articles, accent: getTypeAccentVar('article') },
+];
 ---
 
 <section class="lsp" aria-label={t('library.a11y.libraryStatsPanel', language)}>
-  <h2 class="lsp-title">{t('library.stats.title', language)}</h2>
-  <ul class="lsp-list">
-    <li>{t('library.stats.totalItems',     language, { n: counts.total })}</li>
-    <li>{t('library.stats.booksCount',     language, { n: counts.books })}</li>
-    <li>{t('library.stats.coursesCount',   language, { n: counts.courses })}</li>
-    <li>{t('library.stats.seriesCount',    language, { n: counts.series })}</li>
-    <li>{t('library.stats.articlesCount',  language, { n: counts.articles })}</li>
+  <header class="lsp-header">
+    <span class="lsp-dot" aria-hidden="true"></span>
+    <h2 class="lsp-title">{t('library.stats.title', language)}</h2>
+  </header>
+
+  <div class="lsp-hero-tile">
+    {t('library.stats.totalItems', language, { n: counts.total })}
+  </div>
+
+  <ul class="lsp-tiles">
+    {typeTiles.map((tile) => (
+      <li class="lsp-tile" style={`--tile-accent: ${tile.accent};`}>
+        {t(tile.key, language, { n: tile.n })}
+      </li>
+    ))}
+  </ul>
+
+  <div class="lsp-divider" aria-hidden="true"></div>
+
+  <ul class="lsp-footer">
     <li>{t('library.stats.readingMinutes', language, { n: counts.minutes })}</li>
-    <li>{t('library.stats.words',          language, { n: counts.words })}</li>
+    <li>{t('library.stats.words', language, { n: counts.words })}</li>
   </ul>
 </section>
 
 <style>
   .lsp {
-    padding: 1.25rem;
+    padding: 1.375rem;
     border: 1px solid var(--yuval-galaxy-border);
-    border-radius: var(--yuval-galaxy-card-radius);
+    border-radius: var(--yuval-galaxy-panel-radius);
     background-color: var(--yuval-galaxy-surface);
     backdrop-filter: blur(var(--yuval-galaxy-card-blur));
     -webkit-backdrop-filter: blur(var(--yuval-galaxy-card-blur));
     box-shadow: var(--yuval-galaxy-glow-card);
   }
-  .lsp-title {
-    font-size: 1.125rem;
-    font-weight: 600;
-    margin: 0 0 0.875rem;
-    color: var(--yuval-galaxy-text);
+
+  .lsp-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-block-end: 0.875rem;
   }
-  .lsp-list {
+  .lsp-dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: var(--yuval-galaxy-accent-purple);
+    box-shadow: var(--yuval-galaxy-glow-secondary);
+  }
+  .lsp-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin: 0;
+    color: var(--yuval-galaxy-text-muted);
+  }
+
+  /* Hero tile — total items, full width, calm tint */
+  .lsp-hero-tile {
+    position: relative;
+    padding: 0.875rem 1rem;
+    margin-block-end: 0.75rem;
+    border: 1px solid var(--yuval-galaxy-card-border);
+    border-radius: 14px;
+    background-color: var(--yuval-galaxy-card-surface);
+    color: var(--yuval-galaxy-text);
+    font-size: 1rem;
+    font-weight: 600;
+    overflow: hidden;
+    isolation: isolate;
+  }
+  .lsp-hero-tile::after {
+    content: "";
+    position: absolute;
+    inset-block-start: -50%;
+    inset-inline-end: -20%;
+    width: 60%;
+    aspect-ratio: 1;
+    background: radial-gradient(circle,
+      var(--yuval-galaxy-accent-cyan) 0%,
+      transparent 70%);
+    opacity: 0.16;
+    pointer-events: none;
+    z-index: -1;
+  }
+
+  /* Type tile grid — 2×2 on mobile, stays 2×2 in side column on desktop */
+  .lsp-tiles {
     list-style: none;
     margin: 0;
     padding: 0;
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.5rem 1rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem;
   }
-  .lsp-list li {
-    font-size: 0.875rem;
+  .lsp-tile {
+    --tile-accent: var(--yuval-galaxy-accent);
+    position: relative;
+    padding: 0.625rem 0.75rem 0.625rem 0.875rem;
+    border: 1px solid var(--yuval-galaxy-card-border);
+    border-radius: 12px;
+    background-color: var(--yuval-galaxy-surface-muted);
+    font-size: 0.8125rem;
     color: var(--yuval-galaxy-text-muted);
-    padding-block: 0.25rem;
+    overflow: hidden;
+  }
+  /* Inline-start accent stripe per tile */
+  .lsp-tile::before {
+    content: "";
+    position: absolute;
+    inset-block-start: 0;
+    inset-block-end: 0;
+    inset-inline-start: 0;
+    width: 3px;
+    background-color: var(--tile-accent);
+    opacity: 0.85;
+  }
+
+  .lsp-divider {
+    height: 1px;
+    background: var(--yuval-galaxy-divider);
+    margin-block: 0.875rem;
+  }
+
+  .lsp-footer {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+    font-size: 0.75rem;
+    color: var(--yuval-galaxy-text-soft);
   }
 </style>

@@ -1,13 +1,18 @@
 ---
 /**
- * LibraryQuickActions — placeholder rail for AI assistant, bookmarks,
- * history, and item-level AI actions.
+ * LibraryQuickActions — future AI side rail.
  *
- * v1: every button is `disabled` because no behavior is wired yet.
- * Compact area on mobile (single column), right rail on desktop.
+ * Visual upgrade (Prompt 7):
+ *   - Two visual groups separated by a hairline divider:
+ *       1) AI assistant actions (ask / summarize / find-related / what-next)
+ *       2) Library navigation actions (bookmarks / history)
+ *   - Group eyebrow above each group, rooted in i18n keys we already own.
+ *   - Tiny chevron glyph at the inline-end of each button to telegraph
+ *     "this opens something" — purely decorative, aria-hidden.
+ *   - All buttons remain disabled + aria-disabled (no behavior wired).
  *
- * Renders inside an <aside> so screen readers treat it as complementary
- * to the main library content, not navigation.
+ * On mobile the rail collapses naturally into a normal panel via the
+ * page grid; nothing component-specific to do for that.
  */
 import type { Language } from '../../types/index';
 import type { TranslationKey } from '../../i18n';
@@ -18,26 +23,44 @@ interface Props {
 }
 const { language } = Astro.props;
 
-const actionKeys: TranslationKey[] = [
+const aiActionKeys: TranslationKey[] = [
   'library.action.askAboutItem',
   'library.action.summarizeArticle',
   'library.action.findRelated',
   'library.action.whatNext',
+];
+
+const navActionKeys: TranslationKey[] = [
   'library.action.bookmarks',
   'library.action.history',
 ];
 ---
 
-<aside
-  class="lqa"
-  aria-label={t('library.a11y.openAssistant', language)}
->
-  <h2 class="lqa-title">{t('library.action.aiAssistant', language)}</h2>
+<aside class="lqa" aria-label={t('library.a11y.openAssistant', language)}>
+  <header class="lqa-header">
+    <span class="lqa-dot" aria-hidden="true"></span>
+    <h2 class="lqa-title">{t('library.action.aiAssistant', language)}</h2>
+  </header>
+
   <ul class="lqa-list">
-    {actionKeys.map((key) => (
+    {aiActionKeys.map((key) => (
       <li>
         <button type="button" class="lqa-btn" disabled aria-disabled="true">
-          {t(key, language)}
+          <span class="lqa-btn-label">{t(key, language)}</span>
+          <span class="lqa-chevron" aria-hidden="true">›</span>
+        </button>
+      </li>
+    ))}
+  </ul>
+
+  <div class="lqa-divider" aria-hidden="true"></div>
+
+  <ul class="lqa-list">
+    {navActionKeys.map((key) => (
+      <li>
+        <button type="button" class="lqa-btn lqa-btn-quiet" disabled aria-disabled="true">
+          <span class="lqa-btn-label">{t(key, language)}</span>
+          <span class="lqa-chevron" aria-hidden="true">›</span>
         </button>
       </li>
     ))}
@@ -46,20 +69,38 @@ const actionKeys: TranslationKey[] = [
 
 <style>
   .lqa {
-    padding: 1.25rem;
+    padding: 1.375rem;
     border: 1px solid var(--yuval-galaxy-border);
-    border-radius: var(--yuval-galaxy-card-radius);
+    border-radius: var(--yuval-galaxy-panel-radius);
     background-color: var(--yuval-galaxy-surface);
     backdrop-filter: blur(var(--yuval-galaxy-card-blur));
     -webkit-backdrop-filter: blur(var(--yuval-galaxy-card-blur));
     box-shadow: var(--yuval-galaxy-glow-card);
   }
-  .lqa-title {
-    font-size: 1.125rem;
-    font-weight: 600;
-    margin: 0 0 0.875rem;
-    color: var(--yuval-galaxy-text);
+
+  .lqa-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-block-end: 0.875rem;
   }
+  .lqa-dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: var(--yuval-galaxy-accent-cyan);
+    box-shadow: var(--yuval-galaxy-glow-soft);
+  }
+  .lqa-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin: 0;
+    color: var(--yuval-galaxy-text-muted);
+  }
+
   .lqa-list {
     list-style: none;
     margin: 0;
@@ -68,9 +109,21 @@ const actionKeys: TranslationKey[] = [
     flex-direction: column;
     gap: 0.5rem;
   }
+
+  .lqa-divider {
+    height: 1px;
+    background: var(--yuval-galaxy-divider);
+    margin-block: 1rem;
+  }
+
   .lqa-btn {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
     width: 100%;
     text-align: start;
+    min-height: 44px;
     padding: 0.625rem 0.875rem;
     font-size: 0.875rem;
     color: var(--yuval-galaxy-text);
@@ -78,10 +131,25 @@ const actionKeys: TranslationKey[] = [
     border: 1px solid var(--yuval-galaxy-border);
     border-radius: 12px;
     cursor: not-allowed;
+    transition: border-color var(--yuval-galaxy-motion-fast) var(--yuval-galaxy-ease-out);
   }
-  .lqa-btn:disabled { opacity: 0.7; }
+  .lqa-btn-label { min-width: 0; }
+  .lqa-btn-quiet {
+    color: var(--yuval-galaxy-text-muted);
+  }
+  .lqa-chevron {
+    color: var(--yuval-galaxy-text-soft);
+    font-size: 1rem;
+    line-height: 1;
+    /* Flip the chevron in RTL so it always points "forward". */
+  }
+  :global([dir="rtl"]) .lqa-chevron {
+    transform: scaleX(-1);
+  }
+  .lqa-btn:disabled { opacity: 0.78; }
   .lqa-btn:focus-visible {
     outline: none;
+    border-color: var(--yuval-galaxy-border-glow);
     box-shadow: var(--yuval-galaxy-glow-soft);
   }
 </style>

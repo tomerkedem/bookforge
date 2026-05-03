@@ -1,13 +1,15 @@
 ---
 /**
- * RecommendationStrip — horizontally-scrollable rail of recommended items.
+ * RecommendationStrip — premium horizontal discovery rail.
  *
- * Composition only: wraps each item in a compact LibraryCard. No carousel
- * JS, no animation. Pure CSS overflow + scroll-snap so the affordance is
- * native and accessible (keyboard arrows, touch swipe, screen-reader
- * tab order).
+ * Visual upgrade (Prompt 7):
+ *   - Section header with a small dot glyph for calm anchoring.
+ *   - Trailing-edge gradient mask hints "more content scrolls this way"
+ *     (and respects RTL via direction-aware mask-image).
+ *   - Custom thin scrollbar styled with the cyan accent token.
+ *   - Uses LibraryCard variant="compact" — same component, less detail.
  *
- * Empty state uses library.recommendation.none — never shows an empty rail.
+ * Still no JS, no carousel rotation, no animation.
  */
 import type { Language } from '../../types/index';
 import type { LibraryItem } from '../../types/library';
@@ -22,21 +24,23 @@ const { items, language } = Astro.props;
 const hasItems = items.length > 0;
 ---
 
-<section
-  class="rs"
-  aria-label={t('library.a11y.recommendationCarousel', language)}
->
-  <h2 class="rs-title">{t('library.recommendation.forYou', language)}</h2>
+<section class="rs" aria-label={t('library.a11y.recommendationCarousel', language)}>
+  <header class="rs-header">
+    <span class="rs-dot" aria-hidden="true"></span>
+    <h2 class="rs-title">{t('library.recommendation.forYou', language)}</h2>
+  </header>
 
   {hasItems ? (
     <>
       <p class="rs-eyebrow">{t('library.recommendation.basedOnYourLibrary', language)}</p>
-      <div class="rs-strip" role="list">
-        {items.map((item) => (
-          <div class="rs-item" role="listitem">
-            <LibraryCard item={item} language={language} variant="compact" />
-          </div>
-        ))}
+      <div class="rs-strip-wrap">
+        <div class="rs-strip" role="list">
+          {items.map((item) => (
+            <div class="rs-item" role="listitem">
+              <LibraryCard item={item} language={language} variant="compact" />
+            </div>
+          ))}
+        </div>
       </div>
     </>
   ) : (
@@ -48,29 +52,76 @@ const hasItems = items.length > 0;
   .rs {
     max-width: 1200px;
     margin: 1.5rem auto 0;
-    padding: 1.25rem;
+    padding: 1.375rem;
     border: 1px solid var(--yuval-galaxy-border);
-    border-radius: var(--yuval-galaxy-card-radius);
+    border-radius: var(--yuval-galaxy-panel-radius);
     background-color: var(--yuval-galaxy-surface);
     backdrop-filter: blur(var(--yuval-galaxy-card-blur));
     -webkit-backdrop-filter: blur(var(--yuval-galaxy-card-blur));
     box-shadow: var(--yuval-galaxy-glow-card);
+    overflow: hidden;
+  }
+
+  .rs-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-block-end: 0.375rem;
+  }
+  .rs-dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: var(--yuval-galaxy-accent-cyan);
+    box-shadow: var(--yuval-galaxy-glow-soft);
   }
   .rs-title {
-    font-size: 1.125rem;
-    font-weight: 600;
-    margin: 0 0 0.375rem;
-    color: var(--yuval-galaxy-text);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin: 0;
+    color: var(--yuval-galaxy-text-muted);
   }
   .rs-eyebrow {
-    font-size: 0.8125rem;
-    color: var(--yuval-galaxy-text-soft);
+    font-size: 0.875rem;
+    color: var(--yuval-galaxy-text);
     margin: 0 0 0.875rem;
+    font-weight: 500;
   }
   .rs-empty {
     font-size: 0.9375rem;
     color: var(--yuval-galaxy-text-muted);
     margin: 0;
+  }
+
+  /* Wrapper provides the trailing fade mask so the scrollbar still
+     lives inside .rs-strip and remains accessible. */
+  .rs-strip-wrap {
+    position: relative;
+    margin-inline: -0.5rem;
+    padding-inline: 0.5rem;
+    /* Direction-aware fade — uses mask-image with `to right`, then
+       flips for RTL via [dir="rtl"] override below. */
+    mask-image: linear-gradient(to right,
+      black 0%,
+      black 90%,
+      transparent 100%);
+    -webkit-mask-image: linear-gradient(to right,
+      black 0%,
+      black 90%,
+      transparent 100%);
+  }
+  :global([dir="rtl"]) .rs-strip-wrap {
+    mask-image: linear-gradient(to left,
+      black 0%,
+      black 90%,
+      transparent 100%);
+    -webkit-mask-image: linear-gradient(to left,
+      black 0%,
+      black 90%,
+      transparent 100%);
   }
 
   .rs-strip {
@@ -80,7 +131,19 @@ const hasItems = items.length > 0;
     scroll-snap-type: x mandatory;
     padding-block-end: 0.5rem;
     -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: var(--yuval-galaxy-accent-cyan) transparent;
   }
+  .rs-strip::-webkit-scrollbar {
+    height: 6px;
+  }
+  .rs-strip::-webkit-scrollbar-track { background: transparent; }
+  .rs-strip::-webkit-scrollbar-thumb {
+    background-color: var(--yuval-galaxy-accent-cyan);
+    border-radius: 999px;
+    opacity: 0.5;
+  }
+
   .rs-item {
     flex: 0 0 80%;
     max-width: 320px;

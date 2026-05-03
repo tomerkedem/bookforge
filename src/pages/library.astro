@@ -1,17 +1,21 @@
 ---
 /**
- * /library — Living Library, v1 composition.
+ * /library — Living Library, premium-foundation composition.
  *
- * After Prompt 6 refactor, this page is composition-only:
+ * Page is composition-only:
  *  • picks language from URL / props
- *  • loads mock catalog data via the utility surface
+ *  • loads mock catalog data through the utility surface
  *  • lays out the page subtree under .library-dark-showcase
- *  • plugs in the small library/* components — no rendering logic here
+ *  • plugs in the small library/* components
  *
- * Card rendering, stats formatting, search chrome, and quick-action
- * placeholders all live in src/components/library/. Pure helpers
- * live in src/utils/library-display.ts. This page no longer knows
- * what a card looks like — it just knows where one goes.
+ * Visual upgrade in this prompt is mostly *inside* the components.
+ * What this page contributes to the upgrade:
+ *  - layered ambient backdrop (radial purple/blue + a soft top aurora)
+ *  - clearer section rhythm and breathing room
+ *  - a hairline divider between the hero band and the content body
+ *
+ * No carousel, no animation, no JS. Header stays controlled by the
+ * global theme — out of scope for this step.
  */
 
 import BaseLayout from '../layouts/BaseLayout.astro';
@@ -48,9 +52,7 @@ const requestedLanguage =
 const language = requestedLanguage as Language;
 const isRtl = getLanguageDirection(language) === 'rtl';
 
-// ── Data ──────────────────────────────────────────────────────────────────
-// Only this page touches the catalog utilities. Components below depend on
-// LibraryItem / LibraryStats — never on the mock array directly (DI).
+// ── Data (only this page touches catalog utilities — DI) ──────────────────
 const items = getMockLibraryItems();
 const stats = getLibraryStats(items);
 const continueItem = getContinueReadingItem(items);
@@ -59,7 +61,6 @@ const recommendedItems = continueItem
   ? getRecommendedItems(items, continueItem.id, 6)
   : [];
 
-// Showcase row — one of each major type when available, defensive otherwise.
 const showcaseTypes: LibraryItemType[] = ['book', 'course', 'series', 'article'];
 const showcaseItems: LibraryItem[] = showcaseTypes
   .map((type) => items.find((it) => it.type === type))
@@ -78,13 +79,24 @@ const showcaseItems: LibraryItem[] = showcaseTypes
   {/*
     .library-dark-showcase scopes --yuval-galaxy-* dark tokens to this
     subtree only. It does not touch html.dark, the user's global theme
-    preference, or any other route. See galaxy.css and Prompt 4 notes.
-    Header above remains controlled by the global theme — by design,
-    per the Prompt 6 contract.
+    preference, or any other route. Header above remains controlled by
+    the global theme — by design, per Prompt 7 contract.
   */}
   <div class="library-dark-showcase library-root" lang={language} dir={isRtl ? 'rtl' : 'ltr'}>
 
+    {/*
+      Decorative ambient layer. Layered radial gradients drawn on a
+      pseudo-element so they live behind everything, never block input,
+      and stay token-based. aria-hidden via the wrapper's `aria-hidden`
+      element below.
+    */}
+    <div class="library-ambient" aria-hidden="true">
+      <div class="library-aurora"></div>
+    </div>
+
     <LibraryHero language={language} />
+
+    <div class="library-divider" aria-hidden="true"></div>
 
     <div class="library-body">
 
@@ -97,7 +109,10 @@ const showcaseItems: LibraryItem[] = showcaseTypes
 
         {showcaseItems.length > 0 && (
           <section class="library-section" aria-label={t('library.galaxy.welcome', language)}>
-            <h2 class="library-section-title">{t('library.galaxy.welcome', language)}</h2>
+            <header class="library-section-header">
+              <span class="library-section-dot" aria-hidden="true"></span>
+              <h2 class="library-section-title">{t('library.galaxy.welcome', language)}</h2>
+            </header>
             <div class="library-card-grid">
               {showcaseItems.map((item) => (
                 <LibraryCard item={item} language={language} />
@@ -107,7 +122,10 @@ const showcaseItems: LibraryItem[] = showcaseTypes
         )}
 
         <section class="library-section">
-          <h2 class="library-section-title">{t('library.sort.recent', language)}</h2>
+          <header class="library-section-header">
+            <span class="library-section-dot library-section-dot-alt" aria-hidden="true"></span>
+            <h2 class="library-section-title">{t('library.sort.recent', language)}</h2>
+          </header>
           <div class="library-card-grid">
             {recentItems.map((item) => (
               <LibraryCard item={item} language={language} />
@@ -128,12 +146,12 @@ const showcaseItems: LibraryItem[] = showcaseTypes
 
 <style>
   /* ──────────────────────────────────────────────────────────────────────
-     Page-level shell only. All component chrome (panels, cards, search,
-     CTAs) lives inside the components — this file does not redeclare
-     it. RTL flips automatically via CSS Logical Properties.
+     Page-level shell only. Component chrome lives inside components.
+     RTL flips automatically via CSS Logical Properties.
      ────────────────────────────────────────────────────────────────────── */
 
   .library-root {
+    position: relative;
     min-height: 100vh;
     width: 100%;
     background-color: var(--yuval-galaxy-bg);
@@ -143,8 +161,49 @@ const showcaseItems: LibraryItem[] = showcaseTypes
     color: var(--yuval-galaxy-text);
     padding: 1.5rem 1rem 5rem;
     box-sizing: border-box;
+    isolation: isolate;
+    overflow: hidden;
   }
 
+  /* ── Ambient backdrop layer ───────────────────────────────────────── */
+  .library-ambient {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+  }
+  /* "Aurora" — a wide soft band of cyan light at the upper third of
+     the page. Gives the screen a sense of horizon and depth without
+     adding particles or animation. */
+  .library-aurora {
+    position: absolute;
+    inset-block-start: 8%;
+    inset-inline-start: -10%;
+    width: 120%;
+    height: 280px;
+    background: radial-gradient(ellipse at center,
+      var(--yuval-galaxy-accent-cyan) 0%,
+      transparent 65%);
+    opacity: 0.10;
+    filter: blur(60px);
+  }
+
+  /* All real content sits above the ambient layer. */
+  .library-root > :not(.library-ambient) {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ── Divider between hero band and content body ───────────────────── */
+  .library-divider {
+    max-width: 1200px;
+    margin: 0 auto 1.5rem;
+    height: 1px;
+    background: var(--yuval-galaxy-divider);
+  }
+
+  /* ── Body grid: mobile vertical, desktop 3-column ──────────────────── */
   .library-body {
     max-width: 1200px;
     margin: 0 auto;
@@ -160,23 +219,41 @@ const showcaseItems: LibraryItem[] = showcaseTypes
     min-width: 0;
   }
 
-  /* Section wrapper — the two unnamed groups in the main column
-     (showcase + recent). Components own their own panel chrome; this
-     is just enough chrome for the inline groupings here. */
+  /* ── Section wrapper for inline groups in the main column ─────────── */
   .library-section {
-    padding: 1.25rem;
+    padding: 1.375rem;
     border: 1px solid var(--yuval-galaxy-border);
-    border-radius: var(--yuval-galaxy-card-radius);
+    border-radius: var(--yuval-galaxy-panel-radius);
     background-color: var(--yuval-galaxy-surface);
     backdrop-filter: blur(var(--yuval-galaxy-card-blur));
     -webkit-backdrop-filter: blur(var(--yuval-galaxy-card-blur));
     box-shadow: var(--yuval-galaxy-glow-card);
   }
+  .library-section-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-block-end: 0.875rem;
+  }
+  .library-section-dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: var(--yuval-galaxy-accent-cyan);
+    box-shadow: var(--yuval-galaxy-glow-soft);
+  }
+  .library-section-dot-alt {
+    background-color: var(--yuval-galaxy-accent-purple);
+    box-shadow: var(--yuval-galaxy-glow-secondary);
+  }
   .library-section-title {
-    font-size: 1.125rem;
-    font-weight: 600;
-    margin: 0 0 0.875rem;
-    color: var(--yuval-galaxy-text);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin: 0;
+    color: var(--yuval-galaxy-text-muted);
   }
 
   .library-card-grid {
@@ -185,6 +262,7 @@ const showcaseItems: LibraryItem[] = showcaseTypes
     gap: 0.875rem;
   }
 
+  /* ── Tablet (≥640px): 2-up cards, more outer padding ──────────────── */
   @media (min-width: 640px) {
     .library-root { padding: 2rem 1.5rem 5rem; }
     .library-card-grid {
@@ -192,9 +270,11 @@ const showcaseItems: LibraryItem[] = showcaseTypes
     }
   }
 
+  /* ── Desktop (≥1024px): 3-column body, fuller rhythm ──────────────── */
   @media (min-width: 1024px) {
+    .library-root { padding: 2.5rem 2rem 6rem; }
     .library-body {
-      grid-template-columns: minmax(240px, 1fr) minmax(0, 2fr) minmax(240px, 1fr);
+      grid-template-columns: minmax(260px, 1fr) minmax(0, 2.2fr) minmax(260px, 1fr);
       gap: 1.5rem;
     }
     .library-card-grid {
@@ -202,6 +282,7 @@ const showcaseItems: LibraryItem[] = showcaseTypes
     }
   }
 
+  /* ── Wide desktop (≥1280px): 3-up cards in main column ────────────── */
   @media (min-width: 1280px) {
     .library-card-grid {
       grid-template-columns: repeat(3, minmax(0, 1fr));
