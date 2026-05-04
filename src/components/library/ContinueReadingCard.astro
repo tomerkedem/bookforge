@@ -22,7 +22,7 @@ import {
   getItemSummary,
   getItemTypeLabelKey,
   getTypeAccentVar,
-  formatLibraryDate,
+  isSafeLibraryHref,
 } from '../../utils/library-display';
 
 interface Props {
@@ -34,33 +34,60 @@ const { item, language } = Astro.props;
 const cardStyle = item
   ? `--card-accent: ${getTypeAccentVar(item.type)};`
   : '';
+
+// True only when we actually know this reader's last-opened item from
+// real per-user reading state. Today no such state is wired into the
+// SSR layer, so the card presents itself as a recommended starting
+// point instead of pretending to remember the user. The day a real
+// last-opened source lands (localStorage hydration / server session),
+// pass it as a prop and flip this to true.
+const hasPersonalLastOpened = false;
+
+const sectionTitleKey = hasPersonalLastOpened
+  ? 'library.continueReading.title'           // "Continue where you left off"
+  : 'library.continueReading.recommendedStart'; // "Recommended starting point"
+
+const ctaKey = hasPersonalLastOpened
+  ? 'library.continueReading.cta'             // "Continue reading"
+  : 'library.continueReading.startReading';   // "Start reading"
+
+const isSafe = item ? isSafeLibraryHref(item.href) : false;
+const itemTitle = item ? getItemTitle(item, language) : '';
 ---
 
 <section class="crc" aria-label={t('library.a11y.continueReadingCard', language)}>
   <header class="crc-header">
     <span class="crc-dot" aria-hidden="true"></span>
-    <h2 class="crc-title">{t('library.continueReading.title', language)}</h2>
+    <h2 class="crc-title">{t(sectionTitleKey, language)}</h2>
   </header>
 
   {item ? (
     <article class="crc-card" style={cardStyle}>
       <div class="crc-card-glow" aria-hidden="true"></div>
       <p class="crc-card-type">{t(getItemTypeLabelKey(item.type), language)}</p>
-      <h3 class="crc-card-title">{getItemTitle(item, language)}</h3>
+      <h3 class="crc-card-title">{itemTitle}</h3>
       {getItemSummary(item, language) && (
         <p class="crc-card-summary">{getItemSummary(item, language)}</p>
       )}
-      {item.updatedAt && (
+      {!hasPersonalLastOpened && (
         <p class="crc-card-meta">
-          {t('library.continueReading.lastOpened', language, {
-            when: formatLibraryDate(item.updatedAt, language),
-          })}
+          {t('library.continueReading.recommendedStartText', language)}
         </p>
       )}
       <div class="crc-card-activity" aria-hidden="true"></div>
-      <button type="button" class="crc-cta" disabled aria-disabled="true">
-        {t('library.continueReading.cta', language)}
-      </button>
+      {isSafe ? (
+        <a
+          class="crc-cta"
+          href={item.href}
+          aria-label={`${t(ctaKey, language)}: ${itemTitle}`}
+        >
+          {t(ctaKey, language)}
+        </a>
+      ) : (
+        <button type="button" class="crc-cta" disabled aria-disabled="true">
+          {t(ctaKey, language)}
+        </button>
+      )}
     </article>
   ) : (
     <div class="crc-empty">
@@ -192,6 +219,11 @@ const cardStyle = item
 
   .crc-cta {
     appearance: none;
+    /* Inline-flex so the rule applies cleanly whether crc-cta is a
+       <button> or an <a>. */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     min-height: 44px;
     padding: 0.625rem 1.125rem;
     font-size: 0.9375rem;
@@ -200,10 +232,20 @@ const cardStyle = item
     background-color: var(--yuval-galaxy-accent);
     border: 1px solid transparent;
     border-radius: 999px;
-    cursor: not-allowed;
+    text-decoration: none;
+    cursor: pointer;
     box-shadow: var(--yuval-galaxy-glow-primary);
     transition: box-shadow var(--yuval-galaxy-motion-fast) var(--yuval-galaxy-ease-out);
   }
-  .crc-cta:disabled { opacity: 0.78; }
-  .crc-cta:focus-visible { box-shadow: var(--yuval-galaxy-glow-primary); }
+  .crc-cta:disabled { opacity: 0.78; cursor: not-allowed; }
+  .crc-cta:focus-visible {
+    outline: none;
+    box-shadow: var(--yuval-galaxy-glow-primary);
+  }
+  /* Hover lift only on the active <a> variant; disabled <button> stays put. */
+  a.crc-cta:hover {
+    box-shadow:
+      var(--yuval-galaxy-glow-primary),
+      0 6px 18px -4px var(--yuval-galaxy-accent);
+  }
 </style>

@@ -565,6 +565,12 @@ export const translations: Translations = {
   'library.continueReading.lastOpened':    { he: 'נפתח לאחרונה {{when}}',       en: 'Last opened {{when}}',         es: 'Abierto por última vez {{when}}' },
   'library.continueReading.noActive':      { he: 'אין פריט פעיל כרגע',          en: 'Nothing in progress right now', es: 'Nada en progreso ahora mismo' },
   'library.continueReading.startLearning': { he: 'התחל ללמוד',                  en: 'Start learning',               es: 'Empezar a aprender' },
+  // Used when no real per-user "last opened" state is wired. The card is
+  // presented as a recommended entry point, not a memory of the reader's
+  // session.
+  'library.continueReading.recommendedStart':     { he: 'מומלץ להתחיל מכאן',                 en: 'Recommended starting point',                  es: 'Punto de inicio recomendado' },
+  'library.continueReading.recommendedStartText': { he: 'פריט פתיחה מומלץ מתוך מרחב הידע',     en: 'A suggested first item from the knowledge space', es: 'Un primer elemento sugerido del espacio de conocimiento' },
+  'library.continueReading.startReading':         { he: 'התחל לקרוא',                          en: 'Start reading',                                es: 'Empezar a leer' },
 
   // ── library.stats.* — stats panel (interpolated counts) ────────────────────
   'library.stats.title':            { he: 'סטטיסטיקות הספרייה',     en: 'Library stats',                  es: 'Estadísticas de la biblioteca' },
