@@ -1,166 +1,175 @@
 # CLAUDE.local.md
 
-## סביבה מקומית
+## Local Environment
 
 - Python: `C:\Python312`
 - Node: `C:\Program Files\nodejs`
-- PowerShell כברירת מחדל (לא bash/cmd)
-- קובץ עיבוד נוכחי: `D:\Books\AI_Developer_Fitness.docx`
-- ספרי בדיקה:
-  - `D:\Books\Practical Python for AI Engineering.docx` (18 פרקים, portrait cover)
+- Default shell: PowerShell, not bash or cmd
+- Current processing file: `D:\Books\AI_Developer_Fitness.docx`
+- Test books:
+  - `D:\Books\Practical Python for AI Engineering.docx` (18 chapters, portrait cover)
   - `D:\Books\Lesson 1- Introduction to AI Engineering and Generative AI.docx`
-    (29 פרקים, landscape cover, עם SDT cover page)
+    (29 chapters, landscape cover, with SDT cover page)
 
-## פרויקט נוכחי
+## Current Project
 
 `D:\2025 Stu\AI Engineer\AllBooks2026\Claude Code - Book\bookforge\`
 
-## העדפות אישיות
+## Personal Preferences
 
-- **שפת דיון**: עברית
-- **שפת UI באתר**: אנגלית גם בספר עברי
-- **הצג התקדמות**: בעברית
-- **לפני כל פעולה destructive**: שאל אותי
-- **אחרי `Ctrl+C` של dev server**: אני רץ `npm run dev` מחדש בעצמי
-- **ביקורת כנה**: אני מעדיף ביקורת ישירה ופרקטית ("תכלס") על
-  פידבק מעודד. אל תתבזבז על אימות - אם משהו לא טוב, תגיד
-- **אין em dashes** (`—` / `–`) בתוכן עברי
+- **Conversation language with Tomer**: Hebrew
+- **Site UI language**: English, even inside Hebrew books, unless a specific feature explicitly uses i18n
+- **Progress updates**: Hebrew
+- **Before any destructive action**: ask Tomer first
+- **After Tomer stops the dev server with `Ctrl+C`**: Tomer will run `npm run dev` again himself
+- **Direct feedback**: Tomer prefers practical, honest critique. If something is not good, say so directly
+- **No em dashes** (`—` / `–`) in Hebrew content
 
-## סגנון עבודה עם Claude
+## How to Work With Tomer
 
-### מה עובד לי
+### What Works Well
 
-- **קובץ מלא מעודכן** עדיף על פני הוראות חיפוש/החלפה ידניות
-- כשיש ריפקטור גדול, **הצג את השינוי המלא** לפני ביצוע
-- **אל תוותר מהר** - כשמשהו לא עבד, תאבחן עם DevTools
-- **סעיף אחד בכל פעם** לאישור. אל תשלח חמישה שינויים בבת אחת
-- **שמור על קוד הקיים**. אל תיזרם ותתחיל לייצר. תשתמש בתשתית
+- Provide a full updated file when the change is large or risky
+- For large refactors, show the full planned change before executing
+- Do not give up quickly. If something fails, diagnose using DevTools
+- Work one approved step at a time. Do not send five unrelated changes at once
+- Preserve existing code and reuse the current infrastructure. Do not generate a new architecture unless explicitly requested
 
-### מה לא עובד לי
+### What Does Not Work Well
 
-- הוראות "חפש את X והחלף ב-Y" בקובץ של 1500 שורות - שגיאה אחת בדרך
-  ומפסידים שעה
-- **דופליקציות בקוד אחרי `str_replace`** - תמיד תבדוק אחרי
-  `grep -c "function foo"` לפני שמסיימים
-- להמציא content שלא ביקשתי - אם יש ספק, תשאל
+- Instructions like "find X and replace with Y" in a 1500-line file. One small mistake can waste a lot of time
+- Duplicate code after `str_replace`. Always check after changes, for example:
+  `grep -c "function foo"`
+- Inventing content that was not requested. If uncertain, ask
 
-### איך לבדוק עבודה
+### How to Validate Work
 
-אחרי כל שינוי:
+After each change:
 
-1. `Ctrl+Shift+R` בדפדפן (אני אעשה)
-2. פתח Console (F12 → Console) - **לא בטאב Elements!**
-3. אם יש שגיאות אדומות, צלם ושלח לי
-4. אם מדובר בעיית CSS, `Inspect` על האלמנט ותראה את הפאנל Styles
+1. Tomer will refresh the browser with `Ctrl+Shift+R`
+2. Open Console (F12 -> Console), not the Elements tab
+3. If there are red errors, ask Tomer to send a screenshot
+4. If it is a CSS issue, inspect the relevant element and check the Styles panel
 
-## טיפים טכניים לסשן הנוכחי
-
-### PowerShell queries שימושיות
+## Useful PowerShell Queries
 
 ```powershell
-# חיפוש טקסט בכל הפרויקט
+# Search text across the project
 Get-ChildItem -Path "..." -Recurse -Include "*.astro","*.ts","*.css" |
   ForEach-Object { Select-String -LiteralPath $_.FullName -Pattern "PATTERN" -List }
 
-# בדיקת duplicate function
+# Check duplicate function definitions
 Select-String -LiteralPath "FILE" -Pattern "function FN_NAME" |
   Measure-Object | Select-Object Count
 
-# שם קובץ דורש case change (Windows trick)
+# Windows case-change rename trick
 Rename-Item "old.ts" "temp.ts"
 Rename-Item "temp.ts" "new.ts"
 ```
 
-### Console JS שימושיות
+## Useful Console JavaScript
 
 ```javascript
-// בדוק state של כל בלוקי הקוד
+// Check state of all code runner blocks
 document.querySelectorAll('.coderunner').forEach((b, i) =>
   console.log(i, 'initialized:', b.dataset.initialized,
                  'has copy:', !!b.querySelector('.cr-copy-btn')));
 
-// בדוק computed style
-getComputedStyle(document.querySelector('.cr-theme-icon-sun')).display
+// Check computed style
+getComputedStyle(document.querySelector('.cr-theme-icon-sun')).display;
 
-// טריגר theme switch ידני
+// Manually trigger code theme switch
 document.documentElement.setAttribute('data-code-theme', 'light');
 ```
 
-## החלטות שנסגרו בסשן עיצוב הקוד (אפריל 2026)
+## Decisions From the Code Design Session, April 2026
 
-- **BashBlock** → Stripe Navy, פרומפט ציאן
-- **CodeRunner** → GitHub Dark (default) + Light
-- **Theme picker**: כפתור פר בלוק עם שמש/ירח zoom
-- **BashBlock לא מקבל theme** - תמיד נייבי
-- **אייקונים**: gradient + glow, לא stroke contour
-- **שמש**: `#fff8b0 → #ffdd55 → #ff9500` עם 8 קרניים
-- **ירח**: `#fffef8 → #e8e4d0 → #a8a495` עם craters
+- **BashBlock** -> Stripe Navy, cyan prompt
+- **CodeRunner** -> GitHub Dark by default, plus GitHub Light
+- **Theme picker**: per-block button with sun/moon zoom
+- **BashBlock does not support theme switching** -> always navy
+- **Icons**: gradient + glow, not stroke contour
+- **Sun icon**: `#fff8b0 -> #ffdd55 -> #ff9500` with 8 rays
+- **Moon icon**: `#fffef8 -> #e8e4d0 -> #a8a495` with craters
 
-## Yuval - הקשר מוצרי מקומי לספריית AI
+## Yuval Product Context
 
-- Yuval היא כרגע ספריית ידע לתכני AI בלבד.
-- כל התוכן ב-Yuval קשור ל-AI, הנדסת AI, מערכות AI, סוכנים, MCP, Python ל-AI, סיכומי קורסים, מאמרים והדרכות AI.
-- רק תומר מוסיף תוכן לספרייה.
-- התוכן מתווסף רק דרך pipeline קיים בקוד של BookForge.
-- אין כרגע העלאת תכנים על ידי משתמשים.
-- אין כרגע upload UI.
-- אין כרגע upload button פעיל או לא פעיל שמרמז על העלאה ציבורית.
-- אין כרגע database-backed CMS.
-- אין כרגע תוכן שאינו AI.
-- אין כרגע תמחור פעיל, paywall פעיל או הרשאות תוכן בתשלום.
-- בעתיד ייתכן שחלק מהתכנים יהיו חופשיים וחלק זמינים במסלולים מתקדמים, אבל לא לממש זאת עד שתומר מבקש במפורש.
-- אין לכתוב UI שמרמז שמשתמשים יכולים להעלות ספרים, קורסים, מאמרים או קבצים.
-- ניסוחים אסורים ב-UI:
-  - upload a book
-  - add your content
-  - upload your files
-  - create your own library
-  - העלה ספר
-  - הוסף תוכן משלך
-  - העלה קובץ
-- הניסוח המוצרי הנכון:
-  - Yuval is a living AI knowledge space generated from AI content processed by the BookForge pipeline.
-  - בעברית: Yuval היא מרחב ידע חי לתכני AI שעובדו דרך BookForge.
+- Yuval is currently a dedicated AI knowledge library.
+- All content in Yuval is AI-related.
+- Current content areas include AI engineering, AI systems, agents, MCP, Python for AI, course summaries, articles and practical AI guides.
+- Only Tomer adds content to Yuval.
+- Content is added only through the existing BookForge code pipeline.
+- There is currently no public upload flow.
+- There is currently no user-generated upload UI.
+- There is currently no upload button behavior.
+- There is currently no database-backed CMS.
+- There is currently no non-AI content.
+- There is currently no active pricing, paywall or paid-content permission system.
+- In the future, some content may remain free and some content may become available through advanced paid options, but do not implement this unless Tomer explicitly asks.
+- The UI must not imply that users can upload books, courses, articles or files.
 
-## תוכן אמיתי שקיים או מתוכנן ב-Yuval
+### Forbidden UI Wording
 
-- סיכומי קורס מהנדס AI שתומר לומד:
-  - כרגע צורפו 3 סיכומים מתוך 16.
-- קורס AI שתומר בונה בעצמו:
-  - השלב הבסיסי כולל כרגע 3 ספרים מוכנים או קיימים:
+Do not use UI wording that implies public uploads or user-created libraries, such as:
+
+- upload a book
+- add your content
+- upload your files
+- create your own library
+- העלה ספר
+- הוסף תוכן משלך
+- העלה קובץ
+
+### Correct Product Framing
+
+Use this framing:
+
+> Yuval is a living AI knowledge space generated from AI content processed by the BookForge pipeline.
+
+Hebrew product framing when needed:
+
+> Yuval היא מרחב ידע חי לתכני AI שעובדו דרך BookForge.
+
+## Real Content That Exists or Is Planned in Yuval
+
+- Summaries from the AI Engineer course Tomer is currently studying:
+  - Currently 3 summaries have been added out of 16 planned summaries
+- Tomer's self-built AI course:
+  - The foundational stage currently includes 3 existing or ready books:
     - AI Developer Fitness
     - Building AI Systems with MCP
     - Practical Python for AI Engineering
-  - עוד 4 ספרים נמצאים בשלב תיקונים ועריכות אחרונות.
-  - עוד ספר נוסף בדרך.
-- מאמרי AI מקוריים שתומר כותב.
-- הדרכות AI מעשיות, למשל:
+  - 4 additional books are in final correction and editing stages
+  - 1 additional book is on the way
+- Original AI articles written by Tomer
+- Practical AI guides, for example:
   - מפקודה למוצר
   - בניית מערכות סוכנים עם Claude Code
 
-## כיוון ויזואלי מחייב ל-/library
+## Required Visual Direction for `/library`
 
-- עמוד `/library` צריך להתכנס בהדרגה ליעד הוויזואלי הרשמי שתומר סיפק.
-- זה לא דשבורד גנרי ולא רשימת ספרים רגילה.
-- בדסקטופ זה צריך להרגיש כמו dashboard קולנועי אחד בגובה המסך.
-- מבנה הדסקטופ המחייב:
-  - top app bar נקי
-  - left sidebar פונקציונלי עם המשך למידה, הסבר קצר, סטטיסטיקות ותוכן מומלץ
-  - center hero גדול
-  - central galaxy stage עם ליבת ידע זוהרת
-  - floating tilted content cards סביב הליבה
-  - narrow right pill toolbar בלבד עם AI assistant, bookmarks, history
-  - bottom recommendation strip משולב כחלק מהמסך
-- לא להמשיך לכיוון של "דף ארוך עם sections".
-- לא להמשיך לדשבורד עסקי כללי.
-- לא להוסיף פאנלים גדולים בצד ימין. הצד הימני בדסקטופ הוא toolbar צר בלבד.
-- אם יש פאנלים פונקציונליים, הם שייכים לסיידבר השמאלי או לרצועת ההמלצות.
+- The `/library` page must gradually converge toward the official visual target provided by Tomer.
+- It is not a generic dashboard.
+- It is not a normal book list.
+- On desktop, it should feel like one cinematic dashboard viewport.
+- The desktop structure must include:
+  - clean top app bar
+  - functional left sidebar with continue learning, short explanation, stats and recommended or active content
+  - large central hero
+  - central galaxy stage with a glowing knowledge core
+  - floating tilted content cards around the core
+  - narrow right pill toolbar only, with AI assistant, bookmarks and history
+  - bottom recommendation strip integrated into the screen
+- Do not continue toward a long page with stacked sections.
+- Do not continue toward a generic business dashboard.
+- Do not place large panels on the right side. On desktop, the right side is a narrow toolbar only.
+- Functional panels belong in the left sidebar or in the bottom recommendation strip.
 
-## מובייל וטאבלט עבור /library
+## Mobile and Tablet Behavior for `/library`
 
-- מובייל לא צריך לחקות את קומפוזיציית ה-orbit של הדסקטופ.
-- מובייל צריך להיות phone-first, קריא ומהיר.
-- מבנה מובייל מומלץ:
+- Mobile must not copy the desktop orbit composition.
+- Mobile must be phone-first, readable and fast.
+- Recommended mobile structure:
   - compact hero
   - continue reading
   - horizontal featured carousel
@@ -168,5 +177,22 @@ document.documentElement.setAttribute('data-code-theme', 'light');
   - stats
   - recommendations
   - quick actions
-- טאבלט צריך להישאר קרוב יותר למובייל אם קומפוזיציית הדסקטופ נשברת.
-- אין לדחוס את ה-orbit desktop layout למסכים קטנים.
+- Tablet should stay closer to mobile if the desktop orbit composition breaks.
+- Do not squeeze the desktop orbit layout into small screens.
+
+## Current Non-Goals for `/library`
+
+Do not implement any of the following unless Tomer explicitly asks:
+
+- public uploads
+- upload UI
+- upload button behavior
+- user-generated content flows
+- database-backed CMS
+- active payment or paywall behavior
+- non-AI categories
+- AI assistant behavior
+- search/filter/sort behavior
+- drag carousel behavior
+- WebGL or canvas effects
+- heavy animations before the static desktop composition is visually approved

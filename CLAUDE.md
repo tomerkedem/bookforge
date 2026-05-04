@@ -1,80 +1,81 @@
 # BookForge + Yuval
 
-## מה המערכת עושה
+## What the System Does
 
-**שתי מערכות קשורות:**
+**Two connected systems:**
 
-1. **BookForge (pipeline)** — מקבלת ספר בעברית בפורמט Word (.docx),
-   מפרקת לפרקים, כל פרק קובץ MD נפרד. כל פרק מתורגם לאנגלית אוטומטית.
+1. **BookForge (pipeline)** - receives a Hebrew book in Word format (`.docx`),
+   splits it into chapters, and creates a separate Markdown file for each chapter.
+   Each chapter is automatically translated into English.
 
-2. **Yuval (platform)** — מרחב ידע דיגיטלי לתכני AI בלבד.
-   בשלב הנוכחי Yuval אינה פלטפורמת העלאות ציבורית ואינה ספרייה כללית.
-   היא מרכזת תכנים שעובדו דרך BookForge ומציגה אותם כחוויית למידה מסודרת:
-   - **סיכומי קורס מהנדס AI** שתומר לומד
-   - **קורס AI שתומר בונה** עם ספרים, מעבדות והדרכות
-   - **ספרי AI מקצועיים** שנכתבים ונערכים בהדרגה
-   - **מאמרי AI מקוריים** שתומר כותב
-   - **הדרכות מעשיות** סביב עבודה עם AI וכלי קוד
-   - **התקדמות אישית**: מה הושלם, מה ממשיך, כמה זמן נשאר
+2. **Yuval (platform)** - a digital knowledge space for AI content only.
+   At the current stage, Yuval is not a public upload platform and not a general-purpose library.
+   It collects content processed through BookForge and presents it as a structured learning experience:
+   - **AI Engineer course summaries** from the course Tomer is studying
+   - **Tomer's self-built AI course** with books, labs and guides
+   - **Professional AI books** written and edited gradually
+   - **Original AI articles** written by Tomer
+   - **Practical guides** around AI work and coding tools
+   - **Personal progress**: what was completed, what continues, and how much time remains
 
-## טכנולוגיות
+## Technologies
 
-- Framework: Astro (+ Astro Islands לחלקים דינמיים)
-- CSS: Tailwind CSS עם תמיכה מלאה ב-RTL
-- שפה: TypeScript
-- Pipeline: Python (בעיקר python-docx + custom modules)
-- Python execution בדפדפן: Pyodide
-- בדיקות: Vitest ליחידה, Playwright לרספונסיביות
-- Breakpoints: sm, md, lg, xl. Mobile-first תמיד.
+- Framework: Astro (+ Astro Islands for dynamic parts)
+- CSS: Tailwind CSS with full RTL support
+- Language: TypeScript
+- Pipeline: Python, mainly `python-docx` + custom modules
+- Python execution in browser: Pyodide
+- Tests: Vitest for unit tests, Playwright for responsiveness
+- Breakpoints: sm, md, lg, xl. Always mobile-first.
 
 ## Yuval Library Product Constraints
 
-- Yuval היא כרגע ספריית ידע חיה לתכני AI בלבד.
-- כל התוכן ב-Yuval הוא AI-related. אין כרגע תוכן שאינו AI.
-- רק בעל הפרויקט מוסיף תוכן.
-- התוכן מתווסף רק דרך ה-pipeline הקיים של BookForge בקוד.
-- אין כרגע public upload flow.
-- אין user-generated upload UI.
-- אין upload button behavior.
-- אין כרגע database-backed CMS.
-- אין כרגע payment או paywall פעיל.
-- אין להציג את Yuval כפלטפורמת העלאות ציבורית.
-- אין לכתוב UI copy שמרמז שמשתמשים יכולים להעלות ספרים או קבצים.
-- אין להשתמש בניסוחים כמו: upload a book, add your content, upload your files, create your own library.
-- המסגור הנכון: Yuval is a living AI knowledge space generated from AI content processed by the BookForge pipeline.
+- Yuval is currently a living knowledge library for AI content only.
+- All content in Yuval is AI-related. There is currently no non-AI content.
+- Only the project owner adds content.
+- Content is added only through the existing BookForge code pipeline.
+- There is currently no public upload flow.
+- There is currently no user-generated upload UI.
+- There is currently no upload button behavior.
+- There is currently no database-backed CMS.
+- There is currently no active payment or paywall behavior.
+- Do not present Yuval as a public upload platform.
+- Do not write UI copy that implies users can upload books or files.
+- Do not use wording such as: upload a book, add your content, upload your files, create your own library.
+- Correct framing: Yuval is a living AI knowledge space generated from AI content processed by the BookForge pipeline.
 
-### תוכן נוכחי ומתוכנן ל-Yuval
+### Current and Planned Yuval Content
 
-- סיכומי קורס מהנדס AI שתומר לומד: כרגע 3 מתוך 16 סיכומים.
-- קורס AI שתומר בונה: כרגע שלב בסיסי עם כמה ספרים פעילים.
-- ספרי הבסיס הפעילים כוללים:
+- AI Engineer course summaries from the course Tomer is studying: currently 3 out of 16 summaries.
+- Tomer's self-built AI course: currently a foundational stage with several active books.
+- Active foundational books include:
   - AI Developer Fitness
   - Building AI Systems with MCP
   - Practical Python for AI Engineering
-- בנוסף קיימים 4 ספרים בשלבי תיקונים ועריכה אחרונים, ועוד ספר אחד בדרך.
-- Yuval תכלול גם מאמרי AI מקוריים שתומר כותב.
-- Yuval תכלול גם הדרכות מעשיות, למשל:
+- In addition, 4 books are in final correction and editing stages, and 1 more book is on the way.
+- Yuval will also include original AI articles written by Tomer.
+- Yuval will also include practical guides, for example:
   - מפקודה למוצר
   - בניית מערכות סוכנים עם Claude Code
 
 ## Yuval Library Visual Direction
 
-- עמוד `/library` הוא המסך המרכזי של Yuval לתכני AI.
-- היעד הוויזואלי הרשמי הוא dashboard עתידני בסגנון galaxy, לא דף תוכן רגיל.
-- בדסקטופ העמוד צריך להרגיש כמו מסך אחד קולנועי בגובה viewport, לא דף ארוך עם מקטעים מוערמים.
-- מבנה הדסקטופ הרצוי:
-  - top app bar נקי
-  - sidebar שמאלי פונקציונלי
-  - center hero עם galaxy stage
-  - luminous knowledge core במרכז
-  - floating tilted content cards סביב הליבה
-  - right vertical toolbar צר בלבד
-  - bottom recommendation strip משולב במסך
-- הרייל הימני בדסקטופ חייב להיות צר, בסגנון pill toolbar, ולהכיל רק: AI assistant, bookmarks, history.
-- אין לשים סטטיסטיקות, הסבר או המשך קריאה ברייל הימני בדסקטופ.
-- הסיידבר השמאלי בדסקטופ הוא המקום לכרטיסי המשך למידה, הסבר, סטטיסטיקות ותוכן מומלץ.
-- מובייל לא אמור להעתיק את layout ה-orbit של הדסקטופ.
-- מבנה מובייל רצוי:
+- The `/library` page is Yuval's main screen for AI content.
+- The official visual target is a futuristic galaxy-style dashboard, not a regular content page.
+- On desktop, the page should feel like one cinematic viewport-height screen, not a long page with stacked sections.
+- Desired desktop structure:
+  - clean top app bar
+  - functional left sidebar
+  - center hero with galaxy stage
+  - luminous knowledge core in the center
+  - floating tilted content cards around the core
+  - narrow right vertical toolbar only
+  - bottom recommendation strip integrated into the screen
+- On desktop, the right rail must be narrow, in a pill toolbar style, and contain only: AI assistant, bookmarks, history.
+- Do not place stats, explanation or continue-reading panels in the right rail on desktop.
+- The desktop left sidebar is where continue-learning cards, explanation, stats and recommended content belong.
+- Mobile should not copy the desktop orbit layout.
+- Desired mobile structure:
   - compact hero
   - continue reading
   - horizontal featured carousel
@@ -82,19 +83,19 @@
   - stats
   - recommendations
   - quick actions
-- כל שינוי עתידי ב-`/library` צריך לקרב את המסך ליעד הוויזואלי הזה ולא להפוך אותו לדשבורד גנרי.
+- Every future change to `/library` should move the screen closer to this visual target and not turn it into a generic dashboard.
 
-## הקורס המרכזי שתומר כותב — "AI Developer Path"
+## Tomer's Main Course - "AI Developer Path"
 
-14 ספרים בעברית, 3 שכבות:
+14 Hebrew books, 3 layers:
 
-**Core Layer (4 ספרים) — היכולות ההנדסיות הבסיסיות**
-1. AI Developer Fitness — אימון הנדסי בעידן מערכות הסתברותיות
+**Core Layer (4 books) - foundational engineering capabilities**
+1. AI Developer Fitness - engineering training in the age of probabilistic systems
 2. Managing Code Agents
 3. Python for AI Systems
 4. Intuitive Math and Probabilistic Thinking for AI Systems
 
-**Systems Layer (6 ספרים) — בניית רכיבי AI במערכות תוכנה**
+**Systems Layer (6 books) - building AI components inside software systems**
 5. Data Engineering for AI
 6. Practical NLP
 7. Large Language Models in Practice
@@ -102,267 +103,279 @@
 9. AI Agents
 10. MCP Systems Engineering
 
-**Production Layer (4 ספרים) — הפעלה בסביבה אמיתית**
+**Production Layer (4 books) - operating in real production environments**
 11. Production AI Systems
 12. AI Security and Guardrails
 13. Multimodal AI Systems
 14. AI Integration and Automation
 
-כל ספר כולל: ספר לימוד + GitHub repo + מעבדות בדפדפן + פרויקט מסכם.
+Each book includes: textbook + GitHub repo + browser labs + final project.
 
 ## Project Index
 
-### Yuval - פלטפורמת הקריאה (המצב הנוכחי)
+### Yuval - Reading Platform, Current State
 
-```
+```text
 src/layouts/
-  ReadingLayout.astro         דף קריאת פרק, init logic מרכזי,
+  ReadingLayout.astro         Chapter reading page, central init logic,
                               theme picker, code block wiring
-  BaseLayout.astro            עטיפה גלובלית
+  BaseLayout.astro            Global wrapper
 
 src/utils/
-  markdown.ts                 Renderer שמייצר HTML לבלוקי קוד.
-                              שלושה מסלולים:
-                              - bash/sh/zsh/powershell/cmd → BashBlock
-                              - python/py → CodeRunner עם Run
-                              - כל השאר → CodeBlock (view-only)
-  reading-progress.ts         Progress tracking (קיים, יורחב ב-Phase 3)
-  language.ts                 i18n utilities — getLanguageDirection וכו'
+  markdown.ts                 Renderer that generates HTML for code blocks.
+                              Three paths:
+                              - bash/sh/zsh/powershell/cmd -> BashBlock
+                              - python/py -> CodeRunner with Run
+                              - everything else -> CodeBlock, view-only
+  reading-progress.ts         Progress tracking, exists and will be extended in Phase 3
+  language.ts                 i18n utilities - getLanguageDirection, etc.
 
 src/styles/
-  bash-block.css              עיצוב טרמינל — Stripe Navy (#0a2540)
-  code-runner.css             עיצוב IDE — GitHub Dark + Light
-                              (data-code-theme על <html>)
-  reading-typography.css      ⚠ דורס font-family על כל צאצאי .reading-content
+  bash-block.css              Terminal design - Stripe Navy (#0a2540)
+  code-runner.css             IDE design - GitHub Dark + Light
+                              via data-code-theme on <html>
+  reading-typography.css      WARNING: overrides font-family on all descendants of .reading-content
 
 src/components/
-  ReadingControls.astro       FAB צף: Typography, Focus, Theme
-  ReadingProgress.astro       פס התקדמות
-  ChapterNavigation.astro     ניווט בין פרקים
-  ChapterSidebars.astro       ⚠ TO BE REFACTORED — מיזוג שני sidebars
+  ReadingControls.astro       Floating FAB: Typography, Focus, Theme
+  ReadingProgress.astro       Progress bar
+  ChapterNavigation.astro     Navigation between chapters
+  ChapterSidebars.astro       TO BE REFACTORED - merge two sidebars
   Header.astro
   ThemeToggle.astro
   LanguageSelector.astro
 
 src/pages/
-  index.astro                 ⚠ TO BE REDESIGNED — Galaxy view
-  read/[book]/[chapter].astro דף הקריאה
-  books/[slug].astro          דף ספר
-  compare.astro               (legacy)
-  admin.astro                 (legacy)
+  index.astro                 TO BE REDESIGNED - Galaxy view
+  read/[book]/[chapter].astro Reading page
+  books/[slug].astro          Book page
+  compare.astro               legacy
+  admin.astro                 legacy
 
 src/types/
   index.ts                    Chapter, Book, Language, Course types
 ```
 
-### BookForge - pipeline
+### BookForge - Pipeline
 
-```
+```text
 src/pipeline/
-  ingest.py                   קריאת Word (מודולרי, 7 קבצים)
-  parse.py                    פירוק לפרקים
-  organize.py                 סידור תיקיות
-  build.py                    סקלטון Astro + manifest
-                              ⚠ TO BE EXTENDED — חישוב word_count + minutes
-  translate.py                תרגום עברית→אנגלית
-  translate_jobs.py           queue של תרגומים
+  ingest.py                   Reads Word files, modular, 7 files
+  parse.py                    Splits into chapters
+  organize.py                 Organizes folders
+  build.py                    Astro skeleton + manifest
+                              TO BE EXTENDED - calculate word_count + minutes
+  translate.py                Hebrew -> English translation
+  translate_jobs.py           Translation queue
 
 output/{book-name}/
-  chapter-01.he.md            פרק בעברית
-  chapter-01.en.md            פרק באנגלית
-  assets/                     תמונות
-  book-manifest.json          metadata (יורחב ב-Phase 2)
+  chapter-01.he.md            Hebrew chapter
+  chapter-01.en.md            English chapter
+  assets/                     Images
+  book-manifest.json          metadata, will be extended in Phase 2
 ```
 
-## ארכיטקטורת בלוקי קוד (Yuval)
+## Code Block Architecture in Yuval
 
-**חשוב: ה-HTML של בלוקי קוד נבנה ב-markdown.ts בזמן parse,
-לא ברכיבי Astro!** הרכיבים ב-components/ (אם קיימים) הם רק קוד רפרנס,
-לא בשימוש בפועל.
+**Important: code block HTML is generated in `markdown.ts` during Markdown parsing,
+not in Astro components.** Components under `components/`, if present, are reference code only
+and are not used in the actual rendering path.
 
-```
+```text
 Markdown (``` with lang)
     ↓
 markdown.ts renderer
     ↓
-HTML עם class מתאים:
-    ├─ .bash-block             (bash/sh/zsh/powershell/cmd)
-    ├─ .coderunner             (python, עם Run button)
-    └─ .coderunner.codeblock   (yaml/json/js/ts..., ללא Run)
+HTML with the right class:
+    ├─ .bash-block             bash/sh/zsh/powershell/cmd
+    ├─ .coderunner             python, with Run button
+    └─ .coderunner.codeblock   yaml/json/js/ts..., no Run
     ↓
-CSS מ-bash-block.css / code-runner.css
+CSS from bash-block.css / code-runner.css
     ↓
-ReadingLayout.astro מחבר event listeners ל-DOM
+ReadingLayout.astro attaches event listeners to the DOM
 ```
 
-## החלטות עיצוב סגורות
+## Locked Design Decisions
 
-### בלוקי קוד
-- **Shell blocks**: Stripe Docs aesthetic (Navy #0a2540, prompt ציאן)
-- **Code blocks**: GitHub Dark (default) + GitHub Light
-- **Theme switcher**: כפתור פר-בלוק, השפעה גלובלית על הדף,
-  שמור ב-localStorage תחת 'code-theme'
-- **UI באנגלית** גם בספר עברי: "Terminal", "Copy", "Run", "Output",
+### Code Blocks
+
+- **Shell blocks**: Stripe Docs aesthetic, Navy #0a2540, cyan prompt
+- **Code blocks**: GitHub Dark by default + GitHub Light
+- **Theme switcher**: per-block button, global effect on the page,
+  stored in localStorage under `code-theme`
+- **UI in English** even inside Hebrew books: "Terminal", "Copy", "Run", "Output",
   "Running", "Execution finished (no output)"
-- **אייקוני theme**: שמש וירח עם gradient אמיתי, glow, craters בירח
-- **אין תמיכה ב-Light mode ל-BashBlock** — תמיד נייבי
-- **LTR חזק** לכל בלוק קוד, גם בתוך עמוד עברי
-- **מספרי שורות**: תמיד מיושרים לימין (צמודים לקוד), כמו IDE
+- **Theme icons**: sun and moon with real gradient, glow, moon craters
+- **No Light mode support for BashBlock** - always navy
+- **Strong LTR** for every code block, even inside Hebrew pages
+- **Line numbers**: always aligned right, close to the code, like an IDE
 
-### פלטפורמה (Yuval Redesign)
-- **עמוד `/library` = AI Galaxy Dashboard**
-  - מרחב ידע ל-AI בלבד, לא ספרייה כללית
-  - מסך דסקטופ אחד וקולנועי עם sidebar שמאלי, galaxy stage במרכז, toolbar ימני צר ו-recommendation strip תחתון
-  - כרטיסי תוכן מרחפים סביב luminous knowledge core
-  - אין להציג העלאת תכנים על ידי משתמשים
-- **דף ספר**: Hero + timeline פרקים + drawer ימני
-- **דף קריאה**: שני סוגים לפי `book.reading_mode`:
-  - `lesson_module`: טאבים אופקיים (סיכום/תרגילים/דוגמאות/Q&A)
-  - `long_form`: תוכן רציף עם sidebar
-- **Sidebar אחיד** (החלפה של שני sidebars נוכחיים)
-  - כל הניווט מצד אחד (RTL: ימין, LTR: שמאל)
-  - Timeline אנכי ויזואלי
-  - פרק נוכחי "בולט" עם רקע סגול
-  - סעיפים נטענים אוטומטית מ-h2
+### Platform - Yuval Redesign
+
+- **`/library` page = AI Galaxy Dashboard**
+  - AI-only knowledge space, not a general library
+  - One cinematic desktop screen with left sidebar, central galaxy stage, narrow right toolbar and bottom recommendation strip
+  - Floating content cards around a luminous knowledge core
+  - Do not present user content uploads
+- **Book page**: Hero + chapter timeline + right drawer
+- **Reading page**: two types by `book.reading_mode`:
+  - `lesson_module`: horizontal tabs (summary/exercises/examples/Q&A)
+  - `long_form`: continuous content with sidebar
+- **Unified sidebar** replacing the current two sidebars
+  - All navigation on one side (RTL: right, LTR: left)
+  - Visual vertical timeline
+  - Current chapter highlighted with purple background
+  - Sections loaded automatically from h2
   - Progress + reading time per chapter
 
-## Gotchas ידועים - חובה להכיר
+## Known Gotchas - Must Know
 
 ### Astro + SVG
-- JSX-style comments `{/* */}` **שבורים ב-Astro בתוך SVG defs**.
-  השתמש ב-HTML comments `<!-- -->`.
 
-### Script scope
-- `const` ב-`<script is:inline>` הוא **גלובלי לדף**, לא לקובץ.
-  אם ReadingControls.astro וגם ReadingLayout.astro מכריזים על `STORAGE_KEY`,
-  תקבל `Identifier already declared` שמשבית את כל הסקריפט.
-  **פתרון: עטוף ב-IIFE** `(function(){...})();`
+- JSX-style comments `{/* */}` are **broken in Astro inside SVG defs**.
+  Use HTML comments `<!-- -->`.
 
-### CSS priority wars
-- `reading-typography.css` מכריח `font-family !important` על כל
-  צאצאי `.reading-content:not(code):not(pre):not(.hljs)`.
-  בלוקי קוד חדשים (.coderunner, .bash-block) **לא נכללים** ברשימה,
-  אז ה-CSS שלהם חייב `!important` כדי לגבור.
+### Script Scope
 
-### RTL inheritance
-- עמוד עברי מכיל `direction: rtl` על body.
-  כל בלוק קוד חייב `direction: ltr !important` + `text-align: left !important`
-  + `unicode-bidi: isolate` על עצמו **ועל כל צאצאיו**.
-  מספרי שורות הם יוצא-דופן — הם LTR אבל `text-align: right`.
+- `const` inside `<script is:inline>` is **global to the page**, not scoped to the file.
+  If `ReadingControls.astro` and `ReadingLayout.astro` both declare `STORAGE_KEY`,
+  you will get `Identifier already declared`, which disables the whole script.
+  **Solution: wrap in an IIFE**: `(function(){...})();`
 
-### Windows case-sensitivity
-- Windows לא רואה הבדל בין `BashBlock.astro` ל-`Bashblock.astro`,
-  אבל Astro/Vite **כן**. שינוי case דורש rename double:
-  ```
+### CSS Priority Wars
+
+- `reading-typography.css` forces `font-family !important` on all descendants of
+  `.reading-content:not(code):not(pre):not(.hljs)`.
+  New code block containers such as `.coderunner` and `.bash-block` are **not excluded**,
+  so their CSS must use `!important` where needed.
+
+### RTL Inheritance
+
+- Hebrew pages have `direction: rtl` on the body.
+  Every code block must set `direction: ltr !important` + `text-align: left !important`
+  + `unicode-bidi: isolate` on itself **and all descendants**.
+  Line numbers are the exception - they are LTR but `text-align: right`.
+
+### Windows Case Sensitivity
+
+- Windows does not distinguish between `BashBlock.astro` and `Bashblock.astro`,
+  but Astro/Vite **does**. Case-only renames require the double rename trick:
+  ```powershell
   Rename-Item "Bashblock.astro" "Temp.astro"
   Rename-Item "Temp.astro" "BashBlock.astro"
   ```
 
-### Rendering pipeline
-- **אל תתחיל לעבוד על בלוקי קוד לפני שהבנת**:
-  ה-HTML נוצר ב-`markdown.ts` בזמן parse של Markdown, לא ב-Astro runtime.
-  שינוי רכיב `CodeBlock.astro` לא ישפיע על מה שרואים בדף.
-  הקובץ שצריך לערוך הוא `src/utils/markdown.ts`.
+### Rendering Pipeline
 
-### i18n - קריטי
-- כל טקסט UI דרך `data-i18n="key"` או `chapter.titles[lang]`
-- כיוון נקבע ע"י `getLanguageDirection(language)`, לא hardcoded
-- CSS Logical Properties: `padding-inline-start` not `padding-left`,
-  `inset-inline-start` not `left`, `border-inline-end` not `border-right`
-- אסור לבנות רכיב נפרד לעברית — אותו רכיב חייב לעבוד בשתי השפות
+- **Do not start working on code blocks before understanding this**:
+  HTML is generated in `src/utils/markdown.ts` when parsing Markdown, not at Astro runtime.
+  Changing `CodeBlock.astro` will not affect what is rendered on the page.
+  The file to edit is `src/utils/markdown.ts`.
 
-## כללי בחירה: Subagents או Agent Teams
+### i18n - Critical
 
-השתמש ב-**Subagents** כשהמשימות עצמאיות:
+- All UI text must go through `data-i18n="key"` or `chapter.titles[lang]`
+- Direction is determined by `getLanguageDirection(language)`, not hardcoded
+- Use CSS Logical Properties:
+  `padding-inline-start`, not `padding-left`
+  `inset-inline-start`, not `left`
+  `border-inline-end`, not `border-right`
+- Do not build a separate Hebrew component. The same component must work in both languages
+
+## Choosing Subagents or Agent Teams
+
+Use **Subagents** when tasks are independent:
 Explorer, Parser, Content Architect, Organizer, Translator,
 UI Designer, Builder.
 
-השתמש ב-**Agent Teams** כשהסוכנים צריכים לדבר:
+Use **Agent Teams** when agents need to communicate:
 Memory Keeper, Error Handler, Code Reviewer.
 
-## סדר הפעלת pipeline
+## Pipeline Execution Order
 
-כשמקבלים קובץ Word לעיבוד:
+When receiving a Word file for processing:
 
-1. **Explorer** → נתיב → JSON עם מבנה הספר
-2. **Parser** → קובץ + JSON → chapter-XX.he.md
-3. **Content Architect** → קבצי MD → content-structure.json
-4. **Organizer** → structure.json + MD → תיקיות ב-output/
-5. **Translator** → chapter-XX.he.md → chapter-XX.en.md
-6. **UI Designer** → content-structure.json → design-system.json
-7. **Builder** → MD + design-system → קומפוננטים ב-Astro
-8. **במקביל**: Memory Keeper + Error Handler + Code Reviewer
-9. **Quality Gate** → אישור/דחייה
+1. **Explorer** -> path -> JSON with book structure
+2. **Parser** -> file + JSON -> chapter-XX.he.md
+3. **Content Architect** -> MD files -> content-structure.json
+4. **Organizer** -> structure.json + MD -> folders under output/
+5. **Translator** -> chapter-XX.he.md -> chapter-XX.en.md
+6. **UI Designer** -> content-structure.json -> design-system.json
+7. **Builder** -> MD + design-system -> Astro components
+8. **In parallel**: Memory Keeper + Error Handler + Code Reviewer
+9. **Quality Gate** -> approve/reject
 
-## עקרונות SOLID
+## SOLID Principles
 
-- כל סוכן אחראי על דבר אחד בלבד
-- כל סוכן מקבל ומחזיר פורמט מוגדר
-- סוכן לא יודע על המימוש הפנימי של סוכן אחר
-- תלות בממשק, לא בהתנהגות פנימית
+- Each agent is responsible for one thing only
+- Each agent receives and returns a defined format
+- An agent does not know the internal implementation of another agent
+- Depend on interfaces, not internal behavior
 
-## כללי עבודה
+## Work Rules
 
-- תכנן לפני שאתה מבצע
-- כתוב ל-tasks/todo.md לפני כל משימה
-- אחרי כל תיקון שהמשתמש עושה, עדכן tasks/lessons.md
-- שאל את עצמך: would a staff engineer approve this?
-- עבוד תמיד על branch נפרד
-- mobile-first בכל קומפוננט
+- Plan before executing
+- Write to `tasks/todo.md` before every task
+- After every user-made correction, update `tasks/lessons.md`
+- Ask yourself: would a staff engineer approve this?
+- Always work on a separate branch
+- Mobile-first in every component
 
-## Don'ts (חשוב)
+## Don'ts - Important
 
-- **אל תמחק רכיבים ב-components/** בלי `grep -r "import.*ComponentName"`
-- **אל תכתוב em dashes** בתוכן עברי (`—` / `–`)
-- **אל תמציא תוכן** — תמיד צמוד למקור
-- **אל תתרגם UI לעברית** גם בספר עברי
-- **אל תגע ב-output/** ללא אישור מפורש
-- **אל תמחק קבצים**, רק צור ועדכן (חוץ מקבצי `.astro` שנבדקו)
-- **אל תשנה design-system.json** ללא אישור מפורש
-- **אל תריץ פקודות** שמשנות סביבה גלובלית
-- **אל תמזג ל-main** בלי אישור מפורש
-- **אל תבנה רכיב נפרד לעברית** — i18n הוא נון-נגוציאבל
+- **Do not delete components under `components/`** without `grep -r "import.*ComponentName"`
+- **Do not write em dashes** in Hebrew content (`—` / `–`)
+- **Do not invent content** - always stay attached to the source
+- **Do not translate UI to Hebrew** even in a Hebrew book
+- **Do not touch `output/`** without explicit approval
+- **Do not delete files**, only create and update, except `.astro` files that were checked
+- **Do not change `design-system.json`** without explicit approval
+- **Do not run commands that modify the global environment**
+- **Do not merge to main** without explicit approval
+- **Do not build a separate component for Hebrew** - i18n is non-negotiable
 
-## חיסכון ב-tokens
+## Token Saving
 
-- קרא **tasks/lessons.md** לפני כל משימה
-- לפני כל תיקון, כתוב אבחון הבעיה ב-tasks/todo.md
-- **אל תנסה יותר מפתרון אחד** ללא אישור
-- אם נכשלת פעמיים, **עצור ודווח** לפני שממשיך
-- אחרי כל שלב שהסתיים בהצלחה, הרץ `/compact`
+- Read `tasks/lessons.md` before every task
+- Before every fix, write a problem diagnosis in `tasks/todo.md`
+- **Do not try more than one solution** without approval
+- If you fail twice, **stop and report** before continuing
+- After every successful phase, run `/compact`
 
-## קריטריונים לאישור
+## Approval Criteria
 
-לפני כל דיווח סיום, Quality Gate חייב לבדוק את כל
-הקריטריונים ב-docs/acceptance-criteria.md ידנית.
-אין לאשר בלי שכל קריטריון עבר.
+Before every completion report, Quality Gate must manually check all criteria in
+`docs/acceptance-criteria.md`.
+Do not approve without every criterion passing.
 
 ## Playwright MCP
 
-Quality Gate משתמש ב-Playwright לצילום screenshots.
-התקן אם חסר: `npx playwright install chromium`
+Quality Gate uses Playwright for screenshots.
+Install if missing: `npx playwright install chromium`
 
-## כללי Git
+## Git Rules
 
-- עבוד תמיד על branch נפרד, לעולם לא על main
-- שם branch: `feature/{task-name}` או `fix/{issue-name}`
-- commit אחרי כל שלב עצמאי שהושלם
-- הודעת commit: `{type}: {description}` באנגלית קצר
-- פתח PR עם תיאור מלא לפני סיום העבודה
-- תיאור PR חייב לכלול: שם הספר, מספר פרקים, שפות
-- **לעולם אל תמזג ל-main בלי אישור מפורש**
-- אם משהו משתבש, עצור ודווח לפני שתמשיך
+- Always work on a separate branch, never on main
+- Branch name: `feature/{task-name}` or `fix/{issue-name}`
+- Commit after every independent completed step
+- Commit message: `{type}: {description}` in short English
+- Open PR with full description before finishing
+- PR description must include: book name, number of chapters, languages
+- **Never merge to main without explicit approval**
+- If something goes wrong, stop and report before continuing
 
-## עבודה בסשן חדש
+## New Session Workflow
 
-אם זה תחילת סשן חדש:
-1. **קרא קודם את `SESSION-HANDOFF.md`** — מכיל את כל ההחלטות והתכניות
-2. **תברך בעברית קצרה**: "תומר, אני קלוד. קראתי את ה-handoff והבנתי איפה עצרנו"
-3. **המתן להוראה**, אל תשער. אם תומר אומר "תמשיך מאיפה שהיינו" — שאל מה השלב הבא
+If this is the beginning of a new session:
 
-## כללי כתיבה
+1. **Read `SESSION-HANDOFF.md` first** - it contains all decisions and plans
+2. **Greet briefly in Hebrew**: "תומר, אני קלוד. קראתי את ה-handoff והבנתי איפה עצרנו"
+3. **Wait for instructions**, do not guess. If Tomer says "continue from where we stopped", ask what the next step is
 
-- אין em dashes בתוכן עברי
-- שומרים על מבנה נקי בלי להמציא
-- שפת UI באנגלית גם לעברית
-- ליישור שמאלה ב-RTL נדרש CSS אגרסיבי עם isolate
+## Writing Rules
+
+- No em dashes in Hebrew content
+- Keep a clean structure without inventing content
+- Site UI language is English, even in Hebrew books
+- For left alignment inside RTL, aggressive CSS with isolate is required
