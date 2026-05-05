@@ -129,16 +129,27 @@
    subtree, keeping every other route's galaxy mood unchanged. */
 .library-dark-showcase {
   /* ── Asset-calibrated palette ─────────────────────────────────────────────
-     Hex values sampled directly from galaxy-stage-core-medium.png.
-     These are the visual truth of the page — every non-accent surface
-     should resolve to one of these tones. */
+     Hex values sampled from galaxy-stage-core-medium.png at TWO
+     different zones:
+       1. The asset's outermost edges → kept as the deep tokens below,
+          used for vignette + corner darkening.
+       2. The asset's COSMIC BODY (the area between rings — the
+          "atmospheric mid-tone") → used for the page-level base.
+          Earlier passes used the edge tones for the page base, which
+          made the surrounding screen look DARKER than the asset's
+          interior and gave a "center-island" effect. The page base
+          now matches what the user sees in the asset crop's
+          surrounding cosmic field. */
   --yuval-galaxy-bg-deep:            #000010; /* deepest navy-black, edges */
-  --yuval-galaxy-bg-navy:            #000018; /* deep navy, gradient stops  */
-  --yuval-galaxy-bg-navy-soft:       #000020; /* lighter navy, transitions  */
+  --yuval-galaxy-bg-navy:            #000018; /* deep navy, gradient stops */
+  --yuval-galaxy-bg-navy-soft:       #000020; /* lighter navy, transitions */
 
-  /* Page base = median sampled tone. */
-  --yuval-galaxy-bg:                 #01051b;
-  --yuval-galaxy-bg-soft:            #02051e;
+  /* Page base = atmospheric body of the asset, NOT its edges.
+     #0a0d22 → rgb(10, 13, 34): H231° S54% L9%. Distinct navy-violet
+     character with enough lightness that the screen reads as a
+     cosmic field, not a flat black void. */
+  --yuval-galaxy-bg:                 #0a0d22;
+  --yuval-galaxy-bg-soft:            #0d1028;
 
   /* ── Unified page backdrop system ──────────────────────────────────────────
      Whole-screen harmonization: every layer is anchored relative to the
@@ -164,25 +175,24 @@
                                        rgba(124, 58, 237, 0.00) 75%
                                      );
 
-  /* SECONDARY: bottom-edge deep-navy fade that uses the sampled
-     #000010 tone. Replaces the previous indigo "blue horizon glow"
-     because the asset itself does not carry a brighter horizon —
-     it darkens toward the edge. Now the page bottom reads as the
-     same near-black navy as the asset's edges. */
+  /* SECONDARY: subtle bottom-edge fade toward sampled #000010.
+     Reduced 0.50 → 0.28 opacity. With the new brighter base
+     (#0a0d22), the previous strength was producing a near-black
+     band that looked like a separate dark stripe instead of a
+     gentle ground glow continuation. */
   --yuval-galaxy-bg-radial-secondary: radial-gradient(
-                                       ellipse 110% 28% at 50% 100%,
-                                       rgba(0, 0, 16, 0.50) 0%,
-                                       rgba(0, 0, 16, 0.00) 80%
+                                       ellipse 110% 30% at 50% 100%,
+                                       rgba(0, 0, 16, 0.28) 0%,
+                                       rgba(0, 0, 16, 0.00) 82%
                                      );
 
-  /* VIGNETTE: corner darkening using the sampled deepest navy
-     (#000010) instead of pure black. The corners now blend into the
-     same color the asset uses at its outer edge, so there's no
-     palette break between page corner and asset corner. */
+  /* VIGNETTE: corner darkening — opacity reduced 0.55 → 0.32 so
+     the corners darken proportionally against the brighter base,
+     not dramatically. Result is a subtle frame, not a heavy hole. */
   --yuval-galaxy-bg-vignette: radial-gradient(
                                 ellipse 110% 110% at 50% 50%,
                                 rgba(0, 0, 16, 0.00) 50%,
-                                rgba(0, 0, 16, 0.55) 100%
+                                rgba(0, 0, 16, 0.32) 100%
                               );
 
   /* The previous side-accent and hero-halo violet layers were removed:

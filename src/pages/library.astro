@@ -30,12 +30,11 @@ import LibraryLayout from '../layouts/LibraryLayout.astro';
 import LibraryHero from '../components/library/LibraryHero.astro';
 import LibraryStatsPanel from '../components/library/LibraryStatsPanel.astro';
 import ContinueReadingCard from '../components/library/ContinueReadingCard.astro';
-import KnowledgeSpaceCard from '../components/library/KnowledgeSpaceCard.astro';
 import LibraryCard from '../components/library/LibraryCard.astro';
 import RecommendationStrip from '../components/library/RecommendationStrip.astro';
-import RecommendedSidebarList from '../components/library/RecommendedSidebarList.astro';
 import MobileGalaxyCarousel from '../components/library/MobileGalaxyCarousel.astro';
 import LibraryQuickActions from '../components/library/LibraryQuickActions.astro';
+import FloatingSidebar from '../components/library/FloatingSidebar.astro';
 
 import type { Language } from '../types/index';
 import type { LibraryItem } from '../types/library';
@@ -143,23 +142,19 @@ const FEATURED_SLOTS = [
 
     <div class="library-body">
 
-      {/* ── Left sidebar (desktop) / mid-flow blocks (mobile) ── */}
+      {/* ── Left sidebar (desktop) / mid-flow blocks (mobile) ──
+            Two cards only:
+              1. ContinueReadingCard ("מומלץ להתחיל מכאן")
+              2. LibraryStatsPanel ("סטטיסטיקות הספרייה")
+            The "איך זה עובד" explainer and the compact sidebar
+            recommendation list were removed to keep the column
+            calm and premium. */}
       <aside class="lb-area-left">
         <div class="lb-area-continue">
           <ContinueReadingCard item={continueItem} language={language} />
         </div>
-        <div class="lb-area-knowledge">
-          <KnowledgeSpaceCard language={language} />
-        </div>
         <div class="lb-area-stats">
           <LibraryStatsPanel stats={stats} language={language} courseProgress={courseProgress} />
-        </div>
-        {/* Compact recommendation hint — desktop sidebar only.
-            Mobile suppresses this via CSS to avoid duplicating the
-            featured carousel + bottom RecommendationStrip already in
-            the mobile flow. */}
-        <div class="lb-area-sidebar-recs">
-          <RecommendedSidebarList items={recommendedItems.slice(0, 4)} language={language} />
         </div>
       </aside>
 
@@ -216,17 +211,29 @@ const FEATURED_SLOTS = [
 
       </main>
 
-      {/* ── Right rail (desktop pill) / quick-actions panel (mobile) ── */}
+      {/* ── Mobile-only quick-actions panel ──
+            Desktop is owned by <FloatingSidebar> below, which lives
+            outside the grid as `position: fixed`. On mobile this aside
+            stays as `display: contents` and contributes its child as a
+            flex item of `.library-body` at order 6. */}
       <aside class="lb-area-right">
         <div class="lb-area-quick lb-area-quick-mobile">
           <LibraryQuickActions language={language} />
         </div>
-        <div class="lb-area-quick lb-area-quick-rail">
-          <LibraryQuickActions language={language} variant="rail" />
-        </div>
       </aside>
 
     </div>
+
+    {/* ── Desktop floating rail (≥769px) ──
+          Pinned to the inline-end edge via `position: fixed` from the
+          component itself; sits outside the grid so it never claims a
+          column. Hidden at ≤768px — mobile is served by the aside above. */}
+    <FloatingSidebar
+      language={language}
+      aiAssistantHref="#ai-assistant"
+      bookmarksHref="#bookmarks"
+      historyHref="#history"
+    />
 
   </div>
 </LibraryLayout>
@@ -322,27 +329,22 @@ const FEATURED_SLOTS = [
   /* Mobile order — discovery-first.
        1 hero
        2 mobile-discovery (MobileGalaxyCarousel — readable AI content)
-       3 continue (recommended starting card — sits AFTER discovery so
-                   it never blocks the carousel above the fold)
-       4 knowledge
-       5 stats
-       6 recs (RecommendationStrip)
-       7 quick actions
-     The desktop-only `.lb-area-featured` and the rail/sidebar-recs
-     are hidden on mobile via `display: none` below. */
+       3 continue (recommended starting card)
+       4 stats
+       5 recs (RecommendationStrip)
+       6 quick actions
+     The desktop-only `.lb-area-featured` is hidden on mobile via
+     `display: none` below. */
   .lb-area-hero              { order: 1; }
   .lb-area-mobile-discovery  { order: 2; display: block; width: 100%; }
   .lb-area-continue          { order: 3; }
-  .lb-area-knowledge         { order: 4; }
-  .lb-area-stats             { order: 5; }
-  .lb-area-recs              { order: 6; }
-  .lb-area-quick-mobile      { order: 7; }
+  .lb-area-stats             { order: 4; }
+  .lb-area-recs              { order: 5; }
+  .lb-area-quick-mobile      { order: 6; }
 
   /* Desktop-only slots — completely hidden on mobile so they cannot
      contribute to layout, height, or accidental visibility. */
   .lb-area-featured     { display: none; }
-  .lb-area-quick-rail   { display: none; }
-  .lb-area-sidebar-recs { display: none; }
 
   /* ── Tablet (≥640px): same mobile flow, more padding ── */
   @media (min-width: 640px) {
@@ -352,7 +354,19 @@ const FEATURED_SLOTS = [
   /* ── Desktop (≥1024px): ONE viewport dashboard, no long scroll ───── */
   @media (min-width: 1024px) {
     .library-root {
-      padding: 1.25rem 1.5rem 1.5rem;
+      /* Block padding owns top/bottom rhythm. Inline padding is
+         SYMMETRIC so `.library-body` (max-width + margin: 0 auto)
+         centers ITSELF on the viewport — that gives the galaxy core
+         (which sits at the visual center of the body) a perfectly
+         viewport-centered anchor. The clamp value also clears the
+         FloatingSidebar at the inline-end side (rail width ~92px
+         + ~16px gap from edge). Independent from this: the
+         absolute `.lb-area-left` anchors directly to the viewport
+         edge via `inset-inline-start: 20px` below, so its 20px gap
+         stays constant regardless of this padding. */
+      padding-block-start: 1.25rem;
+      padding-block-end: 1.5rem;
+      padding-inline: clamp(60px, 8vw, 120px);
       /* Viewport math is owned by LibraryLayout — the layout sets
          --library-dashboard-min-height = calc(100dvh - --library-header-offset)
          on the slot wrapper, so the page does not have to know the
@@ -373,51 +387,66 @@ const FEATURED_SLOTS = [
         var(--yuval-galaxy-bg-radial-secondary);
     }
 
-    /* ── Page-level cosmic texture layer ─────────────────────────
-       Inline SVG noise (feTurbulence) tiled seamlessly across the
-       whole desktop page. Propagates the dark-cosmic material feel
-       of the central asset to the surrounding background, so the
-       sidebar/rail/hero/recs areas share the same texture language
-       — not just the same color.
+    /* ── Full-page atmospheric underlay (actual asset, not synthetic) ──
+       Reuses the same galaxy stage image already loaded by the center
+       stage — heavily blurred, darkened, desaturated — to provide the
+       page with the SAME visual language as the asset. The browser
+       caches the asset by URL, so this is effectively free.
 
-       `stitchTiles="stitch"` makes the noise wrap edge-to-edge so
-       no seams are visible when the SVG tiles across the viewport.
-       Low opacity (0.05) + soft-light blend keeps the texture
-       subliminal — it reads as "cosmic material" not "noisy overlay".
+       Goals:
+       - The whole desktop page sits on the asset's actual cosmic
+         field, not a synthetic gradient or generated noise.
+       - Center stage remains the dominant focal point — the underlay
+         is heavily neutralised so its central glow does NOT compete.
+       - No visible seams, no tiling, no recognisable second book.
 
-       Generated entirely from CSS (no asset file): noise is computed
-       by the browser's SVG renderer at paint time, costless once
-       cached. Mobile is exempt — the rule lives only inside the
-       desktop @media. */
+       Treatment:
+       - background-size: 180% auto → oversize so the asset's bright
+         center area is partially cropped beyond the viewport at most
+         widths, and any visible bright zone is just a soft glow.
+       - filter: blur(60px) → softens any focal feature past
+         recognition. The "second book" becomes an indistinct halo.
+       - filter: brightness(0.32) → strongly darkens the bright core.
+       - filter: saturate(0.55) → tones down the asset's vivid violet
+         so it doesn't read as a separate vibrant zone.
+       - opacity: 0.55 → subtle presence; sits behind the page bg
+         color, modulating it with real cosmic material. */
     .library-root::before {
       content: "";
       position: absolute;
       inset: 0;
-      /* Two stacked noise layers at different scales:
-         1. Fine grain (baseFrequency 0.9) — pixel-level cosmic dust
-         2. Coarse grain (baseFrequency 0.35) — broader atmospheric
-            variation, suggests gas/dust clouds at a larger scale
-         Both stitched seamlessly. The mix gives the texture more
-         depth than a single frequency, matching the asset's
-         multi-scale cosmic material feel. */
-      background-image:
-        url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch' seed='7'/></filter><rect width='240' height='240' filter='url(%23n)' opacity='0.55'/></svg>"),
-        url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 480 480'><filter id='c'><feTurbulence type='fractalNoise' baseFrequency='0.4' numOctaves='1' stitchTiles='stitch' seed='13'/></filter><rect width='480' height='480' filter='url(%23c)' opacity='0.28'/></svg>");
-      background-size: 240px 240px, 480px 480px;
-      background-repeat: repeat, repeat;
-      opacity: 0.13;
-      /* soft-light is gentler than overlay: it modulates lightness
-         without distorting hue. The violet halo, navy gradients, and
-         vignette underneath stay tonally accurate; the noise only
-         adds material texture. */
-      mix-blend-mode: soft-light;
+      background-image: url("/assets/library/galaxy-stage-core-medium.png");
+      /* Oversize 220% so a) the asset's bright central book sits
+         well off-axis from the actual hero asset's position, and
+         b) the asset's outer cosmic field fills the viewport edges
+         with deep navy material — that's the part we WANT visible.
+         Position shifted up so the hero stage actually overlaps
+         where the underlay's center used to be (reinforces focal
+         instead of duplicating it). */
+      background-size: 220% auto;
+      background-position: center 30%;
+      background-repeat: no-repeat;
+      /* Heavy suppression so no recognisable book or rings:
+           blur(90px)        — softens any focal feature past
+                                recognition; the "second book" becomes
+                                an indistinct cloud of glow.
+           brightness(0.28)  — strongly darkens the asset's bright
+                                center.
+           saturate(0.5)     — reduces vibrancy so the asset's vivid
+                                violet doesn't read as a separate zone. */
+      filter: blur(90px) brightness(0.28) saturate(0.5);
+      opacity: 0.45;
       pointer-events: none;
       z-index: 0;
     }
 
-    /* Re-enable real flex containers on the wrapper asides/main. */
-    .lb-area-left,
-    .lb-area-right {
+    /* Re-enable real flex containers on the wrapper aside/main.
+       `.lb-area-right` stays as `display: contents` (inherited from the
+       mobile baseline) — its only child `.lb-area-quick-mobile` is
+       `display: none` on desktop, so the aside contributes nothing
+       to the grid. The desktop floating rail lives outside the grid
+       entirely (`<FloatingSidebar>` with `position: fixed`). */
+    .lb-area-left {
       display: flex;
       flex-direction: column;
     }
@@ -430,68 +459,84 @@ const FEATURED_SLOTS = [
     .lb-area-hero,
     .lb-area-continue,
     .lb-area-featured,
-    .lb-area-knowledge,
     .lb-area-stats,
-    .lb-area-sidebar-recs,
     .lb-area-recs,
-    .lb-area-quick-mobile,
-    .lb-area-quick-rail { order: initial; }
+    .lb-area-quick-mobile { order: initial; }
 
     /* Mobile-only discovery slot is hidden on desktop — the orbit
        stage in .lb-area-featured takes over there. */
     .lb-area-mobile-discovery { display: none; }
 
-    /* Re-enable the desktop-only slots that were hidden on mobile. */
+    /* Re-enable the desktop-only slot that was hidden on mobile. */
     .lb-area-featured     { display: block; }
-    .lb-area-sidebar-recs { display: block; width: 100%; }
 
-    /* 3-column dashboard. Left rail narrow, center stage flexible,
-       right rail thin enough to look like a pill. */
+    /* 2-column dashboard with LANGUAGE-AWARE column placement:
+         column 1 = inline-start  → outer support sidebar (continue +
+                                    stats), on the side WHERE reading
+                                    starts (visual-right in RTL Hebrew,
+                                    visual-left in LTR English)
+         column 2 = inline-end    → galaxy stage (center of the page),
+                                    on the side opposite to where the
+                                    document flow starts
+       The narrow rail no longer claims a grid column — the desktop
+       FloatingSidebar lives outside the grid as `position: fixed`,
+       pinned to the inline-end edge of the viewport. The body adds
+       a `padding-inline-end` gutter so the support sidebar doesn't
+       collide with the floating rail.
+       In LTR: support is visual-left, floating rail is visual-right
+               (stage sits between sidebar and rail).
+       In RTL: support is visual-right, floating rail is visual-left
+               (same relationship, mirrored).
+       No physical-direction lock. Grid resolves natively to the
+       page's `dir` attribute. */
     .library-body {
-      display: grid;
-      grid-template-columns: 280px minmax(0, 1fr) 104px;
-      grid-template-rows: 1fr;
-      gap: 1.25rem;
-      align-items: stretch;
+      /* Single-column body — the support sidebar is taken OUT of the
+         body's flow (position: absolute on `.lb-area-left` below, anchored
+         to `.library-root` which already has `position: relative`).
+         No inline padding here: the SYMMETRIC inline padding lives on
+         `.library-root` instead, so the body's max-width + margin: 0 auto
+         centers it perfectly on the viewport. The galaxy core (image
+         centered at left:50% of `.library-galaxy` inside the body) thus
+         lands exactly at the viewport's center — independent of where
+         the absolute support sidebar sits. */
+      display: block;
       min-height: calc(var(--library-dashboard-min-height, 100dvh) - 2.75rem);
       max-width: 1440px;
-      /* Lock the grid columns to physical positions: column 1 = visual
-         left, column 3 = visual right. The page may be `dir="rtl"` for
-         Hebrew text, but the dashboard composition itself is fixed
-         (sidebar always physical-left, slim rail always physical-right).
-         Each immediate child re-applies the page direction below so
-         text inside still renders RTL when the page is Hebrew. */
-      direction: ltr;
+      margin: 0 auto;
+      padding: 0;
     }
-    .library-body > * {
-      direction: var(--page-direction, ltr);
-    }
-    /* Galaxy stage uses physical left/right for absolute orbit slots,
-       so the composition (TL/TR/ML/MR/BL/BR card placement) is
-       language-independent. Cards inside re-apply page direction so
-       Hebrew titles still read RTL. */
+    /* Galaxy stage still uses physical left/right for the absolute
+       orbit slots so the TL/TR/ML/MR/BL/BR placement of the floating
+       cards is language-independent (the slots target visual corners,
+       not reading-flow corners). Cards inside re-apply page direction
+       so Hebrew titles still read RTL. */
     .library-galaxy { direction: ltr; }
     .galaxy-card    { direction: var(--page-direction, ltr); }
 
-    /* ── Left sidebar: glass column with four stacked panels ─────
-       (continue → knowledge → stats → recommended). Tighter gap so
-       all four panels fit comfortably on common laptop viewport
-       heights (768-900px) without forcing the dashboard to scroll. */
+    /* ── Outer support sidebar: floating glass column with two stacked
+       panels (continue → stats). Pinned to the inline-start edge of
+       `.library-root` (anchor: library-root has position: relative).
+       For absolute positioning the containing block is library-root's
+       PADDING BOX, which spans the full viewport (library-root has no
+       border and 100% width). So `inset-inline-start: 20px` literally
+       means 20px from the viewport's inline-start edge — that resolves
+       to 20px from physical RIGHT in RTL Hebrew and 20px from physical
+       LEFT in LTR English. Independent of body's centering math.
+       The class name `.lb-area-left` is historical (kept to minimise
+       diff scope); semantically it's the "outer support sidebar". */
     .lb-area-left {
-      grid-column: 1;
-      grid-row: 1;
-      gap: 0.75rem;
-      align-self: stretch;
+      position: absolute;
+      inset-block-start: 1.25rem;
+      inset-inline-start: 20px;
+      width: 280px;
+      gap: 1rem;
+      z-index: 5;
     }
     .lb-area-continue,
-    .lb-area-knowledge,
-    .lb-area-stats,
-    .lb-area-sidebar-recs { width: 100%; }
+    .lb-area-stats { width: 100%; }
 
     /* ── Center stage: hero + galaxy + recs ──────────────────────── */
     .lb-area-stage {
-      grid-column: 2;
-      grid-row: 1;
       /* Zero stage-gap: the hero now lives as the title strip of the
          galaxy, not a separate block. .galaxy-stage provides its own
          interior padding for the orbits. */
@@ -521,15 +566,13 @@ const FEATURED_SLOTS = [
       width: 100%;
     }
 
-    /* ── Right rail: pill toolbar, vertically centered ──────────── */
-    .lb-area-right {
-      grid-column: 3;
-      grid-row: 1;
-      align-items: center;
-      justify-content: center;
-    }
+    /* ── Mobile quick-actions aside: hidden on desktop ──
+       The aside stays as `display: contents` (mobile baseline). Its
+       only child `.lb-area-quick-mobile` is `display: none` on desktop,
+       so the aside contributes nothing visible to the grid. The
+       desktop floating rail is `<FloatingSidebar>` rendered outside
+       `.library-body` with `position: fixed`. */
     .lb-area-quick-mobile { display: none; }
-    .lb-area-quick-rail   { display: block; }
 
     /* Galaxy stage on desktop: absolute canvas anchored to the stage.
        Min-height bumped to 540 so the ML/MR orbit cards have enough
@@ -556,46 +599,12 @@ const FEATURED_SLOTS = [
       scrollbar-width: auto;
       scrollbar-color: auto;
     }
-    /* Underlay halo behind the asset — a wide, blurred radial that
-       extends BEYOND the asset's bounds so the asset's faded edges
-       have something to dissolve INTO instead of stopping at plain
-       page bg. The colors are chosen to match the asset's outer-ring
-       atmosphere:
-         center  → faint violet (continues the asset's central glow
-                   beyond its visible edge)
-         midring → sampled #000018 navy (matches asset's edge color)
-         far     → fully transparent (lets page bg take over)
-       Heavy blur (44px) ensures the halo has no perceivable boundary;
-       the user sees one continuous cosmic field. */
-    .library-galaxy::before {
-      content: "";
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      width: 125%;
-      height: 125%;
-      transform: translate(-50%, -50%);
-      background:
-        /* Continues asset's central violet glow outward — slightly
-           reduced range so it doesn't form a competing halo. */
-        radial-gradient(
-          ellipse 55% 50% at center,
-          rgba(124, 58, 237, 0.12) 0%,
-          rgba(124, 58, 237, 0.00) 70%
-        ),
-        /* Bridging navy tint — pulled from sampled asset edge color
-           (#000018). Reduced from 0.35 → 0.18 so it's a gentle COLOR
-           CONTINUATION, not a perceptible darker ring. Fade extended
-           to 95% so the halo dissolves smoothly into page bg. */
-        radial-gradient(
-          ellipse 75% 68% at center,
-          rgba(0, 0, 24, 0.18) 0%,
-          rgba(0, 0, 24, 0.00) 95%
-        );
-      filter: blur(40px);
-      pointer-events: none;
-      z-index: 0;
-    }
+    /* The earlier `.library-galaxy::before` underlay halo and
+       `.galaxy-stage-veil` overlay were experimental edge-blending
+       layers. Both removed: the new full-page actual-asset underlay
+       on `.library-root::before` propagates the asset's visual
+       language across the entire screen, so per-asset edge blending
+       layers are no longer necessary. */
     .library-galaxy::-webkit-scrollbar { height: auto; }
 
     /* `.galaxy-core` and its child rules (.galaxy-core-pool,
@@ -628,29 +637,35 @@ const FEATURED_SLOTS = [
       pointer-events: none;
       user-select: none;
       z-index: 2;
-      /* Edge feathering — multi-stop S-curve mask. A linear 2-stop
-         fade made the elliptical boundary perceivable (the eye reads
-         a "soft edge" as a shape). With four stops the alpha drops
-         non-linearly: stays high through 60%, soft mid-fade 78%, deep
-         fade at 90%, fully transparent at 100%. The result is a
-         gradient too gradual for the eye to localize as a boundary —
-         no perceptible elliptical "frame" remains. Keep the rings
-         fully sharp inside; only the asset's own outer atmosphere
-         dissolves. */
+      /* Edge feathering — 6-stop mask aggressively dissolves the
+         rectangular bounds.
+            0-58%   fully visible (book + inner rings sharp)
+            58-68%  subtle start of fade (1.0 → 0.85)
+            68-80%  noticeable thinning (0.85 → 0.5)
+            80-88%  heavy fade (0.5 → 0.18) — matches user's
+                    "heavily faded by 82-88%" direction
+            88-96%  ghost trail (0.18 → 0)
+            96-100% fully transparent
+         Ellipse 96%×92% (smaller than the image's bounding box) ends
+         the visible area BEFORE the actual rectangular edges, so the
+         outermost pixels are masked out entirely. Combined with the
+         underlay halo below, the asset has no perceivable boundary. */
       -webkit-mask-image: radial-gradient(
-        ellipse 100% 100% at center,
+        ellipse 96% 92% at center,
         rgba(0, 0, 0, 1)    0%,
-        rgba(0, 0, 0, 1)    60%,
-        rgba(0, 0, 0, 0.78) 78%,
-        rgba(0, 0, 0, 0.32) 90%,
-        rgba(0, 0, 0, 0)    100%);
+        rgba(0, 0, 0, 1)    58%,
+        rgba(0, 0, 0, 0.85) 68%,
+        rgba(0, 0, 0, 0.50) 80%,
+        rgba(0, 0, 0, 0.18) 88%,
+        rgba(0, 0, 0, 0)    96%);
       mask-image: radial-gradient(
-        ellipse 100% 100% at center,
+        ellipse 96% 92% at center,
         rgba(0, 0, 0, 1)    0%,
-        rgba(0, 0, 0, 1)    60%,
-        rgba(0, 0, 0, 0.78) 78%,
-        rgba(0, 0, 0, 0.32) 90%,
-        rgba(0, 0, 0, 0)    100%);
+        rgba(0, 0, 0, 1)    58%,
+        rgba(0, 0, 0, 0.85) 68%,
+        rgba(0, 0, 0, 0.50) 80%,
+        rgba(0, 0, 0, 0.18) 88%,
+        rgba(0, 0, 0, 0)    96%);
     }
 
     /* ── Floating cards: 6 absolute slots arranged around the core,
@@ -681,12 +696,12 @@ const FEATURED_SLOTS = [
     }
   }
 
-  /* ── Wide desktop (≥1280px): bigger stage, wider cards, orbits ──── */
+  /* ── Wide desktop (≥1280px): bigger sidebar + stage, wider cards. ─── */
   @media (min-width: 1280px) {
-    .library-body {
-      grid-template-columns: 320px minmax(0, 1fr) 112px;
-      gap: 1.5rem;
-    }
+    /* Sidebar widens to 320 — its viewport-relative anchor (20px gap)
+       stays unchanged. No body padding to bump anymore: the body
+       centers freely on the viewport regardless of sidebar width. */
+    .lb-area-left      { width: 320px; }
     .galaxy-card        { width: 240px; }
     .galaxy-stage-image { max-width: 880px; }
   }

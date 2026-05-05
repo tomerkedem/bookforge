@@ -1,0 +1,304 @@
+---
+/**
+ * FloatingSidebar — vertical pill rail, desktop-only.
+ *
+ * Stage 3 wiring: the component now pins itself to the inline-end edge
+ * of the viewport (`position: fixed`, `inset-inline-end: clamp(...)`,
+ * vertically centered with `top: 50% / translateY(-50%)`). Stacking
+ * `z-index: 30` keeps it above page content but below the global
+ * sticky Header (z-50).
+ *
+ * Mobile (≤768px): hidden entirely. The legacy
+ * `<LibraryQuickActions language={language} />` panel still owns the
+ * mobile quick-actions UX in `library.astro` — this rail is desktop-only
+ * by product decision (Stage 3, option C).
+ *
+ * Entry animation: a single 400ms slide-in from the inline-end edge,
+ * direction-aware via the `--enter-offset` custom property
+ * (12px LTR / -12px RTL). Respects `prefers-reduced-motion`.
+ *
+ * No client-side state, no JS. Items are simple `<a>` anchors per the
+ * stage-2 prop signature; default `href="#"` keeps them harmless until
+ * real routes are wired by the consumer.
+ */
+import type { Language } from '../../types/index';
+import { t } from '../../i18n';
+import { getLanguageDirection } from '../../utils/language';
+
+interface Props {
+  language: Language;
+  aiAssistantHref?: string;
+  bookmarksHref?: string;
+  historyHref?: string;
+  class?: string;
+}
+
+const {
+  language,
+  aiAssistantHref = '#',
+  bookmarksHref = '#',
+  historyHref = '#',
+  class: className = '',
+} = Astro.props;
+
+const direction = getLanguageDirection(language);
+
+const aiAssistantLabel = t('library.action.aiAssistant', language);
+const bookmarksLabel   = t('library.action.bookmarks',   language);
+const historyLabel     = t('library.action.history',     language);
+---
+
+<aside
+  class:list={['floating-sidebar', className]}
+  dir={direction}
+  aria-label={aiAssistantLabel}
+>
+  <a
+    href={aiAssistantHref}
+    class="floating-sidebar__item floating-sidebar__item--ai"
+    aria-label={aiAssistantLabel}
+  >
+    <span class="floating-sidebar__icon" aria-hidden="true">
+      <img src="/assets/library/ai-icon.png" alt="" width="24" height="24" />
+    </span>
+    <span class="floating-sidebar__label">{aiAssistantLabel}</span>
+  </a>
+
+  <a
+    href={bookmarksHref}
+    class="floating-sidebar__item"
+    aria-label={bookmarksLabel}
+  >
+    <span class="floating-sidebar__icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M6 4h12v17l-6-4-6 4z"></path>
+      </svg>
+    </span>
+    <span class="floating-sidebar__label">{bookmarksLabel}</span>
+  </a>
+
+  <a
+    href={historyHref}
+    class="floating-sidebar__item"
+    aria-label={historyLabel}
+  >
+    <span class="floating-sidebar__icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="9"></circle>
+        <path d="M12 7v5l3 2"></path>
+      </svg>
+    </span>
+    <span class="floating-sidebar__label">{historyLabel}</span>
+  </a>
+</aside>
+
+<style>
+  /* ── Container ───────────────────────────────────────────────────
+     Desktop pill rail, pinned to the inline-end edge of the viewport
+     and vertically centered. `inset-inline-end` resolves to `right`
+     in LTR and `left` in RTL, so the rail naturally swaps sides with
+     the page direction — no physical-direction lock.
+
+     Animation: slides in from off-edge via `--enter-offset` (12px LTR,
+     -12px RTL via the `[dir="rtl"]` selector below). The transform
+     keeps `translateY(-50%)` for vertical centering throughout, so the
+     keyframe animates the X component only.
+  */
+  .floating-sidebar {
+    position: fixed;
+    inset-inline-end: clamp(8px, 1vw, 16px);
+    inset-inline-start: auto;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 30;
+
+    /* Width: 92 (was 80). Reference shows the rail noticeably wider
+       than a strict-icon column — leaves more room for Hebrew labels
+       like "היסטוריה" without crowding the pill walls. */
+    width: 92px;
+    /* Padding: more generous than 24/12. Reference shows ~32 vertical
+       breathing room above the AI item and below the History item,
+       and ~14 horizontal so dividers/labels don't kiss the edge. */
+    padding: 32px 14px;
+    display: flex;
+    flex-direction: column;
+    /* Gap: bumped 28 → 34 to match the looser inter-item rhythm visible
+       in the reference. */
+    gap: 34px;
+    align-items: center;
+
+    /* Background — subtle vertical variation, NOT the dramatic
+       deep→navy→deep gradient we had. Two layers:
+         1. Soft radial highlight at top, fading to transparent at 60%.
+         2. Linear navy with very low contrast between top/middle/bottom
+            (~3-4% lightness swing). Hardcoded — no token sits at exactly
+            this low-contrast envelope. */
+    background:
+      radial-gradient(
+        ellipse 80% 40% at 50% 0%,
+        rgba(40, 70, 130, 0.22) 0%,
+        transparent 60%),
+      linear-gradient(
+        180deg,
+        #08091a 0%,
+        #0b0e22 50%,
+        #08091a 100%);
+
+    /* Border-radius: 28px (was --yuval-galaxy-panel-radius = 22px).
+       Reference shows a more pronounced pill curvature than the
+       general galaxy panel token — hardcoded here so the rail reads
+       as a dedicated pill component, not a generic panel. */
+    border-radius: 28px;
+
+    /* Layered border effect — reference has TWO visible lines:
+         - Outer hairline: subtle dark blue-purple (the actual border)
+         - Inner hairline: faint cyan highlight (via inset box-shadow)
+         - Outer atmosphere: soft cyan halo bleeding past the edge
+         - Inner atmosphere: gentle vignette darkening toward edges
+       Hardcoded RGBA values — they sit between the available galaxy
+       tokens (border / border-strong / border-glow) and were tuned
+       directly against the reference image. */
+    border: 1px solid rgba(120, 140, 200, 0.18);
+    box-shadow:
+      /* inner hairline (the "inside cyan line") */
+      inset 0 0 0 1px rgba(140, 190, 255, 0.10),
+      /* inner soft glow toward the center */
+      inset 0 0 28px rgba(60, 110, 200, 0.12),
+      /* outer atmospheric halo */
+      0 0 36px rgba(80, 130, 220, 0.22),
+      /* depth shadow underneath */
+      0 12px 32px rgba(2, 4, 14, 0.45);
+
+    backdrop-filter: blur(var(--yuval-galaxy-card-blur, 20px));
+    -webkit-backdrop-filter: blur(var(--yuval-galaxy-card-blur, 20px));
+    isolation: isolate;
+
+    --enter-offset: 12px;
+    animation: floating-sidebar-enter 400ms var(--yuval-galaxy-ease-out, ease-out) both;
+  }
+  [dir="rtl"] .floating-sidebar {
+    --enter-offset: -12px;
+  }
+
+  @keyframes floating-sidebar-enter {
+    from {
+      opacity: 0;
+      transform: translate(var(--enter-offset), -50%);
+    }
+    to {
+      opacity: 1;
+      transform: translate(0, -50%);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .floating-sidebar {
+      animation: none;
+    }
+  }
+
+  /* ── Items ─────────────────────────────────────────────────────
+     Bookmark + history items use the muted blue-white token so they
+     read as calm/secondary against the AI item's bright cyan. */
+  .floating-sidebar__item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-decoration: none;
+    padding: 8px 4px;
+    border-radius: 12px;
+    color: var(--yuval-galaxy-text-muted);
+    transition:
+      transform var(--yuval-galaxy-motion-fast, 200ms) var(--yuval-galaxy-ease-out, ease-out),
+      background-color 200ms ease-out,
+      color 200ms ease-out;
+  }
+
+  /* AI item — bright cyan-white with a luminous halo. Hardcoded
+     #c8e6ff is brighter than --yuval-galaxy-accent-cyan (#22d3ee)
+     to match the near-white luminosity in the reference. */
+  .floating-sidebar__item--ai {
+    color: #c8e6ff;
+  }
+
+  /* ── Icon ────────────────────────────────────────────────────── */
+  .floating-sidebar__icon {
+    display: inline-flex;
+    width: 30px;
+    height: 30px;
+    color: inherit;
+    transition:
+      transform var(--yuval-galaxy-motion-fast, 200ms) var(--yuval-galaxy-ease-out, ease-out),
+      filter   var(--yuval-galaxy-motion-fast, 200ms) var(--yuval-galaxy-ease-out, ease-out);
+  }
+  .floating-sidebar__icon svg {
+    width: 100%;
+    height: 100%;
+  }
+  /* AI icon — 2× the size of the other icons (48×48 vs 24×24) so the
+     primary action reads as visibly dominant in the rail.
+     No filter/drop-shadow added: the PNG renders with its natural
+     colors only, no synthetic glow halo around it. */
+  .floating-sidebar__item--ai .floating-sidebar__icon {
+    width: 48px;
+    height: 48px;
+  }
+  /* The PNG ships with a solid black square around a round sparkle.
+     Clip the image to a circle so the black corners are removed and
+     only the round icon is visible. Sized to fill the 48×48 wrapper.
+     `mix-blend-mode: screen` does NOT work here because the parent's
+     `filter: drop-shadow` creates an isolated stacking context that
+     prevents blending against the pill. */
+  .floating-sidebar__item--ai .floating-sidebar__icon img {
+    width: 48px;
+    height: 48px;
+    clip-path: circle(50%);
+    border-radius: 50%;
+  }
+
+  /* ── Label ─────────────────────────────────────────────────────
+     Slightly larger (13 vs 12) and warmer than pure muted token —
+     the reference shows labels reading more legibly than a stark
+     muted gray, with a soft blue-white tint. Hardcoded color sits
+     between --yuval-galaxy-text-muted (#aab5d6) and --yuval-galaxy-text. */
+  .floating-sidebar__label {
+    font-size: 16px;
+    font-weight: 400;
+    margin-top: 11px;
+    color: rgba(200, 215, 245, 0.92);
+    text-align: center;
+    white-space: nowrap;
+    transition: color 200ms ease-out;
+  }
+
+  /* ── Hover & focus states ─────────────────────────────────────
+     Identical visual treatment for hover and focus-visible, per
+     accessibility spec. */
+  .floating-sidebar__item:hover .floating-sidebar__icon,
+  .floating-sidebar__item:focus-visible .floating-sidebar__icon {
+    transform: scale(1.1);
+    filter: drop-shadow(0 0 8px var(--yuval-galaxy-accent-purple));
+  }
+  .floating-sidebar__item:hover .floating-sidebar__label,
+  .floating-sidebar__item:focus-visible .floating-sidebar__label {
+    color: var(--yuval-galaxy-text);
+  }
+  .floating-sidebar__item:focus-visible {
+    outline: 2px solid var(--yuval-galaxy-accent-cyan);
+    outline-offset: 2px;
+  }
+
+  /* Dividers removed per reference — visual separation comes from
+     the 34px gap alone. The previous hairline was an extra accent the
+     reference image does not show. */
+
+  /* ── Mobile (≤768px): hidden ─────────────────────────────────
+     Per Stage 3 product decision (option C), the floating rail is
+     desktop-only. The legacy LibraryQuickActions default-variant
+     panel still owns the mobile quick-actions UX from `library.astro`. */
+  @media (max-width: 768px) {
+    .floating-sidebar {
+      display: none;
+    }
+  }
+</style>
