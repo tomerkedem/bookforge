@@ -530,15 +530,15 @@ export const translations: Translations = {
   // string source.
   'admin.eyebrow':                       { he: 'Yuval · פנים',                                      en: 'Yuval · Internal',                                      es: 'Yuval · Interno' },
   'admin.title':                         { he: 'מרכז בקרת הידע',                                    en: 'Knowledge Control Center',                              es: 'Centro de control del conocimiento' },
-  'admin.subtitle':                      { he: 'ניהול תוכן, מצב קריאה ומטא־דאטה של הידע.',           en: 'Manage content, reader state and knowledge metadata.', es: 'Administra contenido, estado del lector y metadatos del conocimiento.' },
+  'admin.subtitle':                      { he: 'ניהול תוכן, מצב קריאה ומטא-דאטה של הידע.',           en: 'Manage content, reader state and knowledge metadata.', es: 'Administra contenido, estado del lector y metadatos del conocimiento.' },
 
   'admin.section.libraryContent':        { he: 'תוכן הספרייה',          en: 'Library Content',         es: 'Contenido de la biblioteca' },
   'admin.section.globalSettings':        { he: 'הגדרות כלליות',         en: 'Global Settings',         es: 'Configuración global' },
   'admin.section.bookCount':             { he: '{{n}} ספרים',           en: '{{n}} books',             es: '{{n}} libros' },
 
-  'admin.action.editMetadata':           { he: 'עריכת מטא־דאטה',                          en: 'Edit metadata',                         es: 'Editar metadatos' },
-  'admin.action.editAriaLabel':          { he: 'עריכת מטא־דאטה עבור {{title}}',            en: 'Edit metadata for {{title}}',           es: 'Editar metadatos de {{title}}' },
-  'admin.action.editTitle':              { he: 'עריכת מטא־דאטה',                          en: 'Edit metadata',                         es: 'Editar metadatos' },
+  'admin.action.editMetadata':           { he: 'עריכת מטא-דאטה',                          en: 'Edit metadata',                         es: 'Editar metadatos' },
+  'admin.action.editAriaLabel':          { he: 'עריכת מטא-דאטה עבור {{title}}',            en: 'Edit metadata for {{title}}',           es: 'Editar metadatos de {{title}}' },
+  'admin.action.editTitle':              { he: 'עריכת מטא-דאטה',                          en: 'Edit metadata',                         es: 'Editar metadatos' },
   'admin.action.cleanData':              { he: 'ניקוי נתונים',                            en: 'Clean data',                            es: 'Limpiar datos' },
   'admin.action.cleanDataTitle':         { he: 'ניקוי נתוני קריאה מקומיים לספר זה',       en: 'Clean local reader data for this book', es: 'Limpiar datos locales del lector para este libro' },
   'admin.action.delete':                 { he: 'מחיקה',                                   en: 'Delete',                                es: 'Eliminar' },
@@ -554,7 +554,7 @@ export const translations: Translations = {
   'admin.global.description':            { he: 'שפה, ערכת נושא, טיפוגרפיה, קול ומהירות TTS, מצב היכרות.',                       en: 'Language, theme, typography, TTS voice & speed, onboarding state.',          es: 'Idioma, tema, tipografía, voz y velocidad de TTS, estado de presentación.' },
   'admin.global.cleanButton':            { he: 'ניקוי הגדרות כלליות',                                                          en: 'Clean global settings',                                                      es: 'Limpiar configuración global' },
 
-  'admin.drawer.eyebrow':                { he: 'עריכת מטא־דאטה',     en: 'Edit metadata',           es: 'Editar metadatos' },
+  'admin.drawer.eyebrow':                { he: 'עריכת מטא-דאטה',     en: 'Edit metadata',           es: 'Editar metadatos' },
   'admin.drawer.close':                  { he: 'סגירת עורך',         en: 'Close editor',            es: 'Cerrar editor' },
 
   'admin.field.displayTitle':            { he: 'כותרת לתצוגה',                                                  en: 'Display title',                                                       es: 'Título mostrado' },
@@ -576,7 +576,7 @@ export const translations: Translations = {
   'admin.option.hidden':                 { he: 'מוסתר',       en: 'Hidden',   es: 'Oculto' },
 
   'admin.button.cancel':                 { he: 'ביטול',                  en: 'Cancel',                  es: 'Cancelar' },
-  'admin.button.save':                   { he: 'שמירת מטא־דאטה',         en: 'Save metadata',           es: 'Guardar metadatos' },
+  'admin.button.save':                   { he: 'שמירת מטא-דאטה',         en: 'Save metadata',           es: 'Guardar metadatos' },
 
   'admin.modal.title':                   { he: 'מחיקת ספר',                                                                              en: 'Delete book',                                                          es: 'Eliminar libro' },
   'admin.modal.body':                    { he: 'האם אתה בטוח שברצונך למחוק את הספר {{title}}?',                                          en: 'Are you sure you want to delete the book {{title}}?',                  es: '¿Estás seguro de que quieres eliminar el libro {{title}}?' },
@@ -593,7 +593,7 @@ export const translations: Translations = {
   'admin.toast.deleteError':             { he: 'שגיאה: {{msg}}',                                      en: 'Error: {{msg}}',                                                      es: 'Error: {{msg}}' },
   'admin.toast.deleteFailed':            { he: 'לא ניתן למחוק',                                       en: 'Could not delete',                                                    es: 'No se pudo eliminar' },
   'admin.toast.networkError':            { he: 'שגיאת רשת: {{msg}}',                                  en: 'Network error: {{msg}}',                                              es: 'Error de red: {{msg}}' },
-  'admin.toast.metadataSaved':           { he: 'המטא־דאטה נשמרה עבור "{{title}}"',                    en: 'Metadata saved for "{{title}}"',                                      es: 'Metadatos guardados para "{{title}}"' },
+  'admin.toast.metadataSaved':           { he: 'המטא-דאטה נשמרה עבור "{{title}}"',                    en: 'Metadata saved for "{{title}}"',                                      es: 'Metadatos guardados para "{{title}}"' },
 
   // ── library.series.* — series capsule on the orbit ───────────────────────
   // Labels are intentionally short so they fit inside the orbit-card
