@@ -5,39 +5,78 @@ import { discoverAllBooks } from '../utils/book-discovery';
 const books = discoverAllBooks();
 ---
 
-<BaseLayout title="Admin - Yuval" showLanguageToggle={false}>
-  <div class="admin-wrap">
-    <h1 class="admin-title">Admin Panel</h1>
-    <p class="admin-subtitle">Manage local reader data stored in the browser.</p>
-
-    <div class="books-grid" id="books-grid">
-      {books.map(book => (
-        <div class="book-card" data-slug={book.slug}>
-          <div class="book-info">
-            <span class="book-title">{book.title_en}</span>
-            <span class="book-slug">{book.slug}</span>
-          </div>
-          <div class="book-stats">
-            <span class="stat" id={`stat-${book.slug}`}>...</span>
-          </div>
-          <div class="book-actions">
-            <button class="clean-btn" data-slug={book.slug}>
-              Clean data
-            </button>
-            <button class="delete-btn" data-slug={book.slug} data-title={book.title_en}>
-              🗑️ Delete book
-            </button>
-          </div>
+<BaseLayout title="Knowledge Control Center - Yuval" showLanguageToggle={false}>
+  <div class="kcc-shell">
+    <div class="kcc-wrap">
+      <header class="kcc-header">
+        <div class="kcc-eyebrow">
+          <span class="kcc-eyebrow-dot"></span>
+          <span class="kcc-eyebrow-text">Yuval · Internal</span>
         </div>
-      ))}
-    </div>
+        <h1 class="kcc-title">Knowledge Control Center</h1>
+        <p class="kcc-subtitle">Manage content, reader state and knowledge metadata.</p>
+      </header>
 
-    <div class="global-section">
-      <h2>Global settings</h2>
-      <p>Language, theme, typography, TTS voice & speed, onboarding state.</p>
-      <button class="clean-btn clean-btn--global" id="clean-global-btn">
-        Clean global settings
-      </button>
+      <section class="kcc-section">
+        <div class="kcc-section-head">
+          <h2 class="kcc-section-title">Library Content</h2>
+          <span class="kcc-section-meta">{books.length} {books.length === 1 ? 'book' : 'books'}</span>
+        </div>
+
+        <div class="books-grid" id="books-grid">
+          {books.map(book => {
+            const initial = (book.title_en || book.slug).trim().charAt(0).toUpperCase();
+            return (
+              <article class="book-card" data-slug={book.slug}>
+                <div class="book-monogram" aria-hidden="true">{initial}</div>
+                <div class="book-info">
+                  <span class="book-title">{book.title_en}</span>
+                  <span class="book-slug">{book.slug}</span>
+                </div>
+                <div class="book-stats">
+                  <span class="stat" id={`stat-${book.slug}`}>…</span>
+                </div>
+                <div class="book-actions">
+                  <button class="clean-btn" data-slug={book.slug} title="Clean local reader data for this book">
+                    Clean data
+                  </button>
+                  <button
+                    class="delete-btn"
+                    data-slug={book.slug}
+                    data-title={book.title_en}
+                    aria-label={`Delete ${book.title_en}`}
+                    title="Delete book"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <polyline points="3 6 5 6 21 6"></polyline>
+                      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+                      <path d="M10 11v6"></path>
+                      <path d="M14 11v6"></path>
+                      <path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                    <span class="delete-btn-label">Delete</span>
+                  </button>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      </section>
+
+      <section class="kcc-section global-section">
+        <div class="kcc-section-head">
+          <h2 class="kcc-section-title">Global Settings</h2>
+        </div>
+        <div class="global-card">
+          <div class="global-card-info">
+            <p class="global-card-title">Reader preferences</p>
+            <p class="global-card-desc">Language, theme, typography, TTS voice &amp; speed, onboarding state.</p>
+          </div>
+          <button class="clean-btn clean-btn--global" id="clean-global-btn">
+            Clean global settings
+          </button>
+        </div>
+      </section>
     </div>
 
     <div id="toast" class="toast hidden"></div>
@@ -59,155 +98,362 @@ const books = discoverAllBooks();
 </BaseLayout>
 
 <style>
-  .admin-wrap {
-    max-width: 680px;
+  /* ─────────────────────────────────────────────────────────────
+     Knowledge Control Center — premium dark, warm charcoal + gold.
+     Palette intentionally matches LeftSidebar charcoal/gold family
+     (#0d0d10 / #16161c / #b8923f / cream-gold) instead of the light
+     theme tokens used by the rest of the app.
+     ───────────────────────────────────────────────────────────── */
+
+  .kcc-shell {
+    --kcc-ink: #0a0a0c;
+    --kcc-surface: rgba(28, 28, 34, 0.62);
+    --kcc-surface-strong: rgba(34, 34, 40, 0.78);
+    --kcc-rim: rgba(255, 255, 255, 0.08);
+    --kcc-rim-strong: rgba(255, 255, 255, 0.14);
+    --kcc-gold: #c9a96e;
+    --kcc-gold-soft: rgba(201, 169, 110, 0.22);
+    --kcc-gold-rim: rgba(201, 169, 110, 0.35);
+    --kcc-text: #ececea;
+    --kcc-text-secondary: #a8a8a4;
+    --kcc-text-muted: #6e6e6c;
+
+    position: relative;
+    min-height: calc(100vh - 64px);
+    background:
+      radial-gradient(ellipse 90% 60% at 30% -10%, rgba(201, 169, 110, 0.08) 0%, transparent 55%),
+      radial-gradient(ellipse 70% 50% at 80% 110%, rgba(184, 146, 63, 0.06) 0%, transparent 60%),
+      linear-gradient(180deg, #121215 0%, #0a0a0c 60%, #08080a 100%);
+    color: var(--kcc-text);
+    isolation: isolate;
+  }
+
+  /* Subtle film grain / vignette layer */
+  .kcc-shell::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(ellipse at 50% 0%, transparent 60%, rgba(0, 0, 0, 0.45) 100%);
+    z-index: 0;
+  }
+
+  .kcc-wrap {
+    position: relative;
+    z-index: 1;
+    max-width: 760px;
     margin: 0 auto;
-    padding: 48px 24px 80px;
+    padding: 64px 28px 96px;
   }
 
-  .admin-title {
-    font-size: 1.75rem;
-    font-weight: 800;
-    color: var(--yuval-text);
-    margin: 0 0 6px;
+  /* ── Header ─────────────────────────────────────────────── */
+
+  .kcc-header {
+    margin-bottom: 44px;
   }
 
-  .admin-subtitle {
-    color: var(--yuval-text-secondary);
-    font-size: 0.9rem;
-    margin: 0 0 32px;
+  .kcc-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 12px 5px 10px;
+    border-radius: 999px;
+    background: rgba(201, 169, 110, 0.06);
+    border: 1px solid var(--kcc-gold-rim);
+    margin-bottom: 18px;
   }
+
+  .kcc-eyebrow-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--kcc-gold);
+    box-shadow: 0 0 8px rgba(201, 169, 110, 0.55);
+  }
+
+  .kcc-eyebrow-text {
+    font-family: 'Spectral', 'Cardo', Georgia, serif;
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--kcc-gold);
+  }
+
+  .kcc-title {
+    font-family: 'Spectral', 'Cardo', Georgia, serif;
+    font-size: 2.25rem;
+    font-weight: 500;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+    color: var(--kcc-text);
+    margin: 0 0 10px;
+  }
+
+  .kcc-subtitle {
+    color: var(--kcc-text-secondary);
+    font-size: 0.95rem;
+    line-height: 1.55;
+    max-width: 56ch;
+    margin: 0;
+  }
+
+  /* ── Sections ───────────────────────────────────────────── */
+
+  .kcc-section {
+    margin-top: 36px;
+  }
+
+  .kcc-section-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--kcc-rim);
+  }
+
+  .kcc-section-title {
+    font-family: 'Spectral', 'Cardo', Georgia, serif;
+    font-size: 0.78rem;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--kcc-text-secondary);
+    margin: 0;
+  }
+
+  .kcc-section-meta {
+    font-family: 'Spectral', 'Cardo', Georgia, serif;
+    font-size: 0.78rem;
+    color: var(--kcc-text-muted);
+    letter-spacing: 0.04em;
+  }
+
+  /* ── Books grid ─────────────────────────────────────────── */
 
   .books-grid {
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    margin-bottom: 40px;
+    gap: 10px;
   }
 
   .book-card {
     display: flex;
     align-items: center;
-    gap: 16px;
-    background: var(--yuval-surface);
-    border: 1px solid var(--yuval-border);
-    border-radius: 12px;
+    gap: 18px;
+    background: var(--kcc-surface);
+    border: 1px solid var(--kcc-rim);
+    border-radius: 14px;
     padding: 16px 20px;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    transition:
+      background 200ms cubic-bezier(0.4, 0, 0.2, 1),
+      border-color 200ms cubic-bezier(0.4, 0, 0.2, 1),
+      transform 200ms cubic-bezier(0.4, 0, 0.2, 1),
+      box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .book-card:hover {
+    background: var(--kcc-surface-strong);
+    border-color: var(--kcc-rim-strong);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+  }
+
+  .book-monogram {
+    flex-shrink: 0;
+    width: 38px;
+    height: 38px;
+    display: grid;
+    place-items: center;
+    border-radius: 10px;
+    background: linear-gradient(180deg, #1d1d22 0%, #14141a 100%);
+    border: 1px solid var(--kcc-gold-rim);
+    color: var(--kcc-gold);
+    font-family: 'Spectral', 'Cardo', Georgia, serif;
+    font-size: 1.05rem;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
   }
 
   .book-info {
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 3px;
     min-width: 0;
   }
 
   .book-title {
     font-size: 0.95rem;
-    font-weight: 600;
-    color: var(--yuval-text);
+    font-weight: 500;
+    color: var(--kcc-text);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    letter-spacing: -0.005em;
   }
 
   .book-slug {
-    font-size: 0.75rem;
-    color: var(--yuval-text-muted);
-    font-family: monospace;
+    font-size: 0.7rem;
+    color: var(--kcc-text-muted);
+    font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+    letter-spacing: 0.02em;
+  }
+
+  .book-stats {
+    flex-shrink: 0;
   }
 
   .book-stats .stat {
-    font-size: 0.8rem;
-    color: var(--yuval-text-secondary);
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--kcc-rim);
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: var(--kcc-text-secondary);
     white-space: nowrap;
+    letter-spacing: 0.02em;
+  }
+
+  /* ── Actions: ghost buttons, destructive de-emphasised ── */
+
+  .book-actions {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
   }
 
   .clean-btn {
-    padding: 7px 16px;
+    padding: 7px 14px;
     border-radius: 8px;
-    border: 1px solid var(--yuval-border);
-    background: var(--yuval-bg-secondary);
-    color: var(--yuval-text-secondary);
-    font-size: 0.8rem;
+    border: 1px solid var(--kcc-rim);
+    background: rgba(255, 255, 255, 0.02);
+    color: var(--kcc-text-secondary);
+    font-size: 0.78rem;
     font-weight: 500;
     cursor: pointer;
     white-space: nowrap;
-    transition: background 0.15s, color 0.15s, border-color 0.15s;
+    letter-spacing: 0.01em;
+    transition:
+      background 160ms cubic-bezier(0.4, 0, 0.2, 1),
+      color 160ms cubic-bezier(0.4, 0, 0.2, 1),
+      border-color 160ms cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .clean-btn:hover {
-    background: #fee2e2;
-    color: #b91c1c;
-    border-color: #fca5a5;
+    background: rgba(201, 169, 110, 0.08);
+    color: var(--kcc-gold);
+    border-color: var(--kcc-gold-rim);
+  }
+
+  .delete-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 12px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--kcc-text-muted);
+    font-size: 0.78rem;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    letter-spacing: 0.01em;
+    transition:
+      background 160ms cubic-bezier(0.4, 0, 0.2, 1),
+      color 160ms cubic-bezier(0.4, 0, 0.2, 1),
+      border-color 160ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .delete-btn svg {
+    flex-shrink: 0;
+    opacity: 0.75;
+  }
+
+  .delete-btn:hover {
+    background: rgba(220, 38, 38, 0.08);
+    color: #f87171;
+    border-color: rgba(220, 38, 38, 0.32);
+  }
+
+  .delete-btn:hover svg {
+    opacity: 1;
+  }
+
+  /* ── Global card ─────────────────────────────────────────── */
+
+  .global-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    background: var(--kcc-surface);
+    border: 1px solid var(--kcc-rim);
+    border-radius: 14px;
+    padding: 18px 20px;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+
+  .global-card-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .global-card-title {
+    font-size: 0.92rem;
+    font-weight: 500;
+    color: var(--kcc-text);
+    margin: 0 0 3px;
+  }
+
+  .global-card-desc {
+    font-size: 0.8rem;
+    color: var(--kcc-text-secondary);
+    margin: 0;
+    line-height: 1.5;
   }
 
   .clean-btn--global {
-    margin-top: 12px;
+    margin-top: 0;
+    flex-shrink: 0;
   }
 
-  .global-section {
-    border-top: 1px solid var(--yuval-border);
-    padding-top: 28px;
-  }
-
-  .global-section h2 {
-    font-size: 1rem;
-    font-weight: 700;
-    color: var(--yuval-text);
-    margin: 0 0 4px;
-  }
-
-  .global-section p {
-    font-size: 0.85rem;
-    color: var(--yuval-text-secondary);
-    margin: 0 0 8px;
-  }
+  /* ── Toast ──────────────────────────────────────────────── */
 
   .toast {
     position: fixed;
     bottom: 32px;
     left: 50%;
     transform: translateX(-50%);
-    background: #1a1a1a;
+    background: rgba(20, 20, 24, 0.92);
     color: #fff;
-    padding: 10px 20px;
-    border-radius: 99px;
+    border: 1px solid var(--kcc-gold-rim);
+    padding: 10px 22px;
+    border-radius: 999px;
     font-size: 0.85rem;
     font-weight: 500;
+    letter-spacing: 0.01em;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5);
     z-index: 9999;
     transition: opacity 0.3s;
   }
 
   .toast.hidden { display: none; }
 
-  /* Book actions container */
-  .book-actions {
-    display: flex;
-    gap: 8px;
-  }
+  /* ── Modal: dark glass version ──────────────────────────── */
 
-  /* Delete button */
-  .delete-btn {
-    padding: 7px 12px;
-    border-radius: 8px;
-    border: 1px solid #dc2626;
-    background: transparent;
-    color: #dc2626;
-    font-size: 0.8rem;
-    font-weight: 500;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: background 0.15s, color 0.15s;
-  }
-
-  .delete-btn:hover {
-    background: #dc2626;
-    color: #fff;
-  }
-
-  /* Modal */
   .modal {
     position: fixed;
     inset: 0;
@@ -222,82 +468,140 @@ const books = discoverAllBooks();
   .modal-backdrop {
     position: absolute;
     inset: 0;
-    background: rgba(0, 0, 0, 0.6);
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
   }
 
   .modal-content {
     position: relative;
-    background: var(--yuval-surface, #fff);
+    background: linear-gradient(180deg, #1a1a1f 0%, #131318 100%);
+    border: 1px solid var(--kcc-rim-strong);
     border-radius: 16px;
     padding: 28px;
-    max-width: 400px;
+    max-width: 420px;
     width: 90%;
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+    box-shadow:
+      0 30px 80px rgba(0, 0, 0, 0.6),
+      inset 0 1px 0 rgba(255, 255, 255, 0.04);
     text-align: center;
+    color: #ececea;
   }
 
   .modal-content h3 {
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: var(--yuval-text);
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #ececea;
     margin: 0 0 12px;
   }
 
   .modal-content p {
     font-size: 0.9rem;
-    color: var(--yuval-text-secondary);
+    color: #a8a8a4;
     margin: 0 0 8px;
-    line-height: 1.5;
+    line-height: 1.55;
+  }
+
+  .modal-content strong {
+    color: #ececea;
   }
 
   .modal-warning {
-    color: #dc2626 !important;
+    color: #f87171 !important;
     font-weight: 500;
     font-size: 0.85rem !important;
   }
 
   .modal-actions {
     display: flex;
-    gap: 12px;
+    gap: 10px;
     justify-content: center;
-    margin-top: 20px;
+    margin-top: 22px;
   }
 
   .modal-btn {
-    padding: 10px 24px;
+    padding: 10px 22px;
     border-radius: 8px;
-    font-size: 0.9rem;
-    font-weight: 600;
+    font-size: 0.88rem;
+    font-weight: 500;
     cursor: pointer;
     transition:
-      background 150ms cubic-bezier(0.2, 0, 0, 1),
-      color 150ms cubic-bezier(0.2, 0, 0, 1),
-      border-color 150ms cubic-bezier(0.2, 0, 0, 1);
+      background 160ms cubic-bezier(0.2, 0, 0, 1),
+      color 160ms cubic-bezier(0.2, 0, 0, 1),
+      border-color 160ms cubic-bezier(0.2, 0, 0, 1);
   }
 
   .modal-btn--cancel {
-    background: var(--yuval-bg-secondary, #f3f3f3);
-    border: 1px solid var(--yuval-border, #ddd);
-    color: var(--yuval-text-secondary);
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--kcc-rim);
+    color: #ececea;
   }
 
   .modal-btn--cancel:hover {
-    background: var(--yuval-border, #ddd);
+    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--kcc-rim-strong);
   }
 
   .modal-btn--delete {
-    background: #dc2626;
-    border: none;
+    background: rgba(220, 38, 38, 0.92);
+    border: 1px solid rgba(220, 38, 38, 0.6);
     color: #fff;
   }
 
   .modal-btn--delete:hover {
-    background: #b91c1c;
+    background: rgb(220, 38, 38);
   }
 
   .modal-btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+  }
+
+  /* ── Responsive ─────────────────────────────────────────── */
+
+  @media (max-width: 640px) {
+    .kcc-wrap {
+      padding: 36px 18px 64px;
+    }
+
+    .kcc-title {
+      font-size: 1.75rem;
+    }
+
+    .book-card {
+      flex-wrap: wrap;
+      gap: 12px;
+      padding: 14px 16px;
+    }
+
+    .book-info {
+      flex: 1 1 calc(100% - 56px);
+    }
+
+    .book-stats {
+      order: 3;
+    }
+
+    .book-actions {
+      order: 4;
+      width: 100%;
+      justify-content: flex-end;
+      padding-top: 8px;
+      border-top: 1px solid var(--kcc-rim);
+    }
+
+    .global-card {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .clean-btn--global {
+      align-self: flex-start;
+    }
+
+    .delete-btn-label {
+      display: none;
+    }
   }
 </style>
 

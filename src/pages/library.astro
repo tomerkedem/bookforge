@@ -89,8 +89,12 @@ const continueItem = getContinueReadingItem(readableItems);
 const bookItems = readableItems.filter((it) => it.type === 'book');
 const lessonItems = readableItems.filter((it) => it.type === 'course_lesson');
 const VISIBLE_PER_COLUMN = 3;
-const hasBookPagination = bookItems.length > VISIBLE_PER_COLUMN;
-const hasLessonPagination = lessonItems.length > VISIBLE_PER_COLUMN;
+// One shared pager controls BOTH columns. Each click cycles both
+// columns by 1 (cyclic, mod column length), so a column whose items
+// already fit (length ≤ VISIBLE_PER_COLUMN) still animates as the user
+// paginates — items rotate among the slots. Hidden only when there's
+// no content at all.
+const showPager = bookItems.length > 0 || lessonItems.length > 0;
 
 // ── ContinueLearningCard data ─────────────────────────────────────────────
 // Real values are derived from `continueItem` + `courseProgress`. Two modes:
@@ -269,42 +273,25 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
               </div>
             ))}
 
-            {/* Pagination — one pair per column, only when count > 3.
-                Buttons are square chips at the bottom of each column.
-                Hidden on mobile (whole .library-galaxy is). */}
-            {hasBookPagination && (
-              <div class="galaxy-pager galaxy-pager-book" aria-hidden="false">
+            {/* Shared pager — single pair of arrows centered at the
+                bottom of the stage. Each click rotates BOTH columns
+                cyclically by 1, so the user always sees motion on both
+                sides regardless of how many items each column holds. */}
+            {showPager && (
+              <div class="galaxy-pager galaxy-pager-center" aria-hidden="false">
                 <button
                   type="button"
                   class="galaxy-pager-btn"
-                  data-galaxy-pager="book"
+                  data-galaxy-pager-shared
                   data-direction="prev"
                   aria-label={t('library.galaxy.prevBooks', language)}
                 ><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
                 <button
                   type="button"
                   class="galaxy-pager-btn"
-                  data-galaxy-pager="book"
+                  data-galaxy-pager-shared
                   data-direction="next"
                   aria-label={t('library.galaxy.nextBooks', language)}
-                ><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
-              </div>
-            )}
-            {hasLessonPagination && (
-              <div class="galaxy-pager galaxy-pager-lesson" aria-hidden="false">
-                <button
-                  type="button"
-                  class="galaxy-pager-btn"
-                  data-galaxy-pager="lesson"
-                  data-direction="prev"
-                  aria-label={t('library.galaxy.prevLessons', language)}
-                ><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
-                <button
-                  type="button"
-                  class="galaxy-pager-btn"
-                  data-galaxy-pager="lesson"
-                  data-direction="next"
-                  aria-label={t('library.galaxy.nextLessons', language)}
                 ><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
               </div>
             )}
@@ -948,18 +935,20 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
        darken layer above the orbit already provides that focal lift,
        so no extra dimming is wired here. */
 
-    /* Pagination chips — one pair per column, anchored to the bottom
-       inline-start / inline-end corners of the stage. The wrapper isn't
-       rendered when the column has ≤VISIBLE_PER_COLUMN items. */
+    /* Pagination chips — single shared pair, centered at the bottom of
+       the stage. Drives BOTH columns at once so any click animates
+       motion on both sides (cyclic rotation per column). */
     .galaxy-pager {
       position: absolute;
       inset-block-end: -1.5rem;
       display: flex;
-      gap: 0.375rem;
+      gap: 0.5rem;
       z-index: 4;
     }
-    .galaxy-pager-book   { inset-inline-start: 4%; }
-    .galaxy-pager-lesson { inset-inline-end:   4%; }
+    .galaxy-pager-center {
+      left: 50%;
+      transform: translateX(-50%);
+    }
     .galaxy-pager-btn {
       width: 32px;
       height: 32px;
@@ -1057,41 +1046,34 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       }
 
       // Per-column carousel offset (start index for the visible window).
+      // Cyclic: each click on the shared pager bumps both offsets by 1
+      // mod length, so even a column with length === VISIBLE rotates
+      // its cards through the slots and animates on every click.
       const offset: Record<string, number> = { book: 0, lesson: 0 };
-      // Card currently in center, plus the slot it returns to on close.
-      let focused: { card: HTMLElement; column: string; slot: number } | null = null;
+      // Card currently in center.
+      let focused: { card: HTMLElement; column: string } | null = null;
 
       // Apply offset → set data-pos for every card in the column. Cards
       // currently in "center" are skipped so a paginate doesn't yank a
       // focused card back to a slot mid-flight.
       function applyColumn(column: string) {
         const list = byColumn[column];
+        const len = list.length;
+        if (len === 0) return;
         const off = offset[column];
-        for (let i = 0; i < list.length; i++) {
+        for (let i = 0; i < len; i++) {
           const card = list[i];
           if (focused && focused.card === card) continue;
-          const slot = i - off;
-          if (slot >= 0 && slot < VISIBLE) {
+          // Cyclic slot — wraps around so length === VISIBLE still
+          // rotates the cards visually instead of staying static.
+          const slot = ((i - off) % len + len) % len;
+          if (slot < VISIBLE) {
             card.dataset.pos = `slot-${slot}`;
             card.removeAttribute('inert');
           } else {
             card.dataset.pos = 'queue';
             card.setAttribute('inert', '');
           }
-        }
-        updatePagerDisabled(column);
-      }
-
-      function updatePagerDisabled(column: string) {
-        const list = byColumn[column];
-        const max = Math.max(0, list.length - VISIBLE);
-        const buttons = stage.querySelectorAll<HTMLButtonElement>(
-          `[data-galaxy-pager="${column}"]`,
-        );
-        for (const btn of buttons) {
-          const dir = btn.dataset.direction;
-          if (dir === 'prev') btn.disabled = offset[column] <= 0;
-          else if (dir === 'next') btn.disabled = offset[column] >= max;
         }
       }
 
@@ -1100,33 +1082,32 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
         if (focused) closeCenter();
         const column = card.dataset.column;
         if (!column) return;
-        // Slot index relative to the column at the time of click.
-        const list = byColumn[column];
-        const idx = list.indexOf(card);
-        const slot = idx - offset[column];
-        focused = { card, column, slot };
+        focused = { card, column };
         card.dataset.pos = 'center';
         stage.dataset.galaxyFocused = 'true';
       }
 
       function closeCenter() {
         if (!focused) return;
-        const { card, column, slot } = focused;
-        // Restore the card to a slot only if its slot is still in the
-        // visible window. Otherwise it returns to the queue.
-        if (slot >= 0 && slot < VISIBLE) {
-          card.dataset.pos = `slot-${slot}`;
-          card.removeAttribute('inert');
-        } else {
-          card.dataset.pos = 'queue';
-          card.setAttribute('inert', '');
-        }
+        const { column } = focused;
         focused = null;
         delete stage.dataset.galaxyFocused;
-        // Also re-apply the column in case the offset moved while the
-        // card was centered (pager click while focused first closes,
-        // then advances — but defensive replay is cheap).
+        // applyColumn reassigns the now-unfocused card to its proper
+        // slot/queue based on current offset. No need to remember the
+        // original slot — cyclic positioning recomputes from scratch.
         applyColumn(column);
+      }
+
+      // One click → both columns rotate cyclically by `step`.
+      function paginate(step: number) {
+        for (const column of ['book', 'lesson']) {
+          const len = byColumn[column].length;
+          if (len === 0) continue;
+          offset[column] = ((offset[column] + step) % len + len) % len;
+        }
+        if (focused) closeCenter();
+        applyColumn('book');
+        applyColumn('lesson');
       }
 
       // Card click — capture phase so we beat the inner <a>'s native
@@ -1153,18 +1134,11 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
           return;
         }
 
-        // Pager.
-        const pagerBtn = target.closest<HTMLButtonElement>('[data-galaxy-pager]');
+        // Shared pager — drives both columns at once.
+        const pagerBtn = target.closest<HTMLButtonElement>('[data-galaxy-pager-shared]');
         if (pagerBtn) {
           e.preventDefault();
-          const column = pagerBtn.dataset.galaxyPager!;
-          const dir = pagerBtn.dataset.direction;
-          const max = Math.max(0, byColumn[column].length - VISIBLE);
-          if (dir === 'next') offset[column] = Math.min(max, offset[column] + 1);
-          else if (dir === 'prev') offset[column] = Math.max(0, offset[column] - 1);
-          // If something is centered when the user paginates, close it.
-          if (focused && focused.column === column) closeCenter();
-          applyColumn(column);
+          paginate(pagerBtn.dataset.direction === 'prev' ? -1 : 1);
           return;
         }
 
@@ -1193,9 +1167,6 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
         if (e.key === 'Escape' && focused) closeCenter();
       });
 
-      // Initialize disabled state for pagers (starting offsets are 0).
-      updatePagerDisabled('book');
-      updatePagerDisabled('lesson');
     }
 
     document.querySelectorAll<HTMLElement>('[data-galaxy-stage]').forEach(initStage);
