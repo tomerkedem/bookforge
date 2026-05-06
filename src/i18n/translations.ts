@@ -514,6 +514,8 @@ export const translations: Translations = {
   'library.galaxy.prevBooks':       { he: 'ספרים קודמים',     en: 'Previous books',      es: 'Libros anteriores' },
   'library.galaxy.nextLessons':     { he: 'שיעורים הבאים',    en: 'Next lessons',        es: 'Siguientes lecciones' },
   'library.galaxy.prevLessons':     { he: 'שיעורים קודמים',   en: 'Previous lessons',    es: 'Lecciones anteriores' },
+  'library.galaxy.rotateNext':      { he: 'סובב את המערכת קדימה', en: 'Rotate orbit forward',  es: 'Girar órbita hacia adelante' },
+  'library.galaxy.rotatePrev':      { he: 'סובב את המערכת אחורה', en: 'Rotate orbit backward', es: 'Girar órbita hacia atrás' },
 
   // ── library.galaxy.* — orbit BookCard inner labels (count + progress) ─────
   'library.galaxy.chaptersCount':   { he: '{{n}} פרקים',        en: '{{n}} chapters',      es: '{{n}} capítulos' },
@@ -525,6 +527,10 @@ export const translations: Translations = {
   // bolded in DOM, so these keys carry only the trailing noun phrase.
   'library.series.itemsLabel':      { he: 'פריטים בסדרה',     en: 'items in series',     es: 'elementos en la serie' },
   'library.series.availableLabel':  { he: 'זמינים במערכת',    en: 'available in system', es: 'disponibles en el sistema' },
+  // Labels for the "Other Knowledge" capsule shown when the universe
+  // enters series-mode (an active series is expanded into a carousel).
+  'library.series.otherKnowledge':  { he: 'ידע אחר',          en: 'Other Knowledge',     es: 'Otro conocimiento' },
+  'library.series.itemsShort':      { he: 'פריטים',           en: 'items',               es: 'elementos' },
 
   // ── library.mobileGalaxy.* — mobile-only horizontal carousel ──────────────
   'library.mobileGalaxy.title':     { he: 'תכני AI זמינים',                                            en: 'Available AI content',                                       es: 'Contenido de IA disponible' },

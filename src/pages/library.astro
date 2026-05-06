@@ -126,6 +126,10 @@ const orbitItems: OrbitItem[] = [
     kind: 'lesson' as const,
   })),
 ];
+// Rotate-orbit controls only make sense with at least 2 stations to
+// rotate between. The shared step `360°/N` is computed in JS at click
+// time from the live card count; CSS just animates --orbit-rotation.
+const showOrbitControls = orbitItems.length > 1;
 
 // ── ContinueLearningCard data ─────────────────────────────────────────────
 // Real values are derived from `continueItem` + `courseProgress`. Two modes:
@@ -236,6 +240,9 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
             data-series-badge={t('library.itemType.series', language)}
             data-series-items-label={t('library.series.itemsLabel', language)}
             data-series-available-label={t('library.series.availableLabel', language)}
+            data-other-knowledge-label={t('library.series.otherKnowledge', language)}
+            data-items-short-label={t('library.series.itemsShort', language)}
+            data-close-label={t('library.galaxy.closeItem', language)}
             style={`--galaxy-dir: ${isRtl ? -1 : 1};`}
           >
 
@@ -278,6 +285,30 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
                 </div>
               </div>
             ))}
+
+            {/* Orbit rotation controls — small chevron pair centered at
+                the bottom of the stage. One click rotates ALL cards
+                around the ellipse by 360°/N (computed in JS from the
+                live card count), so every station shifts to the next
+                seat. CSS transitions on transform animate the flight. */}
+            {showOrbitControls && (
+              <div class="galaxy-orbit-controls" aria-hidden="false">
+                <button
+                  type="button"
+                  class="galaxy-orbit-btn"
+                  data-galaxy-rotate
+                  data-direction="prev"
+                  aria-label={t('library.galaxy.rotatePrev', language)}
+                ><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+                <button
+                  type="button"
+                  class="galaxy-orbit-btn"
+                  data-galaxy-rotate
+                  data-direction="next"
+                  aria-label={t('library.galaxy.rotateNext', language)}
+                ><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+              </div>
+            )}
           </div>
         </section>
 
@@ -712,20 +743,26 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
          narrow desktop widths and grows on wide ones. */
       --orbit-rx: clamp(280px, 32vw, 380px);
       --orbit-ry: clamp(180px, 28vh, 230px);
+      /* Effective angle = base angle (set inline per card) + the
+         stage-level rotation that the rotate-orbit controls drive.
+         All trigonometry below reads from this so a single CSS-var
+         change on the stage moves every card around the ellipse in
+         lockstep, animated via the existing transform transition. */
+      --orbit-active-angle: calc(var(--orbit-angle, 0deg) + var(--orbit-rotation, 0deg));
       /* Depth from angle: --orbit-depth ranges 0 (top of orbit, farthest)
          to 1 (bottom, nearest). sin(angle) is -1 at the top and +1 at
          the bottom; remap to [0, 1]. */
-      --orbit-depth: calc((sin(var(--orbit-angle, 0deg)) + 1) / 2);
+      --orbit-depth: calc((sin(var(--orbit-active-angle, 0deg)) + 1) / 2);
       --slot-scale: calc(0.9 + 0.12 * var(--orbit-depth));
       --slot-opacity: calc(0.86 + 0.14 * var(--orbit-depth));
       /* Subtle perpendicular tilt: cards on the inline-start arc
          (cos < 0 in default LTR, after dir flip) lean inward. */
-      --tilt: calc(cos(var(--orbit-angle, 0deg)) * 4deg * var(--galaxy-dir, 1) * -1);
+      --tilt: calc(cos(var(--orbit-active-angle, 0deg)) * 4deg * var(--galaxy-dir, 1) * -1);
       transform:
         translate(-50%, -50%)
         translate(
-          calc(cos(var(--orbit-angle, 0deg)) * var(--orbit-rx) * var(--galaxy-dir, 1)),
-          calc(sin(var(--orbit-angle, 0deg)) * var(--orbit-ry))
+          calc(cos(var(--orbit-active-angle, 0deg)) * var(--orbit-rx) * var(--galaxy-dir, 1)),
+          calc(sin(var(--orbit-active-angle, 0deg)) * var(--orbit-ry))
         )
         rotate(var(--tilt))
         scale(var(--slot-scale));
@@ -744,30 +781,198 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
     .galaxy-card[data-kind="lesson"] { --card-accent-slot: var(--yuval-galaxy-accent-cyan); }
 
     /* ── Series capsule —
-          Painted client-side when ≥2 visible items share a seriesName
-          (see metadata layer + the hydrator script below). The wrapper
-          .galaxy-card keeps all orbit positioning/tilt/depth machinery,
-          so the capsule lives at a real station on the ellipse exactly
-          like a single-book card would.
-          The capsule is informational-only at this iteration: no Open
-          CTA, no click-to-center (the [data-galaxy-card] attribute is
-          stripped on hydration), no carousel expansion. Hover lift is
-          also reset so the card doesn't suggest interactivity that
-          isn't wired yet. */
+          Built client-side as a separate node when ≥2 visible items
+          share a seriesName. The wrapper .galaxy-card carries the
+          orbit positioning machinery so the capsule lives at a real
+          station on the ellipse, exactly like a single-book card.
+          Capsules are clickable: they enter series mode, expanding
+          the series's books into a carousel and collapsing the rest
+          of the universe into "Other Knowledge". */
     .galaxy-card[data-role="series"] {
-      cursor: default;
+      cursor: pointer;
     }
-    .galaxy-card[data-role="series"]:hover:not([data-pos="center"]),
-    .galaxy-card[data-role="series"]:focus-visible:not([data-pos="center"]) {
+    .galaxy-card[data-role="series"]:focus-visible {
+      outline: none;
+    }
+    .galaxy-card[data-role="series"]:focus-visible .galaxy-series-capsule {
+      box-shadow:
+        0 14px 38px -14px color-mix(in srgb, var(--series-color-resolved) 70%, transparent),
+        0 0 0 2px color-mix(in srgb, var(--series-color-resolved) 70%, transparent),
+        inset 0 1px 0 color-mix(in srgb, var(--series-color-resolved) 22%, transparent);
+    }
+
+    /* ── Series members —
+          Every individual book inside a multi-item series is kept in
+          the DOM as an orbit card, but tagged with data-series-member
+          so it stays hidden in universe mode. Series mode reveals the
+          members of the active series via .is-active-series-member
+          (added by the hydrator JS). */
+    .galaxy-card[data-series-member] {
+      display: none;
+    }
+
+    /* ── Series mode — stage-level state.
+          Activated by clicking a SeriesCapsule. The hydrator sets
+          data-stage-mode="series" + data-active-series="<name>" on
+          the stage element, then class-tags individual cards. */
+
+    /* Mute every station that isn't the active series's books or
+       the synthesized Other Knowledge pill. Premium fade — opacity
+       and scale only, no jarring movement. */
+    [data-stage-mode="series"] .galaxy-card.is-muted {
+      opacity: 0;
+      pointer-events: none;
       transform:
         translate(-50%, -50%)
         translate(
-          calc(cos(var(--orbit-angle, 0deg)) * var(--orbit-rx) * var(--galaxy-dir, 1)),
-          calc(sin(var(--orbit-angle, 0deg)) * var(--orbit-ry))
+          calc(cos(var(--orbit-active-angle, 0deg)) * var(--orbit-rx) * var(--galaxy-dir, 1) * 0.85),
+          calc(sin(var(--orbit-active-angle, 0deg)) * var(--orbit-ry) * 0.85)
         )
         rotate(var(--tilt))
-        scale(var(--slot-scale));
-      opacity: var(--slot-opacity);
+        scale(0.7);
+    }
+
+    /* The active series's own capsule is replaced by its books, so
+       hide the capsule in series mode. */
+    [data-stage-mode="series"] .galaxy-card.is-active-series-capsule {
+      opacity: 0;
+      pointer-events: none;
+      transform:
+        translate(-50%, -50%)
+        translate(
+          calc(cos(var(--orbit-active-angle, 0deg)) * var(--orbit-rx) * var(--galaxy-dir, 1)),
+          calc(sin(var(--orbit-active-angle, 0deg)) * var(--orbit-ry))
+        )
+        rotate(var(--tilt))
+        scale(0.85);
+    }
+
+    /* Members of the active series — revealed and laid out in a
+       horizontal carousel centered on the stage. The horizontal
+       offset per card is computed from the index/total custom
+       properties set by the hydrator. */
+    [data-stage-mode="series"] .galaxy-card.is-active-series-member {
+      display: block;
+      --series-step: clamp(195px, 22vw, 230px);
+      --series-row-x: calc(
+        (var(--series-active-index, 0)
+          - (var(--series-active-total, 1) - 1) / 2)
+        * var(--series-step)
+        * var(--galaxy-dir, 1)
+      );
+      transform:
+        translate(-50%, -50%)
+        translate(var(--series-row-x), 0)
+        scale(1.12);
+      opacity: 1;
+      z-index: 5;
+      cursor: pointer;
+    }
+
+    /* Hover lift on a carousel book — gentle vertical bump only,
+       overrides the default radial-bump hover so cards don't fly
+       off the row. */
+    [data-stage-mode="series"]
+      .galaxy-card.is-active-series-member:hover:not([data-pos="center"]),
+    [data-stage-mode="series"]
+      .galaxy-card.is-active-series-member:focus-visible:not([data-pos="center"]) {
+      transform:
+        translate(-50%, -50%)
+        translate(var(--series-row-x), -6px)
+        scale(1.16);
+      opacity: 1;
+    }
+
+    /* ── Other Knowledge capsule —
+          Synthesized by JS on series-mode entry, removed on exit.
+          Sits at the inline-end top of the stage as a compact pill
+          summarising "everything else". Clicking it exits series
+          mode and restores the universe. */
+    .galaxy-card[data-role="other-knowledge"] {
+      /* Reset the orbit-card absolute geometry. */
+      top: 0;
+      left: auto;
+      inset-block-start: 12px;
+      inset-inline-end: 12px;
+      width: auto;
+      transform: none;
+      opacity: 0;
+      cursor: pointer;
+      z-index: 6;
+      transition:
+        opacity 0.32s cubic-bezier(0.4, 0, 0.2, 1),
+        transform 0.32s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .galaxy-card[data-role="other-knowledge"].is-visible {
+      opacity: 1;
+    }
+    .galaxy-card[data-role="other-knowledge"]:hover .galaxy-other-knowledge,
+    .galaxy-card[data-role="other-knowledge"]:focus-visible .galaxy-other-knowledge {
+      border-color: color-mix(in srgb, var(--yuval-galaxy-text, #ececea) 30%, transparent);
+      background: var(--yuval-galaxy-card-surface-hover, rgba(28, 30, 44, 0.82));
+    }
+    .galaxy-card[data-role="other-knowledge"]:focus-visible {
+      outline: none;
+    }
+
+    .galaxy-other-knowledge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.55rem 0.85rem 0.55rem 0.65rem;
+      border-radius: 999px;
+      background: var(--yuval-galaxy-card-surface, rgba(20, 22, 36, 0.78));
+      border: 1px solid color-mix(in srgb, var(--yuval-galaxy-text-muted, #6e6e6c) 40%, transparent);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      box-shadow: 0 8px 22px -10px rgba(0, 0, 0, 0.5);
+      transition: background 0.2s ease, border-color 0.2s ease;
+    }
+
+    .galaxy-other-knowledge-icon {
+      width: 26px;
+      height: 26px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--yuval-galaxy-text-muted, #6e6e6c) 20%, transparent),
+        color-mix(in srgb, var(--yuval-galaxy-text-muted, #6e6e6c) 8%, transparent)
+      );
+      color: var(--yuval-galaxy-text, #ececea);
+      font-size: 1.15rem;
+      line-height: 1;
+      letter-spacing: 0.06em;
+      font-weight: 600;
+    }
+
+    .galaxy-other-knowledge-text {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      line-height: 1.25;
+      padding-inline-end: 0.15rem;
+    }
+
+    .galaxy-other-knowledge-label {
+      font-family: 'Spectral', 'Cardo', Georgia, serif;
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: var(--yuval-galaxy-text, #ececea);
+      letter-spacing: 0.005em;
+    }
+
+    .galaxy-other-knowledge-count {
+      font-size: 0.66rem;
+      color: var(--yuval-galaxy-text-secondary, var(--yuval-galaxy-text-muted, #a8a8a4));
+      letter-spacing: 0.02em;
+    }
+
+    .galaxy-other-knowledge-count strong {
+      color: var(--yuval-galaxy-text, #ececea);
+      font-weight: 600;
+      margin-inline-end: 0.2rem;
     }
 
     .galaxy-series-capsule {
@@ -888,8 +1093,8 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       transform:
         translate(-50%, -50%)
         translate(
-          calc(cos(var(--orbit-angle, 0deg)) * (var(--orbit-rx) + 8px) * var(--galaxy-dir, 1)),
-          calc(sin(var(--orbit-angle, 0deg)) * (var(--orbit-ry) + 8px))
+          calc(cos(var(--orbit-active-angle, 0deg)) * (var(--orbit-rx) + 8px) * var(--galaxy-dir, 1)),
+          calc(sin(var(--orbit-active-angle, 0deg)) * (var(--orbit-ry) + 8px))
         )
         rotate(calc(var(--tilt) * 0.5))
         scale(calc(var(--slot-scale) * 1.04));
@@ -986,6 +1191,53 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
        darken layer above the orbit already provides that focal lift,
        so no extra dimming is wired here. */
 
+    /* Orbit rotation controls — small chevron pair centered at the
+       bottom of the stage. Each click bumps --orbit-rotation on the
+       stage by ±360°/N, and CSS interpolates the resulting transform
+       on every card simultaneously. The wrapper is a flex pill so
+       the two buttons read as one control. */
+    .galaxy-orbit-controls {
+      position: absolute;
+      inset-block-end: -1.75rem;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 0.375rem;
+      padding: 0.25rem;
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--yuval-galaxy-bg, #00010d) 55%, transparent);
+      border: 1px solid color-mix(in srgb, var(--yuval-galaxy-border, #1a1a3a) 75%, transparent);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      z-index: 4;
+    }
+    .galaxy-orbit-btn {
+      width: 32px;
+      height: 32px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      color: var(--yuval-galaxy-text-soft);
+      background: var(--yuval-galaxy-surface-muted);
+      border: 1px solid var(--yuval-galaxy-border);
+      cursor: pointer;
+      padding: 0;
+      transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+    }
+    .galaxy-orbit-btn:hover,
+    .galaxy-orbit-btn:focus-visible {
+      color: var(--yuval-galaxy-text);
+      background: var(--yuval-galaxy-card-surface-hover);
+      border-color: var(--yuval-galaxy-border-strong);
+      transform: translateY(-1px);
+      outline: none;
+    }
+    /* Mirror chevrons on RTL pages so "next" still points toward the
+       direction reading flows. The stage itself is direction:ltr;
+       only the icons need the manual flip. */
+    [dir="rtl"] .galaxy-orbit-btn svg { transform: scaleX(-1); }
+
   }
 
   /* ── Wide desktop (≥1280px): wider orbit cards + larger orbit. ─── */
@@ -1008,8 +1260,8 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       transform:
         translate(-50%, -50%)
         translate(
-          calc(cos(var(--orbit-angle, 0deg)) * var(--orbit-rx) * var(--galaxy-dir, 1)),
-          calc(sin(var(--orbit-angle, 0deg)) * var(--orbit-ry))
+          calc(cos(var(--orbit-active-angle, 0deg)) * var(--orbit-rx) * var(--galaxy-dir, 1)),
+          calc(sin(var(--orbit-active-angle, 0deg)) * var(--orbit-ry))
         )
         rotate(var(--tilt))
         scale(var(--slot-scale));
@@ -1095,20 +1347,29 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       });
 
     // ── Phase 3 — Series grouping (desktop orbit only). ──────────────
+    //
+    // For every series with ≥2 visible items we tag every member with
+    // data-series-member="<name>" (kept in DOM, but hidden in universe
+    // mode by CSS) and INSERT A SEPARATE capsule node next to the
+    // first member, inheriting its orbit angle. This separation —
+    // members + capsule as distinct nodes — lets us toggle visibility
+    // by data-attributes when entering / exiting series mode without
+    // ever destroying or re-creating the original <LibraryCard>
+    // markup. Single-item series stay as normal book cards.
     const stage = document.querySelector<HTMLElement>('[data-galaxy-stage]');
     if (!stage) return;
 
     const badgeLabel = stage.dataset.seriesBadge || 'Series';
     const itemsLabel = stage.dataset.seriesItemsLabel || 'items';
     const availableLabel = stage.dataset.seriesAvailableLabel || 'available';
+    const otherKnowledgeLabel = stage.dataset.otherKnowledgeLabel || 'Other Knowledge';
+    const itemsShortLabel = stage.dataset.itemsShortLabel || 'items';
+    const closeLabel = stage.dataset.closeLabel || 'Close';
 
-    // Build the ordered list of currently-rendered orbit cards.
     const liveCards = Array.from(
       stage.querySelectorAll<HTMLElement>('.galaxy-card[data-slug]'),
     );
 
-    // First pass: keep the first card per series, mark others for
-    // removal. Single-item series stay as normal book cards.
     const seenSeries = new Set<string>();
     liveCards.forEach(card => {
       const slug = card.dataset.slug!;
@@ -1117,33 +1378,40 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       if (!sn) return;
 
       const total = seriesTotal.get(sn) || 0;
-      if (total < 2) return; // not a real series
+      if (total < 2) return; // single-item "series" stays a normal book
 
-      if (seenSeries.has(sn)) {
-        card.remove();
-        return;
-      }
+      card.dataset.seriesMember = sn;
+
+      if (seenSeries.has(sn)) return;
       seenSeries.add(sn);
 
+      // Build a brand-new capsule node and insert it right before
+      // this first member. The capsule inherits the member's
+      // --orbit-angle and data-kind so it lands at exactly that
+      // station; the angle recomputation below then redistributes
+      // every station evenly across its arc.
       const seriesMeta = getSeriesMetadata(sn);
-      const totalCount = seriesTotal.get(sn) || 0;
-      const availableCount = seriesAvailable.get(sn) || 0;
-      replaceWithCapsule(
-        card,
-        sn,
-        totalCount,
-        availableCount,
-        seriesMeta.color,
-      );
+      const capsule = buildSeriesCapsuleCard({
+        seriesName: sn,
+        total,
+        available: seriesAvailable.get(sn) || 0,
+        color: seriesMeta.color,
+        kind: card.dataset.kind === 'lesson' ? 'lesson' : 'book',
+        angle: card.style.getPropertyValue('--orbit-angle') || '270deg',
+      });
+      card.before(capsule);
     });
 
-    // Second pass: recompute --orbit-angle for each kind across the
-    // surviving stations, so the orbit stays evenly distributed.
-    const surviving = Array.from(
-      stage.querySelectorAll<HTMLElement>('.galaxy-card'),
+    // ── Phase 4 — Recompute --orbit-angle per kind. Members are NOT
+    //    stations (they're hidden in universe mode); capsules and
+    //    non-series cards ARE. ────────────────────────────────────────
+    const stations = Array.from(
+      stage.querySelectorAll<HTMLElement>(
+        '.galaxy-card:not([data-series-member])',
+      ),
     );
     const byKind: Record<string, HTMLElement[]> = { book: [], lesson: [] };
-    surviving.forEach(card => {
+    stations.forEach(card => {
       const k = card.dataset.kind;
       if (k === 'book' || k === 'lesson') byKind[k].push(card);
     });
@@ -1166,23 +1434,243 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       card.style.setProperty('--orbit-angle', `${angle}deg`);
     });
 
-    function replaceWithCapsule(
-      card: HTMLElement,
-      seriesName: string,
-      total: number,
-      available: number,
-      color: string | undefined,
-    ): void {
-      // Mark as series: keeps orbit positioning (.galaxy-card class +
-      // data-kind), but disables click-to-center by stripping the
-      // attribute the existing handler queries for.
-      card.dataset.role = 'series';
-      card.dataset.seriesName = seriesName;
-      card.removeAttribute('data-galaxy-card');
-      card.removeAttribute('data-slug');
-      if (color) card.style.setProperty('--series-color', color);
+    // ── Phase 5 — Series-mode interactions. ─────────────────────────
+    //
+    // Click on a series capsule → enter series mode for that series:
+    //   - mute every other galaxy-card (faded, scaled down, no clicks)
+    //   - hide the active series's own capsule
+    //   - reveal the active series's members in a horizontal carousel
+    //   - inject one "Other Knowledge" capsule that, when clicked,
+    //     exits series mode and restores the universe.
+    // Click on Other Knowledge → exit series mode and restore.
+    //
+    // The transformation is purely class/attribute toggles + a single
+    // synthesized DOM node for Other Knowledge. No reading data, no
+    // navigation, no re-fetch.
 
-      card.replaceChildren();
+    let activeSeriesName: string | null = null;
+
+    function enterSeriesMode(seriesName: string): void {
+      if (activeSeriesName === seriesName) return;
+      if (activeSeriesName) exitSeriesMode();
+      // Force-clear any Other Knowledge node that may still be
+      // mid-fade-out from a previous exit, before we add a new one.
+      stage
+        .querySelectorAll<HTMLElement>('.galaxy-card[data-role="other-knowledge"]')
+        .forEach(el => el.remove());
+      activeSeriesName = seriesName;
+
+      const members = Array.from(
+        stage.querySelectorAll<HTMLElement>(
+          `.galaxy-card[data-series-member="${cssEscape(seriesName)}"]`,
+        ),
+      );
+      const totalMembers = members.length;
+      members.forEach((card, i) => {
+        card.classList.add('is-active-series-member');
+        card.style.setProperty('--series-active-index', String(i));
+        card.style.setProperty('--series-active-total', String(totalMembers));
+      });
+
+      // Hide the active series's own capsule — its books are now
+      // shown individually as the carousel.
+      const activeCapsule = stage.querySelector<HTMLElement>(
+        `.galaxy-card[data-role="series"][data-series-capsule="${cssEscape(seriesName)}"]`,
+      );
+      if (activeCapsule) activeCapsule.classList.add('is-active-series-capsule');
+
+      // Mute everything that is NOT a member of the active series and
+      // NOT the freshly-injected Other Knowledge capsule. Members of
+      // OTHER series are not stations themselves (they were tagged
+      // data-series-member at hydration time), so this list is the
+      // set of non-active stations: every capsule + every standalone
+      // book / lesson card.
+      stage
+        .querySelectorAll<HTMLElement>('.galaxy-card:not([data-series-member])')
+        .forEach(card => {
+          if (card.classList.contains('is-active-series-capsule')) return;
+          card.classList.add('is-muted');
+        });
+
+      // Other Knowledge count = every visible item in the universe
+      // minus items that belong to the active series. seriesAvailable
+      // is the visible-only map, so subtracting it gives "everything
+      // currently in the universe outside this series".
+      let visibleTotal = 0;
+      slugSet.forEach(slug => {
+        if (!isHidden(slug)) visibleTotal++;
+      });
+      const otherCount = Math.max(
+        0,
+        visibleTotal - (seriesAvailable.get(seriesName) || 0),
+      );
+      const ok = buildOtherKnowledgeCard(otherCount);
+      stage.appendChild(ok);
+      // Two-frame fade-in: opacity 0 in initial style → 1 next frame.
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          ok.classList.add('is-visible');
+        });
+      });
+
+      stage.dataset.stageMode = 'series';
+      stage.dataset.activeSeries = seriesName;
+    }
+
+    function exitSeriesMode(): void {
+      if (!activeSeriesName) return;
+      const wasActive = activeSeriesName;
+      activeSeriesName = null;
+
+      // Fade out Other Knowledge and remove after transition.
+      const ok = stage.querySelector<HTMLElement>(
+        '.galaxy-card[data-role="other-knowledge"]',
+      );
+      if (ok) {
+        ok.classList.remove('is-visible');
+        ok.addEventListener(
+          'transitionend',
+          () => ok.remove(),
+          { once: true },
+        );
+        // Safety fallback in case transitionend is missed (e.g.
+        // reduced motion or display:none mid-transition).
+        window.setTimeout(() => {
+          if (ok.isConnected) ok.remove();
+        }, 600);
+      }
+
+      // Restore class state on every card.
+      stage
+        .querySelectorAll<HTMLElement>('.is-active-series-member')
+        .forEach(card => {
+          card.classList.remove('is-active-series-member');
+          card.style.removeProperty('--series-active-index');
+          card.style.removeProperty('--series-active-total');
+        });
+      stage
+        .querySelectorAll<HTMLElement>('.is-active-series-capsule')
+        .forEach(card => card.classList.remove('is-active-series-capsule'));
+      stage
+        .querySelectorAll<HTMLElement>('.is-muted')
+        .forEach(card => card.classList.remove('is-muted'));
+
+      delete stage.dataset.stageMode;
+      delete stage.dataset.activeSeries;
+      void wasActive;
+    }
+
+    // Click handler — runs in the capture phase before the existing
+    // click-to-center handler. Series capsules and Other Knowledge
+    // both swallow the click; everything else falls through to the
+    // existing logic.
+    stage.addEventListener(
+      'click',
+      e => {
+        const target = e.target as Element | null;
+        if (!target) return;
+
+        const seriesCapsule = target.closest<HTMLElement>(
+          '.galaxy-card[data-role="series"]',
+        );
+        if (seriesCapsule) {
+          const sn = seriesCapsule.dataset.seriesCapsule;
+          if (sn) {
+            e.preventDefault();
+            e.stopPropagation();
+            enterSeriesMode(sn);
+          }
+          return;
+        }
+
+        const ok = target.closest<HTMLElement>(
+          '.galaxy-card[data-role="other-knowledge"]',
+        );
+        if (ok) {
+          e.preventDefault();
+          e.stopPropagation();
+          exitSeriesMode();
+          return;
+        }
+      },
+      true,
+    );
+
+    // Keyboard activation for role="button" capsules. Enter dispatches
+    // a synthetic click on most elements; Space does not, so we handle
+    // both explicitly.
+    stage.addEventListener('keydown', e => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      const target = e.target as Element | null;
+      if (!target) return;
+
+      const seriesCapsule = target.closest<HTMLElement>(
+        '.galaxy-card[data-role="series"]',
+      );
+      if (seriesCapsule) {
+        const sn = seriesCapsule.dataset.seriesCapsule;
+        if (sn) {
+          e.preventDefault();
+          enterSeriesMode(sn);
+        }
+        return;
+      }
+
+      const ok = target.closest<HTMLElement>(
+        '.galaxy-card[data-role="other-knowledge"]',
+      );
+      if (ok) {
+        e.preventDefault();
+        exitSeriesMode();
+      }
+    });
+
+    // Esc exits series mode — but only when no card is currently
+    // click-to-centered. The existing orbit-interactions script
+    // closes a focused card on Esc; that should win first so a second
+    // Esc press exits the series. The shared signal is the stage's
+    // data-galaxy-focused attribute, which the existing script toggles
+    // around openCenter/closeCenter.
+    document.addEventListener('keydown', e => {
+      if (e.key !== 'Escape') return;
+      if (!activeSeriesName) return;
+      if (stage.dataset.galaxyFocused === 'true') return;
+      exitSeriesMode();
+    });
+
+    // ── Helpers ──────────────────────────────────────────────────────
+
+    function cssEscape(value: string): string {
+      // Native CSS.escape is broadly available; fall back to a manual
+      // escape that quotes anything that could break attribute syntax.
+      // Series names typed by users may contain quotes / brackets.
+      if (typeof CSS !== 'undefined' && typeof CSS.escape === 'function') {
+        return CSS.escape(value);
+      }
+      return value.replace(/["\\\[\]]/g, '\\$&');
+    }
+
+    function buildSeriesCapsuleCard(opts: {
+      seriesName: string;
+      total: number;
+      available: number;
+      color: string | undefined;
+      kind: 'book' | 'lesson';
+      angle: string;
+    }): HTMLElement {
+      const card = document.createElement('div');
+      card.className = 'galaxy-card';
+      card.dataset.kind = opts.kind;
+      card.dataset.role = 'series';
+      card.dataset.seriesCapsule = opts.seriesName;
+      card.style.setProperty('--orbit-angle', opts.angle);
+      if (opts.color) card.style.setProperty('--series-color', opts.color);
+      card.setAttribute('role', 'button');
+      card.setAttribute('tabindex', '0');
+      card.setAttribute(
+        'aria-label',
+        `${opts.seriesName} — ${badgeLabel}`,
+      );
 
       const capsule = document.createElement('div');
       capsule.className = 'galaxy-series-capsule';
@@ -1194,7 +1682,7 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
 
       const name = document.createElement('h3');
       name.className = 'galaxy-series-name';
-      name.textContent = seriesName;
+      name.textContent = opts.seriesName;
       capsule.appendChild(name);
 
       const counts = document.createElement('div');
@@ -1203,19 +1691,59 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       const totalLine = document.createElement('span');
       totalLine.className = 'galaxy-series-count-line';
       const totalNum = document.createElement('strong');
-      totalNum.textContent = String(total);
+      totalNum.textContent = String(opts.total);
       totalLine.append(totalNum, document.createTextNode(' ' + itemsLabel));
       counts.appendChild(totalLine);
 
       const availLine = document.createElement('span');
-      availLine.className = 'galaxy-series-count-line galaxy-series-count-available';
+      availLine.className =
+        'galaxy-series-count-line galaxy-series-count-available';
       const availNum = document.createElement('strong');
-      availNum.textContent = String(available);
+      availNum.textContent = String(opts.available);
       availLine.append(availNum, document.createTextNode(' ' + availableLabel));
       counts.appendChild(availLine);
 
       capsule.appendChild(counts);
       card.appendChild(capsule);
+      return card;
+    }
+
+    function buildOtherKnowledgeCard(itemCount: number): HTMLElement {
+      const card = document.createElement('div');
+      card.className = 'galaxy-card';
+      card.dataset.role = 'other-knowledge';
+      card.setAttribute('role', 'button');
+      card.setAttribute('tabindex', '0');
+      card.setAttribute('aria-label', `${otherKnowledgeLabel} — ${closeLabel}`);
+
+      const inner = document.createElement('div');
+      inner.className = 'galaxy-other-knowledge';
+
+      const icon = document.createElement('span');
+      icon.className = 'galaxy-other-knowledge-icon';
+      icon.setAttribute('aria-hidden', 'true');
+      // Three-dot glyph — reads as "more / collection".
+      icon.textContent = '⋯';
+      inner.appendChild(icon);
+
+      const text = document.createElement('div');
+      text.className = 'galaxy-other-knowledge-text';
+
+      const label = document.createElement('span');
+      label.className = 'galaxy-other-knowledge-label';
+      label.textContent = otherKnowledgeLabel;
+      text.appendChild(label);
+
+      const count = document.createElement('span');
+      count.className = 'galaxy-other-knowledge-count';
+      const countNum = document.createElement('strong');
+      countNum.textContent = String(itemCount);
+      count.append(countNum, document.createTextNode(' ' + itemsShortLabel));
+      text.appendChild(count);
+
+      inner.appendChild(text);
+      card.appendChild(inner);
+      return card;
     }
   })();
 </script>
@@ -1247,6 +1775,10 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
     function initStage(stage: HTMLElement) {
       // Card currently in center.
       let focused: HTMLElement | null = null;
+      // Cumulative orbit rotation (deg). Each rotate-orbit click bumps
+      // this by ±360°/N where N is the live card count. CSS reads this
+      // off the stage as `--orbit-rotation` and animates every card.
+      let rotation = 0;
 
       function openCenter(card: HTMLElement) {
         if (focused === card) return;
@@ -1264,6 +1796,22 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
         delete focused.dataset.pos;
         focused = null;
         delete stage.dataset.galaxyFocused;
+      }
+
+      function rotateOrbit(direction: number) {
+        // Count only cards that are actually visible orbit stations
+        // (i.e. excluding hidden series members tagged by the metadata
+        // hydrator). Falls back to the card count when no stations are
+        // visible (defensive: keeps rotation working in unit tests).
+        const visibleCount = stage.querySelectorAll(
+          '[data-galaxy-card]:not([data-series-member])',
+        ).length || 1;
+        const step = 360 / visibleCount;
+        rotation += direction * step;
+        stage.style.setProperty('--orbit-rotation', `${rotation}deg`);
+        // Rotation moves stations under the focused card; close any
+        // focus so the user sees the rotation, not a stale spotlight.
+        if (focused) closeCenter();
       }
 
       // Card click — capture phase so we beat the inner <a>'s native
@@ -1287,6 +1835,14 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
         if (target.closest('[data-galaxy-backdrop]')) {
           e.preventDefault();
           closeCenter();
+          return;
+        }
+
+        // Rotate-orbit chevrons.
+        const rotateBtn = target.closest<HTMLButtonElement>('[data-galaxy-rotate]');
+        if (rotateBtn) {
+          e.preventDefault();
+          rotateOrbit(rotateBtn.dataset.direction === 'prev' ? -1 : 1);
           return;
         }
 
