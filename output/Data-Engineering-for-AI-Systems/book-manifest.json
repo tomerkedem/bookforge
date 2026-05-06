@@ -1,0 +1,179 @@
+{
+  "book": {
+    "titles": {
+      "he": "הנדסת נתונים לעולמות ה-AI"
+    },
+    "subtitles": {
+      "he": "מדריך מעשי למהנדסי דאטה ו-AI Engineers"
+    },
+    "descriptions": {
+      "he": "אתה עומד לקרוא ספר שישנה לך את הדרך שבה אתה חושב על AI.\n\nאם עד עכשיו האמנת שהכוח נמצא במודל, הספר הזה ישבור לך את האשליה הזאת מהר מאוד. הוא מראה לך בצורה חדה וברורה: המודל הוא כבר לא היתרון. הוא זמין לכולם. הוא אותו מנוע אצל כולם. ההבדל האמיתי נוצר במקום אחר לגמרי.\n\nהספר לוקח אותך צעד אחר צעד אל מאחורי הקלעים של מערכות AI אמיתיות. לא דמו, לא ניסוי, אלא מערכת שחייבת לעבוד כשיש לקוחות, כסף ואחריות. דרך סיפור חי של מערכת לוגיסטית אמיתית, אתה רואה איך רעיון שנראה גאוני קורס ברגע שהוא פוגש מציאות, ואיך מתקנים אותו שכבה אחרי שכבה.\n\nאתה תלמד משהו שרוב המפתחים מפספסים:\nהבעיה היא לא שהמודל טועה, אלא שהמערכת נותנת לו לטעות.\n\nכאן נכנסת הנדסת הנתונים לא ככלי, אלא כשכבת שליטה. חוזי דאטה, ניתוב חכם בין מודלים, סטרימינג בזמן אמת, מנגנוני בטיחות ויכולת התאוששות. כל אלה הופכים את ה-AI ממנוע חזק אך עיוור למערכת שאפשר לסמוך עליה.\n\nזה לא ספר על דאטה.\nזה ספר על שליטה.\n\nואם אתה רוצה לבנות מערכות AI שלא רק מרשימות, אלא באמת עובדות בעולם האמיתי, זה בדיוק המקום שבו הכל מתחיל להתחבר.\n\nהוא עוצמתי, הוא מבריק, והוא מסוגל לייצר כוח אדיר. אבל כשהוא עומד לבדו, הוא חסר תועלת עסקית. אין לו כיוון, אין לו בלמים, ואין לו דרך להתחבר לכביש (המציאות). כל מתחרה שלכם יכול לקנות את אותו מנוע בדיוק."
+    },
+    "chapters": [
+      {
+        "id": 1,
+        "file_slug": "chapter-01",
+        "type": "content",
+        "titles": {
+          "he": "פרק 1: ממודלים למערכות"
+        },
+        "sections": 5,
+        "has_images": true,
+        "word_count": 2597,
+        "topics": []
+      },
+      {
+        "id": 2,
+        "file_slug": "chapter-02",
+        "type": "content",
+        "titles": {
+          "he": "פרק 2: תשתית הבסיס המודרנית (Reference Stack)"
+        },
+        "sections": 4,
+        "has_images": true,
+        "word_count": 1480,
+        "topics": []
+      },
+      {
+        "id": 3,
+        "file_slug": "chapter-03",
+        "type": "content",
+        "titles": {
+          "he": "פרק 3: Data Contracts ושלמות סמנטית (Semantic Integrity)"
+        },
+        "sections": 5,
+        "has_images": true,
+        "word_count": 2399,
+        "topics": []
+      },
+      {
+        "id": 4,
+        "file_slug": "chapter-04",
+        "type": "content",
+        "titles": {
+          "he": "פרק 4: סטרימינג ודאטה בזמן אמת ל-AI"
+        },
+        "sections": 5,
+        "has_images": true,
+        "word_count": 2222,
+        "topics": []
+      },
+      {
+        "id": 5,
+        "file_slug": "chapter-05",
+        "type": "content",
+        "titles": {
+          "he": "פרק 5: LLMOps כהנדסת נתונים"
+        },
+        "sections": 5,
+        "has_images": true,
+        "word_count": 2544,
+        "topics": []
+      },
+      {
+        "id": 6,
+        "file_slug": "chapter-06",
+        "type": "content",
+        "titles": {
+          "he": "פרק 6: מערכות RAG בפרודקשן (טקסט)"
+        },
+        "sections": 9,
+        "has_images": true,
+        "word_count": 3402,
+        "topics": []
+      },
+      {
+        "id": 7,
+        "file_slug": "chapter-07",
+        "type": "content",
+        "titles": {
+          "he": "פרק 7: Multimodal RAG & Documents"
+        },
+        "sections": 4,
+        "has_images": true,
+        "word_count": 3243,
+        "topics": []
+      },
+      {
+        "id": 8,
+        "file_slug": "chapter-08",
+        "type": "content",
+        "titles": {
+          "he": "פרק 8: From Single Calls to AI Workflows"
+        },
+        "sections": 6,
+        "has_images": true,
+        "word_count": 4550,
+        "topics": []
+      },
+      {
+        "id": 9,
+        "file_slug": "chapter-09",
+        "type": "content",
+        "titles": {
+          "he": "פרק 9: Governance, AI Act & Observability – הנדסה תחת זכוכית מגדלת"
+        },
+        "sections": 5,
+        "has_images": true,
+        "word_count": 2128,
+        "topics": []
+      },
+      {
+        "id": 10,
+        "file_slug": "chapter-10",
+        "type": "content",
+        "titles": {
+          "he": "פרק 10 – מודל הבשלות של דאטה ל-AI (מהדורת 2026)"
+        },
+        "sections": 3,
+        "has_images": true,
+        "word_count": 1375,
+        "topics": []
+      },
+      {
+        "id": 11,
+        "file_slug": "chapter-11",
+        "type": "content",
+        "titles": {
+          "he": "פרק 11 מסגרות החלטה שתשתמשו בהן באמת"
+        },
+        "sections": 5,
+        "has_images": true,
+        "word_count": 2581,
+        "topics": []
+      },
+      {
+        "id": 12,
+        "file_slug": "chapter-12",
+        "type": "content",
+        "titles": {
+          "he": "נספחים"
+        },
+        "sections": 3,
+        "has_images": false,
+        "word_count": 1792,
+        "topics": []
+      },
+      {
+        "id": 13,
+        "file_slug": "chapter-13",
+        "type": "content",
+        "titles": {
+          "he": "קריאה נוספת והעמקה (Further Reading)"
+        },
+        "sections": 0,
+        "has_images": false,
+        "word_count": 153,
+        "topics": []
+      }
+    ],
+    "languages": [
+      "he"
+    ],
+    "credits": {
+      "author": {
+        "he": "תומר קדם"
+      }
+    }
+  }
+}

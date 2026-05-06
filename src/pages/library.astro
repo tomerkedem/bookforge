@@ -300,11 +300,14 @@ const FEATURED_SLOTS = [
        desktop adds side accents + vignette so the entire dashboard
        (sidebar + center + rail + recs) reads as one cosmic field.
 
-       Background-color overridden to match the dark outer area of
-       galaxy-stage-core-medium.png so the image blends seamlessly into
-       the page. Scoped to .library-root via Astro style scoping — does
-       not affect any other route. */
-    background-color: #0a0a1f;
+       Background-color sampled directly from the dark outer pixels of
+       galaxy-stage-core-medium.png (corners read RGB(0,1,13)). The
+       earlier #0a0a1f estimate was ~3× brighter than reality and left
+       a visible seam between the image edges and the page. With the
+       sampled value, the image's outer dark pixels are continuous
+       with the page bg. Scoped to .library-root via Astro style
+       scoping — does not affect any other route. */
+    background-color: #00010d;
     background-image:
       var(--yuval-galaxy-bg-radial-primary),
       var(--yuval-galaxy-bg-radial-secondary);
@@ -436,58 +439,14 @@ const FEATURED_SLOTS = [
         var(--yuval-galaxy-bg-radial-secondary);
     }
 
-    /* ── Full-page atmospheric underlay (actual asset, not synthetic) ──
-       Reuses the same galaxy stage image already loaded by the center
-       stage — heavily blurred, darkened, desaturated — to provide the
-       page with the SAME visual language as the asset. The browser
-       caches the asset by URL, so this is effectively free.
-
-       Goals:
-       - The whole desktop page sits on the asset's actual cosmic
-         field, not a synthetic gradient or generated noise.
-       - Center stage remains the dominant focal point — the underlay
-         is heavily neutralised so its central glow does NOT compete.
-       - No visible seams, no tiling, no recognisable second book.
-
-       Treatment:
-       - background-size: 180% auto → oversize so the asset's bright
-         center area is partially cropped beyond the viewport at most
-         widths, and any visible bright zone is just a soft glow.
-       - filter: blur(60px) → softens any focal feature past
-         recognition. The "second book" becomes an indistinct halo.
-       - filter: brightness(0.32) → strongly darkens the bright core.
-       - filter: saturate(0.55) → tones down the asset's vivid violet
-         so it doesn't read as a separate vibrant zone.
-       - opacity: 0.55 → subtle presence; sits behind the page bg
-         color, modulating it with real cosmic material. */
-    .library-root::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background-image: url("/assets/library/galaxy-stage-core-medium.png");
-      /* Oversize 220% so a) the asset's bright central book sits
-         well off-axis from the actual hero asset's position, and
-         b) the asset's outer cosmic field fills the viewport edges
-         with deep navy material — that's the part we WANT visible.
-         Position shifted up so the hero stage actually overlaps
-         where the underlay's center used to be (reinforces focal
-         instead of duplicating it). */
-      background-size: 220% auto;
-      background-position: center 30%;
-      background-repeat: no-repeat;
-      /* Heavy suppression so no recognisable book or rings:
-           blur(90px)        — softens any focal feature past
-                                recognition; the "second book" becomes
-                                an indistinct cloud of glow.
-           brightness(0.28)  — strongly darkens the asset's bright
-                                center.
-           saturate(0.5)     — reduces vibrancy so the asset's vivid
-                                violet doesn't read as a separate zone. */
-      filter: blur(90px) brightness(0.28) saturate(0.5);
-      opacity: 0.45;
-      pointer-events: none;
-      z-index: 0;
-    }
+    /* Full-page atmospheric underlay removed: it placed a blurred copy
+       of the asset under the whole page, which created a non-uniform
+       halo right under where the central image sits — the eye then
+       read the contrast between halo-area and rest as a rectangle
+       outline, even after the asset's edges were faded. The flat
+       page-bg color (#0a0a1f on .library-root above) plus the
+       existing radial gradients + vignette are now the only
+       atmospheric layers. */
 
     /* Re-enable real flex container on the center stage main.
        `.lb-area-right` stays as `display: contents` (inherited from the
