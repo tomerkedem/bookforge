@@ -780,6 +780,34 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
     .galaxy-card[data-kind="book"]   { --card-accent-slot: var(--yuval-galaxy-accent-gold); }
     .galaxy-card[data-kind="lesson"] { --card-accent-slot: var(--yuval-galaxy-accent-cyan); }
 
+    /* Drag-to-rotate — while the user is actively dragging the orbit
+       we drop the transform transition so the carousel tracks the
+       cursor in real time (no easing lag). The transition is restored
+       the moment the drag ends, which lets the snap-to-station read
+       as a smooth animated move. The grabbing cursor + user-select
+       reset prevent accidental text selection mid-drag. */
+    .library-galaxy[data-galaxy-dragging],
+    .library-galaxy[data-galaxy-dragging] .galaxy-card {
+      cursor: grabbing;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .library-galaxy[data-galaxy-dragging] .galaxy-card {
+      transition: none;
+    }
+    /* Block the browser's native image/link drag on every card and on
+       its descendant images. Without this, mousedown on the inner <a>
+       starts a drag-and-drop "ghost" that prevents our pointermove
+       handler from tracking the cursor. The pointerdown handler also
+       calls preventDefault, but the CSS hint catches stragglers (e.g.
+       SVG/IMG nodes that opt themselves into drag separately). */
+    .galaxy-card,
+    .galaxy-card *,
+    .galaxy-card img,
+    .galaxy-card svg {
+      -webkit-user-drag: none;
+    }
+
     /* ── Series capsule —
           Built client-side as a separate node when ≥2 visible items
           share a seriesName. The wrapper .galaxy-card carries the
@@ -1798,21 +1826,121 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
         delete stage.dataset.galaxyFocused;
       }
 
-      function rotateOrbit(direction: number) {
+      function getStep(): number {
         // Count only cards that are actually visible orbit stations
         // (i.e. excluding hidden series members tagged by the metadata
-        // hydrator). Falls back to the card count when no stations are
-        // visible (defensive: keeps rotation working in unit tests).
+        // hydrator). Falls back to 1 when no stations are visible
+        // (defensive: keeps rotation working in unit tests).
         const visibleCount = stage.querySelectorAll(
           '[data-galaxy-card]:not([data-series-member])',
         ).length || 1;
-        const step = 360 / visibleCount;
-        rotation += direction * step;
+        return 360 / visibleCount;
+      }
+
+      function rotateOrbit(direction: number) {
+        rotation += direction * getStep();
         stage.style.setProperty('--orbit-rotation', `${rotation}deg`);
         // Rotation moves stations under the focused card; close any
         // focus so the user sees the rotation, not a stale spotlight.
         if (focused) closeCenter();
       }
+
+      // ── Drag-to-rotate ──────────────────────────────────────────────
+      // Click+hold anywhere on the orbit and drag horizontally to
+      // rotate the entire carousel. The drag direction follows the
+      // user's hand: drag right rotates the orbit rightward (the card
+      // under your cursor moves with you), drag left rotates leftward.
+      // RTL pages flip the X axis at the CSS level, so we mirror the
+      // input here too — same visual feel in both directions.
+      // On release we snap to the nearest station.
+      // A short drag (< DRAG_THRESHOLD px) is interpreted as a click,
+      // so click-to-center still works as before.
+      const DRAG_THRESHOLD = 6;
+      const DRAG_PIXELS_PER_STEP = 180;
+      let drag: {
+        pointerId: number;
+        startX: number;
+        startRotation: number;
+        moved: boolean;
+      } | null = null;
+
+      function endDrag(commit: boolean) {
+        if (!drag) return;
+        const wasMoved = drag.moved;
+        const pid = drag.pointerId;
+        // Clear the dragging flag FIRST so the existing transform
+        // transition is restored before the snap value is set — that
+        // way the snap reads as a smooth animated move, not a jump.
+        delete stage.dataset.galaxyDragging;
+        if (stage.hasPointerCapture(pid)) stage.releasePointerCapture(pid);
+        drag = null;
+        if (wasMoved && commit) {
+          const step = getStep();
+          rotation = Math.round(rotation / step) * step;
+          stage.style.setProperty('--orbit-rotation', `${rotation}deg`);
+        }
+        // If the drag actually moved, mark the next click as "swallow
+        // me" so click-to-center doesn't fire on pointerup. Cleared by
+        // the click handler below (or by the next pointerdown).
+        if (wasMoved) stage.dataset.galaxyJustDragged = 'true';
+      }
+
+      stage.addEventListener('pointerdown', (e) => {
+        // Only the primary mouse button counts; touch + pen always do.
+        if (e.pointerType === 'mouse' && e.button !== 0) return;
+        const target = e.target as Element | null;
+        if (!target) return;
+        // Drags that start on a control element should NOT hijack the
+        // control's own click semantics.
+        if (target.closest(
+          '[data-galaxy-cta-open], [data-galaxy-cta-close], [data-galaxy-rotate], [data-galaxy-backdrop]',
+        )) return;
+        // The orbit card is an <a>, and anchors + images are draggable
+        // by default. Without preventDefault here the browser starts
+        // its native link-drag on mousedown and our pointermove never
+        // sees the motion. Touch devices are unaffected (no link-drag),
+        // which is why dragging worked there but not with a mouse.
+        e.preventDefault();
+        drag = {
+          pointerId: e.pointerId,
+          startX: e.clientX,
+          startRotation: rotation,
+          moved: false,
+        };
+      });
+
+      // Belt-and-braces: even with preventDefault on pointerdown, some
+      // browsers still fire dragstart on inner anchors/images. Killing
+      // it here makes sure the native drag-and-drop ghost never appears.
+      stage.addEventListener('dragstart', (e) => {
+        const target = e.target as Element | null;
+        if (target && target.closest('[data-galaxy-card]')) {
+          e.preventDefault();
+        }
+      });
+
+      stage.addEventListener('pointermove', (e) => {
+        if (!drag || e.pointerId !== drag.pointerId) return;
+        const dx = e.clientX - drag.startX;
+        if (!drag.moved) {
+          if (Math.abs(dx) < DRAG_THRESHOLD) return;
+          drag.moved = true;
+          stage.dataset.galaxyDragging = 'true';
+          // Capture so we still get events when the cursor leaves the
+          // stage, and so the eventual click is suppressed.
+          try { stage.setPointerCapture(drag.pointerId); } catch { /* noop */ }
+          // Drop any spotlight so the user clearly sees the rotation.
+          if (focused) closeCenter();
+        }
+        const dirSign = stage.style.getPropertyValue('--galaxy-dir').trim() === '-1' ? -1 : 1;
+        const step = getStep();
+        rotation =
+          drag.startRotation + (dx / DRAG_PIXELS_PER_STEP) * step * dirSign;
+        stage.style.setProperty('--orbit-rotation', `${rotation}deg`);
+      });
+
+      stage.addEventListener('pointerup',     () => endDrag(true));
+      stage.addEventListener('pointercancel', () => endDrag(false));
 
       // Card click — capture phase so we beat the inner <a>'s native
       // navigation. We preventDefault unless the click came from the
@@ -1820,6 +1948,17 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       stage.addEventListener('click', (e) => {
         const target = e.target as Element | null;
         if (!target) return;
+
+        // Suppress the click that follows a real drag. pointerup fires
+        // before click, and after pointerup `drag` is null but the
+        // moved flag was reflected in `data-galaxy-dragging` — we use a
+        // separate sticky flag for one tick instead.
+        if (stage.dataset.galaxyJustDragged === 'true') {
+          e.preventDefault();
+          e.stopPropagation();
+          delete stage.dataset.galaxyJustDragged;
+          return;
+        }
 
         // Open CTA — let it navigate.
         if (target.closest('[data-galaxy-cta-open]')) return;
@@ -1861,6 +2000,7 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
           openCenter(card);
         }
       }, true);
+
 
       // Keyboard: Enter on the inner <a> bubbles up as a click and is
       // handled by the click listener above (preventDefault + open).
