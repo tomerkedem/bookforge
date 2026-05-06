@@ -298,8 +298,13 @@ const FEATURED_SLOTS = [
     width: 100%;
     /* Whole-screen unified backdrop. Mobile uses the two main layers;
        desktop adds side accents + vignette so the entire dashboard
-       (sidebar + center + rail + recs) reads as one cosmic field. */
-    background-color: var(--yuval-galaxy-bg);
+       (sidebar + center + rail + recs) reads as one cosmic field.
+
+       Background-color overridden to match the dark outer area of
+       galaxy-stage-core-medium.png so the image blends seamlessly into
+       the page. Scoped to .library-root via Astro style scoping — does
+       not affect any other route. */
+    background-color: #0a0a1f;
     background-image:
       var(--yuval-galaxy-bg-radial-primary),
       var(--yuval-galaxy-bg-radial-secondary);
@@ -640,12 +645,12 @@ const FEATURED_SLOTS = [
        the entire central composition. */
 
     /* ── Galaxy stage decorative asset ───────────────────────────
-       The provided PNG (galaxy-stage-core-medium.png) replaces the
-       CSS-generated central composition. `object-fit: contain` keeps
-       the open book and orbit rings intact (no crop). Sized to ~95%
-       of the stage. A radial mask softens the rectangular edges so
-       the image dissolves into the matched dark-navy stage background
-       instead of stamping a flat box. */
+       The provided PNG (galaxy-stage-core-medium.png). `object-fit:
+       contain` keeps the open book and orbit rings intact (no crop).
+       Sized to ~95% of the stage. A four-edge linear mask softens the
+       rectangular bounds so the image dissolves into the matched
+       dark-navy page background (#0a0a1f) on .library-root instead of
+       stamping a flat box. */
     .galaxy-stage-image {
       position: absolute;
       top: 50%;
@@ -662,35 +667,37 @@ const FEATURED_SLOTS = [
       pointer-events: none;
       user-select: none;
       z-index: 2;
-      /* Edge feathering — 6-stop mask aggressively dissolves the
-         rectangular bounds.
-            0-58%   fully visible (book + inner rings sharp)
-            58-68%  subtle start of fade (1.0 → 0.85)
-            68-80%  noticeable thinning (0.85 → 0.5)
-            80-88%  heavy fade (0.5 → 0.18) — matches user's
-                    "heavily faded by 82-88%" direction
-            88-96%  ghost trail (0.18 → 0)
-            96-100% fully transparent
-         Ellipse 96%×92% (smaller than the image's bounding box) ends
-         the visible area BEFORE the actual rectangular edges, so the
-         outermost pixels are masked out entirely. Combined with the
-         underlay halo below, the asset has no perceivable boundary. */
-      -webkit-mask-image: radial-gradient(
-        ellipse 96% 92% at center,
-        rgba(0, 0, 0, 1)    0%,
-        rgba(0, 0, 0, 1)    58%,
-        rgba(0, 0, 0, 0.85) 68%,
-        rgba(0, 0, 0, 0.50) 80%,
-        rgba(0, 0, 0, 0.18) 88%,
-        rgba(0, 0, 0, 0)    96%);
-      mask-image: radial-gradient(
-        ellipse 96% 92% at center,
-        rgba(0, 0, 0, 1)    0%,
-        rgba(0, 0, 0, 1)    58%,
-        rgba(0, 0, 0, 0.85) 68%,
-        rgba(0, 0, 0, 0.50) 80%,
-        rgba(0, 0, 0, 0.18) 88%,
-        rgba(0, 0, 0, 0)    96%);
+      /* Four-edge linear fade — 35px soft fade-to-transparent on each
+         edge of the image. Implemented as the intersection of a
+         horizontal and a vertical linear gradient; the intersect
+         operation gives uniform fading on all four sides (and softer
+         corners where the two fades overlap). This replaces the prior
+         radial ellipse mask, which left visible rectangular corners
+         and was tuned for a different page-bg color. */
+      -webkit-mask-image:
+        linear-gradient(to right,
+          transparent 0,
+          #000 35px,
+          #000 calc(100% - 35px),
+          transparent 100%),
+        linear-gradient(to bottom,
+          transparent 0,
+          #000 35px,
+          #000 calc(100% - 35px),
+          transparent 100%);
+      -webkit-mask-composite: source-in;
+      mask-image:
+        linear-gradient(to right,
+          transparent 0,
+          #000 35px,
+          #000 calc(100% - 35px),
+          transparent 100%),
+        linear-gradient(to bottom,
+          transparent 0,
+          #000 35px,
+          #000 calc(100% - 35px),
+          transparent 100%);
+      mask-composite: intersect;
     }
 
     /* ── Floating cards: 6 absolute slots arranged around the core,
