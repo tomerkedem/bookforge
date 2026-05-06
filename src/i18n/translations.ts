@@ -567,7 +567,7 @@ export const translations: Translations = {
   'library.sort.status':       { he: 'לפי סטטוס',          en: 'Status',             es: 'Estado' },
 
   // ── library.continueReading.* — resume card ────────────────────────────────
-  'library.continueReading.title':         { he: 'המשך מהמקום שעצרת',         en: 'Continue where you left off',  es: 'Continúa donde lo dejaste' },
+  'library.continueReading.title':         { he: 'המשך למידה',                 en: 'Continue Learning',            es: 'Continuar aprendiendo' },
   'library.continueReading.cta':           { he: 'המשך קריאה',                 en: 'Continue reading',             es: 'Continuar leyendo' },
   'library.continueReading.lastOpened':    { he: 'נפתח לאחרונה {{when}}',       en: 'Last opened {{when}}',         es: 'Abierto por última vez {{when}}' },
   'library.continueReading.noActive':      { he: 'אין פריט פעיל כרגע',          en: 'Nothing in progress right now', es: 'Nada en progreso ahora mismo' },
@@ -578,6 +578,7 @@ export const translations: Translations = {
   'library.continueReading.recommendedStart':     { he: 'מומלץ להתחיל מכאן',                 en: 'Recommended starting point',                  es: 'Punto de inicio recomendado' },
   'library.continueReading.recommendedStartText': { he: 'פריט פתיחה מומלץ מתוך מרחב הידע',     en: 'A suggested first item from the knowledge space', es: 'Un primer elemento sugerido del espacio de conocimiento' },
   'library.continueReading.startReading':         { he: 'התחל לקרוא',                          en: 'Start reading',                                es: 'Empezar a leer' },
+  'library.continueReading.lessonsAvailable':     { he: '{{available}} מתוך {{total}} סיכומי שיעור זמינים', en: '{{available}} of {{total}} lesson summaries available', es: '{{available}} de {{total}} resúmenes de clase disponibles' },
 
   // ── library.stats.* — stats panel (interpolated counts) ────────────────────
   'library.stats.title':            { he: 'סטטיסטיקות הספרייה',     en: 'Library stats',                  es: 'Estadísticas de la biblioteca' },
@@ -593,6 +594,17 @@ export const translations: Translations = {
   'library.stats.readingMinutes':   { he: '{{n}} דקות קריאה',        en: '{{n}} reading minutes',          es: '{{n}} minutos de lectura' },
   'library.stats.words':            { he: '{{n}} מילים',              en: '{{n}} words',                    es: '{{n}} palabras' },
   'library.stats.updatedRecently':  { he: 'עודכן לאחרונה {{when}}',   en: 'Updated {{when}}',               es: 'Actualizado {{when}}' },
+
+  // ── library.stats.* — new keys for the rewritten LibraryStatsPanel ─────────
+  'library.stats.yourLibrary':          { he: 'הספריה שלך',     en: 'Your Library',         es: 'Tu biblioteca' },
+  'library.stats.itemsInLibrary':       { he: 'פריטים בספרייה',  en: 'Items in library',     es: 'Elementos en la biblioteca' },
+  'library.stats.label.books':          { he: 'ספרים',          en: 'Books',                es: 'Libros' },
+  'library.stats.label.courses':        { he: 'קורסים',         en: 'Courses',              es: 'Cursos' },
+  'library.stats.label.lessons':        { he: 'שיעורים',        en: 'Lessons',              es: 'Lecciones' },
+  'library.stats.label.series':         { he: 'סדרות',          en: 'Series',               es: 'Series' },
+  'library.stats.label.articles':       { he: 'מאמרים',         en: 'Articles',             es: 'Artículos' },
+  'library.stats.courseSummariesTitle': { he: 'סיכומי קורס {{courseName}}', en: 'Course summaries: {{courseName}}', es: 'Resúmenes del curso: {{courseName}}' },
+  'library.stats.viewAll':              { he: 'צפה בכל הפריטים', en: 'View all items',       es: 'Ver todos los elementos' },
 
   // ── library.recommendation.* — recommendation strip ────────────────────────
   'library.recommendation.forYou':            { he: 'מומלץ עבורך',                       en: 'Recommended for you',                 es: 'Recomendado para ti' },

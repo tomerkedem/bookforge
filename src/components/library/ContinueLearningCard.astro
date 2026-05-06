@@ -11,6 +11,10 @@ interface Props {
   progress?: number;
   href?: string;
   class?: string;
+  /** Available lesson summaries already published for this course. */
+  lessonsAvailable?: number;
+  /** Total planned lesson summaries for this course. */
+  lessonsTotal?: number;
 }
 
 const {
@@ -21,7 +25,14 @@ const {
   progress = 68,
   href = '#',
   class: className = '',
+  lessonsAvailable,
+  lessonsTotal,
 } = Astro.props;
+
+const hasLessonAvailability =
+  typeof lessonsAvailable === 'number' &&
+  typeof lessonsTotal === 'number' &&
+  lessonsTotal > 0;
 
 const direction = getLanguageDirection(language);
 const safeProgress = Math.max(0, Math.min(100, progress));
@@ -84,6 +95,14 @@ const dashLength = (safeProgress / 100) * CIRCUMFERENCE;
       <p class="continue-learning-card__course-title">{courseTitle}</p>
       <p class="continue-learning-card__meta">{metaLine1}</p>
       {metaLine2 && <p class="continue-learning-card__meta">{metaLine2}</p>}
+      {hasLessonAvailability && (
+        <p class="continue-learning-card__meta continue-learning-card__lessons">
+          {t('library.continueReading.lessonsAvailable', language, {
+            available: lessonsAvailable!,
+            total: lessonsTotal!,
+          })}
+        </p>
+      )}
     </div>
   </div>
 
@@ -121,7 +140,7 @@ const dashLength = (safeProgress / 100) * CIRCUMFERENCE;
     display: inline-flex;
     width: 16px;
     height: 16px;
-    color: var(--yuval-galaxy-accent-purple);
+    color: var(--yuval-galaxy-accent-cyan);
   }
   .continue-learning-card__header-icon svg {
     width: 100%;
@@ -133,13 +152,19 @@ const dashLength = (safeProgress / 100) * CIRCUMFERENCE;
     font-size: 0.875rem;
     font-weight: 600;
     letter-spacing: 0.02em;
-    color: var(--yuval-galaxy-text);
+    color: var(--yuval-galaxy-accent-cyan);
   }
 
+  /* Inner inset card around donut + info — visible in reference as a
+     nested surface with its own background, border and radius. */
   .continue-learning-card__body {
     display: flex;
     align-items: center;
     gap: 14px;
+    padding: 14px;
+    background-color: var(--yuval-galaxy-surface-elevated);
+    border: 1px solid var(--yuval-galaxy-card-border);
+    border-radius: 12px;
   }
 
   .continue-learning-card__progress {
@@ -155,7 +180,7 @@ const dashLength = (safeProgress / 100) * CIRCUMFERENCE;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.9375rem;
+    font-size: 1rem;
     font-weight: 700;
     color: var(--yuval-galaxy-text);
   }
@@ -179,17 +204,19 @@ const dashLength = (safeProgress / 100) * CIRCUMFERENCE;
   }
 
   .continue-learning-card__cta {
-    display: inline-flex;
+    display: flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
-    padding: 10px 18px;
-    border-radius: 999px;
+    width: 100%;
+    padding: 12px 16px;
+    border-radius: 14px;
     text-decoration: none;
     font-size: 0.9375rem;
     font-weight: 600;
-    color: var(--yuval-galaxy-text-inverse);
-    background-color: var(--yuval-galaxy-accent);
+    color: var(--yuval-galaxy-text);
+    background-color: var(--yuval-galaxy-card-surface);
+    border: 1px solid var(--yuval-galaxy-card-border);
     transition: opacity 150ms ease-out;
   }
   .continue-learning-card__cta:hover {

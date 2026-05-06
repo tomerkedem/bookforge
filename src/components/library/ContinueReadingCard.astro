@@ -43,10 +43,6 @@ const cardStyle = item
 // pass it as a prop and flip this to true.
 const hasPersonalLastOpened = false;
 
-const sectionTitleKey = hasPersonalLastOpened
-  ? 'library.continueReading.title'           // "Continue where you left off"
-  : 'library.continueReading.recommendedStart'; // "Recommended starting point"
-
 const ctaKey = hasPersonalLastOpened
   ? 'library.continueReading.cta'             // "Continue reading"
   : 'library.continueReading.startReading';   // "Start reading"
@@ -62,7 +58,11 @@ const itemTitle = item ? getItemTitle(item, language) : '';
         <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
       </svg>
     </span>
-    <h2 class="crc-title">{t(sectionTitleKey, language)}</h2>
+    <h2 class="crc-title">
+      {hasPersonalLastOpened
+        ? t('library.continueReading.lastOpened', language, { when: '' })
+        : t('library.continueReading.recommendedStart', language)}
+    </h2>
   </header>
 
   {item ? (

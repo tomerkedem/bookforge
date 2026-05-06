@@ -1,242 +1,233 @@
 ---
-/**
- * LibraryStatsPanel — premium analytics tile dashboard.
- *
- * Semantics (Prompt 8.7 update):
- *   - Hero tile shows "available content items" (readable count) — not
- *     the raw `total` which now includes synthetic course meta.
- *   - Type tiles render dynamically: only types with count > 0 appear.
- *     Avoids the "0 articles / 0 series" awkwardness on a real-content
- *     library that doesn't have those types yet.
- *   - When the page passes `courseProgress`, the panel adds an honest
- *     "X of Y lesson summaries available" line per course.
- *   - course_lesson is rendered as "lesson summaries" via its own key.
- *
- * Defensive: every count falls back to 0; missing courseProgress is
- * silently skipped.
- */
+import type { LibraryStats, LibraryCourseProgress, LibraryItemType } from '../../types/library';
 import type { Language } from '../../types/index';
-import type { LibraryCourseProgress, LibraryStats } from '../../types/library';
-import type { TranslationKey } from '../../i18n';
 import { t } from '../../i18n';
-import { getTypeAccentVar } from '../../utils/library-display';
+import { getLanguageDirection } from '../../utils/language';
 
 interface Props {
   stats: LibraryStats;
   language: Language;
-  /**
-   * Optional per-course progress fed by library-adapter. When omitted,
-   * the panel does not render any "X of Y lessons" lines.
-   */
   courseProgress?: LibraryCourseProgress[];
 }
+
 const { stats, language, courseProgress = [] } = Astro.props;
+const direction = getLanguageDirection(language);
 
-const counts = {
-  readable: stats.readable ?? 0,
-  books:    stats.byType.book ?? 0,
-  courses:  stats.byType.course ?? 0,
-  lessons:  stats.byType.course_lesson ?? 0,
-  series:   stats.byType.series ?? 0,
-  articles: stats.byType.article ?? 0,
-  minutes:  stats.totalReadingMinutes ?? 0,
-  words:    stats.totalWordCount ?? 0,
-};
-
-// Tile config — full set declared declaratively, then filtered to count>0.
-// Order is the order tiles will appear in the 2×N grid: books first
-// (most concrete content), lessons second, course third, then optional
-// types only if they ever land.
-type TileSpec = {
-  key: TranslationKey;
-  n: number;
-  accent: string;
-};
-const allTiles: TileSpec[] = [
-  { key: 'library.stats.booksCount',    n: counts.books,    accent: getTypeAccentVar('book') },
-  { key: 'library.stats.lessonsCount',  n: counts.lessons,  accent: getTypeAccentVar('course_lesson') },
-  { key: 'library.stats.coursesCount',  n: counts.courses,  accent: getTypeAccentVar('course') },
-  { key: 'library.stats.seriesCount',   n: counts.series,   accent: getTypeAccentVar('series') },
-  { key: 'library.stats.articlesCount', n: counts.articles, accent: getTypeAccentVar('article') },
+const typeOrder: Array<{ type: LibraryItemType; labelKey: string }> = [
+  { type: 'book',    labelKey: 'library.stats.label.books' },
+  { type: 'course',  labelKey: 'library.stats.label.courses' },
+  { type: 'series',  labelKey: 'library.stats.label.series' },
+  { type: 'article', labelKey: 'library.stats.label.articles' },
 ];
-const typeTiles: TileSpec[] = allTiles.filter((tile) => tile.n > 0);
+
+const visibleTypes = typeOrder.filter(({ type }) => (stats.byType[type] ?? 0) > 0);
+const visibleCourses = courseProgress.filter((course) => course.total > 0);
+const showCourseGroup = visibleCourses.length > 0;
 ---
 
-<section class="lsp" aria-label={t('library.a11y.libraryStatsPanel', language)}>
-  <header class="lsp-header">
-    <span class="lsp-dot" aria-hidden="true">
+<article
+  class="library-stats-panel"
+  dir={direction}
+  aria-label={t('library.a11y.libraryStatsPanel', language)}
+>
+  <header class="lsp__header">
+    <span class="lsp__header-icon" aria-hidden="true">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M12 2a10 10 0 1 0 10 10h-10z"></path>
-        <path d="M12 2a10 10 0 0 1 10 10"></path>
+        <path d="M21 12A9 9 0 1 1 12 3v9z"></path>
+        <path d="M21 12A9 9 0 0 0 12 3v9z"></path>
       </svg>
     </span>
-    <h2 class="lsp-title">{t('library.stats.title', language)}</h2>
+    <h3 class="lsp__title">{t('library.stats.yourLibrary', language)}</h3>
   </header>
 
-  <div class="lsp-hero">
-    <span class="lsp-hero-num">{counts.readable}</span>
-    <span class="lsp-hero-label">{t('library.stats.readableItems', language, { n: '' }).replace(/^\s*/, '').trim()}</span>
+  <div class="lsp__hero">
+    <span class="lsp__hero-number">{stats.readable}</span>
+    <span class="lsp__hero-subtitle">{t('library.stats.itemsInLibrary', language)}</span>
   </div>
 
-  {typeTiles.length > 0 && (
-    <ul class="lsp-chips">
-      {typeTiles.map((tile) => (
-        <li class="lsp-chip" style={`--chip-accent: ${tile.accent};`}>
-          <span class="lsp-chip-dot" aria-hidden="true"></span>
-          {t(tile.key, language, { n: tile.n })}
+  {visibleTypes.length > 0 && (
+    <ul class="lsp__breakdown" role="list">
+      {visibleTypes.map(({ type, labelKey }) => (
+        <li class="lsp__row">
+          <span class="lsp__row-dot" data-type={type} aria-hidden="true"></span>
+          <span class="lsp__row-label">{t(labelKey, language)}</span>
+          <span class="lsp__row-value">{stats.byType[type]}</span>
         </li>
       ))}
     </ul>
   )}
 
-  {courseProgress.length > 0 && (
-    <ul class="lsp-progress-list" aria-label={t('library.stats.courseProgressTitle', language)}>
-      {courseProgress.map((cp) => (
-        <li class="lsp-progress-row">
-          <span class="lsp-progress-bar" aria-hidden="true">
-            <span
-              class="lsp-progress-bar-fill"
-              style={`width: ${cp.total > 0 ? Math.round((cp.available / cp.total) * 100) : 0}%;`}
-            ></span>
-          </span>
-          <span class="lsp-progress-text">
-            {t('library.stats.lessonsAvailable', language, { available: cp.available, total: cp.total })}
-          </span>
-        </li>
-      ))}
-    </ul>
-  )}
-</section>
+  {showCourseGroup && visibleCourses.map((course) => {
+    const courseName =
+      course.titles[language] ??
+      course.titles.en ??
+      course.titles.he ??
+      course.slug;
+    return (
+      <div class="lsp__course-group">
+        <h4 class="lsp__group-title">
+          {t('library.stats.courseSummariesTitle', language, { courseName })}
+        </h4>
+        <div class="lsp__row">
+          <span class="lsp__row-dot" data-type="course_lesson" aria-hidden="true"></span>
+          <span class="lsp__row-label">{t('library.stats.label.lessons', language)}</span>
+          <span class="lsp__row-value">{course.available} / {course.total}</span>
+        </div>
+      </div>
+    );
+  })}
+
+  <a class="lsp__cta" href="/library">
+    <span class="lsp__cta-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="7" height="7" rx="1"></rect>
+        <rect x="14" y="3" width="7" height="7" rx="1"></rect>
+        <rect x="3" y="14" width="7" height="7" rx="1"></rect>
+        <rect x="14" y="14" width="7" height="7" rx="1"></rect>
+      </svg>
+    </span>
+    <span class="lsp__cta-label">{t('library.stats.viewAll', language)}</span>
+  </a>
+</article>
 
 <style>
-  .lsp {
-    padding: 1.375rem;
+  .library-stats-panel {
+    background: var(--yuval-galaxy-surface);
     border: 1px solid var(--yuval-galaxy-border);
-    border-radius: var(--yuval-galaxy-panel-radius);
-    background-color: var(--yuval-galaxy-surface);
-    backdrop-filter: blur(var(--yuval-galaxy-card-blur));
-    -webkit-backdrop-filter: blur(var(--yuval-galaxy-card-blur));
-    box-shadow: var(--yuval-galaxy-glow-card);
+    border-radius: var(--yuval-galaxy-panel-radius, 20px);
+    padding: 20px;
+    width: 100%;
+    max-width: 320px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
   }
 
-  .lsp-header {
+  .lsp__header {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    margin-block-end: 0.875rem;
+    gap: 10px;
+    color: var(--yuval-galaxy-accent-purple);
   }
-  .lsp-dot {
+
+  .lsp__header-icon {
+    display: inline-flex;
+    width: 24px;
+    height: 24px;
+  }
+  .lsp__header-icon svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  .lsp__title {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--yuval-galaxy-text);
+    margin: 0;
+  }
+
+  .lsp__hero {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .lsp__hero-number {
+    font-size: 48px;
+    font-weight: 600;
+    color: var(--yuval-galaxy-text);
+    line-height: 1;
+  }
+
+  .lsp__hero-subtitle {
+    font-size: 13px;
+    color: var(--yuval-galaxy-text-muted);
+  }
+
+  .lsp__breakdown {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .lsp__row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+  }
+
+  .lsp__row-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--yuval-galaxy-accent);
+    flex-shrink: 0;
+  }
+
+  .lsp__row-dot[data-type="book"]          { background: var(--yuval-galaxy-type-book,          var(--yuval-galaxy-accent-purple)); }
+  .lsp__row-dot[data-type="course"]        { background: var(--yuval-galaxy-type-course,        var(--yuval-galaxy-accent-cyan));   }
+  .lsp__row-dot[data-type="course_lesson"] { background: var(--yuval-galaxy-type-course_lesson, var(--yuval-galaxy-accent-blue));   }
+  .lsp__row-dot[data-type="series"]        { background: var(--yuval-galaxy-type-series,        var(--yuval-galaxy-accent-gold));   }
+  .lsp__row-dot[data-type="article"]       { background: var(--yuval-galaxy-type-article,       var(--yuval-galaxy-accent));        }
+
+  .lsp__row-label {
+    flex: 1;
+    color: var(--yuval-galaxy-text-soft);
+  }
+
+  .lsp__row-value {
+    color: var(--yuval-galaxy-text);
+    font-weight: 500;
+  }
+
+  .lsp__course-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-top: 12px;
+    border-top: 1px solid var(--yuval-galaxy-border);
+  }
+
+  .lsp__group-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--yuval-galaxy-text-muted);
+    margin: 0;
+    text-align: center;
+  }
+
+  .lsp__cta {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 16px;
+    background: var(--yuval-galaxy-surface-elevated, var(--yuval-galaxy-bg-navy));
+    border: 1px solid var(--yuval-galaxy-border);
+    border-radius: 12px;
+    color: var(--yuval-galaxy-text);
+    text-decoration: none;
+    font-size: 14px;
+    transition: opacity 200ms ease-out;
+  }
+
+  .lsp__cta:hover {
+    opacity: 0.85;
+  }
+
+  .lsp__cta-icon {
     display: inline-flex;
     width: 18px;
     height: 18px;
-    color: var(--yuval-galaxy-accent-purple);
-    filter: drop-shadow(0 0 6px color-mix(in srgb, var(--yuval-galaxy-accent-purple) 40%, transparent));
   }
-  .lsp-dot svg { width: 100%; height: 100%; }
-  .lsp-title {
-    font-size: 0.875rem;
-    font-weight: 600;
-    letter-spacing: 0.02em;
-    margin: 0;
-    color: var(--yuval-galaxy-text);
-  }
-
-  /* Hero — big number "6" + descriptor "available content items".
-     Per reference: number is huge and luminous, label sits beside or
-     under it as a subtle line. */
-  .lsp-hero {
-    display: flex;
-    align-items: baseline;
-    gap: 0.625rem;
-    margin-block-end: 0.875rem;
-  }
-  .lsp-hero-num {
-    font-size: 2.625rem;
-    font-weight: 700;
-    line-height: 1;
-    background: linear-gradient(135deg,
-      var(--yuval-galaxy-accent-cyan) 0%,
-      var(--yuval-galaxy-accent-purple) 100%);
-    background-clip: text;
-    -webkit-background-clip: text;
-    color: transparent;
-    -webkit-text-fill-color: transparent;
-    filter: drop-shadow(0 0 14px color-mix(in srgb, var(--yuval-galaxy-accent-purple) 35%, transparent));
-  }
-  .lsp-hero-label {
-    font-size: 0.875rem;
-    color: var(--yuval-galaxy-text-muted);
-    line-height: 1.3;
-  }
-
-  /* Type chips — small pill rows, one per type, with a colored dot. */
-  .lsp-chips {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.375rem;
-  }
-  .lsp-chip {
-    --chip-accent: var(--yuval-galaxy-accent);
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4375rem;
-    padding: 0.3125rem 0.625rem;
-    border-radius: 999px;
-    border: 1px solid var(--yuval-galaxy-border-strong);
-    background-color: var(--yuval-galaxy-surface-muted);
-    font-size: 0.75rem;
-    font-weight: 500;
-    color: var(--yuval-galaxy-text-muted);
-  }
-  .lsp-chip-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background-color: var(--chip-accent);
-    box-shadow: 0 0 6px 0 color-mix(in srgb, var(--chip-accent) 60%, transparent);
-  }
-
-  /* Course progress: thin gradient bar + label line below.
-     Reference shows the bar as the visible signal of "X of Y". */
-  .lsp-progress-list {
-    list-style: none;
-    margin: 0.875rem 0 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-  .lsp-progress-row {
-    display: flex;
-    flex-direction: column;
-    gap: 0.4375rem;
-  }
-  .lsp-progress-bar {
-    display: block;
+  .lsp__cta-icon svg {
     width: 100%;
-    height: 4px;
-    border-radius: 999px;
-    background-color: var(--yuval-galaxy-surface-muted);
-    border: 1px solid var(--yuval-galaxy-border);
-    overflow: hidden;
-  }
-  .lsp-progress-bar-fill {
-    display: block;
     height: 100%;
-    background: linear-gradient(
-      90deg,
-      var(--yuval-galaxy-accent-cyan) 0%,
-      var(--yuval-galaxy-accent-purple) 100%);
-    border-radius: 999px;
-    box-shadow: 0 0 10px 0 color-mix(in srgb, var(--yuval-galaxy-accent-cyan) 50%, transparent);
-  }
-  .lsp-progress-text {
-    font-size: 0.75rem;
-    color: var(--yuval-galaxy-text-muted);
-    line-height: 1.3;
   }
 </style>

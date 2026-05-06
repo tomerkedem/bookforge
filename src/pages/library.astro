@@ -29,7 +29,7 @@
 import LibraryLayout from '../layouts/LibraryLayout.astro';
 import LibraryHero from '../components/library/LibraryHero.astro';
 import LibraryStatsPanel from '../components/library/LibraryStatsPanel.astro';
-import ContinueReadingCard from '../components/library/ContinueReadingCard.astro';
+import ContinueLearningCard from '../components/library/ContinueLearningCard.astro';
 import LibraryCard from '../components/library/LibraryCard.astro';
 import RecommendationStrip from '../components/library/RecommendationStrip.astro';
 import MobileGalaxyCarousel from '../components/library/MobileGalaxyCarousel.astro';
@@ -102,6 +102,49 @@ const featuredItems: LibraryItem[] = featuredSlugs
   .map((slug) => readableItems.find((it) => it.slug === slug))
   .filter((it): it is LibraryItem => Boolean(it));
 
+// ── ContinueLearningCard data ─────────────────────────────────────────────
+// Real values are derived from `continueItem` + `courseProgress`. Two modes:
+//   - lesson mode: course title at top, "Lesson N" line, then the lesson
+//     subtitle. Reached when continueItem is a course_lesson whose
+//     courseSlug matches a known course in courseProgress.
+//   - book mode: book title at top, blank metaLine1, subtitle as metaLine2.
+// When continueItem is undefined (mock fallback), no props are passed and
+// the component's own placeholder defaults render.
+const isLesson =
+  continueItem?.type === 'course_lesson' && Boolean(continueItem?.courseSlug);
+const matchingCourse = isLesson
+  ? courseProgress.find((c) => c.slug === continueItem!.courseSlug)
+  : undefined;
+
+let courseTitleForCard: string | undefined;
+let metaLine1ForCard: string | undefined;
+let metaLine2ForCard: string | undefined;
+
+if (isLesson && matchingCourse && continueItem?.orderInSeries) {
+  courseTitleForCard =
+    matchingCourse.titles[language]
+    ?? matchingCourse.titles.en
+    ?? matchingCourse.titles.he
+    ?? matchingCourse.slug;
+  metaLine1ForCard = t('courses.lessonNumber', language, { n: continueItem.orderInSeries });
+  metaLine2ForCard =
+    continueItem.subtitles?.[language]
+    ?? continueItem.subtitles?.en
+    ?? continueItem.subtitles?.he
+    ?? '';
+} else if (continueItem) {
+  courseTitleForCard =
+    continueItem.titles?.[language]
+    ?? continueItem.titles?.en
+    ?? continueItem.titles?.he;
+  metaLine1ForCard = '';
+  metaLine2ForCard =
+    continueItem.subtitles?.[language]
+    ?? continueItem.subtitles?.en
+    ?? continueItem.subtitles?.he
+    ?? '';
+}
+
 // Pre-computed slot classes for desktop absolute positioning.
 // Order matches featuredSlugs above so the 3 books (idx 0..2) all land
 // in the LEFT column and the 3 lesson summaries (idx 3..5) all land in
@@ -151,7 +194,15 @@ const FEATURED_SLOTS = [
             calm and premium. */}
       <aside class="lb-area-left">
         <div class="lb-area-continue">
-          <ContinueReadingCard item={continueItem} language={language} />
+          <ContinueLearningCard
+            language={language}
+            courseTitle={courseTitleForCard}
+            metaLine1={metaLine1ForCard}
+            metaLine2={metaLine2ForCard}
+            lessonsAvailable={isLesson ? courseProgress[0]?.available : undefined}
+            lessonsTotal={isLesson ? courseProgress[0]?.total : undefined}
+            href={continueItem?.href}
+          />
         </div>
         <div class="lb-area-stats">
           <LibraryStatsPanel stats={stats} language={language} courseProgress={courseProgress} />
