@@ -185,6 +185,11 @@ export function hydrateUniverse(stage: HTMLElement): UniverseState {
       angle: card.style.getPropertyValue('--orbit-angle') || '270deg',
       labels,
     });
+    // Astro scopes <style> by appending data-astro-cid-* to every
+    // selector; SSR elements get the matching attribute, but JS-created
+    // ones do not. Without this the capsule renders unstyled (no orbit
+    // positioning, no colors). Inherit from the SSR sibling card.
+    inheritAstroScope(card, capsule);
     card.before(capsule);
   });
 
@@ -275,6 +280,28 @@ function sortStations(stations: HTMLElement[]): HTMLElement[] {
   });
 
   return annotated.map(x => x.card);
+}
+
+/**
+ * Copy any Astro CSS-scope attributes (`data-astro-cid-*`) from a SSR
+ * source element onto a freshly-created subtree. Astro's default `<style>`
+ * scoping rewrites every selector to require the cid attribute on the
+ * matched element; JS-created nodes never receive the attribute through
+ * SSR, so without this propagation a dynamically-injected subtree is
+ * completely unstyled (no orbit positioning, no glass surface, etc.).
+ *
+ * Exported so other JS-DOM-creating modules (e.g. the Other Knowledge
+ * pill in universe-series-mode.ts) can reuse the same fix.
+ */
+export function inheritAstroScope(source: Element, target: Element): void {
+  const attrs: string[] = [];
+  for (const attr of Array.from(source.attributes)) {
+    if (attr.name.startsWith('data-astro-cid-')) attrs.push(attr.name);
+  }
+  if (attrs.length === 0) return;
+  const apply = (el: Element) => attrs.forEach(name => el.setAttribute(name, ''));
+  apply(target);
+  target.querySelectorAll('*').forEach(apply);
 }
 
 function readLabels(stage: HTMLElement): UniverseLabels {

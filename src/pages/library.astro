@@ -807,6 +807,46 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
           of the universe into "Other Knowledge". */
     .galaxy-card[data-role="series"] {
       cursor: pointer;
+      /* A capsule is wider than a regular book card on the orbit so the
+         shape proportions alone signal "container, not item" — even
+         before reading the badge or label. */
+      width: 210px;
+      /* Resolve series colour at the wrapper level so the deck pseudos
+         (below) and the inner capsule both read the same value without
+         each redefining it. */
+      --series-color-resolved: var(--series-color, var(--yuval-galaxy-accent-gold, #c9a96e));
+    }
+    /* Stacked deck — two ghost rectangles peeking out behind the capsule,
+       narrower and offset downward so the capsule reads as a stack of
+       grouped knowledge, not as a single tile. Pure decoration via
+       wrapper pseudo-elements; muted/active state animations on the
+       wrapper carry the deck along automatically. */
+    .galaxy-card[data-role="series"]::before,
+    .galaxy-card[data-role="series"]::after {
+      content: "";
+      position: absolute;
+      pointer-events: none;
+      border-radius: 18px;
+      border-end-start-radius: 12px;
+      background: color-mix(in srgb, var(--series-color-resolved) 8%, var(--yuval-galaxy-card-surface, rgba(20, 22, 36, 0.78)));
+      border: 1px solid color-mix(in srgb, var(--series-color-resolved) 22%, transparent);
+      z-index: 0;
+    }
+    /* Middle layer — peeks 4 px below, narrower by 8 px each side. */
+    .galaxy-card[data-role="series"]::after {
+      inset-block-start: 4px;
+      inset-block-end: -4px;
+      inset-inline-start: 8px;
+      inset-inline-end: 8px;
+      opacity: 0.85;
+    }
+    /* Back layer — peeks 8 px below, narrower by 18 px each side. */
+    .galaxy-card[data-role="series"]::before {
+      inset-block-start: 7px;
+      inset-block-end: -8px;
+      inset-inline-start: 18px;
+      inset-inline-end: 18px;
+      opacity: 0.6;
     }
     .galaxy-card[data-role="series"]:focus-visible {
       outline: none;
@@ -994,42 +1034,41 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
 
     .galaxy-series-capsule {
       position: relative;
+      /* Stacked above the wrapper's deck pseudo-elements. */
+      z-index: 1;
       display: flex;
       flex-direction: column;
-      gap: 0.5rem;
-      padding: 1rem 1.05rem 0.9rem;
-      padding-inline-start: 1.15rem;
+      gap: 0.45rem;
+      padding: 1.05rem 1.1rem 0.85rem;
+      padding-inline-start: 1.2rem;
       /* Restrained asymmetry — the inline-start/block-end corner is
          tighter so the capsule reads as a grounded container, not as
          a floating chip. Logical so RTL flips automatically. */
       border-radius: 22px;
       border-end-start-radius: 14px;
-      /* Use the editorial series color when set; fall back to the gold
-         accent so a freshly-tagged series still reads as a series. */
-      --series-color-resolved: var(--series-color, var(--yuval-galaxy-accent-gold, #c9a96e));
       background:
         /* Atmospheric inner glow from the top, painted with the series
            color. Lives in the background stack (not a pseudo-element)
            so children render above it without z-index gymnastics. */
         radial-gradient(
           ellipse 70% 55% at 50% 0%,
-          color-mix(in srgb, var(--series-color-resolved) 16%, transparent) 0%,
+          color-mix(in srgb, var(--series-color-resolved) 18%, transparent) 0%,
           transparent 65%
         ),
         linear-gradient(
           180deg,
-          color-mix(in srgb, var(--series-color-resolved) 10%, transparent) 0%,
-          color-mix(in srgb, var(--series-color-resolved) 4%, transparent) 60%,
-          color-mix(in srgb, var(--yuval-galaxy-bg, #00010d) 82%, transparent) 100%
+          color-mix(in srgb, var(--series-color-resolved) 11%, transparent) 0%,
+          color-mix(in srgb, var(--series-color-resolved) 4%, transparent) 55%,
+          color-mix(in srgb, var(--yuval-galaxy-bg, #00010d) 84%, transparent) 100%
         ),
         var(--yuval-galaxy-card-surface, rgba(20, 22, 36, 0.78));
       /* Two-layer luminous border — hairline outer ring + a slightly
          stronger inner edge — for a refined, lit-from-within feel. */
-      border: 1px solid color-mix(in srgb, var(--series-color-resolved) 32%, transparent);
+      border: 1px solid color-mix(in srgb, var(--series-color-resolved) 36%, transparent);
       box-shadow:
-        0 10px 26px -16px color-mix(in srgb, var(--series-color-resolved) 42%, transparent),
-        0 0 0 1px color-mix(in srgb, var(--series-color-resolved) 12%, transparent),
-        inset 0 1px 0 color-mix(in srgb, var(--series-color-resolved) 18%, transparent);
+        0 10px 26px -16px color-mix(in srgb, var(--series-color-resolved) 38%, transparent),
+        0 0 0 1px color-mix(in srgb, var(--series-color-resolved) 14%, transparent),
+        inset 0 1px 0 color-mix(in srgb, var(--series-color-resolved) 22%, transparent);
       backdrop-filter: blur(14px) saturate(125%);
       -webkit-backdrop-filter: blur(14px) saturate(125%);
       transition:
@@ -1048,31 +1087,52 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       width: 2px;
       border-radius: 0 2px 2px 0;
       background: var(--series-color-resolved);
-      opacity: 0.7;
+      opacity: 0.75;
       box-shadow: 0 0 8px color-mix(in srgb, var(--series-color-resolved) 60%, transparent);
     }
     [dir="rtl"] .galaxy-series-capsule::before {
       border-radius: 2px 0 0 2px;
     }
 
+    /* Binder ridge — a hairline horizontal line tucked into the empty
+       strip above the badge, like the metal clip at the top of a binder.
+       Reads as "container surface" rather than "card top edge". */
+    .galaxy-series-capsule::after {
+      content: "";
+      position: absolute;
+      inset-block-start: 7px;
+      inset-inline: 16px;
+      height: 1px;
+      pointer-events: none;
+      background: linear-gradient(
+        90deg,
+        transparent 0%,
+        color-mix(in srgb, var(--series-color-resolved) 50%, transparent) 30%,
+        color-mix(in srgb, var(--series-color-resolved) 65%, transparent) 50%,
+        color-mix(in srgb, var(--series-color-resolved) 50%, transparent) 70%,
+        transparent 100%
+      );
+      opacity: 0.55;
+    }
+
     /* Restrained hover — slightly lift the border luminosity and the
        inner edge, no large bloom. The universe should feel calm. */
     .galaxy-card[data-role="series"]:hover .galaxy-series-capsule {
-      border-color: color-mix(in srgb, var(--series-color-resolved) 48%, transparent);
+      border-color: color-mix(in srgb, var(--series-color-resolved) 52%, transparent);
       box-shadow:
-        0 12px 30px -16px color-mix(in srgb, var(--series-color-resolved) 50%, transparent),
-        0 0 0 1px color-mix(in srgb, var(--series-color-resolved) 18%, transparent),
-        inset 0 1px 0 color-mix(in srgb, var(--series-color-resolved) 24%, transparent);
+        0 12px 30px -16px color-mix(in srgb, var(--series-color-resolved) 48%, transparent),
+        0 0 0 1px color-mix(in srgb, var(--series-color-resolved) 20%, transparent),
+        inset 0 1px 0 color-mix(in srgb, var(--series-color-resolved) 28%, transparent);
     }
 
     .galaxy-series-badge {
       align-self: flex-start;
       display: inline-flex;
       align-items: center;
-      padding: 2px 10px;
+      padding: 2px 10px 2px 8px;
       border-radius: 999px;
-      background: color-mix(in srgb, var(--series-color-resolved) 16%, transparent);
-      border: 1px solid color-mix(in srgb, var(--series-color-resolved) 50%, transparent);
+      background: color-mix(in srgb, var(--series-color-resolved) 18%, transparent);
+      border: 1px solid color-mix(in srgb, var(--series-color-resolved) 55%, transparent);
       color: var(--series-color-resolved);
       font-family: 'Spectral', 'Cardo', Georgia, serif;
       font-size: 0.66rem;
@@ -1080,6 +1140,22 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       letter-spacing: 0.14em;
       text-transform: uppercase;
       line-height: 1.4;
+    }
+    /* Stacked-bars glyph rendered purely in CSS — three short horizontal
+       lines tucked before the badge text. Reinforces the "stacked
+       knowledge" semantic without adding markup. */
+    .galaxy-series-badge::before {
+      content: "";
+      display: inline-block;
+      width: 9px;
+      height: 9px;
+      margin-inline-end: 6px;
+      background:
+        linear-gradient(currentColor, currentColor) top center / 9px 1.4px no-repeat,
+        linear-gradient(currentColor, currentColor) center      / 7px 1.4px no-repeat,
+        linear-gradient(currentColor, currentColor) bottom center / 5px 1.4px no-repeat;
+      vertical-align: -1px;
+      opacity: 0.95;
     }
 
     .galaxy-series-name {
@@ -1125,22 +1201,53 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       color: var(--series-color-resolved);
     }
 
-    /* Spine row — subtle density indicator, capped at 5. Each spine is
-       a thin vertical bar; filled spines use the series color, the rest
-       are dim placeholders. The :nth-child heights are a fixed, gentle
-       rhythm — not random — so the row reads as "books on a shelf"
-       without visual noise. */
+    /* Shelf — the spine row sits in a recessed compartment with a
+       luminous bottom edge, so the spines read as "books on a shelf"
+       rather than as a chart. Margin pulls the shelf to the inline
+       edges of the capsule's inner padding so it spans the full width. */
     .galaxy-series-stack {
+      position: relative;
       display: flex;
       align-items: flex-end;
       gap: 3px;
-      height: 14px;
-      margin-top: 4px;
+      height: 18px;
+      margin-block-start: 6px;
+      margin-inline: -0.35rem;
+      padding: 4px 0.5rem 5px;
+      border-radius: 5px 5px 8px 8px;
+      background:
+        linear-gradient(
+          180deg,
+          color-mix(in srgb, var(--yuval-galaxy-bg, #00010d) 22%, transparent) 0%,
+          color-mix(in srgb, var(--yuval-galaxy-bg, #00010d) 42%, transparent) 100%
+        );
+      box-shadow:
+        inset 0 1px 0 color-mix(in srgb, #000 22%, transparent),
+        inset 0 -1px 0 color-mix(in srgb, var(--series-color-resolved) 14%, transparent);
     }
+    /* Luminous shelf line — the surface the books are resting on. */
+    .galaxy-series-stack::after {
+      content: "";
+      position: absolute;
+      inset-block-end: 1px;
+      inset-inline: 8px;
+      height: 1px;
+      pointer-events: none;
+      background: linear-gradient(
+        90deg,
+        transparent 0%,
+        color-mix(in srgb, var(--series-color-resolved) 60%, transparent) 50%,
+        transparent 100%
+      );
+      opacity: 0.7;
+    }
+    /* Each spine = one book. Capped at 5 in the hydrator. Heights vary
+       in a fixed, gentle rhythm — not random — so the row reads as
+       "books on a shelf" without visual noise. */
     .galaxy-series-spine {
       display: block;
       width: 3px;
-      border-radius: 1px;
+      border-radius: 1px 1px 0 0;
       background: color-mix(in srgb, var(--series-color-resolved) 22%, transparent);
       height: 11px;
     }
@@ -1149,8 +1256,14 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
     .galaxy-series-spine:nth-child(4) { height: 14px; }
     .galaxy-series-spine:nth-child(5) { height: 12px; }
     .galaxy-series-spine.is-filled {
-      background: var(--series-color-resolved);
-      opacity: 0.78;
+      background: linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--series-color-resolved) 92%, white) 0%,
+        var(--series-color-resolved) 100%
+      );
+      opacity: 0.85;
+      box-shadow:
+        inset 0 -1px 0 color-mix(in srgb, #000 25%, transparent);
     }
 
     /* Centered focus state — overrides the orbit transform so the card
@@ -1324,6 +1437,11 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       width: 210px;
       --orbit-rx: clamp(320px, 30vw, 440px);
       --orbit-ry: clamp(200px, 26vh, 250px);
+    }
+    /* Capsule stays one notch wider than a book card so the proportion
+       contrast holds across breakpoints. */
+    .galaxy-card[data-role="series"] {
+      width: 232px;
     }
   }
 

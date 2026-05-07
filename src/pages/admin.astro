@@ -11,6 +11,24 @@ import { t } from '../i18n';
 
 const books = discoverAllBooks();
 
+/**
+ * Pick a localized string from a Record<lang, string> with sensible
+ * fallbacks. Returns undefined when nothing is usable, so callers can
+ * decide whether to render an em-dash or hide the cell.
+ */
+function pickLocalized(
+  map: Record<string, string> | undefined,
+  primary: string,
+): string | undefined {
+  if (!map) return undefined;
+  const candidates = [map[primary], map.en, map.he, map.es];
+  for (const c of candidates) {
+    if (typeof c === 'string' && c.trim().length > 0) return c.trim();
+  }
+  return undefined;
+}
+
+
 // Language resolution mirrors the pattern used by /library and the
 // chapter pages: ?lang=he|en|es overrides everything; otherwise fall
 // back to DEFAULT_LANGUAGE. allowClientLanguageOverride below lets the
@@ -53,6 +71,15 @@ const i18nBundle = {
   seriesEditTitle:   t('admin.series.editTitle', language),
   seriesTagCapsule:  t('admin.series.tagCapsule', language),
   toastSeriesSaved:  t('admin.series.toast.saved', language),
+  // Knowledge Catalog table cells — repainted by the metadata script.
+  cellEmpty:         t('admin.cell.empty', language),
+  cellVisible:       t('admin.cell.visible', language),
+  cellHidden:        t('admin.cell.hidden', language),
+  cellNoSeries:      t('admin.cell.noSeries', language),
+  cellNoCategory:    t('admin.cell.noCategory', language),
+  optionBook:        t('admin.option.book', language),
+  optionCourse:      t('admin.option.course', language),
+  optionArticle:     t('admin.option.article', language),
 };
 ---
 
@@ -84,61 +111,109 @@ const i18nBundle = {
           <span class="kcc-section-meta">{t('admin.section.bookCount', language, { n: books.length })}</span>
         </div>
 
-        <div class="books-grid" id="books-grid">
-          {books.map(book => {
-            const displayName = book.title_en || book.slug;
-            const initial = displayName.trim().charAt(0).toUpperCase();
-            return (
-              <article class="book-card" data-slug={book.slug}>
-                <div class="book-monogram" aria-hidden="true">{initial}</div>
-                <div class="book-info">
-                  <span class="book-title">{book.title_en}</span>
-                  <span class="book-slug">{book.slug}</span>
-                </div>
-                <div class="book-stats">
-                  <span class="stat" id={`stat-${book.slug}`}>{t('admin.stat.loading', language)}</span>
-                </div>
-                <div class="book-actions">
-                  <button
-                    class="edit-btn"
-                    data-slug={book.slug}
-                    data-title={book.title_en}
-                    aria-label={t('admin.action.editAriaLabel', language, { title: displayName })}
-                    title={t('admin.action.editTitle', language)}
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                      <path d="M12 20h9"></path>
-                      <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-                    </svg>
-                    <span class="edit-btn-label">{t('admin.action.editMetadata', language)}</span>
-                  </button>
-                  <button
-                    class="clean-btn"
-                    data-slug={book.slug}
-                    title={t('admin.action.cleanDataTitle', language)}
-                  >
-                    {t('admin.action.cleanData', language)}
-                  </button>
-                  <button
-                    class="delete-btn"
-                    data-slug={book.slug}
-                    data-title={book.title_en}
-                    aria-label={t('admin.action.deleteAriaLabel', language, { title: displayName })}
-                    title={t('admin.action.deleteTitle', language)}
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                      <polyline points="3 6 5 6 21 6"></polyline>
-                      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
-                      <path d="M10 11v6"></path>
-                      <path d="M14 11v6"></path>
-                      <path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"></path>
-                    </svg>
-                    <span class="delete-btn-label">{t('admin.action.delete', language)}</span>
-                  </button>
-                </div>
-              </article>
-            );
-          })}
+        <div class="kcc-table-wrap">
+          <table class="kcc-table" id="books-table">
+            <thead class="kcc-thead">
+              <tr>
+                <th class="kcc-th col-title">{t('admin.column.item', language)}</th>
+                <th class="kcc-th col-type">{t('admin.column.type', language)}</th>
+                <th class="kcc-th col-series">{t('admin.column.series', language)}</th>
+                <th class="kcc-th col-category">{t('admin.column.category', language)}</th>
+                <th class="kcc-th col-visibility">{t('admin.column.visibility', language)}</th>
+                <th class="kcc-th col-progress">{t('admin.column.progress', language)}</th>
+                <th class="kcc-th col-count">{t('admin.column.chapters', language)}</th>
+                <th class="kcc-th col-actions">{t('admin.column.actions', language)}</th>
+              </tr>
+            </thead>
+            <tbody id="books-grid">
+              {books.map(book => {
+                const ssrTitle =
+                  pickLocalized(book.titles, language) || book.slug;
+                const ssrSubtitle = pickLocalized(book.subtitles, language);
+                const ssrCategory = pickLocalized(book.category, language);
+                const chapterCount = book.chapters.length;
+                return (
+                  <tr class="book-card kcc-tr" data-slug={book.slug}>
+                    <td class="kcc-td col-title">
+                      <div class="kcc-title-stack">
+                        <span class="book-title">{ssrTitle}</span>
+                        {ssrSubtitle && (
+                          <span class="book-subtitle">{ssrSubtitle}</span>
+                        )}
+                      </div>
+                    </td>
+                    <td class="kcc-td col-type">
+                      <span class="kcc-pill" data-cell="type">
+                        {t('admin.option.book', language)}
+                      </span>
+                    </td>
+                    <td class="kcc-td col-series" data-cell="series">
+                      <span class="kcc-muted">{t('admin.cell.noSeries', language)}</span>
+                    </td>
+                    <td class="kcc-td col-category" data-cell="category">
+                      {ssrCategory || (
+                        <span class="kcc-muted">{t('admin.cell.noCategory', language)}</span>
+                      )}
+                    </td>
+                    <td class="kcc-td col-visibility">
+                      <span class="kcc-vis kcc-vis--on" data-cell="visibility">
+                        <span class="kcc-vis-dot" aria-hidden="true"></span>
+                        <span class="kcc-vis-label">{t('admin.cell.visible', language)}</span>
+                      </span>
+                    </td>
+                    <td class="kcc-td col-progress">
+                      <span class="stat" id={`stat-${book.slug}`}>
+                        {t('admin.stat.loading', language)}
+                      </span>
+                    </td>
+                    <td class="kcc-td col-count">
+                      <span class="kcc-num">{chapterCount}</span>
+                    </td>
+                    <td class="kcc-td col-actions">
+                      <div class="book-actions">
+                        <button
+                          class="edit-btn"
+                          data-slug={book.slug}
+                          data-title={ssrTitle}
+                          aria-label={t('admin.action.editAriaLabel', language, { title: ssrTitle })}
+                          title={t('admin.action.editTitle', language)}
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M12 20h9"></path>
+                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                          </svg>
+                          <span class="edit-btn-label">{t('admin.action.editMetadata', language)}</span>
+                        </button>
+                        <button
+                          class="clean-btn"
+                          data-slug={book.slug}
+                          title={t('admin.action.cleanDataTitle', language)}
+                        >
+                          {t('admin.action.cleanData', language)}
+                        </button>
+                        <button
+                          class="delete-btn"
+                          data-slug={book.slug}
+                          data-title={ssrTitle}
+                          aria-label={t('admin.action.deleteAriaLabel', language, { title: ssrTitle })}
+                          title={t('admin.action.deleteTitle', language)}
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+                            <path d="M10 11v6"></path>
+                            <path d="M14 11v6"></path>
+                            <path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"></path>
+                          </svg>
+                          <span class="delete-btn-label">{t('admin.action.delete', language)}</span>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       </section>
 
@@ -430,7 +505,11 @@ const i18nBundle = {
   .kcc-wrap {
     position: relative;
     z-index: 1;
-    max-width: 760px;
+    /* Knowledge Catalog table needs significantly more horizontal room
+       than the previous card list. Cap at 1600px so ultra-wide monitors
+       don't stretch every column to absurd widths, but give standard
+       desktops the full 9-column width without horizontal scroll. */
+    max-width: 1600px;
     margin: 0 auto;
     padding: 64px 28px 96px;
   }
@@ -520,85 +599,242 @@ const i18nBundle = {
     letter-spacing: 0.04em;
   }
 
-  /* ── Books grid ─────────────────────────────────────────── */
+  /* ── Knowledge Catalog table ─────────────────────────────
+     Wide management table replacing the previous card list. Built on
+     <table> so the column widths balance naturally across rows and the
+     header can stick under the global Yuval header. The container is
+     a glass panel with overflow-x:auto so narrow viewports get a
+     horizontal scrollbar instead of crushing the columns.
 
-  .books-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
+     Class .book-card is kept on each <tr> on purpose — every JS
+     selector in this file (delete, paintCardFromMetadata, series
+     detection, updateStats) targets `.book-card[data-slug]`, so
+     reusing the class keeps the existing logic untouched.
+     ───────────────────────────────────────────────────────── */
 
-  .book-card {
-    display: flex;
-    align-items: center;
-    gap: 18px;
+  /* The wrap is the visual panel only — NO `overflow-x: auto` here.
+     Reason: a wrapper with overflow-x:auto becomes a scroll container,
+     which then captures `position: sticky` from the inner <th>s. The
+     sticky header would compute its `top: …` relative to the wrapper
+     instead of the page, and end up pushed *below* the first row.
+     Horizontal scroll on narrow viewports is handled by the page
+     itself (or by a future inner scroll container that does not host
+     the sticky header). */
+  .kcc-table-wrap {
     background: var(--kcc-surface);
     border: 1px solid var(--kcc-rim);
     border-radius: 14px;
-    padding: 16px 20px;
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
-    transition:
-      background 200ms cubic-bezier(0.4, 0, 0.2, 1),
-      border-color 200ms cubic-bezier(0.4, 0, 0.2, 1),
-      transform 200ms cubic-bezier(0.4, 0, 0.2, 1),
-      box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1);
+    /* Inner glow so the table reads as one panel, not a flat rectangle. */
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.03),
+      0 8px 28px rgba(0, 0, 0, 0.25);
   }
 
-  .book-card:hover {
-    background: var(--kcc-surface-strong);
-    border-color: var(--kcc-rim-strong);
-    transform: translateY(-1px);
-    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+  .kcc-table {
+    width: 100%;
+    /* min-width keeps all 9 columns legible. Below this width the
+       wrapper scrolls horizontally instead of letting the title cell
+       collapse into one tight column. */
+    min-width: 1340px;
+    /* table-layout: fixed guarantees that <thead> column widths and
+       <tbody> column widths stay locked together — without it, the
+       first <tr> alone determines the layout and a long subtitle in
+       row N can shift later rows out of alignment with the header. */
+    table-layout: fixed;
+    border-collapse: separate;
+    border-spacing: 0;
+    color: var(--kcc-text);
   }
 
-  .book-monogram {
-    flex-shrink: 0;
-    width: 38px;
-    height: 38px;
-    display: grid;
-    place-items: center;
-    border-radius: 10px;
-    background: linear-gradient(180deg, #1d1d22 0%, #14141a 100%);
-    border: 1px solid var(--kcc-gold-rim);
-    color: var(--kcc-gold);
+  /* ── Sticky header ───────────────────────────────────────
+     Stick each <th> under the global Yuval header (~72px). Using
+     sticky on the <th>s — not on <thead> — works around the classic
+     border-collapse + sticky bug where the row's bottom border
+     disappears on scroll. */
+  .kcc-thead .kcc-th {
+    position: sticky;
+    top: 72px;
+    z-index: 2;
+    background: linear-gradient(180deg, #16161c 0%, #131318 100%);
+    color: var(--kcc-text-secondary);
     font-family: 'Spectral', 'Cardo', Georgia, serif;
-    font-size: 1.05rem;
+    font-size: 0.72rem;
     font-weight: 500;
-    letter-spacing: 0.02em;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    text-align: start;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--kcc-rim-strong);
+    white-space: nowrap;
   }
 
-  .book-info {
-    flex: 1;
+  .kcc-thead .kcc-th.col-actions,
+  .kcc-thead .kcc-th.col-count,
+  .kcc-thead .kcc-th.col-visibility {
+    text-align: center;
+  }
+
+  /* ── Body cells ──────────────────────────────────────────
+     Vertical-align top so the title cell — the only multi-line cell —
+     stacks cleanly while the rest of the row sits at the same line
+     height as the title. */
+  .kcc-td {
+    padding: 14px 14px;
+    border-bottom: 1px solid var(--kcc-rim);
+    font-size: 0.85rem;
+    color: var(--kcc-text);
+    vertical-align: top;
+    line-height: 1.45;
+  }
+
+  .kcc-tr:hover .kcc-td {
+    background: rgba(255, 255, 255, 0.02);
+  }
+
+  .kcc-tr:last-child .kcc-td {
+    border-bottom: none;
+  }
+
+  /* Column widths — explicit because table-layout:fixed needs them.
+     Title takes whatever's left; the rest are content-fit. Both <th>
+     and <td> read these widths so the header stays aligned with the
+     body on every viewport. */
+  .col-title       { width: auto; }
+  .col-type        { width: 110px; }
+  .col-series      { width: 160px; }
+  .col-category    { width: 170px; }
+  .col-visibility  { width: 120px; text-align: center; }
+  .col-progress    { width: 130px; }
+  .col-count       { width: 90px;  text-align: center; }
+  /* Actions column needs to fit all three buttons in Hebrew without
+     overflowing into the chapters column. Measured worst case:
+     "עריכת מטא-דאטה" + icon (~165px) + 6px gap + "ניקוי נתונים"
+     (~115px) + 6px gap + "מחיקה" + icon (~85px) ≈ 380px. */
+  .col-actions     { width: 380px; }
+
+  /* ── Title cell stack ────────────────────────────────────
+     The first column shows ONLY book title and subtitle. Slug,
+     monogram and other file-system identifiers were removed so the
+     row reads as editorial content, not an ops dump. Wrapping is
+     allowed without ellipsis — wide rows are the whole point of
+     this table. */
+  .kcc-title-stack {
     display: flex;
     flex-direction: column;
-    gap: 3px;
+    gap: 4px;
     min-width: 0;
   }
 
   .book-title {
-    font-size: 0.95rem;
+    font-family: 'Spectral', 'Cardo', Georgia, serif;
+    font-size: 1.0rem;
     font-weight: 500;
     color: var(--kcc-text);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
     letter-spacing: -0.005em;
+    /* Allow wrapping — explicit override of any inherited nowrap. */
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    overflow-wrap: anywhere;
+    line-height: 1.35;
   }
 
-  .book-slug {
+  .book-subtitle {
+    font-size: 0.82rem;
+    color: var(--kcc-text-secondary);
+    line-height: 1.45;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  /* ── Inline cell visuals ─────────────────────────────────
+     Each metadata column gets a small dedicated visual treatment so
+     the table reads at a glance instead of as a wall of grey text. */
+  .kcc-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: rgba(201, 169, 110, 0.1);
+    border: 1px solid var(--kcc-gold-rim);
+    color: var(--kcc-gold);
+    font-family: 'Spectral', 'Cardo', Georgia, serif;
     font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .kcc-muted {
     color: var(--kcc-text-muted);
-    font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
-    letter-spacing: 0.02em;
+    font-style: italic;
+    font-size: 0.8rem;
   }
 
-  .book-stats {
-    flex-shrink: 0;
+  .kcc-num {
+    display: inline-block;
+    min-width: 28px;
+    padding: 2px 10px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--kcc-rim);
+    color: var(--kcc-text);
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    font-size: 0.78rem;
+    text-align: center;
   }
 
-  .book-stats .stat {
+  .kcc-vis {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 3px 10px 3px 8px;
+    border-radius: 999px;
+    border: 1px solid var(--kcc-rim);
+    background: rgba(255, 255, 255, 0.03);
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    color: var(--kcc-text-secondary);
+    white-space: nowrap;
+  }
+
+  .kcc-vis-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--kcc-text-muted);
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4) inset;
+  }
+
+  .kcc-vis--on {
+    border-color: rgba(120, 200, 130, 0.32);
+    background: rgba(120, 200, 130, 0.08);
+    color: #9ad6a3;
+  }
+
+  .kcc-vis--on .kcc-vis-dot {
+    background: #6dd97f;
+    box-shadow: 0 0 8px rgba(120, 220, 140, 0.55);
+  }
+
+  .kcc-vis--off {
+    border-color: rgba(220, 38, 38, 0.28);
+    background: rgba(220, 38, 38, 0.06);
+    color: #f0a9a9;
+  }
+
+  .kcc-vis--off .kcc-vis-dot {
+    background: #d96d6d;
+  }
+
+  /* Reader-data stat retains the original pill look so existing JS
+     that swaps its text content keeps reading as the same widget. */
+  .stat {
     display: inline-block;
     padding: 4px 10px;
     border-radius: 999px;
@@ -611,12 +847,15 @@ const i18nBundle = {
     letter-spacing: 0.02em;
   }
 
+
   /* ── Actions: ghost buttons, destructive de-emphasised ── */
 
   .book-actions {
     display: flex;
     gap: 6px;
     flex-shrink: 0;
+    justify-content: flex-end;
+    flex-wrap: nowrap;
   }
 
   .clean-btn {
@@ -1535,6 +1774,23 @@ const i18nBundle = {
 
   /* ── Responsive ─────────────────────────────────────────── */
 
+  /* On narrow viewports the table keeps its column layout but the
+     wrapper scrolls horizontally — this is a management surface, not a
+     phone-first reading experience, so a clean horizontal scroll is the
+     right tradeoff. We only trim the global page chrome and tighten
+     paddings inside cells. */
+  @media (max-width: 880px) {
+    .kcc-th,
+    .kcc-td {
+      padding: 12px 12px;
+    }
+
+    .delete-btn-label,
+    .edit-btn-label {
+      display: none;
+    }
+  }
+
   @media (max-width: 640px) {
     .kcc-wrap {
       padding: 36px 18px 64px;
@@ -1544,28 +1800,6 @@ const i18nBundle = {
       font-size: 1.75rem;
     }
 
-    .book-card {
-      flex-wrap: wrap;
-      gap: 12px;
-      padding: 14px 16px;
-    }
-
-    .book-info {
-      flex: 1 1 calc(100% - 56px);
-    }
-
-    .book-stats {
-      order: 3;
-    }
-
-    .book-actions {
-      order: 4;
-      width: 100%;
-      justify-content: flex-end;
-      padding-top: 8px;
-      border-top: 1px solid var(--kcc-rim);
-    }
-
     .global-card {
       flex-direction: column;
       align-items: stretch;
@@ -1573,11 +1807,6 @@ const i18nBundle = {
 
     .clean-btn--global {
       align-self: flex-start;
-    }
-
-    .delete-btn-label,
-    .edit-btn-label {
-      display: none;
     }
 
     .meta-drawer-panel {
@@ -1637,6 +1866,14 @@ const i18nBundle = {
     seriesEditTitle: string;
     seriesTagCapsule: string;
     toastSeriesSaved: string;
+    cellEmpty: string;
+    cellVisible: string;
+    cellHidden: string;
+    cellNoSeries: string;
+    cellNoCategory: string;
+    optionBook: string;
+    optionCourse: string;
+    optionArticle: string;
   };
 
   const i18nRoot = document.querySelector<HTMLElement>('.kcc-shell');
@@ -1851,15 +2088,68 @@ const i18nBundle = {
   let editingSlug: string | null = null;
   let returnFocusEl: HTMLElement | null = null;
 
+  function contentTypeLabel(t: ContentMetadata['contentType']): string {
+    switch (t) {
+      case 'course':  return i18n.optionCourse;
+      case 'article': return i18n.optionArticle;
+      case 'book':
+      default:        return i18n.optionBook;
+    }
+  }
+
   function paintCardFromMetadata(slug: string, meta: ContentMetadata) {
     const card = document.querySelector<HTMLElement>(`.book-card[data-slug="${slug}"]`);
     if (!card) return;
+
     const titleEl = card.querySelector<HTMLElement>('.book-title');
     if (titleEl) titleEl.textContent = meta.displayTitle;
+
     const monoEl = card.querySelector<HTMLElement>('.book-monogram');
     if (monoEl) {
       const ch = (meta.displayTitle || slug).trim().charAt(0).toUpperCase();
       monoEl.textContent = ch || '·';
+    }
+
+    // Knowledge Catalog table cells — each is identified by its
+    // data-cell attribute so the painter doesn't depend on column
+    // order. Missing cells (older markup, hypothetical pruning) are
+    // simply skipped, never thrown.
+    const typeCell = card.querySelector<HTMLElement>('[data-cell="type"]');
+    if (typeCell) typeCell.textContent = contentTypeLabel(meta.contentType);
+
+    const seriesCell = card.querySelector<HTMLElement>('[data-cell="series"]');
+    if (seriesCell) {
+      seriesCell.replaceChildren();
+      const trimmed = meta.seriesName.trim();
+      if (trimmed) {
+        seriesCell.textContent = trimmed;
+      } else {
+        const muted = document.createElement('span');
+        muted.className = 'kcc-muted';
+        muted.textContent = i18n.cellNoSeries;
+        seriesCell.appendChild(muted);
+      }
+    }
+
+    const catCell = card.querySelector<HTMLElement>('[data-cell="category"]');
+    if (catCell) {
+      const stored = meta.category.trim();
+      // Only overwrite when the editor has typed something. Otherwise
+      // keep the SSR-rendered category from the book-manifest catalog
+      // so the cell stays useful before any editorial input.
+      if (stored) {
+        catCell.replaceChildren();
+        catCell.textContent = stored;
+      }
+    }
+
+    const visCell = card.querySelector<HTMLElement>('[data-cell="visibility"]');
+    if (visCell) {
+      const on = meta.isVisibleInUniverse;
+      visCell.classList.toggle('kcc-vis--on', on);
+      visCell.classList.toggle('kcc-vis--off', !on);
+      const label = visCell.querySelector<HTMLElement>('.kcc-vis-label');
+      if (label) label.textContent = on ? i18n.cellVisible : i18n.cellHidden;
     }
   }
 

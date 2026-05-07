@@ -595,6 +595,25 @@ export const translations: Translations = {
   'admin.toast.networkError':            { he: 'שגיאת רשת: {{msg}}',                                  en: 'Network error: {{msg}}',                                              es: 'Error de red: {{msg}}' },
   'admin.toast.metadataSaved':           { he: 'המטא-דאטה נשמרה עבור "{{title}}"',                    en: 'Metadata saved for "{{title}}"',                                      es: 'Metadatos guardados para "{{title}}"' },
 
+  // ── admin.column.* — Knowledge Catalog table column headers ────────────
+  // Used by the wide table layout that replaces the previous card list.
+  // Column titles are short so the header bar fits on a typical desktop
+  // viewport even with all 9 columns visible.
+  'admin.column.item':                   { he: 'שם ספר',         en: 'Book name',    es: 'Nombre del libro' },
+  'admin.column.type':                   { he: 'סוג',            en: 'Type',         es: 'Tipo' },
+  'admin.column.series':                 { he: 'סדרה',           en: 'Series',       es: 'Serie' },
+  'admin.column.category':               { he: 'קטגוריה',        en: 'Category',     es: 'Categoría' },
+  'admin.column.visibility':             { he: 'גלויות',          en: 'Visibility',   es: 'Visibilidad' },
+  'admin.column.progress':               { he: 'נתוני קריאה',     en: 'Reader data',  es: 'Datos del lector' },
+  'admin.column.chapters':               { he: 'פרקים',          en: 'Chapters',     es: 'Capítulos' },
+  'admin.column.actions':                { he: 'פעולות',         en: 'Actions',      es: 'Acciones' },
+
+  'admin.cell.empty':                    { he: '—',              en: '—',            es: '—' },
+  'admin.cell.visible':                  { he: 'גלוי',           en: 'Visible',      es: 'Visible' },
+  'admin.cell.hidden':                   { he: 'מוסתר',          en: 'Hidden',       es: 'Oculto' },
+  'admin.cell.noSeries':                 { he: 'ללא סדרה',       en: 'No series',    es: 'Sin serie' },
+  'admin.cell.noCategory':               { he: 'ללא קטגוריה',    en: 'No category',  es: 'Sin categoría' },
+
   // ── admin.series.* — Series Management on /admin ───────────────────────
   // A series is detected when ≥1 content items share the same non-empty
   // seriesName. The admin section lets the project owner edit the
