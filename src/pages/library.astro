@@ -997,57 +997,87 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       display: flex;
       flex-direction: column;
       gap: 0.5rem;
-      padding: 0.95rem 0.95rem 0.85rem;
-      border-radius: 14px;
+      padding: 1rem 1.05rem 0.9rem;
+      padding-inline-start: 1.15rem;
+      /* Restrained asymmetry — the inline-start/block-end corner is
+         tighter so the capsule reads as a grounded container, not as
+         a floating chip. Logical so RTL flips automatically. */
+      border-radius: 22px;
+      border-end-start-radius: 14px;
       /* Use the editorial series color when set; fall back to the gold
          accent so a freshly-tagged series still reads as a series. */
       --series-color-resolved: var(--series-color, var(--yuval-galaxy-accent-gold, #c9a96e));
       background:
+        /* Atmospheric inner glow from the top, painted with the series
+           color. Lives in the background stack (not a pseudo-element)
+           so children render above it without z-index gymnastics. */
+        radial-gradient(
+          ellipse 70% 55% at 50% 0%,
+          color-mix(in srgb, var(--series-color-resolved) 16%, transparent) 0%,
+          transparent 65%
+        ),
         linear-gradient(
           180deg,
-          color-mix(in srgb, var(--series-color-resolved) 14%, transparent) 0%,
-          color-mix(in srgb, var(--series-color-resolved) 6%, transparent) 60%,
-          color-mix(in srgb, var(--yuval-galaxy-bg, #00010d) 78%, transparent) 100%
+          color-mix(in srgb, var(--series-color-resolved) 10%, transparent) 0%,
+          color-mix(in srgb, var(--series-color-resolved) 4%, transparent) 60%,
+          color-mix(in srgb, var(--yuval-galaxy-bg, #00010d) 82%, transparent) 100%
         ),
         var(--yuval-galaxy-card-surface, rgba(20, 22, 36, 0.78));
-      border: 1px solid color-mix(in srgb, var(--series-color-resolved) 45%, transparent);
+      /* Two-layer luminous border — hairline outer ring + a slightly
+         stronger inner edge — for a refined, lit-from-within feel. */
+      border: 1px solid color-mix(in srgb, var(--series-color-resolved) 32%, transparent);
       box-shadow:
-        0 14px 38px -14px color-mix(in srgb, var(--series-color-resolved) 55%, transparent),
-        inset 0 1px 0 color-mix(in srgb, var(--series-color-resolved) 22%, transparent);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
+        0 10px 26px -16px color-mix(in srgb, var(--series-color-resolved) 42%, transparent),
+        0 0 0 1px color-mix(in srgb, var(--series-color-resolved) 12%, transparent),
+        inset 0 1px 0 color-mix(in srgb, var(--series-color-resolved) 18%, transparent);
+      backdrop-filter: blur(14px) saturate(125%);
+      -webkit-backdrop-filter: blur(14px) saturate(125%);
+      transition:
+        border-color 240ms ease,
+        box-shadow 240ms ease;
     }
 
-    /* Capsule edge indicator — a thin colored bar along the inline-start
+    /* Capsule edge indicator — a thin luminous bar along the inline-start
        side, painted in the series color. Echoes the series swatch on
        /admin so the same color identifies the same series everywhere. */
     .galaxy-series-capsule::before {
       content: "";
       position: absolute;
-      inset-block: 12px;
+      inset-block: 16px;
       inset-inline-start: 0;
-      width: 3px;
-      border-radius: 0 3px 3px 0;
+      width: 2px;
+      border-radius: 0 2px 2px 0;
       background: var(--series-color-resolved);
-      opacity: 0.85;
+      opacity: 0.7;
+      box-shadow: 0 0 8px color-mix(in srgb, var(--series-color-resolved) 60%, transparent);
     }
     [dir="rtl"] .galaxy-series-capsule::before {
-      border-radius: 3px 0 0 3px;
+      border-radius: 2px 0 0 2px;
+    }
+
+    /* Restrained hover — slightly lift the border luminosity and the
+       inner edge, no large bloom. The universe should feel calm. */
+    .galaxy-card[data-role="series"]:hover .galaxy-series-capsule {
+      border-color: color-mix(in srgb, var(--series-color-resolved) 48%, transparent);
+      box-shadow:
+        0 12px 30px -16px color-mix(in srgb, var(--series-color-resolved) 50%, transparent),
+        0 0 0 1px color-mix(in srgb, var(--series-color-resolved) 18%, transparent),
+        inset 0 1px 0 color-mix(in srgb, var(--series-color-resolved) 24%, transparent);
     }
 
     .galaxy-series-badge {
       align-self: flex-start;
       display: inline-flex;
       align-items: center;
-      padding: 2px 9px;
+      padding: 2px 10px;
       border-radius: 999px;
-      background: color-mix(in srgb, var(--series-color-resolved) 18%, transparent);
-      border: 1px solid color-mix(in srgb, var(--series-color-resolved) 55%, transparent);
+      background: color-mix(in srgb, var(--series-color-resolved) 16%, transparent);
+      border: 1px solid color-mix(in srgb, var(--series-color-resolved) 50%, transparent);
       color: var(--series-color-resolved);
       font-family: 'Spectral', 'Cardo', Georgia, serif;
       font-size: 0.66rem;
       font-weight: 500;
-      letter-spacing: 0.12em;
+      letter-spacing: 0.14em;
       text-transform: uppercase;
       line-height: 1.4;
     }
@@ -1055,11 +1085,11 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
     .galaxy-series-name {
       margin: 0;
       font-family: 'Spectral', 'Cardo', Georgia, serif;
-      font-size: 1.02rem;
+      font-size: 1.12rem;
       font-weight: 500;
-      line-height: 1.25;
+      line-height: 1.2;
       color: var(--yuval-galaxy-text, #ececea);
-      letter-spacing: -0.005em;
+      letter-spacing: -0.01em;
       /* Allow up to 2 lines — series names tend to be longer than book titles. */
       display: -webkit-box;
       -webkit-line-clamp: 2;
@@ -1071,25 +1101,56 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
     .galaxy-series-counts {
       display: flex;
       flex-direction: column;
-      gap: 2px;
+      gap: 1px;
       margin-top: 2px;
     }
 
     .galaxy-series-count-line {
-      font-size: 0.74rem;
+      font-size: 0.72rem;
       color: var(--yuval-galaxy-text-secondary, var(--yuval-galaxy-text-muted, #a8a8a4));
-      line-height: 1.4;
+      line-height: 1.45;
       letter-spacing: 0.005em;
     }
 
     .galaxy-series-count-line strong {
       color: var(--yuval-galaxy-text, #ececea);
-      font-weight: 600;
-      margin-inline-end: 0.25rem;
+      font-family: 'Spectral', 'Cardo', Georgia, serif;
+      font-size: 0.95rem;
+      font-weight: 500;
+      font-feature-settings: 'tnum' 1, 'lnum' 1;
+      margin-inline-end: 0.3rem;
     }
 
     .galaxy-series-count-available strong {
       color: var(--series-color-resolved);
+    }
+
+    /* Spine row — subtle density indicator, capped at 5. Each spine is
+       a thin vertical bar; filled spines use the series color, the rest
+       are dim placeholders. The :nth-child heights are a fixed, gentle
+       rhythm — not random — so the row reads as "books on a shelf"
+       without visual noise. */
+    .galaxy-series-stack {
+      display: flex;
+      align-items: flex-end;
+      gap: 3px;
+      height: 14px;
+      margin-top: 4px;
+    }
+    .galaxy-series-spine {
+      display: block;
+      width: 3px;
+      border-radius: 1px;
+      background: color-mix(in srgb, var(--series-color-resolved) 22%, transparent);
+      height: 11px;
+    }
+    .galaxy-series-spine:nth-child(2) { height: 13px; }
+    .galaxy-series-spine:nth-child(3) { height: 12px; }
+    .galaxy-series-spine:nth-child(4) { height: 14px; }
+    .galaxy-series-spine:nth-child(5) { height: 12px; }
+    .galaxy-series-spine.is-filled {
+      background: var(--series-color-resolved);
+      opacity: 0.78;
     }
 
     /* Centered focus state — overrides the orbit transform so the card

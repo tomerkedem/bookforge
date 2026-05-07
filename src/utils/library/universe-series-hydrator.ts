@@ -393,6 +393,30 @@ function buildSeriesCapsuleCard(opts: SeriesNodeOpts): HTMLElement {
   counts.appendChild(availLine);
 
   capsule.appendChild(counts);
+
+  // Subtle density indicator — a row of book-spine markers capped at 5.
+  // For small series (≤5) we render one spine per item; for larger
+  // series we render 5 spines and scale the filled count so the row
+  // reads as density, not literal counting.
+  const cap = 5;
+  const totalShown = Math.min(opts.total, cap);
+  const filledShown =
+    opts.total <= cap
+      ? Math.min(opts.available, totalShown)
+      : Math.round((opts.available / opts.total) * cap);
+  if (totalShown > 0) {
+    const stack = document.createElement('div');
+    stack.className = 'galaxy-series-stack';
+    stack.setAttribute('aria-hidden', 'true');
+    for (let i = 0; i < totalShown; i++) {
+      const spine = document.createElement('span');
+      spine.className =
+        'galaxy-series-spine' + (i < filledShown ? ' is-filled' : '');
+      stack.appendChild(spine);
+    }
+    capsule.appendChild(stack);
+  }
+
   card.appendChild(capsule);
   return card;
 }
