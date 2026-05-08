@@ -1171,12 +1171,15 @@ const extraTopics = topics.length - topicChips.length;
     overflow: hidden;
     transform: scale(1.5);
     transform-origin: center;
-    /* Symmetric vertical reservation, tuned just slightly above the
-       1.5× visual bleed (~21 % of the card's inline size) so the
-       title above and the subtitle below sit very close to the
-       image's visible edges without ever overlapping it. With the
-       flex gap zeroed out, this margin IS the entire spacing. */
-    margin-block: 22.5%;
+    /* Tight vertical reservation. The PNG has internal transparent
+       padding that the previous "just-clears-the-1.5×-bleed" margin
+       (~22 %) could not remove on its own — the visible artwork
+       still appeared to float well inside its bounding box. Pulling
+       the margin down to ~4.5 % lets the title and subtitle sit
+       against the visible artwork edge: any layout overlap eaten
+       by the transform's bleed lands inside the PNG's transparent
+       padding, so visually nothing collides. */
+    margin-block: 15%;
     /* Smooth scale-in when the card is promoted to the center, matching
        the orbit's transform timing so the card-scale and image-scale
        glide together. */
