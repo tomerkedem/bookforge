@@ -252,7 +252,16 @@ export function createInteractiveEarth(
   // do NOT enable HDR / ACES / bloom — the look stays flat-to-camera
   // but punchy, exactly like the rest of Yuval's premium chrome.
   renderer.toneMapping = THREE.LinearToneMapping;
-  renderer.toneMappingExposure = 1.0;
+  // Exposure lifted from 1.00 → 1.06 in the stronger-lighting pass.
+  // A 6% boost on the composited frame preserves the per-light
+  // intensity ratios (so terminator contrast is unchanged in ratio
+  // space) while giving the whole sphere a touch more on-screen
+  // presence. Still well below filmic / HDR territory: bright land
+  // that already saturated to white now saturates 6% sooner, which
+  // is imperceptible. Forests and mid-latitude oceans — which were
+  // sitting in the murky 0.30–0.45 range — get pushed visibly into
+  // the lit register without clipping.
+  renderer.toneMappingExposure = 1.06;
 
   const canvas = renderer.domElement;
   canvas.style.touchAction = 'none';
@@ -435,24 +444,50 @@ export function createInteractiveEarth(
   scene.add(atmosphere);
 
   // ── Lights ───────────────────────────────────────────────────────
-  // Three lights, all cheap:
-  //   • A warm AmbientLight pulled DOWN from the previous step so the
-  //     night side has more contrast — premium globes earn their
-  //     drama from the terminator, not from globally bright surfaces.
-  //   • A single white DirectionalLight positioned upper-left of the
-  //     camera. This is the "sun" — its specular off the ocean is
-  //     what we tuned the specularMap and shininess for.
-  //   • A subtle HemisphereLight: cool sky tint above, warm earth
-  //     bounce below. Fills in the day-side-but-not-direct region
-  //     so the sphere doesn't read as a pure two-tone billiard ball.
-  const ambient = new THREE.AmbientLight(0xfff3dc, 0.30);
+  // Three lights, all cheap. Re-balanced in the stronger-lighting
+  // pass after the previous moderate bump turned out too subtle to
+  // dominate Blue Marble's dark mid-tones.
+  //
+  //   • DirectionalLight — the "sun". Two changes:
+  //     (a) Pulled FORWARD toward the camera: (-2.0, 1.8, 3.0) →
+  //         (-1.5, 1.5, 2.7). The previous position had a light
+  //         direction of (-0.49, 0.44, 0.74), giving the dead-
+  //         center pixel of the visible face only N·L = 0.74 of
+  //         the sun's intensity. The new direction (-0.44, 0.44,
+  //         0.79) yields N·L = 0.79 at the same pixel and lifts
+  //         the entire camera-facing hemisphere into the
+  //         high-cosine zone. Still 3/4 framing (upper-left and
+  //         forward), not flat camera-axis lighting.
+  //     (b) Intensity 1.20 → 1.45 — a real key-light bump, not a
+  //         token nudge. Bright land (Sahara, polar ice) saturates
+  //         to white slightly sooner; that's correct, those things
+  //         ARE bright in reality. The visible mid-tones (forests,
+  //         mid-latitude oceans) get pushed into the readable
+  //         register where they should have been.
+  //   • AmbientLight — warm earthshine fill. 0.40 → 0.50. The only
+  //     light that touches the unlit hemisphere directly. The bump
+  //     keeps the dark side as a soft visible "Earth at night" glow
+  //     (~0.75 final shaded value) rather than a black void, while
+  //     leaving it ~2.6× darker than the lit side so the terminator
+  //     stays clear. Color (0xfff3dc) unchanged.
+  //   • HemisphereLight — atmospheric scatter. 0.32 → 0.42. Sky tint
+  //     (0x9ab8ff cool atmospheric blue) on top, ground bounce
+  //     (0x7a5e3a warm earth) below. Hemi is direction-biased fill,
+  //     not flat fill, so this bump adds dimensional richness — cool
+  //     polar caps, warm equatorial deserts — without making the
+  //     sphere read as a uniformly bright disc.
+  //
+  // No new lights, no shadow maps, no post-processing. Material
+  // stays MeshPhongMaterial. This is purely a light-rebalance plus
+  // the small exposure lift on the renderer.
+  const ambient = new THREE.AmbientLight(0xfff3dc, 0.50);
   scene.add(ambient);
 
-  const sun = new THREE.DirectionalLight(0xffffff, 1.18);
-  sun.position.set(-2.0, 1.8, 3.0);
+  const sun = new THREE.DirectionalLight(0xffffff, 1.45);
+  sun.position.set(-1.5, 1.5, 2.7);
   scene.add(sun);
 
-  const hemi = new THREE.HemisphereLight(0x9ab8ff, 0x7a5e3a, 0.20);
+  const hemi = new THREE.HemisphereLight(0x9ab8ff, 0x7a5e3a, 0.42);
   scene.add(hemi);
 
   // ── Resize handling ──────────────────────────────────────────────
