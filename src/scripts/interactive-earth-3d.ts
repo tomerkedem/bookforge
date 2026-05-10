@@ -11,21 +11,29 @@
  * component. This module has no knowledge of language codes; it just
  * accepts an optional initial focus point as { lat, lng } in degrees.
  *
- * Lifecycle contract:
+ * Lifecycle contract (unchanged from earlier steps):
  *   - createInteractiveEarth(container, options) builds the scene,
  *     mounts a single canvas inside `container`, starts the rAF loop,
  *     and returns a handle.
- *   - handle.setIdleRotation(false) pauses the rAF loop without tearing
- *     anything down — the host calls this when the overlay closes so
- *     a re-open is instant and no second canvas is ever created.
+ *   - handle.setIdleRotation(false) pauses the rAF loop without
+ *     tearing anything down — re-open is instant; no second canvas.
  *   - handle.destroy() stops the loop, removes listeners, disposes
  *     geometries / materials / textures / renderer, and removes the
- *     canvas from the DOM. The host calls this on `astro:before-swap`
- *     and on `beforeunload` so view transitions and full page exits
- *     don't leak GPU resources.
+ *     canvas from the DOM. Called on `astro:before-swap` and
+ *     `beforeunload` so view transitions and full page exits don't
+ *     leak GPU resources.
  *   - handle.focusLatLng(lat, lng) snaps the globe so a point faces
- *     the camera. Used today for initial focus only; the future
- *     header→center launch animation will animate this instead.
+ *     the camera. Used today for initial focus only.
+ *
+ * Visual layers (back-to-front in render order):
+ *   1. Earth sphere — color map (canvas-generated, refined continents)
+ *      + specular map (ocean glints, land matte) on MeshPhongMaterial.
+ *   2. Cloud sphere — child of Earth at radius 1.012, MeshLambertMaterial
+ *      with alpha-blended cloud texture; drifts slightly faster than
+ *      the Earth so the atmosphere reads as alive.
+ *   3. Atmosphere halo — back-side sphere at radius 1.06 with a
+ *      Fresnel-style ShaderMaterial in additive blend mode. Cyan rim,
+ *      no bloom, no post-processing.
  */
 
 import * as THREE from 'three';
@@ -58,11 +66,103 @@ export interface InteractiveEarthHandle {
 const DEG = Math.PI / 180;
 const POLE_CLAMP = Math.PI / 2 - 0.05;
 
+/**
+ * Continent silhouettes in (lat, lng) pairs, traced clockwise around
+ * each landmass. Vertex counts are deliberate: dense enough to read as
+ * organic at full overlay size (~440 px wide), sparse enough that the
+ * texture generator runs in well under one frame on first open.
+ *
+ * These polygons are NOT cartographically accurate. They're meant to
+ * be recognizable as continents at a glance, not to support
+ * navigation. Pre-rendered into the color and specular maps.
+ */
+const CONTINENT_POLYGONS: ReadonlyArray<ReadonlyArray<readonly [number, number]>> = [
+  // Africa — the prototypical continent silhouette: northern Sahara
+  // bulge, eastern Horn, southern Cape, western Gulf-of-Guinea curve.
+  [
+    [37, -5], [37, 4], [35, 11], [33, 19], [32, 27], [31, 32], [29, 34],
+    [22, 36], [16, 39], [12, 42], [9, 49], [3, 49], [-2, 41],
+    [-12, 40], [-20, 36], [-26, 33], [-30, 30], [-33, 26], [-34, 22],
+    [-34, 18], [-30, 16], [-25, 14], [-15, 11], [-5, 8], [4, 5],
+    [9, -2], [12, -10], [15, -16], [22, -17], [27, -14], [32, -10], [35, -8],
+  ],
+  // Eurasia — single big landmass; peninsulas (Iberia, Italy, Korea)
+  // are blended into the perimeter rather than rendered separately,
+  // which reads cleaner at this scale than detailed coastline.
+  [
+    [40, -10], [44, -10], [50, -5], [55, -5], [60, 5], [65, 12],
+    [70, 25], [72, 40], [78, 55], [78, 75], [78, 95], [76, 115],
+    [73, 130], [68, 142], [60, 160], [52, 168], [50, 158], [44, 148],
+    [39, 142], [35, 138], [32, 130], [28, 124], [22, 115], [12, 110],
+    [8, 100], [12, 98], [16, 95], [22, 92], [25, 88], [22, 80], [15, 78],
+    [10, 78], [8, 80], [12, 70], [22, 70], [22, 60], [12, 50],
+    [12, 45], [25, 38], [33, 35], [38, 28], [40, 22], [42, 14],
+    [44, 6], [44, -3], [42, -8],
+  ],
+  // North America — from Aleutians around the Arctic, down the East
+  // Coast, around the Gulf, up Mexico, back to Alaska.
+  [
+    [72, -160], [78, -120], [78, -90], [70, -75], [62, -60], [50, -55],
+    [42, -65], [38, -75], [32, -78], [28, -80], [25, -85], [22, -97],
+    [18, -94], [16, -90], [16, -100], [25, -110], [32, -116], [42, -125],
+    [50, -130], [58, -135], [65, -150], [70, -165],
+  ],
+  // South America — narrow vertical mass with the Andean west-coast
+  // bulge and the Patagonian taper at the south.
+  [
+    [12, -82], [10, -75], [10, -65], [5, -55], [0, -48], [-5, -36],
+    [-15, -38], [-22, -42], [-30, -50], [-38, -58], [-45, -65], [-52, -70],
+    [-55, -68], [-50, -73], [-40, -73], [-30, -73], [-20, -75],
+    [-10, -78], [-2, -80], [5, -80], [10, -80],
+  ],
+  // Australia.
+  [
+    [-12, 113], [-12, 130], [-15, 145], [-22, 152], [-30, 153],
+    [-37, 148], [-39, 143], [-37, 138], [-32, 128], [-30, 116],
+    [-22, 113],
+  ],
+  // Greenland.
+  [
+    [83, -45], [80, -25], [76, -22], [70, -25], [64, -42], [62, -52],
+    [70, -60], [78, -68], [82, -55],
+  ],
+  // Madagascar.
+  [
+    [-12, 49], [-15, 50], [-18, 49], [-22, 47], [-25, 45], [-23, 44],
+    [-17, 44], [-13, 46],
+  ],
+  // New Guinea.
+  [
+    [-1, 132], [-2, 138], [-6, 145], [-10, 150], [-9, 144], [-7, 138], [-3, 134],
+  ],
+  // British Isles — small but characteristic at the NW edge of Eurasia.
+  [
+    [60, -2], [58, -4], [55, -6], [51, -5], [50, -2], [52, 1], [55, 0], [58, -1],
+  ],
+  // Iceland.
+  [
+    [66, -23], [65, -15], [63, -16], [63, -22], [65, -25],
+  ],
+  // Japan — three connected blobs read as the archipelago.
+  [
+    [44, 144], [40, 141], [35, 137], [33, 135], [37, 138], [40, 141], [43, 144],
+  ],
+  // New Zealand (north + south islands as one outline at this scale).
+  [
+    [-35, 174], [-37, 176], [-41, 175], [-44, 171], [-46, 167],
+    [-43, 169], [-40, 173], [-37, 174],
+  ],
+];
+
 export function createInteractiveEarth(
   container: HTMLElement,
   options: InteractiveEarthOptions = {}
 ): InteractiveEarthHandle {
   const idleSpeed = options.idleSpeed ?? 0.06; // ≈ 3.4°/sec
+  // Cloud drift relative to the Earth surface — a touch faster than
+  // the planet so atmosphere reads as alive without becoming the
+  // focal point. Tuned by eye on the overlay's 440 px stage.
+  const cloudDriftSpeed = idleSpeed * 0.32;
 
   // ── Scene ────────────────────────────────────────────────────────
   const scene = new THREE.Scene();
@@ -77,9 +177,12 @@ export function createInteractiveEarth(
   });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.setClearColor(0x000000, 0);
-  // Slight tone-mapped output keeps highlights from clipping when the
-  // directional light hits the ocean specular at glancing angles.
+  // Linear tone-mapping keeps the ocean specular from clipping when
+  // the directional light hits it at glancing angles. We deliberately
+  // do NOT enable HDR / ACES / bloom — the look stays flat-to-camera
+  // but punchy, exactly like the rest of Yuval's premium chrome.
   renderer.toneMapping = THREE.LinearToneMapping;
+  renderer.toneMappingExposure = 1.0;
 
   const canvas = renderer.domElement;
   canvas.style.touchAction = 'none';
@@ -89,12 +192,28 @@ export function createInteractiveEarth(
   canvas.setAttribute('aria-hidden', 'true');
   container.appendChild(canvas);
 
+  const maxAniso = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+
   // ── Earth sphere ─────────────────────────────────────────────────
-  const earthTexture = generateEarthTexture();
+  // Three textures, all CPU-generated, all disposable:
+  //   • colorTex — RGB Earth surface (1536×768)
+  //   • specularTex — grayscale specular intensity (768×384)
+  //   • cloudTex — RGBA cloud cover (1024×512)
+  // No remote assets. Total GPU memory ≈ 7 MB.
+  const colorTex = generateEarthColorTexture(maxAniso);
+  const specularTex = generateEarthSpecularTexture(maxAniso);
+  const cloudTex = generateCloudTexture(maxAniso);
+
+  // The earth material is MeshPhongMaterial with a specularMap, which
+  // is what lets the ocean glint while the continents stay matte.
+  // Specular base color #3a5e8c reads as cool moonlight on water; the
+  // shininess of 90 keeps the highlight tight (a cinematic glint, not
+  // a plastic-toy hotspot).
   const earthMaterial = new THREE.MeshPhongMaterial({
-    map: earthTexture,
-    specular: new THREE.Color(0x2a4060),
-    shininess: 14,
+    map: colorTex,
+    specularMap: specularTex,
+    specular: new THREE.Color(0x3a5e8c),
+    shininess: 90,
   });
   const earthGeometry = new THREE.SphereGeometry(1, 96, 96);
   const earth = new THREE.Mesh(earthGeometry, earthMaterial);
@@ -107,10 +226,30 @@ export function createInteractiveEarth(
     earth.rotation.x = clamp(options.initialFocus.lat * DEG, -POLE_CLAMP, POLE_CLAMP);
   }
 
+  // ── Cloud layer ──────────────────────────────────────────────────
+  // Child of the Earth so dragging rotates them together. The
+  // cloudDrift in the rAF loop adds a tiny extra rotation so the
+  // clouds appear to glide across the surface over time. Lambert
+  // (not Phong) for the clouds: water vapor doesn't have a specular
+  // glint, so saving the highlight pass is a small win.
+  const cloudGeometry = new THREE.SphereGeometry(1.012, 64, 64);
+  const cloudMaterial = new THREE.MeshLambertMaterial({
+    map: cloudTex,
+    transparent: true,
+    opacity: 0.55,
+    depthWrite: false,
+  });
+  const clouds = new THREE.Mesh(cloudGeometry, cloudMaterial);
+  earth.add(clouds);
+
   // ── Atmospheric glow ─────────────────────────────────────────────
-  // Soft Fresnel halo via a back-side sphere with additive blending.
-  // No post-processing pass — this is a single extra mesh, ~12 KB on
-  // the GPU, and reads as "atmosphere" without bloom or tone mapping.
+  // Single back-side sphere at radius 1.06 with an additive Fresnel
+  // shader. No post-processing pass — this is one mesh, ~12 KB on
+  // GPU, and reads as "atmosphere" without bloom or HDR. The shader
+  // is unchanged in structure from the earlier step but tuned to a
+  // cooler tint (less cyan-saturated, more hazy) and a slightly
+  // sharper falloff so the atmosphere becomes a thinner halo
+  // instead of a soft cloud around the planet.
   const atmosphereGeometry = new THREE.SphereGeometry(1.06, 64, 64);
   const atmosphereMaterial = new THREE.ShaderMaterial({
     uniforms: {},
@@ -124,8 +263,13 @@ export function createInteractiveEarth(
     fragmentShader: /* glsl */ `
       varying vec3 vNormal;
       void main() {
-        float intensity = pow(0.85 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 3.5);
-        gl_FragColor = vec4(0.40, 0.65, 1.0, 1.0) * clamp(intensity * 0.7, 0.0, 1.0);
+        float rim = 1.0 - dot(vNormal, vec3(0.0, 0.0, 1.0));
+        float intensity = pow(clamp(rim, 0.0, 1.0), 4.0);
+        // Two-tone halo: cooler core, warmer edge as it fades out.
+        vec3 inner = vec3(0.36, 0.58, 0.96);
+        vec3 outer = vec3(0.62, 0.82, 1.00);
+        vec3 col = mix(inner, outer, smoothstep(0.0, 1.0, intensity));
+        gl_FragColor = vec4(col, 1.0) * clamp(intensity * 0.78, 0.0, 1.0);
       }
     `,
     blending: THREE.AdditiveBlending,
@@ -137,21 +281,30 @@ export function createInteractiveEarth(
   scene.add(atmosphere);
 
   // ── Lights ───────────────────────────────────────────────────────
-  // Soft warm ambient + a single directional sun, biased so the lit
-  // hemisphere lands roughly upper-right of the camera. Avoids the
-  // rim-only look pure ambient gives on a sphere.
-  const ambient = new THREE.AmbientLight(0xfff3dc, 0.42);
+  // Three lights, all cheap:
+  //   • A warm AmbientLight pulled DOWN from the previous step so the
+  //     night side has more contrast — premium globes earn their
+  //     drama from the terminator, not from globally bright surfaces.
+  //   • A single white DirectionalLight positioned upper-left of the
+  //     camera. This is the "sun" — its specular off the ocean is
+  //     what we tuned the specularMap and shininess for.
+  //   • A subtle HemisphereLight: cool sky tint above, warm earth
+  //     bounce below. Fills in the day-side-but-not-direct region
+  //     so the sphere doesn't read as a pure two-tone billiard ball.
+  const ambient = new THREE.AmbientLight(0xfff3dc, 0.30);
   scene.add(ambient);
 
-  const sun = new THREE.DirectionalLight(0xffffff, 1.05);
-  sun.position.set(-2.0, 1.6, 3.2);
+  const sun = new THREE.DirectionalLight(0xffffff, 1.18);
+  sun.position.set(-2.0, 1.8, 3.0);
   scene.add(sun);
 
+  const hemi = new THREE.HemisphereLight(0x9ab8ff, 0x7a5e3a, 0.20);
+  scene.add(hemi);
+
   // ── Resize handling ──────────────────────────────────────────────
-  // ResizeObserver covers both initial mount and any container size
-  // changes (e.g. orientation flip, overlay re-centering). The
-  // renderer.setSize call uses `false` for the third arg so it won't
-  // override the canvas's CSS sizing (we want CSS to drive layout).
+  // Same as before: ResizeObserver sizes the renderer + camera to the
+  // container. The third arg of setSize is `false` so the renderer
+  // doesn't override the canvas's CSS sizing.
   const sizeFromContainer = () => {
     const rect = container.getBoundingClientRect();
     const w = Math.max(1, Math.round(rect.width));
@@ -178,10 +331,6 @@ export function createInteractiveEarth(
     lastX = e.clientX;
     lastY = e.clientY;
     canvas.setPointerCapture(e.pointerId);
-    // While dragging the canvas should not also try to scroll the
-    // page on touch devices. touch-action:none on the canvas already
-    // covers this; calling preventDefault here on the down event is
-    // belt-and-suspenders for very old browsers.
     e.preventDefault();
   };
 
@@ -223,6 +372,13 @@ export function createInteractiveEarth(
     if (!dragging && idleSpeed > 0) {
       earth.rotation.y += idleSpeed * dt;
     }
+    // Clouds drift relative to Earth at all times — even while
+    // dragging — so the atmosphere stays alive when the user is
+    // exploring. The relative speed is small (~30% of idle), so a
+    // single drag still feels like rotating both together.
+    if (cloudDriftSpeed > 0) {
+      clouds.rotation.y += cloudDriftSpeed * dt;
+    }
     renderer.render(scene, camera);
     rafId = requestAnimationFrame(tick);
   };
@@ -241,13 +397,9 @@ export function createInteractiveEarth(
     }
   };
 
-  // First paint synchronously so the canvas isn't black for one frame
-  // when the overlay opens — even on slower devices this keeps the
-  // open feel instantaneous.
   renderer.render(scene, camera);
   startLoop();
 
-  // ── Public handle ────────────────────────────────────────────────
   return {
     canvas,
     destroy(): void {
@@ -262,9 +414,16 @@ export function createInteractiveEarth(
 
       resizeObserver.disconnect();
 
+      // Dispose every GPU-owned object we created. Children (clouds)
+      // are removed implicitly when their parent is removed; only
+      // their geometry/material/texture need explicit dispose.
       earthGeometry.dispose();
       earthMaterial.dispose();
-      earthTexture.dispose();
+      colorTex.dispose();
+      specularTex.dispose();
+      cloudGeometry.dispose();
+      cloudMaterial.dispose();
+      cloudTex.dispose();
       atmosphereGeometry.dispose();
       atmosphereMaterial.dispose();
       renderer.dispose();
@@ -294,152 +453,321 @@ function clamp(v: number, lo: number, hi: number): number {
   return v < lo ? lo : v > hi ? hi : v;
 }
 
+/** Mulberry32 — small deterministic PRNG, used so the cloud layout
+ *  is the same on every load. Avoids "different clouds every refresh"
+ *  flicker when the page is hot-reloaded. */
+function seededRandom(seed: number): () => number {
+  let s = seed >>> 0;
+  return function next(): number {
+    s = (s + 0x6D2B79F5) | 0;
+    let t = s;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/** Equirectangular projection helper, shared across all texture
+ *  generators so coastlines on color/specular maps line up exactly. */
+function makeProjector(w: number, h: number) {
+  return function project(lat: number, lng: number): [number, number] {
+    return [
+      ((lng + 180) / 360) * w,
+      ((90 - lat) / 180) * h,
+    ];
+  };
+}
+
+/** Trace a continent polygon onto the given context. Used by both the
+ *  color map (with a green/teal fill) and the specular map (with
+ *  pure black, since land has no ocean glint). */
+function fillContinents(
+  ctx: CanvasRenderingContext2D,
+  polygons: typeof CONTINENT_POLYGONS,
+  fill: string | CanvasGradient | CanvasPattern,
+  project: (lat: number, lng: number) => [number, number]
+): void {
+  ctx.fillStyle = fill;
+  for (const poly of polygons) {
+    if (poly.length < 3) continue;
+    ctx.beginPath();
+    const [lat0, lng0] = poly[0];
+    const [x0, y0] = project(lat0, lng0);
+    ctx.moveTo(x0, y0);
+    for (let i = 1; i < poly.length; i++) {
+      const [lat, lng] = poly[i];
+      const [x, y] = project(lat, lng);
+      ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.fill();
+  }
+}
+
 /**
- * Build a 1024×512 equirectangular texture for the Earth on a 2D
- * canvas. Pure CPU canvas drawing — no remote assets, no hotlinking.
- *
- * The continents are abstract polygons in lat/lng space, projected to
- * canvas pixels. They aren't cartographically accurate; the goal is
- * "this reads as Earth on a rotating sphere," not a navigation map.
+ * Build the Earth's RGB surface texture on a 2D canvas. Pure CPU
+ * drawing — no remote assets, no hotlinking.
  *
  * Layers (back to front):
- *   1. Ocean — vertical gradient (lighter equatorial, deeper poles)
- *   2. Continents — green/teal land gradient
- *   3. Polar caps — soft white bands at top/bottom
- *   4. Subtle horizontal noise band along the equator (faint cloud-ish)
+ *   1. Ocean — five-stop vertical gradient with deeper poles, lighter
+ *      equatorial band, and subtle horizontal banding for atmospheric
+ *      depth.
+ *   2. Coastline halo — same continents drawn slightly larger with a
+ *      desaturated darker fill + 3px blur, so the boundary between
+ *      land and water reads as a soft beach-edge instead of a hard
+ *      pixel cliff.
+ *   3. Continents — green/teal land gradient.
+ *   4. Polar ice caps — wavy band at top + bottom (not a flat
+ *      rectangle) so the planet doesn't look like a stamped circle.
+ *
+ * 1536×768 keeps continent edges sharp at the overlay's 440 px stage
+ * size while still fitting in ~4.7 MB of GPU memory.
  */
-function generateEarthTexture(): THREE.CanvasTexture {
+function generateEarthColorTexture(maxAniso: number): THREE.CanvasTexture {
+  const w = 1536;
+  const h = 768;
+  const canvas = document.createElement('canvas');
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return new THREE.CanvasTexture(canvas);
+
+  const project = makeProjector(w, h);
+
+  // ── Ocean ─────────────────────────────────────────────────────
+  // Five-stop gradient — equator brighter, poles deeper, mid-lats
+  // in between. Reads as a sphere already, before any continent is
+  // drawn, because the brightness peaks where the camera looks.
+  const ocean = ctx.createLinearGradient(0, 0, 0, h);
+  ocean.addColorStop(0.00, '#0a1a36');
+  ocean.addColorStop(0.18, '#0e2c5a');
+  ocean.addColorStop(0.42, '#1a4a7e');
+  ocean.addColorStop(0.50, '#2a5e95');
+  ocean.addColorStop(0.58, '#1a4a7e');
+  ocean.addColorStop(0.82, '#0e2c5a');
+  ocean.addColorStop(1.00, '#0a1a36');
+  ctx.fillStyle = ocean;
+  ctx.fillRect(0, 0, w, h);
+
+  // Subtle horizontal latitude bands — barely-perceptible alpha
+  // stripes so the ocean has texture without ever looking noisy.
+  for (let band = 0; band < 12; band++) {
+    const y = (band / 12) * h;
+    const a = 0.025 + (band % 2) * 0.012;
+    ctx.fillStyle = `rgba(255, 255, 255, ${a.toFixed(3)})`;
+    ctx.fillRect(0, y, w, h / 12);
+  }
+
+  // ── Coastline halo (drawn BEFORE continents) ────────────────
+  // A blurred, semi-transparent darker pass so the green-on-blue
+  // boundary has a soft atmospheric beach. Without this, continents
+  // sit on the ocean like decals; with it, the planet feels lit.
+  ctx.save();
+  ctx.filter = 'blur(3px)';
+  fillContinents(ctx, CONTINENT_POLYGONS, 'rgba(20, 50, 60, 0.45)', project);
+  ctx.restore();
+
+  // ── Continents ──────────────────────────────────────────────
+  // Three-stop vertical gradient: brighter mid-latitude greens,
+  // cooler near-arctic and arid-tropical edges. This mirrors how
+  // real biomes vary by latitude without requiring per-continent
+  // tinting.
+  const land = ctx.createLinearGradient(0, 0, 0, h);
+  land.addColorStop(0.00, '#3a6248');
+  land.addColorStop(0.30, '#5a8862');
+  land.addColorStop(0.50, '#6a9a6e');
+  land.addColorStop(0.70, '#5a8862');
+  land.addColorStop(1.00, '#3a5040');
+
+  fillContinents(ctx, CONTINENT_POLYGONS, land, project);
+
+  // Tiny island specks scattered through the Pacific/Indian — they
+  // never read as named islands, but they break the "blank ocean"
+  // monotony when the user rotates past them.
+  const islandRng = seededRandom(0xA15);
+  ctx.fillStyle = '#5a8862';
+  for (let i = 0; i < 24; i++) {
+    const lat = (islandRng() - 0.5) * 100; // -50..+50
+    const lng = islandRng() * 360 - 180;
+    const [x, y] = project(lat, lng);
+    const r = 1.5 + islandRng() * 2.5;
+    ctx.beginPath();
+    ctx.ellipse(x, y, r, r * 0.7, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // ── Polar caps with wavy edges ──────────────────────────────
+  // Antarctica.
+  ctx.fillStyle = 'rgba(228, 238, 250, 0.95)';
+  ctx.beginPath();
+  ctx.moveTo(0, h);
+  for (let lng = -180; lng <= 180; lng += 4) {
+    const wave = Math.sin(lng * 0.05) * 4 + Math.cos(lng * 0.12) * 2;
+    const lat = -68 + wave;
+    const [x, y] = project(lat, lng);
+    ctx.lineTo(x, y);
+  }
+  ctx.lineTo(w, h);
+  ctx.closePath();
+  ctx.fill();
+
+  // Arctic ice pack — wavy upper edge, slightly translucent so the
+  // ocean blue still bleeds through at the boundary. Otherwise the
+  // North Pole reads as a solid lid, which kills the spherical feel.
+  ctx.fillStyle = 'rgba(220, 232, 248, 0.78)';
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  for (let lng = -180; lng <= 180; lng += 4) {
+    const wave = Math.sin(lng * 0.04) * 3 + Math.cos(lng * 0.09) * 2;
+    const lat = 76 + wave;
+    const [x, y] = project(lat, lng);
+    ctx.lineTo(x, y);
+  }
+  ctx.lineTo(w, 0);
+  ctx.closePath();
+  ctx.fill();
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = maxAniso;
+  texture.needsUpdate = true;
+  return texture;
+}
+
+/**
+ * Build the Earth's specular map. Same continent silhouettes, but
+ * everything is grayscale: water = bright (high specular), land =
+ * dark (low specular), polar ice = mid-bright. Multiplied with the
+ * material's specular base color (#3a5e8c), this is what makes the
+ * ocean glint while the continents stay matte.
+ *
+ * Lower res than the color map (768×384) — specular is forgiving of
+ * downsampling because the highlight is a low-frequency feature.
+ */
+function generateEarthSpecularTexture(maxAniso: number): THREE.CanvasTexture {
+  const w = 768;
+  const h = 384;
+  const canvas = document.createElement('canvas');
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return new THREE.CanvasTexture(canvas);
+
+  const project = makeProjector(w, h);
+
+  // Ocean: bright (full specular).
+  ctx.fillStyle = '#dcecff';
+  ctx.fillRect(0, 0, w, h);
+
+  // Land: matte (zero specular).
+  fillContinents(ctx, CONTINENT_POLYGONS, '#000000', project);
+
+  // Polar ice caps: bright like ocean — ice has a specular sheen
+  // similar to open water.
+  ctx.fillStyle = '#e8f0ff';
+  ctx.beginPath();
+  ctx.moveTo(0, h);
+  for (let lng = -180; lng <= 180; lng += 6) {
+    const wave = Math.sin(lng * 0.05) * 4 + Math.cos(lng * 0.12) * 2;
+    const lat = -68 + wave;
+    const [x, y] = project(lat, lng);
+    ctx.lineTo(x, y);
+  }
+  ctx.lineTo(w, h);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  for (let lng = -180; lng <= 180; lng += 6) {
+    const wave = Math.sin(lng * 0.04) * 3 + Math.cos(lng * 0.09) * 2;
+    const lat = 76 + wave;
+    const [x, y] = project(lat, lng);
+    ctx.lineTo(x, y);
+  }
+  ctx.lineTo(w, 0);
+  ctx.closePath();
+  ctx.fill();
+
+  const texture = new THREE.CanvasTexture(canvas);
+  // Specular maps stay in linear space — they're not color, they're
+  // intensities. SRGBColorSpace would over-bright them.
+  texture.colorSpace = THREE.NoColorSpace;
+  texture.anisotropy = maxAniso;
+  texture.needsUpdate = true;
+  return texture;
+}
+
+/**
+ * Build the cloud layer's RGBA texture. White, soft-edged blobs
+ * scattered with a deterministic PRNG (so reloads look identical),
+ * weighted toward mid-latitudes where weather actually accumulates.
+ * Plus a faint equatorial band suggesting the ITCZ.
+ *
+ * The texture goes onto a separate sphere mesh at radius 1.012 so
+ * clouds can drift independently of the Earth's continents.
+ */
+function generateCloudTexture(maxAniso: number): THREE.CanvasTexture {
   const w = 1024;
   const h = 512;
   const canvas = document.createElement('canvas');
   canvas.width = w;
   canvas.height = h;
   const ctx = canvas.getContext('2d');
-  if (!ctx) {
-    // CanvasTexture will still construct from an empty canvas; the
-    // sphere just renders deep ocean color, which degrades gracefully.
-    return new THREE.CanvasTexture(canvas);
+  if (!ctx) return new THREE.CanvasTexture(canvas);
+
+  ctx.clearRect(0, 0, w, h);
+
+  const rng = seededRandom(0xC10D);
+
+  // Random cloud blobs — biased toward latitudes where real weather
+  // tends to gather (tropics + temperate). Skewed normal distribution
+  // approximated via two random samples averaged.
+  const numClouds = 48;
+  for (let i = 0; i < numClouds; i++) {
+    const latBias = (rng() + rng() - 1) * 60; // -60..60, peaked at 0
+    const lat = clamp(latBias + (rng() - 0.5) * 30, -75, 75);
+    const lng = rng() * 360 - 180;
+    const x = ((lng + 180) / 360) * w;
+    const y = ((90 - lat) / 180) * h;
+
+    // Vary cloud size + elongation for variety; bigger storm-system
+    // blobs interleaved with smaller wisp blobs.
+    const baseSize = 18 + rng() * 60;
+    const elongation = 0.5 + rng() * 1.6;
+    const angle = rng() * Math.PI * 2;
+
+    // Soft radial gradient — full alpha at the core fading to zero
+    // at the edge. Stacking a few blobs at the same point gives the
+    // "puffy" look without procedural noise.
+    const grad = ctx.createRadialGradient(x, y, 0, x, y, baseSize);
+    grad.addColorStop(0.0, 'rgba(255, 255, 255, 0.78)');
+    grad.addColorStop(0.4, 'rgba(255, 255, 255, 0.42)');
+    grad.addColorStop(0.8, 'rgba(255, 255, 255, 0.10)');
+    grad.addColorStop(1.0, 'rgba(255, 255, 255, 0.00)');
+
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(angle);
+    ctx.scale(elongation, 1);
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(0, 0, baseSize, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
   }
 
-  // Ocean — vertical gradient
-  const ocean = ctx.createLinearGradient(0, 0, 0, h);
-  ocean.addColorStop(0, '#082246');
-  ocean.addColorStop(0.5, '#0e3a72');
-  ocean.addColorStop(1, '#082246');
-  ctx.fillStyle = ocean;
-  ctx.fillRect(0, 0, w, h);
-
-  // Latitude/longitude → canvas pixels (equirectangular).
-  const xy = (lat: number, lng: number): [number, number] => [
-    ((lng + 180) / 360) * w,
-    ((90 - lat) / 180) * h,
-  ];
-
-  const land = ctx.createLinearGradient(0, 0, 0, h);
-  land.addColorStop(0, '#5b8a64');
-  land.addColorStop(0.55, '#3a7152');
-  land.addColorStop(1, '#23503c');
-
-  const drawBlob = (
-    coords: ReadonlyArray<readonly [number, number]>,
-    fill: string | CanvasGradient
-  ): void => {
-    ctx.fillStyle = fill;
-    ctx.beginPath();
-    coords.forEach(([lat, lng], i) => {
-      const [x, y] = xy(lat, lng);
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    });
-    ctx.closePath();
-    ctx.fill();
-  };
-
-  // ── Continents (rough lat/lng polygons) ────────────────────────
-  // Africa — single closed polygon traced clockwise from Morocco.
-  drawBlob([
-    [35, -10], [37, 0], [33, 12], [32, 22], [30, 32], [22, 38],
-    [12, 43], [2, 46], [-12, 40], [-22, 35], [-30, 30], [-35, 18],
-    [-25, 14], [-15, 12], [-5, 8], [5, 0], [12, -8], [20, -16], [30, -10],
-  ], land);
-
-  // Eurasia — Europe through far-east Asia.
-  drawBlob([
-    [60, -10], [70, 0], [72, 30], [78, 60], [78, 100], [72, 145],
-    [62, 175], [50, 160], [38, 142], [25, 122], [12, 108], [5, 102],
-    [10, 90], [22, 88], [25, 75], [22, 60], [25, 48], [38, 40],
-    [42, 28], [38, 18], [42, 8], [48, -2], [55, -8],
-  ], land);
-
-  // North America.
-  drawBlob([
-    [72, -160], [72, -110], [70, -85], [60, -65], [48, -60], [38, -72],
-    [25, -80], [22, -98], [16, -94], [22, -110], [40, -125], [55, -132],
-    [65, -150], [72, -165],
-  ], land);
-
-  // South America.
-  drawBlob([
-    [12, -78], [8, -60], [-2, -45], [-15, -38], [-25, -42], [-38, -58],
-    [-52, -68], [-55, -72], [-40, -73], [-22, -72], [-5, -78], [8, -82],
-  ], land);
-
-  // Australia.
-  drawBlob([
-    [-12, 113], [-12, 135], [-18, 148], [-30, 153], [-38, 145],
-    [-35, 122], [-25, 113],
-  ], land);
-
-  // Greenland — its own small mass, otherwise the planet looks bare
-  // when North America rotates out of view.
-  drawBlob([
-    [82, -55], [78, -20], [70, -22], [62, -50], [70, -55], [78, -62],
-  ], land);
-
-  // Indonesian island arc — a string of small blobs near the equator.
-  for (const [lat, lng] of [
-    [-2, 102], [-3, 115], [-5, 122], [-8, 128], [-1, 130],
-  ]) {
-    const [x, y] = xy(lat, lng);
-    ctx.fillStyle = land;
-    ctx.beginPath();
-    ctx.ellipse(x, y, 14, 6, 0, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  // British Isles + Iceland — same reason as Greenland.
-  for (const [lat, lng, rx, ry] of [
-    [54, -3, 12, 18],
-    [65, -19, 9, 7],
-    [40, 14, 7, 14], // Italy peninsula hint
-  ]) {
-    const [x, y] = xy(lat, lng);
-    ctx.fillStyle = land;
-    ctx.beginPath();
-    ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  // ── Polar caps ─────────────────────────────────────────────────
-  ctx.fillStyle = 'rgba(232, 240, 250, 0.85)';
-  ctx.fillRect(0, 0, w, h * 0.045);
-  ctx.fillRect(0, h * 0.955, w, h * 0.045);
-
-  // ── Subtle equatorial cloud band ───────────────────────────────
-  // A soft horizontal stripe with low alpha gives the texture a hint
-  // of atmosphere without requiring a separate cloud sphere or noise
-  // shader. Drawn after continents so it slightly veils them, which
-  // is realistic.
-  const cloud = ctx.createLinearGradient(0, h * 0.4, 0, h * 0.6);
-  cloud.addColorStop(0, 'rgba(255,255,255,0)');
-  cloud.addColorStop(0.5, 'rgba(255,255,255,0.07)');
-  cloud.addColorStop(1, 'rgba(255,255,255,0)');
-  ctx.fillStyle = cloud;
-  ctx.fillRect(0, h * 0.4, w, h * 0.2);
+  // Equatorial band (ITCZ feel) — very faint horizontal stripe.
+  const eq = ctx.createLinearGradient(0, h * 0.46, 0, h * 0.54);
+  eq.addColorStop(0.0, 'rgba(255, 255, 255, 0.00)');
+  eq.addColorStop(0.5, 'rgba(255, 255, 255, 0.10)');
+  eq.addColorStop(1.0, 'rgba(255, 255, 255, 0.00)');
+  ctx.fillStyle = eq;
+  ctx.fillRect(0, h * 0.46, w, h * 0.08);
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
-  texture.anisotropy = 4;
+  texture.anisotropy = maxAniso;
   texture.needsUpdate = true;
   return texture;
 }
