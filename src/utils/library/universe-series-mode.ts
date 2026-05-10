@@ -37,7 +37,25 @@
 import type { UniverseState } from './universe-series-hydrator';
 import { cssEscape } from './universe-angle-utils';
 
-export function initSeriesMode(stage: HTMLElement, state: UniverseState): void {
+/**
+ * Public handle returned by `initSeriesMode`, letting other modules
+ * drive the orbit's series-mode without duplicating the click /
+ * keyboard wiring. The "Show / Hide series items" buttons in the
+ * focused-capsule action panel call these handles to filter the
+ * orbit to a single series's members — the same visual state a
+ * direct click on a series capsule produces.
+ */
+export interface SeriesModeHandle {
+  enter(seriesName: string): void;
+  exit(): void;
+  /** Currently-active series name, or null when not in series mode. */
+  active(): string | null;
+}
+
+export function initSeriesMode(
+  stage: HTMLElement,
+  state: UniverseState,
+): SeriesModeHandle {
   const { slugSet, seriesAvailable, labels, isHidden } = state;
 
   let activeSeriesName: string | null = null;
@@ -218,6 +236,12 @@ export function initSeriesMode(stage: HTMLElement, state: UniverseState): void {
     if (stage.dataset.galaxyFocused === 'true') return;
     exitSeriesMode();
   });
+
+  return {
+    enter: enterSeriesMode,
+    exit: exitSeriesMode,
+    active: () => activeSeriesName,
+  };
 }
 
 /**

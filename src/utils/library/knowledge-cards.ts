@@ -1,22 +1,27 @@
 /**
- * Knowledge Cards — four-face artifact assets for orbit cards.
+ * Knowledge Cards — artifact assets for orbit cards.
  *
  * DISCOVERY MODEL — fully automatic, zero hardcoded slugs
  *
  *   Drop a folder under `src/assets/knowledge-cards/<slug>/` containing:
- *     front.png      — straight, non-selected positions on the orbit
- *     left.png       — left arc of the orbit
- *     right.png      — right arc of the orbit
- *     selected.png   — click-focused / center / promoted state
+ *     front.png      — REQUIRED. The single visible face for every
+ *                      orbit position. New cards only need this one.
+ *     left.png       — OPTIONAL legacy face shown on the left arc.
+ *     right.png      — OPTIONAL legacy face shown on the right arc.
+ *     selected.png   — OPTIONAL legacy face for click-focused / center.
  *
  *   …and on the next build / dev-server reload the matching library
  *   item will appear in artifact mode. Vite's `import.meta.glob` walks
  *   the tree at build time, so adding / removing a folder Just Works
  *   without touching code, configs, or any registry.
  *
- *   - All four faces present → returned as a complete asset bundle.
- *   - Any face missing → undefined → orbit keeps the medallion fallback
- *     (the item is excluded from the orbit by the page-level filter).
+ *   - `front.png` present → returned as a complete asset bundle. Any
+ *     legacy face that also exists on disk is included verbatim;
+ *     consumers (e.g. LibraryCard.astro) fall back to `front` when a
+ *     legacy face is absent, so single-image folders still render.
+ *   - `front.png` missing → undefined → the page-level filter drops
+ *     the item from the orbit and the existing medallion fallback
+ *     remains in place for non-orbit views (e.g. mobile carousel).
  *   - Slug matching is case-insensitive (Windows-friendly): an item with
  *     slug `AI-Developer-Fitness` matches a folder named
  *     `ai-developer-fitness` and vice versa.
@@ -54,39 +59,115 @@ const SELECTED_GLOBS = import.meta.glob<string>(
   { eager: true, query: '?url', import: 'default' },
 );
 
+// ── Shared placeholder asset ──────────────────────────────────────────
+// `_placeholders/book-front.png` is the single fallback image used by
+// any regular content item (book / lesson / generic content) that does
+// not yet have its own `front.png`. The file lives outside the per-slug
+// folder convention so:
+//   • the per-slug front.png glob never picks it up (the wildcard `*`
+//     would match `_placeholders` as a folder, but the filename here
+//     is `book-front.png`, not `front.png`, so the patterns don't
+//     collide);
+//   • `slugFromGlobPath` defensively skips any `_`-prefixed folder
+//     name, so even if a future placeholder is ever named `front.png`
+//     it still won't surface as a discoverable item slug.
+// Series capsules MUST keep using their real folder asset, so the
+// placeholder helper below is opted-in per call (`{ allowPlaceholder }`).
+const PLACEHOLDER_GLOBS = import.meta.glob<string>(
+  '/src/assets/knowledge-cards/_placeholders/book-front.png',
+  { eager: true, query: '?url', import: 'default' },
+);
+const BOOK_PLACEHOLDER_URL: string | undefined =
+  Object.values(PLACEHOLDER_GLOBS)[0];
+
 // ── Public API ─────────────────────────────────────────────────────────
 export interface KnowledgeCardAssets {
+  /** REQUIRED. The single visible face for every orbit position. */
   front: string;
-  left: string;
-  right: string;
+  /** Optional legacy face. Consumers should fall back to `front`. */
+  left?: string;
+  /** Optional legacy face. Consumers should fall back to `front`. */
+  right?: string;
   /**
-   * Shown only on the click-focused / promoted-to-center card. Authored
-   * intentionally taller than `front.png` (~50 % more vertical) so the
-   * focused presentation stands clearly apart from the orbit-station
-   * artwork. Layout adapts: when this face is active, the artifact
-   * container's aspect-ratio relaxes so the image renders at its
-   * natural proportions without clipping.
+   * Optional legacy face. Shown on the click-focused / promoted-to-center
+   * card. Authored intentionally taller than `front.png` (~50 % more
+   * vertical) so the focused presentation stands clearly apart from the
+   * orbit-station artwork. Layout adapts: when this face is active, the
+   * artifact container's aspect-ratio relaxes so the image renders at
+   * its natural proportions without clipping. Consumers should fall back
+   * to `front` when this face is absent.
    */
-  selected: string;
+  selected?: string;
 }
 
-/** Names of every face the discovery code expects. Single source of truth. */
+/** Names of every face the discovery code looks for. Single source of truth. */
 const FACE_KEYS = ['front', 'left', 'right', 'selected'] as const;
 type FaceKey = (typeof FACE_KEYS)[number];
+
+/**
+ * The only face required for an item to be considered COMPLETE. Legacy
+ * faces (left/right/selected) are included if present but never gate
+ * discovery — single-image folders are first-class citizens.
+ */
+const REQUIRED_FACE: FaceKey = 'front';
 
 /**
  * Returns the four-face asset URLs for a slug, or `undefined` when
  * the slug has no complete set of assets. Matches case-insensitively.
  *
  * Behavior contract:
- *   - All four PNGs present → `{ front, left, right, selected }`.
- *   - Any face missing → `undefined`. The page-level filter then drops
- *     the item from the orbit and the existing medallion fallback
- *     remains in place for non-orbit views (e.g. mobile carousel).
+ *   - `front.png` present → `{ front, left?, right?, selected? }` with
+ *     each optional face populated only if it exists on disk. This
+ *     preserves backward compatibility: existing folders that still
+ *     ship all four PNGs continue to expose distinct left/right/
+ *     selected URLs and render unchanged.
+ *   - `front.png` missing → `undefined`. The page-level filter then
+ *     drops the item from the orbit and the existing medallion
+ *     fallback remains in place for non-orbit views (e.g. mobile
+ *     carousel).
  */
 export function getKnowledgeCardAssets(slug: string): KnowledgeCardAssets | undefined {
   if (assetsCache === null) assetsCache = buildCache();
   return assetsCache.get(normalizeSlug(slug));
+}
+
+/**
+ * Returns the asset bundle for `slug`, falling back to the shared
+ * `_placeholders/book-front.png` when no per-slug `front.png` exists.
+ *
+ * Use this for regular content items (books, lessons, generic content)
+ * where the placeholder is acceptable. The series capsule
+ * (`ai-engineering-series` and any future series) must keep using its
+ * real asset folder, so callers rendering a series should keep calling
+ * `getKnowledgeCardAssets(slug)` directly — the helper below is opt-in.
+ *
+ * Returns `undefined` only when both the per-slug folder AND the shared
+ * placeholder are missing on disk; in that case the caller's existing
+ * "no artifact" path (medallion fallback) still applies.
+ */
+export function getKnowledgeCardAssetsOrPlaceholder(
+  slug: string,
+): KnowledgeCardAssets | undefined {
+  const real = getKnowledgeCardAssets(slug);
+  if (real) return real;
+  if (!BOOK_PLACEHOLDER_URL) return undefined;
+  // Single-face bundle. The orbit's resting state already shows the
+  // front face for every station (the legacy left/right faces are now
+  // optional, see KnowledgeCardAssets above), so a placeholder card
+  // renders as a single static face — exactly the behaviour we want.
+  return { front: BOOK_PLACEHOLDER_URL };
+}
+
+/**
+ * True when the item is being rendered with the shared placeholder
+ * rather than its own per-slug artwork. Lets consumers decide whether
+ * to surface a "placeholder" hint without re-deriving the URL match.
+ */
+export function isPlaceholderArtifact(
+  artifact: KnowledgeCardAssets | undefined,
+): boolean {
+  if (!artifact || !BOOK_PLACEHOLDER_URL) return false;
+  return artifact.front === BOOK_PLACEHOLDER_URL;
 }
 
 // ── Internals ──────────────────────────────────────────────────────────
@@ -104,7 +185,13 @@ function slugFromGlobPath(path: string): string | null {
   const m = path.match(
     /\/knowledge-cards\/([^/]+)\/(?:front|left|right|selected)\.png$/,
   );
-  return m ? m[1] : null;
+  if (!m) return null;
+  // Folders with a leading underscore are reserved for shared assets
+  // (`_placeholders/`, future `_templates/`, etc.) and must never be
+  // treated as a content slug — otherwise the orbit would surface a
+  // ghost station for a non-existent item.
+  if (m[1].startsWith('_')) return null;
+  return m[1];
 }
 
 function buildCache(): Map<string, KnowledgeCardAssets> {
@@ -136,10 +223,16 @@ function buildCache(): Map<string, KnowledgeCardAssets> {
   collect(RIGHT_GLOBS, 'right');
   collect(SELECTED_GLOBS, 'selected');
 
-  // Pass 2: keep only slugs whose folder has every required face.
+  // Pass 2: keep slugs whose folder has the single required face
+  // (`front.png`). Optional legacy faces (left/right/selected) are
+  // carried over verbatim when present so existing four-face folders
+  // keep their distinct artwork; missing legacy faces stay `undefined`
+  // and consumers fall back to `front`.
   const cache = new Map<string, KnowledgeCardAssets>();
   for (const [key, { faces }] of partial) {
-    if (FACE_KEYS.every((f) => faces[f])) {
+    if (faces[REQUIRED_FACE]) {
+      // `faces.front` is guaranteed by the check above; the cast keeps
+      // TypeScript happy without a runtime non-null assertion.
       cache.set(key, faces as KnowledgeCardAssets);
     }
   }
@@ -161,16 +254,20 @@ function reportDiscovery(
   // eslint-disable-next-line no-console
   console.log(
     `[knowledge-cards] discovered ${partial.size} folder(s); `
-    + `${complete.size} complete (have all of `
-    + `${FACE_KEYS.join('/')}).`,
+    + `${complete.size} complete (require ${REQUIRED_FACE}.png; `
+    + `legacy faces ${FACE_KEYS.filter((f) => f !== REQUIRED_FACE).join('/')} `
+    + `are optional).`,
   );
   for (const [key, { onDiskSlug, faces }] of partial) {
     const present = FACE_KEYS.filter((f) => faces[f]);
-    const missing = FACE_KEYS.filter((f) => !faces[f]);
+    const missingLegacy = FACE_KEYS
+      .filter((f) => f !== REQUIRED_FACE && !faces[f]);
     const status = complete.has(key) ? 'COMPLETE' : 'INCOMPLETE';
-    const detail = missing.length === 0
-      ? 'all faces present'
-      : `missing: ${missing.join(', ')}`;
+    const detail = !faces[REQUIRED_FACE]
+      ? `missing required: ${REQUIRED_FACE}`
+      : missingLegacy.length === 0
+        ? 'all faces present'
+        : `legacy missing (will fall back to front): ${missingLegacy.join(', ')}`;
     // eslint-disable-next-line no-console
     console.log(
       `[knowledge-cards]   [${status}] ${onDiskSlug}`

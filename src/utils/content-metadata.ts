@@ -153,9 +153,12 @@ export function defaultSeriesMetadataFor(name: string): SeriesMetadata {
     displayTitle: name,
     visualMode: 'capsule',
     isVisibleInUniverse: true,
-    // color and order are intentionally left undefined — they are
+    status: 'active',
+    // color, order, shortDescription, fullDescription, plannedBooksCount
+    // and assetFolder are intentionally left undefined — they are
     // editorial overrides, not always-present values. A consumer that
-    // reads `meta.color` should treat falsy as "use default".
+    // reads `meta.color` (or any optional field) should treat falsy as
+    // "use default" / "not set".
   };
 }
 
@@ -227,4 +230,26 @@ export function setSeriesMetadata(
   store.version = SERIES_METADATA_VERSION;
   writeSeriesStore(store);
   return next;
+}
+
+/**
+ * Deletes the series record for `name`, if any. This is the editorial
+ * inverse of `setSeriesMetadata` and ONLY removes the series's
+ * presentation properties (displayTitle, color, descriptions, etc.).
+ *
+ * It does NOT mutate any item metadata: books that still carry
+ * `seriesName: name` keep that field untouched. Callers that want a
+ * full series teardown (so the auto-detection in /admin no longer
+ * resurrects a row) must also walk the affected items and clear
+ * their `seriesName`. The series-delete flow in /admin does both.
+ *
+ * Returns true when a record existed and was removed, false otherwise.
+ */
+export function deleteSeriesMetadata(name: string): boolean {
+  const store = readSeriesStore();
+  if (!(name in store.items)) return false;
+  delete store.items[name];
+  store.version = SERIES_METADATA_VERSION;
+  writeSeriesStore(store);
+  return true;
 }

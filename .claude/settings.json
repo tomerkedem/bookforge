@@ -1,7 +1,15 @@
 {
   "permissions": {
     "allow": [
-      "PowerShell(npx astro check 2>&1)"
+      "PowerShell(npx astro check 2>&1)",
+      "PowerShell(npx astro build 2>&1 | Out-String | ForEach-Object { $_ -split \"`n\" } | Where-Object { $_ -match \"knowledge-cards|Lesson|orbit|error|Error\" } | Select-Object -First 100)",
+      "PowerShell(Start-Process -NoNewWindow -FilePath \"node\" -ArgumentList \"dist/server/entry.mjs\" -RedirectStandardOutput \"server.log\" -RedirectStandardError \"server.err.log\"; Start-Sleep -Seconds 4; try { $r = Invoke-WebRequest -Uri \"http://localhost:4321/library\" -UseBasicParsing; \"STATUS: $\\($r.StatusCode\\)\" } catch { \"ERR: $_\" }; Stop-Process -Name node -Force -ErrorAction SilentlyContinue; Get-Content server.log -Raw | Select-String -Pattern \"knowledge-cards|orbit\" -SimpleMatch | Select-Object -First 80 | ForEach-Object { $_.Line })",
+      "PowerShell(Test-Path server.log; \\(Get-Item server.log -ErrorAction SilentlyContinue\\).Length; Test-Path server.err.log; \\(Get-Item server.err.log -ErrorAction SilentlyContinue\\).Length)",
+      "PowerShell($r = Invoke-WebRequest -Uri \"http://localhost:4321/library\" -UseBasicParsing; $r.Content | Select-String -Pattern \"Lesson-1|Lesson-2|Lesson-3|Lesson-4|knowledge-cards|orbit\" -AllMatches | Out-Null; \"Lesson-1 count: \" + \\($r.Content -split \"Lesson-1\" | Measure-Object\\).Count; \"Lesson-2 count: \" + \\($r.Content -split \"Lesson-2\" | Measure-Object\\).Count; \"Lesson-3 count: \" + \\($r.Content -split \"Lesson-3\" | Measure-Object\\).Count; \"Lesson-4 count: \" + \\($r.Content -split \"Lesson-4\" | Measure-Object\\).Count)",
+      "PowerShell($r = Invoke-WebRequest -Uri \"http://localhost:4321/library\" -UseBasicParsing; \\($r.Content -split \"AI-Developer-Fitness\" | Measure-Object\\).Count - 1; $matches = [regex]::Matches\\($r.Content, 'data-slug=\"\\([^\"]+\\)\"'\\); $matches | ForEach-Object { $_.Groups[1].Value } | Sort-Object -Unique)"
+    ],
+    "additionalDirectories": [
+      "D:\\2025 Stu\\AI Engineer\\AllBooks2026\\Claude Code - Book\\bookforge"
     ]
   }
 }

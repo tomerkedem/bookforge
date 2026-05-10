@@ -479,6 +479,37 @@ const items: LibraryItem[] = [
     href: '/articles/broken-article',
   },
 
+  // 19. Series — EI Engineering Course
+  // Registered as a LibraryItem of type 'series' so the knowledge-card
+  // discovery (src/utils/library/knowledge-cards.ts) can match the
+  // folder `src/assets/knowledge-cards/ai-engineering-series/` to a
+  // catalog slug. No routing wired yet: href is a placeholder under
+  // `/series/`, which is intentionally NOT in `isSafeLibraryHref`'s
+  // allow-list, so the item stays out of the orbit / continue-reading
+  // until a real route ships. This preserves existing book behavior
+  // and keeps the orbit free of broken-looking tiles.
+  {
+    id: 'ai-engineering-series',
+    slug: 'ai-engineering-series',
+    type: 'series',
+    status: 'new',
+    sourceKind: 'manual',
+    titles: {
+      en: 'EI Engineering Course',
+    },
+    summaries: {
+      en: 'A structured AI Engineering learning series',
+    },
+    author: {
+      en: 'Tomer Kedem',
+    },
+    categoryKey: 'ai-engineering',
+    languages: ['en'],
+    createdAt: '2026-05-09T00:00:00.000Z',
+    updatedAt: '2026-05-09T00:00:00.000Z',
+    href: '/series/ai-engineering-series',
+  },
+
   // 18. Archived item
   {
     id: 'book-legacy-intro-to-ml',

@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { discoverAllBooks } from '../utils/book-discovery';
+import { getKnowledgeCardAssets } from '../utils/library/knowledge-cards';
 import type { Language } from '../types/index';
 import {
   DEFAULT_LANGUAGE,
@@ -27,6 +28,7 @@ function pickLocalized(
   }
   return undefined;
 }
+
 
 
 // Language resolution mirrors the pattern used by /library and the
@@ -61,6 +63,17 @@ const i18nBundle = {
   toastMetadataSaved:t('admin.toast.metadataSaved', language),
   modalDeleting:     t('admin.modal.deleting', language),
   modalConfirmText:  t('admin.modal.confirm', language),
+  // Per-flow modal copy. The generic `admin.modal.title/warning` keys
+  // are the SSR fallback for the modal element itself; the JS calls
+  // showConfirmModal({...}) with these flow-specific strings at open
+  // time so book delete and series delete each speak in their own
+  // terms (different heading, different consequences warning).
+  modalHeadingBook:  t('admin.modal.headingBook', language),
+  modalBodyBook:     t('admin.modal.bodyBook', language),
+  modalWarningBook:  t('admin.modal.warningBook', language),
+  modalHeadingSeries:t('admin.modal.headingSeries', language),
+  modalBodySeries:   t('admin.modal.bodySeries', language),
+  modalWarningSeries:t('admin.modal.warningSeries', language),
   // Series Management labels — used by the JS that renders detected
   // series cards and by the toast emitted after a series is saved.
   seriesEmpty:       t('admin.series.empty', language),
@@ -71,6 +84,46 @@ const i18nBundle = {
   seriesEditTitle:   t('admin.series.editTitle', language),
   seriesTagCapsule:  t('admin.series.tagCapsule', language),
   toastSeriesSaved:  t('admin.series.toast.saved', language),
+  // Rich-card redesign — labels for badges, progress, asset folder
+  // and the read-only computed actual-count summary inside the
+  // edit drawer.
+  seriesCardItemsOfTpl:        t('admin.series.card.itemsOf', language),
+  seriesCardItemsOnlyTpl:      t('admin.series.card.itemsOnly', language),
+  seriesCardActualLabelTpl:    t('admin.series.card.actualLabel', language),
+  seriesCardAssetFolderLabel:  t('admin.series.card.assetFolderLabel', language),
+  seriesCardAssetFolderEmpty:  t('admin.series.card.assetFolderEmpty', language),
+  seriesCardEditButton:        t('admin.series.card.editButton', language),
+  seriesCardNoDescription:     t('admin.series.card.noDescription', language),
+  seriesCardProgressAriaTpl:   t('admin.series.card.progressAria', language),
+  seriesStatusActive:          t('admin.series.status.active', language),
+  seriesStatusDraft:           t('admin.series.status.draft', language),
+  seriesStatusHidden:          t('admin.series.status.hidden', language),
+  seriesBadgeVisible:          t('admin.series.badge.visible', language),
+  seriesBadgeHiddenFromUni:    t('admin.series.badge.hiddenFromUniverse', language),
+  seriesOptionCapsule:         t('admin.series.option.capsule', language),
+  seriesOptionCard:            t('admin.series.option.card', language),
+  seriesOptionOrbitNode:       t('admin.series.option.orbitNode', language),
+  seriesActualReadOnlyTpl:     t('admin.series.field.actualReadOnly', language),
+  // New / delete a series (Series Management section CTA + per-row
+  // delete button). Toasts mirror the book-delete toasts so a glance
+  // at the toast queue tells the user which destructive flow ran.
+  seriesActionNew:             t('admin.series.action.new', language),
+  seriesActionDelete:          t('admin.series.action.delete', language),
+  seriesActionDeleteAriaTpl:   t('admin.series.action.deleteAriaLabel', language),
+  seriesActionDeleteTitle:     t('admin.series.action.deleteTitle', language),
+  seriesDrawerEyebrowNew:      t('admin.series.drawer.eyebrowNew', language),
+  seriesFieldName:             t('admin.series.field.name', language),
+  seriesFieldNameHint:         t('admin.series.field.nameHint', language),
+  seriesToastDeleted:          t('admin.series.toast.deleted', language),
+  seriesToastCreated:          t('admin.series.toast.created', language),
+  seriesToastRenamed:          t('admin.series.toast.renamed', language),
+  seriesToastAlreadyExists:    t('admin.series.toast.alreadyExists', language),
+  seriesToastNameRequired:     t('admin.series.toast.nameRequired', language),
+  // Table — cell placeholders. Column headers are rendered server-side
+  // in the <thead>, so they don't need to be in the runtime bundle.
+  seriesCellNotSet:            t('admin.series.cell.notSet', language),
+  seriesCellNoFolder:          t('admin.series.cell.noFolder', language),
+  seriesCellDash:              t('admin.series.cell.dash', language),
   // Knowledge Catalog table cells — repainted by the metadata script.
   cellEmpty:         t('admin.cell.empty', language),
   cellVisible:       t('admin.cell.visible', language),
@@ -80,6 +133,18 @@ const i18nBundle = {
   optionBook:        t('admin.option.book', language),
   optionCourse:      t('admin.option.course', language),
   optionArticle:     t('admin.option.article', language),
+  // Cover upload — toasts are rendered from the script after the
+  // POST /api/upload-cover round-trip. Templates use {{title}} for
+  // success and {{msg}} for fetch / server failures.
+  coverPlaceholder:        t('admin.cover.placeholder', language),
+  coverUpload:             t('admin.cover.upload', language),
+  coverUploadAria:         t('admin.cover.uploadAria', language),
+  coverReplace:            t('admin.cover.replace', language),
+  coverUploading:          t('admin.cover.uploading', language),
+  toastCoverUploaded:      t('admin.toast.coverUploaded', language),
+  toastCoverUploadFailed:  t('admin.toast.coverUploadFailed', language),
+  toastCoverInvalidType:   t('admin.toast.coverInvalidType', language),
+  toastCoverTooLarge:      t('admin.toast.coverTooLarge', language),
 };
 ---
 
@@ -115,6 +180,7 @@ const i18nBundle = {
           <table class="kcc-table" id="books-table">
             <thead class="kcc-thead">
               <tr>
+                <th class="kcc-th col-cover">{t('admin.column.cover', language)}</th>
                 <th class="kcc-th col-title">{t('admin.column.item', language)}</th>
                 <th class="kcc-th col-type">{t('admin.column.type', language)}</th>
                 <th class="kcc-th col-series">{t('admin.column.series', language)}</th>
@@ -127,13 +193,69 @@ const i18nBundle = {
             </thead>
             <tbody id="books-grid">
               {books.map(book => {
+                // The pipeline (ingest.py) is responsible for writing
+                // the manifest with the correct title/subtitle layout —
+                // including the course-lesson normalization that swaps
+                // Word's cover-page placeholders so the lesson title
+                // lands in `titles` rather than `subtitles`. The admin
+                // then only has to render: title primary, subtitle
+                // secondary. Slug is the last-resort fallback.
                 const ssrTitle =
                   pickLocalized(book.titles, language) || book.slug;
                 const ssrSubtitle = pickLocalized(book.subtitles, language);
                 const ssrCategory = pickLocalized(book.category, language);
                 const chapterCount = book.chapters.length;
+                // Knowledge-card front image — the same artifact the
+                // /library orbit renders. We surface it (not the
+                // pipeline cover) because the user's mental model of
+                // "the book's image" in the knowledge space is the
+                // futuristic front card, not the docx-extracted cover.
+                // Discovery is case-insensitive (matches the orbit
+                // page's behaviour); when no front.png exists the
+                // empty placeholder shows and the upload button still
+                // works.
+                const frontUrl = getKnowledgeCardAssets(book.slug)?.front;
                 return (
                   <tr class="book-card kcc-tr" data-slug={book.slug}>
+                    <td class="kcc-td col-cover">
+                      {/* Front-image thumbnail. The button wraps the
+                          image so a click anywhere opens the file
+                          picker. The delegated handler in the script
+                          picks the slug from data-slug and POSTs to
+                          /api/upload-front. */}
+                      <button
+                        type="button"
+                        class="cover-uploader"
+                        data-cover-upload="book"
+                        data-slug={book.slug}
+                        aria-label={t('admin.cover.uploadAria', language, { title: ssrTitle })}
+                        title={t('admin.cover.upload', language)}
+                      >
+                        {frontUrl ? (
+                          <img
+                            class="cover-thumb"
+                            src={frontUrl}
+                            alt=""
+                            loading="lazy"
+                            decoding="async"
+                          />
+                        ) : (
+                          <span class="cover-thumb cover-thumb--empty" aria-hidden="true">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                              <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+                              <circle cx="9" cy="9" r="2"></circle>
+                              <path d="M21 15l-5-5L5 21"></path>
+                            </svg>
+                          </span>
+                        )}
+                        <span class="cover-uploader-overlay" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 5v14"></path>
+                            <path d="M5 12h14"></path>
+                          </svg>
+                        </span>
+                      </button>
+                    </td>
                     <td class="kcc-td col-title">
                       <div class="kcc-title-stack">
                         <span class="book-title">{ssrTitle}</span>
@@ -218,12 +340,56 @@ const i18nBundle = {
       </section>
 
       <section class="kcc-section">
-        <div class="kcc-section-head">
-          <h2 class="kcc-section-title">{t('admin.series.section', language)}</h2>
-          <span class="kcc-section-meta" id="series-count">{t('admin.series.count', language, { n: 0 })}</span>
+        <div class="kcc-section-head series-section-head">
+          <div class="series-section-titles">
+            <h2 class="kcc-section-title">{t('admin.series.section', language)}</h2>
+            <p class="series-section-subtitle">{t('admin.series.subtitle', language)}</p>
+          </div>
+          {/* Right cluster: series count + "New series" CTA. The
+              CTA opens the series drawer in create mode (empty
+              fields, name input editable). The script-side handler
+              that wires the drawer reads `data-new-series` to
+              distinguish the create path from per-row edit. */}
+          <div class="series-section-actions">
+            <span class="kcc-section-meta" id="series-count">{t('admin.series.count', language, { n: 0 })}</span>
+            <button type="button" class="series-new-btn" data-new-series>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M12 5v14"></path>
+                <path d="M5 12h14"></path>
+              </svg>
+              <span>{t('admin.series.action.new', language)}</span>
+            </button>
+          </div>
         </div>
-        <div id="series-list" class="series-grid">
-          <p class="series-empty">{t('admin.series.empty', language)}</p>
+        {/* Series Management table — same visual family as the books
+            table above (kcc-table-wrap + kcc-table). The <tbody> is
+            populated by `renderSeries()` in the script below; on first
+            paint it renders the empty-state row. */}
+        <div class="kcc-table-wrap series-table-wrap">
+          <table class="kcc-table series-table" id="series-table">
+            <thead class="kcc-thead">
+              <tr>
+                <th class="kcc-th col-cover">{t('admin.column.cover', language)}</th>
+                <th class="kcc-th col-series-name">{t('admin.series.column.name', language)}</th>
+                <th class="kcc-th col-series-desc">{t('admin.series.column.description', language)}</th>
+                <th class="kcc-th col-series-status">{t('admin.series.column.status', language)}</th>
+                <th class="kcc-th col-series-universe">{t('admin.series.column.universe', language)}</th>
+                <th class="kcc-th col-series-actual">{t('admin.series.column.actualItems', language)}</th>
+                <th class="kcc-th col-series-planned">{t('admin.series.column.plannedItems', language)}</th>
+                <th class="kcc-th col-series-progress">{t('admin.series.column.progress', language)}</th>
+                <th class="kcc-th col-series-folder">{t('admin.series.column.assetFolder', language)}</th>
+                <th class="kcc-th col-series-order">{t('admin.series.column.order', language)}</th>
+                <th class="kcc-th col-series-actions">{t('admin.series.column.actions', language)}</th>
+              </tr>
+            </thead>
+            <tbody id="series-list">
+              <tr class="series-empty-row">
+                <td class="kcc-td series-empty-cell" colspan="11">
+                  {t('admin.series.empty', language)}
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </section>
 
@@ -345,7 +511,10 @@ const i18nBundle = {
       <div class="meta-drawer-panel" role="document">
         <header class="meta-drawer-header">
           <div class="meta-drawer-heading">
-            <p class="meta-drawer-eyebrow">{t('admin.series.drawer.eyebrow', language)}</p>
+            {/* Eyebrow swaps between "Edit series" and "Create
+                series" via JS based on the open mode — see
+                openSeriesDrawer / openSeriesDrawerForNew. */}
+            <p class="meta-drawer-eyebrow" id="series-drawer-eyebrow">{t('admin.series.drawer.eyebrow', language)}</p>
             <h2 id="series-drawer-title" class="meta-drawer-title">—</h2>
             <p class="meta-drawer-slug" id="series-drawer-name">—</p>
           </div>
@@ -367,6 +536,42 @@ const i18nBundle = {
             <span class="meta-label">{t('admin.series.field.displayTitle', language)}</span>
             <input class="meta-input" type="text" name="displayTitle" />
             <span class="meta-hint">{t('admin.series.field.displayTitleHint', language)}</span>
+          </label>
+
+          <label class="meta-field">
+            <span class="meta-label">{t('admin.series.field.slug', language)}</span>
+            <input class="meta-input meta-input--readonly" type="text" name="slug" readonly aria-readonly="true" tabindex="-1" />
+            <span class="meta-hint">{t('admin.series.field.slugHint', language)}</span>
+          </label>
+
+          <label class="meta-field">
+            <span class="meta-label">{t('admin.series.field.shortDescription', language)}</span>
+            <input class="meta-input" type="text" name="shortDescription" maxlength="180" />
+            <span class="meta-hint">{t('admin.series.field.shortDescriptionHint', language)}</span>
+          </label>
+
+          <label class="meta-field">
+            <span class="meta-label">{t('admin.series.field.fullDescription', language)}</span>
+            <textarea class="meta-input meta-textarea" name="fullDescription" rows="4"></textarea>
+            <span class="meta-hint">{t('admin.series.field.fullDescriptionHint', language)}</span>
+          </label>
+
+          <label class="meta-field">
+            <span class="meta-label">{t('admin.series.field.plannedBooksCount', language)}</span>
+            <input class="meta-input" type="number" name="plannedBooksCount" inputmode="numeric" min="0" step="1" placeholder="—" />
+            <span class="meta-hint">{t('admin.series.field.plannedBooksCountHint', language)}</span>
+          </label>
+
+          <div class="meta-field meta-field--readonly-summary">
+            <span class="meta-label">{t('admin.series.field.actualReadOnly', language, { n: 0 })}</span>
+            <span class="meta-hint">{t('admin.series.field.actualReadOnlyHint', language)}</span>
+            <input type="hidden" name="actualBooksCount" value="0" data-actual-books-count />
+          </div>
+
+          <label class="meta-field">
+            <span class="meta-label">{t('admin.series.field.assetFolder', language)}</span>
+            <input class="meta-input meta-input--mono" type="text" name="assetFolder" placeholder="ai-engineering-series" />
+            <span class="meta-hint">{t('admin.series.field.assetFolderHint', language)}</span>
           </label>
 
           <div class="meta-field">
@@ -417,7 +622,19 @@ const i18nBundle = {
             <span class="meta-label">{t('admin.series.field.visualMode', language)}</span>
             <select class="meta-select" name="visualMode">
               <option value="capsule">{t('admin.series.option.capsule', language)}</option>
+              <option value="card">{t('admin.series.option.card', language)}</option>
+              <option value="orbit-node">{t('admin.series.option.orbitNode', language)}</option>
             </select>
+          </label>
+
+          <label class="meta-field">
+            <span class="meta-label">{t('admin.series.field.status', language)}</span>
+            <select class="meta-select" name="status">
+              <option value="active">{t('admin.series.status.active', language)}</option>
+              <option value="draft">{t('admin.series.status.draft', language)}</option>
+              <option value="hidden">{t('admin.series.status.hidden', language)}</option>
+            </select>
+            <span class="meta-hint">{t('admin.series.field.statusHint', language)}</span>
           </label>
         </form>
 
@@ -432,13 +649,17 @@ const i18nBundle = {
       </div>
     </aside>
 
-    <!-- Delete Confirmation Modal -->
+    <!-- Delete Confirmation Modal — generic across books and series.
+         Heading, body, warning, and confirm-label are populated by JS
+         at show time (see showConfirmModal). The body element accepts a
+         {{title}} placeholder which JS renders as a real <strong> with
+         textContent (no HTML injection from user-supplied titles). -->
     <div id="delete-modal" class="modal hidden">
       <div class="modal-backdrop"></div>
       <div class="modal-content">
-        <h3>⚠️ {t('admin.modal.title', language)}</h3>
-        <p set:html={t('admin.modal.body', language, { title: '<strong id="modal-book-title"></strong>' })}></p>
-        <p class="modal-warning">{t('admin.modal.warning', language)}</p>
+        <h3 id="modal-heading">⚠️ {t('admin.modal.title', language)}</h3>
+        <p id="modal-body"></p>
+        <p id="modal-warning" class="modal-warning">{t('admin.modal.warning', language)}</p>
         <div class="modal-actions">
           <button class="modal-btn modal-btn--cancel" id="modal-cancel">
             {t('admin.modal.cancel', language)}
@@ -459,6 +680,22 @@ const i18nBundle = {
      (#0d0d10 / #16161c / #b8923f / cream-gold) instead of the light
      theme tokens used by the rest of the app.
      ───────────────────────────────────────────────────────────── */
+
+  /* Hide the global Back-to-Top FAB (rendered by BaseLayout) while
+     either edit drawer is open. The drawer slides in from the inline
+     edge and the FAB is anchored in the same corner — without this
+     rule they overlap, which made it look as if the FAB was attached
+     to the drawer. Using `:has()` lets us key off the live drawer
+     state (presence of `.meta-drawer` without `.hidden`) without
+     touching the drawer's open/close JS. The :global wrapper is
+     required because #back-to-top is rendered outside this scoped
+     style's component tree.
+     Closing the drawer adds `.hidden` back to it, the :has() match
+     drops, and the FAB's own scroll handler resumes ownership of
+     visibility — so it returns to its place automatically. */
+  body:has(.meta-drawer:not(.hidden)) :global(#back-to-top) {
+    display: none !important;
+  }
 
   .kcc-shell {
     --kcc-ink: #0a0a0c;
@@ -701,6 +938,7 @@ const i18nBundle = {
      Title takes whatever's left; the rest are content-fit. Both <th>
      and <td> read these widths so the header stays aligned with the
      body on every viewport. */
+  .col-cover       { width: 78px;  text-align: center; }
   .col-title       { width: auto; }
   .col-type        { width: 110px; }
   .col-series      { width: 160px; }
@@ -708,6 +946,86 @@ const i18nBundle = {
   .col-visibility  { width: 120px; text-align: center; }
   .col-progress    { width: 130px; }
   .col-count       { width: 90px;  text-align: center; }
+
+  /* ── Cover uploader cell ────────────────────────────────
+     The cover column is the click target for swapping a book's
+     thumbnail. The thumbnail and the upload affordance are the same
+     element: the entire button is the picker trigger so a click
+     anywhere on the image opens the file dialog. The visual rule is
+     "image first, affordance second" — the overlay (+ icon) is faint
+     by default and only brightens on hover/focus so a populated row
+     reads as content, not as a tool. Empty cells flip the priority:
+     the placeholder icon is the focal point and the + overlay is
+     redundant, so we keep both visible to telegraph the action. */
+  .cover-uploader {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    /* Aspect matches the canonical front.png (1600:2320 ≈ 1:1.45) so
+       the thumb shows the artwork at its authored proportions. The
+       artwork itself is composition-heavy (top icon, title, subtitle,
+       author at the bottom), so we use object-fit: contain on the
+       inner img — cropping would chop the title or the author byline. */
+    width: 56px;
+    height: 80px;
+    border-radius: 4px;
+    border: 1px solid color-mix(in oklab, currentColor 18%, transparent);
+    background: color-mix(in oklab, currentColor 4%, transparent);
+    padding: 0;
+    cursor: pointer;
+    overflow: hidden;
+    color: inherit;
+    transition: border-color 140ms ease, transform 140ms ease, box-shadow 140ms ease;
+  }
+  .cover-uploader:hover,
+  .cover-uploader:focus-visible {
+    border-color: color-mix(in oklab, var(--gold, #c9a96e) 65%, transparent);
+    box-shadow: 0 0 0 1px color-mix(in oklab, var(--gold, #c9a96e) 35%, transparent);
+    outline: none;
+  }
+  .cover-uploader[data-uploading="true"] {
+    cursor: progress;
+    opacity: 0.7;
+  }
+
+  .cover-thumb {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    border-radius: 3px;
+  }
+  .cover-thumb--empty {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: color-mix(in oklab, currentColor 40%, transparent);
+  }
+
+  /* Plus-icon affordance pinned to the bottom-end corner. Logical
+     properties so RTL flips the corner naturally. */
+  .cover-uploader-overlay {
+    position: absolute;
+    inset-block-end: 2px;
+    inset-inline-end: 2px;
+    width: 18px;
+    height: 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(15, 19, 28, 0.85);
+    color: #fff;
+    opacity: 0;
+    transition: opacity 140ms ease;
+    pointer-events: none;
+  }
+  .cover-uploader:hover .cover-uploader-overlay,
+  .cover-uploader:focus-visible .cover-uploader-overlay,
+  .cover-uploader .cover-thumb--empty + .cover-uploader-overlay {
+    opacity: 1;
+  }
   /* Actions column needs to fit all three buttons in Hebrew without
      overflowing into the chapters column. Measured worst case:
      "עריכת מטא-דאטה" + icon (~165px) + 6px gap + "ניקוי נתונים"
@@ -1133,159 +1451,289 @@ const i18nBundle = {
 
   /* ── Series Management ──────────────────────────────────── */
 
-  .series-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+  /* Section header — adds a subtitle row under the existing
+     all-caps title so the Series block reads as a deliberate
+     management area instead of a generic list. */
+  .series-section-head {
+    align-items: flex-start;
   }
-
-  .series-empty {
-    margin: 0;
-    padding: 22px 20px;
-    text-align: center;
-    border: 1px dashed var(--kcc-rim);
-    border-radius: 12px;
-    background: rgba(255, 255, 255, 0.015);
-    color: var(--kcc-text-muted);
-    font-size: 0.85rem;
-    line-height: 1.5;
-  }
-
-  .series-card {
-    position: relative;
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    background: var(--kcc-surface);
-    border: 1px solid var(--kcc-rim);
-    border-radius: 14px;
-    padding: 14px 18px;
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    transition:
-      background 200ms cubic-bezier(0.4, 0, 0.2, 1),
-      border-color 200ms cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  .series-card:hover {
-    background: var(--kcc-surface-strong);
-    border-color: var(--kcc-rim-strong);
-  }
-
-  /* Capsule edge indicator on the inline-start side, painted in the
-     series color. Hints at the "capsule" visual mode without rendering
-     an actual capsule. */
-  .series-card::before {
-    content: "";
-    position: absolute;
-    inset-block: 14px;
-    inset-inline-start: 0;
-    width: 3px;
-    border-radius: 0 3px 3px 0;
-    background: var(--series-color, var(--kcc-gold));
-    opacity: 0.85;
-  }
-
-  [dir="rtl"] .series-card::before {
-    border-radius: 3px 0 0 3px;
-  }
-
-  .series-card-info {
-    flex: 1;
-    min-width: 0;
+  .series-section-titles {
     display: flex;
     flex-direction: column;
     gap: 4px;
+    min-width: 0;
+  }
+  .series-section-subtitle {
+    margin: 0;
+    font-family: 'Spectral', 'Cardo', Georgia, serif;
+    font-size: 0.82rem;
+    line-height: 1.5;
+    color: var(--kcc-text-secondary);
+    letter-spacing: 0;
+    text-transform: none;
+    max-width: 56ch;
   }
 
-  .series-card-name {
+  /* Right cluster of the section header: count meta + "New series" CTA.
+     The CTA reads as a primary action in the section's own context —
+     gold outline + cream text — so it stands clearly apart from the
+     row-level icon-only buttons further below. */
+  .series-section-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .series-new-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 12px;
+    font-family: inherit;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--gold-cream, #ffe8a3);
+    background: color-mix(in oklab, var(--gold, #c9a96e) 12%, transparent);
+    border: 1px solid color-mix(in oklab, var(--gold, #c9a96e) 60%, transparent);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 140ms ease, border-color 140ms ease, transform 140ms ease;
+  }
+  .series-new-btn:hover {
+    background: color-mix(in oklab, var(--gold, #c9a96e) 22%, transparent);
+    border-color: color-mix(in oklab, var(--gold, #c9a96e) 80%, transparent);
+  }
+  .series-new-btn:active {
+    transform: translateY(1px);
+  }
+
+  /* Per-row delete button in the series table. Same visual language
+     as the books-table delete button (red-tinted icon button) but
+     scoped to the series-actions cell so the two delete buttons
+     don't share a class — that way visual changes to one don't
+     accidentally touch the other. */
+  .series-delete-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    margin-inline-start: 8px;
+    color: color-mix(in oklab, #f57b6a 75%, currentColor);
+    background: transparent;
+    border: 1px solid color-mix(in oklab, #f57b6a 30%, transparent);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
+  }
+  .series-delete-btn:hover {
+    background: color-mix(in oklab, #f57b6a 18%, transparent);
+    border-color: color-mix(in oklab, #f57b6a 70%, transparent);
+    color: #ff8e7d;
+  }
+
+  /* ── Series Management table ────────────────────────────────
+     Same visual family as the books table (`.kcc-table-wrap`,
+     `.kcc-table`, `.kcc-th`, `.kcc-td`). Only the column widths and a
+     handful of inline cell visuals (status pill, universe pill, slim
+     progress bar, monospace folder code) live here — everything else
+     inherits from the existing kcc-table rules above. */
+
+  /* Wrapper override: the books table has `min-width: 1340px` to keep
+     its 8 columns legible. The series table needs slightly less and
+     gets its own min-width via `.series-table` below. The wrap stays
+     identical so the panel chrome (radius, blur, glow) matches. */
+  .series-table-wrap {
+    margin-block-start: 0;
+  }
+
+  .series-table {
+    /* 10 columns; min-width keeps every column readable before the
+       horizontal scrollbar kicks in on narrow viewports. */
+    min-width: 1280px;
+  }
+
+  /* Column widths — auto for the description (the only freely-wrapping
+     column), explicit for the rest so the row reads as a clean grid.
+     `text-align: center` is applied where the cell content is purely
+     numeric or pill-shaped so the eye scans down a column without the
+     header label drifting to a different alignment than the body. */
+  .col-series-name      { width: 200px; }
+  .col-series-desc      { width: auto;  min-width: 240px; }
+  .col-series-status    { width: 110px; text-align: center; }
+  .col-series-universe  { width: 150px; text-align: center; }
+  .col-series-actual    { width: 110px; text-align: center; }
+  .col-series-planned   { width: 130px; text-align: center; }
+  .col-series-progress  { width: 200px; }
+  .col-series-folder    { width: 200px; }
+  .col-series-order     { width: 100px; text-align: center; }
+  .col-series-actions   { width: 150px; text-align: center; }
+
+  /* Title cell — same `.kcc-title-stack` pattern as the books table.
+     The slug is intentionally muted so the display title leads. */
+  .series-row-title {
+    margin: 0;
     font-family: 'Spectral', 'Cardo', Georgia, serif;
-    font-size: 1rem;
+    font-size: 0.96rem;
     font-weight: 500;
     color: var(--kcc-text);
-    margin: 0;
+    line-height: 1.3;
     letter-spacing: -0.005em;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    overflow-wrap: anywhere;
   }
-
-  .series-card-slug {
+  .series-row-slug {
+    margin: 0;
     font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
     font-size: 0.7rem;
     color: var(--kcc-text-muted);
     letter-spacing: 0.02em;
+    overflow-wrap: anywhere;
   }
 
-  .series-card-meta {
+  /* Status pill — three colour-coded states matching the existing
+     `.kcc-vis--on` / `--off` palette. Width is fluid (no fixed) so
+     Hebrew "פעילה" / "טיוטה" / "מוסתרת" each sit comfortably without
+     padding adjustments per language. */
+  .series-status-pill {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
-    margin-top: 2px;
-  }
-
-  .series-tag {
-    display: inline-block;
-    padding: 2px 9px;
+    padding: 3px 10px;
     border-radius: 999px;
-    background: rgba(201, 169, 110, 0.1);
-    border: 1px solid var(--kcc-gold-rim);
-    color: var(--kcc-gold);
     font-family: 'Spectral', 'Cardo', Georgia, serif;
-    font-size: 0.66rem;
-    font-weight: 500;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-  }
-
-  .series-order-tag {
-    display: inline-block;
-    padding: 2px 8px;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid var(--kcc-rim);
-    color: var(--kcc-text-secondary);
     font-size: 0.7rem;
     font-weight: 600;
-    letter-spacing: 0.02em;
+    letter-spacing: 0.06em;
+    border: 1px solid var(--kcc-rim);
+    background: rgba(255, 255, 255, 0.03);
+    color: var(--kcc-text-secondary);
+    white-space: nowrap;
+  }
+  .series-status-pill[data-status="active"] {
+    background: rgba(120, 200, 130, 0.10);
+    border-color: rgba(120, 200, 130, 0.36);
+    color: #9ad6a3;
+  }
+  .series-status-pill[data-status="draft"] {
+    background: rgba(218, 165, 32, 0.10);
+    border-color: rgba(218, 165, 32, 0.40);
+    color: #e8c468;
+  }
+  .series-status-pill[data-status="hidden"] {
+    background: rgba(220, 38, 38, 0.10);
+    border-color: rgba(220, 38, 38, 0.36);
+    color: #f0a9a9;
+  }
+
+  /* Universe pill — "מוצגת במרחב" / "מוסתרת מהמרחב". Two states
+     only, both rendered as the same shape so the column reads as a
+     single visual rhythm. */
+  .series-universe-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-family: 'Spectral', 'Cardo', Georgia, serif;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    border: 1px solid var(--kcc-rim);
+    background: rgba(255, 255, 255, 0.03);
+    color: var(--kcc-text-secondary);
+    white-space: nowrap;
+  }
+  .series-universe-pill[data-on="true"] {
+    background: rgba(120, 200, 130, 0.08);
+    border-color: rgba(120, 200, 130, 0.32);
+    color: #9ad6a3;
+  }
+  .series-universe-pill[data-on="false"] {
+    background: rgba(220, 38, 38, 0.08);
+    border-color: rgba(220, 38, 38, 0.32);
+    color: #f0a9a9;
+  }
+
+  /* Numeric cells — tabular-nums + center alignment line up the
+     digits across rows so a quick scan answers "which series has
+     more items?" without the eye recalibrating. */
+  .series-cell-num {
+    text-align: center;
     font-variant-numeric: tabular-nums;
   }
 
-  .series-hidden-tag {
-    display: inline-block;
-    padding: 2px 8px;
-    border-radius: 999px;
-    background: rgba(220, 38, 38, 0.12);
-    border: 1px solid rgba(220, 38, 38, 0.32);
-    color: #f87171;
-    font-size: 0.66rem;
-    font-weight: 500;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
+  /* Progress cell — counter on top, slim bar below. Bar fill picks
+     up the per-series colour from `--series-color` set on the row. */
+  .series-progress-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
   }
-
-  .series-dot-sep {
-    color: var(--kcc-text-muted);
-    font-size: 0.75rem;
-    line-height: 1;
-  }
-
-  .series-card-counts {
-    font-size: 0.76rem;
+  .series-progress-counter {
+    font-size: 0.78rem;
     color: var(--kcc-text-secondary);
+    font-variant-numeric: tabular-nums;
     letter-spacing: 0.01em;
   }
-
-  .series-card-counts strong {
-    color: var(--kcc-text);
-    font-weight: 600;
+  .series-progress-bar {
+    position: relative;
+    width: 100%;
+    height: 6px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.06);
+    overflow: hidden;
+  }
+  .series-progress-fill {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(
+      90deg,
+      var(--series-color, var(--kcc-gold)),
+      color-mix(in srgb, var(--series-color, var(--kcc-gold)) 60%, transparent)
+    );
+    box-shadow: 0 0 8px -2px var(--series-color, var(--kcc-gold));
+    transition: width 280ms cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  .series-card-actions {
-    display: flex;
-    gap: 6px;
-    flex-shrink: 0;
+  /* Asset folder cell — monospace pill matching the visual rhythm
+     of `<code>` inline elements but boxed so the column reads as
+     filesystem identifier. */
+  .series-folder-code {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--kcc-rim);
+    color: var(--kcc-text);
+    font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+    font-size: 0.74rem;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+    overflow: hidden;
+    max-width: 100%;
+    text-overflow: ellipsis;
+  }
+
+  /* Empty state — single full-width row with muted text. Mirrors
+     the books table's empty handling and keeps the table chrome
+     intact so the section still reads as a "data area" rather than
+     a placeholder card. */
+  .series-empty-row .series-empty-cell {
+    text-align: center;
+    color: var(--kcc-text-muted);
+    font-size: 0.85rem;
+    padding: 26px 16px;
+    background: rgba(255, 255, 255, 0.012);
+    border-bottom: none;
+  }
+
+  /* Hover affordance — same gentle row tint as the books table so
+     the two tables behave identically when the cursor moves over
+     them. */
+  .series-row.kcc-tr:hover .kcc-td {
+    background: rgba(255, 255, 255, 0.02);
+  }
+  .series-row.kcc-tr:last-child .kcc-td {
+    border-bottom: none;
   }
 
   /* The series-edit-btn shares its visual treatment with the per-item
@@ -1601,6 +2049,54 @@ const i18nBundle = {
     box-shadow: 0 0 0 3px rgba(201, 169, 110, 0.12);
   }
 
+  /* Read-only slug — visually muted so the user can scan it but
+     understands it isn't editable. Cursor stays as text so the
+     value can still be selected and copied. */
+  .meta-input--readonly {
+    background: rgba(255, 255, 255, 0.02);
+    color: var(--kcc-text-muted);
+    cursor: text;
+  }
+  .meta-input--readonly:focus {
+    border-color: var(--kcc-rim);
+    background: rgba(255, 255, 255, 0.02);
+    box-shadow: none;
+  }
+
+  /* Monospace input for filesystem-shaped values (asset folder). */
+  .meta-input--mono {
+    font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+    font-size: 0.84rem;
+    letter-spacing: 0.01em;
+  }
+
+  /* Textarea — same look as .meta-input, just with a comfortable
+     resize handle and a min-height that fits ~4 lines. */
+  .meta-textarea {
+    min-height: 96px;
+    resize: vertical;
+    line-height: 1.5;
+  }
+
+  /* Read-only computed summary inside the drawer. Renders just like
+     a meta-field but without an input — the label is the value, the
+     hint explains why it's read-only. The hidden mirror input keeps
+     the value programmatically accessible for tests/screenshots. */
+  .meta-field--readonly-summary {
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px dashed var(--kcc-rim);
+  }
+  .meta-field--readonly-summary .meta-label {
+    color: var(--kcc-text);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  .meta-field--readonly-summary .meta-hint {
+    color: var(--kcc-text-muted);
+  }
+
   .meta-select {
     appearance: none;
     -webkit-appearance: none;
@@ -1829,10 +2325,15 @@ const i18nBundle = {
     setMetadata,
     getSeriesMetadata,
     setSeriesMetadata,
+    getAllSeriesMetadata,
+    deleteSeriesMetadata,
   } from '../utils/content-metadata';
+  import { slugifySeriesName } from '../types/content-metadata';
+  import { getKnowledgeCardAssets } from '../utils/library/knowledge-cards';
   import type {
     ContentMetadata,
     SeriesMetadata,
+    SeriesStatus,
   } from '../types/content-metadata';
 
   // ── i18n bundle ──────────────────────────────────────────────
@@ -1857,6 +2358,12 @@ const i18nBundle = {
     toastMetadataSaved: string;
     modalDeleting: string;
     modalConfirmText: string;
+    modalHeadingBook: string;
+    modalBodyBook: string;
+    modalWarningBook: string;
+    modalHeadingSeries: string;
+    modalBodySeries: string;
+    modalWarningSeries: string;
     // Series Management
     seriesEmpty: string;
     seriesCountTpl: string;
@@ -1866,6 +2373,39 @@ const i18nBundle = {
     seriesEditTitle: string;
     seriesTagCapsule: string;
     toastSeriesSaved: string;
+    // Rich-card redesign
+    seriesCardItemsOfTpl: string;
+    seriesCardItemsOnlyTpl: string;
+    seriesCardActualLabelTpl: string;
+    seriesCardAssetFolderLabel: string;
+    seriesCardAssetFolderEmpty: string;
+    seriesCardEditButton: string;
+    seriesCardNoDescription: string;
+    seriesCardProgressAriaTpl: string;
+    seriesStatusActive: string;
+    seriesStatusDraft: string;
+    seriesStatusHidden: string;
+    seriesBadgeVisible: string;
+    seriesBadgeHiddenFromUni: string;
+    seriesOptionCapsule: string;
+    seriesOptionCard: string;
+    seriesOptionOrbitNode: string;
+    seriesActualReadOnlyTpl: string;
+    seriesActionNew: string;
+    seriesActionDelete: string;
+    seriesActionDeleteAriaTpl: string;
+    seriesActionDeleteTitle: string;
+    seriesDrawerEyebrowNew: string;
+    seriesFieldName: string;
+    seriesFieldNameHint: string;
+    seriesToastDeleted: string;
+    seriesToastCreated: string;
+    seriesToastRenamed: string;
+    seriesToastAlreadyExists: string;
+    seriesToastNameRequired: string;
+    seriesCellNotSet: string;
+    seriesCellNoFolder: string;
+    seriesCellDash: string;
     cellEmpty: string;
     cellVisible: string;
     cellHidden: string;
@@ -1874,6 +2414,16 @@ const i18nBundle = {
     optionBook: string;
     optionCourse: string;
     optionArticle: string;
+    // Cover upload
+    coverPlaceholder: string;
+    coverUpload: string;
+    coverUploadAria: string;
+    coverReplace: string;
+    coverUploading: string;
+    toastCoverUploaded: string;
+    toastCoverUploadFailed: string;
+    toastCoverInvalidType: string;
+    toastCoverTooLarge: string;
   };
 
   const i18nRoot = document.querySelector<HTMLElement>('.kcc-shell');
@@ -1986,32 +2536,113 @@ const i18nBundle = {
     );
   });
 
-  // Delete book functionality
-  const modal = document.getElementById('delete-modal')!;
-  const modalTitle = document.getElementById('modal-book-title')!;
-  const modalCancel = document.getElementById('modal-cancel')!;
-  const modalConfirm = document.getElementById('modal-confirm')!;
-  let pendingDeleteSlug: string | null = null;
+  // ─────────────────────────────────────────────────────────────
+  // Confirmation modal — shared by book delete AND series delete.
+  //
+  // Each caller supplies a heading, a body template, the title to
+  // substitute into the body, a warning line, and an async onConfirm.
+  // The modal renders the {{title}} placeholder as a real <strong>
+  // with `.textContent` so user-supplied titles cannot inject HTML.
+  // While onConfirm runs, the confirm button is disabled and shows
+  // the "Deleting…" label; on success or failure the modal closes
+  // (errors are surfaced via toasts the caller emits inside
+  // onConfirm).
+  // ─────────────────────────────────────────────────────────────
 
-  function showModal(slug: string, title: string) {
-    pendingDeleteSlug = slug;
-    modalTitle.textContent = title;
-    modal.classList.remove('hidden');
+  const modal = document.getElementById('delete-modal')!;
+  const modalHeadingEl = document.getElementById('modal-heading')!;
+  const modalBodyEl = document.getElementById('modal-body')!;
+  const modalWarningEl = document.getElementById('modal-warning')!;
+  const modalCancel = document.getElementById('modal-cancel') as HTMLButtonElement;
+  const modalConfirm = document.getElementById('modal-confirm') as HTMLButtonElement;
+
+  type ConfirmRequest = {
+    heading: string;
+    /** Body template; may contain a single `{{title}}` placeholder. */
+    bodyTpl: string;
+    /** Substituted into bodyTpl wrapped in <strong>. */
+    title: string;
+    /** Plain-text warning line shown below the body. */
+    warning: string;
+    /** Optional confirm-button label. Defaults to i18n.modalConfirmText. */
+    confirmLabel?: string;
+    /** Action invoked on confirm. Errors must be handled inside. */
+    onConfirm: () => Promise<void> | void;
+  };
+
+  let pendingConfirm: ConfirmRequest | null = null;
+
+  /**
+   * Build the body paragraph for the confirmation modal. Splits
+   * `tpl` on the literal `{{title}}` placeholder and inserts a
+   * `<strong>` carrying the title's text — never its HTML — so a
+   * user-typed series name like `<img onerror=…>` cannot run.
+   */
+  function buildConfirmBody(tpl: string, title: string): DocumentFragment {
+    const frag = document.createDocumentFragment();
+    const parts = tpl.split('{{title}}');
+    for (let i = 0; i < parts.length; i++) {
+      if (i > 0) {
+        const strong = document.createElement('strong');
+        strong.textContent = title;
+        frag.appendChild(strong);
+      }
+      if (parts[i]) frag.appendChild(document.createTextNode(parts[i]));
+    }
+    return frag;
+  }
+
+  function showConfirmModal(req: ConfirmRequest) {
+    pendingConfirm = req;
+    modalHeadingEl.textContent = req.heading;
+    modalBodyEl.replaceChildren(buildConfirmBody(req.bodyTpl, req.title));
+    modalWarningEl.textContent = req.warning;
     modalConfirm.disabled = false;
-    modalConfirm.textContent = i18n.modalConfirmText;
+    modalConfirm.textContent = req.confirmLabel ?? i18n.modalConfirmText;
+    modal.classList.remove('hidden');
   }
 
   function hideModal() {
     modal.classList.add('hidden');
-    pendingDeleteSlug = null;
+    pendingConfirm = null;
   }
 
-  // Attach delete buttons
+  // Attach book delete buttons. The book delete flow stays in this
+  // file (close to the modal) because it's the most-used path.
+  // Series delete is wired further below in renderSeries.
   document.querySelectorAll<HTMLButtonElement>('.delete-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const slug = btn.dataset.slug!;
       const title = btn.dataset.title || slug;
-      showModal(slug, title);
+      showConfirmModal({
+        heading: i18n.modalHeadingBook,
+        bodyTpl: i18n.modalBodyBook,
+        title,
+        warning: i18n.modalWarningBook,
+        onConfirm: async () => {
+          try {
+            const response = await fetch('/api/delete-book', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ slug }),
+            });
+            const result = await response.json();
+            if (result.success) {
+              const card = document.querySelector(`.book-card[data-slug="${slug}"]`);
+              if (card) card.remove();
+              showToast(`✅ ${fmt(i18n.toastBookDeleted, { slug })}`);
+              // A book delete may have removed the only member of a
+              // series, so the series row's count needs a repaint
+              // (or the row needs to drop to lonely-only state).
+              renderSeries();
+            } else {
+              showToast(`❌ ${fmt(i18n.toastDeleteError, { msg: result.error || i18n.toastDeleteFailed })}`);
+            }
+          } catch (error: any) {
+            showToast(`❌ ${fmt(i18n.toastNetworkError, { msg: error.message })}`);
+          }
+        },
+      });
     });
   });
 
@@ -2019,35 +2650,13 @@ const i18nBundle = {
   modal.querySelector('.modal-backdrop')?.addEventListener('click', hideModal);
 
   modalConfirm.addEventListener('click', async () => {
-    if (!pendingDeleteSlug) return;
-    
-    const slug = pendingDeleteSlug;
+    if (!pendingConfirm) return;
+    const req = pendingConfirm;
     modalConfirm.disabled = true;
     modalConfirm.textContent = i18n.modalDeleting;
-
     try {
-      const response = await fetch('/api/delete-book', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slug })
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        // Remove the book card from the page
-        const card = document.querySelector(`.book-card[data-slug="${slug}"]`);
-        if (card) {
-          card.remove();
-        }
-        hideModal();
-        showToast(`✅ ${fmt(i18n.toastBookDeleted, { slug })}`);
-      } else {
-        showToast(`❌ ${fmt(i18n.toastDeleteError, { msg: result.error || i18n.toastDeleteFailed })}`);
-        hideModal();
-      }
-    } catch (error: any) {
-      showToast(`❌ ${fmt(i18n.toastNetworkError, { msg: error.message })}`);
+      await req.onConfirm();
+    } finally {
       hideModal();
     }
   });
@@ -2097,17 +2706,31 @@ const i18nBundle = {
     }
   }
 
-  function paintCardFromMetadata(slug: string, meta: ContentMetadata) {
+  function paintCardFromMetadata(
+    slug: string,
+    meta: ContentMetadata,
+    opts: { paintTitle?: boolean } = {},
+  ) {
     const card = document.querySelector<HTMLElement>(`.book-card[data-slug="${slug}"]`);
     if (!card) return;
 
-    const titleEl = card.querySelector<HTMLElement>('.book-title');
-    if (titleEl) titleEl.textContent = meta.displayTitle;
+    // The SSR-rendered title already reflects the manifest (via
+    // pickAdminTitleAndSubtitle, which knows that course_lesson rows
+    // surface the lesson-specific name from `subtitles`). Repainting
+    // it from localStorage on every boot would let stale or
+    // accidentally-saved displayTitle values silently overwrite the
+    // correct manifest text — including pinning the slug as the title
+    // if a previous session ever saved it. So title repaint is opt-in
+    // and only requested by the explicit save flow below.
+    if (opts.paintTitle) {
+      const titleEl = card.querySelector<HTMLElement>('.book-title');
+      if (titleEl) titleEl.textContent = meta.displayTitle;
 
-    const monoEl = card.querySelector<HTMLElement>('.book-monogram');
-    if (monoEl) {
-      const ch = (meta.displayTitle || slug).trim().charAt(0).toUpperCase();
-      monoEl.textContent = ch || '·';
+      const monoEl = card.querySelector<HTMLElement>('.book-monogram');
+      if (monoEl) {
+        const ch = (meta.displayTitle || slug).trim().charAt(0).toUpperCase();
+        monoEl.textContent = ch || '·';
+      }
     }
 
     // Knowledge Catalog table cells — each is identified by its
@@ -2247,7 +2870,10 @@ const i18nBundle = {
     };
 
     const saved = setMetadata(slug, patch, fallback);
-    paintCardFromMetadata(slug, saved);
+    // Save flow is the only place the user explicitly asked for the
+    // displayTitle to change, so it's the only place that should
+    // overwrite the SSR-rendered manifest title.
+    paintCardFromMetadata(slug, saved, { paintTitle: true });
     // A series is implicitly defined by items sharing a non-empty
     // seriesName, so an item save can create / move / drain a series.
     // Re-derive and repaint the Series Management list.
@@ -2277,30 +2903,96 @@ const i18nBundle = {
     members: ContentMetadata[];
     available: number;
     seriesMeta: SeriesMetadata;
+    /**
+     * Every raw `seriesName` string we observed across book metadata
+     * that normalized to the same grouping key. Usually a one-element
+     * array; multi-element only when the user has whitespace variants
+     * of the same series name across books. The series-delete flow
+     * uses this list to clear `seriesName` on every book that points
+     * at any of the variants in one pass.
+     */
+    allRawNames: string[];
   };
 
+  /**
+   * Build the canonical key used to group items into a single series
+   * row. Two seriesName values that differ only in invisible whitespace
+   * (trailing space, doubled internal spaces, leading newline) MUST
+   * NOT produce two rows — that's the duplicate-row bug we hit when a
+   * single series was authored on two books with subtly different
+   * whitespace. We collapse internal whitespace to a single space and
+   * trim. Casing is intentionally preserved: "AI" and "Ai" remain
+   * distinct on purpose so the user can keep deliberate casing splits.
+   */
+  function normalizeSeriesKey(raw: string): string {
+    return raw.trim().replace(/\s+/g, ' ');
+  }
+
   function detectSeriesGroups(): SeriesGroup[] {
-    const groups = new Map<string, ContentMetadata[]>();
+    // Bucket -> { displayName (the FIRST raw form encountered, used to
+    // render the row), members, allRawNames (every raw seriesName
+    // value seen for this normalized key, used by the delete flow to
+    // sweep all variants out of book metadata in one pass) }.
+    type Bucket = {
+      displayName: string;
+      members: ContentMetadata[];
+      allRawNames: Set<string>;
+    };
+    const buckets = new Map<string, Bucket>();
+
     document.querySelectorAll<HTMLElement>('.book-card[data-slug]').forEach(card => {
       const slug = card.dataset.slug;
       if (!slug) return;
       const titleEl = card.querySelector<HTMLElement>('.book-title');
       const fallback = titleEl?.textContent?.trim() || slug;
       const m = getMetadata(slug, fallback);
-      const sn = m.seriesName.trim();
-      if (!sn) return;
-      const bucket = groups.get(sn);
-      if (bucket) bucket.push(m);
-      else groups.set(sn, [m]);
+      const raw = (m.seriesName || '').trim();
+      if (!raw) return;
+      const key = normalizeSeriesKey(raw);
+      if (!key) return;
+      const bucket = buckets.get(key);
+      if (bucket) {
+        bucket.members.push(m);
+        bucket.allRawNames.add(raw);
+      } else {
+        buckets.set(key, {
+          displayName: raw,
+          members: [m],
+          allRawNames: new Set([raw]),
+        });
+      }
     });
 
+    // Also surface "lonely" series — metadata records that exist but
+    // have no books pointing at them. Without this, a series the user
+    // creates via the "New series" button would never render until at
+    // least one book is attached. The lonely record's name is the
+    // displayName for the row.
+    const allMeta = getAllSeriesMetadata();
+    for (const [name] of Object.entries(allMeta)) {
+      const key = normalizeSeriesKey(name);
+      if (!key) continue;
+      if (buckets.has(key)) continue;
+      buckets.set(key, {
+        displayName: name,
+        members: [],
+        allRawNames: new Set([name]),
+      });
+    }
+
     const result: SeriesGroup[] = [];
-    groups.forEach((members, name) => {
+    buckets.forEach(({ displayName, members, allRawNames }) => {
       const available = members.filter(
         m => m.isVisibleInUniverse && m.visualMode !== 'hidden',
       ).length;
-      const seriesMeta = getSeriesMetadata(name);
-      result.push({ name, members, available, seriesMeta });
+      const seriesMeta = getSeriesMetadata(displayName);
+      result.push({
+        name: displayName,
+        members,
+        available,
+        seriesMeta,
+        allRawNames: Array.from(allRawNames),
+      });
     });
 
     // Sort by editorial order if set on EITHER side, then alphabetical
@@ -2335,106 +3027,275 @@ const i18nBundle = {
     list.replaceChildren();
 
     if (groups.length === 0) {
-      const empty = document.createElement('p');
-      empty.className = 'series-empty';
-      empty.textContent = i18n.seriesEmpty;
-      list.appendChild(empty);
+      // Empty-state row spanning the full column count. The hairline
+      // border + muted text pattern matches the books table's empty
+      // state above so the two sections feel like one panel system.
+      const tr = document.createElement('tr');
+      tr.className = 'series-empty-row';
+      const td = document.createElement('td');
+      td.className = 'kcc-td series-empty-cell';
+      td.colSpan = 10;
+      td.textContent = i18n.seriesEmpty;
+      tr.appendChild(td);
+      list.appendChild(tr);
       return;
     }
 
     groups.forEach(group => {
-      list.appendChild(buildSeriesCard(group));
+      list.appendChild(buildSeriesRow(group));
     });
   }
 
-  function buildSeriesCard(group: SeriesGroup): HTMLElement {
-    const { name, members, available, seriesMeta } = group;
-    const total = members.length;
+  // ─────────────────────────────────────────────────────────────────
+  // Series-row builder — emits one <tr> per detected series.
+  //
+  // Columns (left-to-right in DOM source; visual order under RTL is
+  // mirrored automatically by the browser):
+  //   1. שם סדרה        — display title (prominent) + slug (muted)
+  //   2. תיאור          — shortDescription, or muted "no description"
+  //   3. סטטוס          — pill, colored by status
+  //   4. מרחב ידע       — pill, colored by isVisibleInUniverse
+  //   5. פריטים בפועל   — computed count (members.length)
+  //   6. פריטים מתוכננים — plannedBooksCount or "לא הוגדר"
+  //   7. התקדמות        — counter + bar, or "לא הוגדר" without bar
+  //   8. תיקיית נכסים   — monospace folder name or "ללא תיקייה"
+  //   9. סדר תצוגה      — number or "-"
+  //  10. פעולות         — gold-outline "עריכת סדרה" button
+  //
+  // The same `data-series-name` attribute is kept on the row so any
+  // existing selector (`[data-series-name="…"]`) continues to work.
+  // The legacy `.series-card` class is renamed to `.series-row` to
+  // make it obvious the rendering mode changed; `data-series-name`
+  // is the stable identity hook either way.
+  function buildSeriesRow(group: SeriesGroup): HTMLElement {
+    const { name, members, seriesMeta, allRawNames } = group;
+    const actualBooksCount = members.length;
+    const plannedBooksCount =
+      typeof seriesMeta.plannedBooksCount === 'number' && seriesMeta.plannedBooksCount > 0
+        ? seriesMeta.plannedBooksCount
+        : undefined;
     const color = seriesMeta.color || DEFAULT_SERIES_COLOR;
+    const status: SeriesStatus = seriesMeta.status ?? 'active';
 
-    const card = document.createElement('article');
-    card.className = 'series-card';
-    card.dataset.seriesName = name;
-    card.style.setProperty('--series-color', color);
+    const tr = document.createElement('tr');
+    tr.className = 'series-row kcc-tr';
+    tr.dataset.seriesName = name;
+    tr.dataset.status = status;
+    // Series color is exposed on the row so the progress-bar fill
+    // (declared in CSS as `var(--series-color, …)`) picks up the
+    // per-series accent without extra inline styling per cell.
+    tr.style.setProperty('--series-color', color);
 
-    const info = document.createElement('div');
-    info.className = 'series-card-info';
+    // 0. כריכה — front-image thumbnail + uploader. Same pattern as
+    //    the books table; the whole button is the click target and
+    //    the delegated handler (matching `[data-cover-upload]`) drives
+    //    the file picker / fetch to /api/upload-front. The asset
+    //    folder under src/assets/knowledge-cards/ is whatever the
+    //    user authored on `seriesMeta.assetFolder`; if blank, we fall
+    //    back to slugifySeriesName(name) so the series at least gets
+    //    a deterministic folder. The thumbnail itself is read via the
+    //    same getKnowledgeCardAssets glob the orbit uses, so what the
+    //    admin shows is exactly what /library will show.
+    const assetSlug = (seriesMeta.assetFolder?.trim()) || slugifySeriesName(name);
+    const coverTd = document.createElement('td');
+    coverTd.className = 'kcc-td col-cover';
+    const coverBtn = document.createElement('button');
+    coverBtn.type = 'button';
+    coverBtn.className = 'cover-uploader';
+    coverBtn.dataset.coverUpload = 'series';
+    coverBtn.dataset.slug = assetSlug;
+    coverBtn.title = i18n.coverUpload;
+    coverBtn.setAttribute(
+      'aria-label',
+      fmt(i18n.coverUploadAria, { title: seriesMeta.displayTitle || name }),
+    );
+    const seriesFrontUrl = assetSlug ? getKnowledgeCardAssets(assetSlug)?.front : undefined;
+    if (seriesFrontUrl) {
+      const img = document.createElement('img');
+      img.className = 'cover-thumb';
+      img.src = seriesFrontUrl;
+      img.alt = '';
+      img.loading = 'lazy';
+      img.decoding = 'async';
+      coverBtn.appendChild(img);
+    } else {
+      const empty = document.createElement('span');
+      empty.className = 'cover-thumb cover-thumb--empty';
+      empty.setAttribute('aria-hidden', 'true');
+      empty.innerHTML =
+        '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">' +
+        '<rect x="3" y="3" width="18" height="18" rx="2"></rect>' +
+        '<circle cx="9" cy="9" r="2"></circle>' +
+        '<path d="M21 15l-5-5L5 21"></path>' +
+        '</svg>';
+      coverBtn.appendChild(empty);
+    }
+    const overlay = document.createElement('span');
+    overlay.className = 'cover-uploader-overlay';
+    overlay.setAttribute('aria-hidden', 'true');
+    overlay.innerHTML =
+      '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' +
+      '<path d="M12 5v14"></path><path d="M5 12h14"></path>' +
+      '</svg>';
+    coverBtn.appendChild(overlay);
+    coverTd.appendChild(coverBtn);
+    tr.appendChild(coverTd);
 
-    const heading = document.createElement('h3');
-    heading.className = 'series-card-name';
-    heading.textContent = seriesMeta.displayTitle || name;
-    info.appendChild(heading);
-
-    // Show the underlying series name (the keyed identifier) when it
-    // differs from the display title — the user needs to know which
-    // raw seriesName an item must carry to land in this series.
+    // 1. שם סדרה — title + slug stack mirrors `.kcc-title-stack`
+    //    used by the books table so the visual rhythm matches.
+    const nameTd = document.createElement('td');
+    nameTd.className = 'kcc-td col-series-name';
+    const stack = document.createElement('div');
+    stack.className = 'kcc-title-stack';
+    const title = document.createElement('p');
+    title.className = 'series-row-title';
+    title.textContent = seriesMeta.displayTitle || name;
+    stack.appendChild(title);
     if (seriesMeta.displayTitle && seriesMeta.displayTitle !== name) {
-      const slug = document.createElement('span');
-      slug.className = 'series-card-slug';
+      const slug = document.createElement('p');
+      slug.className = 'series-row-slug';
       slug.textContent = name;
-      info.appendChild(slug);
+      stack.appendChild(slug);
     }
+    nameTd.appendChild(stack);
+    tr.appendChild(nameTd);
 
-    const meta = document.createElement('div');
-    meta.className = 'series-card-meta';
+    // 2. תיאור — shortDescription or muted placeholder.
+    const descTd = document.createElement('td');
+    descTd.className = 'kcc-td col-series-desc';
+    const summaryText = (seriesMeta.shortDescription ?? '').trim();
+    if (summaryText.length > 0) {
+      descTd.textContent = summaryText;
+    } else {
+      descTd.classList.add('kcc-muted');
+      descTd.textContent = i18n.seriesCardNoDescription;
+    }
+    tr.appendChild(descTd);
 
-    const tag = document.createElement('span');
-    tag.className = 'series-tag';
-    tag.textContent = i18n.seriesTagCapsule;
-    meta.appendChild(tag);
+    // 3. סטטוס — colored pill driven by data-status.
+    const statusTd = document.createElement('td');
+    statusTd.className = 'kcc-td col-series-status';
+    const statusPill = document.createElement('span');
+    statusPill.className = 'series-status-pill';
+    statusPill.dataset.status = status;
+    statusPill.textContent =
+      status === 'draft'  ? i18n.seriesStatusDraft  :
+      status === 'hidden' ? i18n.seriesStatusHidden :
+                            i18n.seriesStatusActive;
+    statusTd.appendChild(statusPill);
+    tr.appendChild(statusTd);
 
+    // 4. מרחב ידע — green / red pill driven by data-on.
+    const universeTd = document.createElement('td');
+    universeTd.className = 'kcc-td col-series-universe';
+    const universePill = document.createElement('span');
+    universePill.className = 'series-universe-pill';
+    if (seriesMeta.isVisibleInUniverse) {
+      universePill.dataset.on = 'true';
+      universePill.textContent = i18n.seriesBadgeVisible;
+    } else {
+      universePill.dataset.on = 'false';
+      universePill.textContent = i18n.seriesBadgeHiddenFromUni;
+    }
+    universeTd.appendChild(universePill);
+    tr.appendChild(universeTd);
+
+    // 5. פריטים בפועל — computed count. Read-only: never editable.
+    const actualTd = document.createElement('td');
+    actualTd.className = 'kcc-td col-series-actual series-cell-num';
+    actualTd.textContent = String(actualBooksCount);
+    tr.appendChild(actualTd);
+
+    // 6. פריטים מתוכננים — number or "לא הוגדר".
+    const plannedTd = document.createElement('td');
+    plannedTd.className = 'kcc-td col-series-planned series-cell-num';
+    if (plannedBooksCount !== undefined) {
+      plannedTd.textContent = String(plannedBooksCount);
+    } else {
+      plannedTd.classList.add('kcc-muted');
+      plannedTd.textContent = i18n.seriesCellNotSet;
+    }
+    tr.appendChild(plannedTd);
+
+    // 7. התקדמות — counter + bar when planned set; "לא הוגדר" otherwise.
+    const progressTd = document.createElement('td');
+    progressTd.className = 'kcc-td col-series-progress';
+    if (plannedBooksCount !== undefined) {
+      const pct = Math.max(0, Math.min(100,
+        Math.round((actualBooksCount / plannedBooksCount) * 100)));
+      const wrap = document.createElement('div');
+      wrap.className = 'series-progress-cell';
+
+      const counter = document.createElement('span');
+      counter.className = 'series-progress-counter';
+      counter.textContent = fmt(i18n.seriesCardItemsOfTpl, {
+        actual: actualBooksCount,
+        planned: plannedBooksCount,
+      });
+      wrap.appendChild(counter);
+
+      const bar = document.createElement('div');
+      bar.className = 'series-progress-bar';
+      bar.setAttribute('role', 'progressbar');
+      bar.setAttribute('aria-valuemin', '0');
+      bar.setAttribute('aria-valuemax', String(plannedBooksCount));
+      bar.setAttribute('aria-valuenow', String(actualBooksCount));
+      bar.setAttribute('aria-label', fmt(i18n.seriesCardProgressAriaTpl, {
+        actual: actualBooksCount,
+        planned: plannedBooksCount,
+      }));
+      const fill = document.createElement('span');
+      fill.className = 'series-progress-fill';
+      fill.style.width = pct + '%';
+      bar.appendChild(fill);
+      wrap.appendChild(bar);
+
+      progressTd.appendChild(wrap);
+    } else {
+      progressTd.classList.add('kcc-muted');
+      progressTd.textContent = i18n.seriesCellNotSet;
+    }
+    tr.appendChild(progressTd);
+
+    // 8. תיקיית נכסים — monospace folder name or "ללא תיקייה".
+    const folderTd = document.createElement('td');
+    folderTd.className = 'kcc-td col-series-folder';
+    const folder = (seriesMeta.assetFolder ?? '').trim();
+    if (folder.length > 0) {
+      const code = document.createElement('code');
+      code.className = 'series-folder-code';
+      code.textContent = folder;
+      folderTd.appendChild(code);
+    } else {
+      folderTd.classList.add('kcc-muted');
+      folderTd.textContent = i18n.seriesCellNoFolder;
+    }
+    tr.appendChild(folderTd);
+
+    // 9. סדר תצוגה — number or "-".
+    const orderTd = document.createElement('td');
+    orderTd.className = 'kcc-td col-series-order series-cell-num';
     if (typeof seriesMeta.order === 'number') {
-      const order = document.createElement('span');
-      order.className = 'series-order-tag';
-      order.textContent = '#' + String(seriesMeta.order);
-      meta.appendChild(order);
+      orderTd.textContent = String(seriesMeta.order);
+    } else {
+      orderTd.classList.add('kcc-muted');
+      orderTd.textContent = i18n.seriesCellDash;
     }
+    tr.appendChild(orderTd);
 
-    if (!seriesMeta.isVisibleInUniverse) {
-      const hidden = document.createElement('span');
-      hidden.className = 'series-hidden-tag';
-      hidden.textContent = '○';
-      hidden.setAttribute('aria-hidden', 'true');
-      meta.appendChild(hidden);
-    }
-
-    const sep = document.createElement('span');
-    sep.className = 'series-dot-sep';
-    sep.textContent = '·';
-    sep.setAttribute('aria-hidden', 'true');
-    meta.appendChild(sep);
-
-    const counts = document.createElement('span');
-    counts.className = 'series-card-counts';
-    const totalStrong = document.createElement('strong');
-    totalStrong.textContent = String(total);
-    counts.append(totalStrong, document.createTextNode(' '));
-    counts.append(
-      document.createTextNode(
-        fmt(i18n.seriesItemsTpl, { n: total }).replace(String(total), '').trim() || 'items',
-      ),
-    );
-    counts.appendChild(document.createTextNode(' · '));
-    const availStrong = document.createElement('strong');
-    availStrong.textContent = String(available);
-    counts.append(availStrong, document.createTextNode(' '));
-    counts.append(
-      document.createTextNode(
-        fmt(i18n.seriesAvailableTpl, { n: available }).replace(String(available), '').trim() || 'available',
-      ),
-    );
-    meta.appendChild(counts);
-
-    info.appendChild(meta);
-    card.appendChild(info);
-
-    // Edit action — opens the series drawer for this series name.
-    const actions = document.createElement('div');
-    actions.className = 'series-card-actions';
+    // 10. פעולות — primary "עריכת סדרה" button + small delete icon.
+    //     The delete button never deletes immediately; it pops the
+    //     shared confirmation modal (same flow used for book delete)
+    //     and only on confirm does it (a) clear `seriesName` on every
+    //     book attached to any whitespace variant of this group, and
+    //     (b) remove the SeriesMetadata record. Both steps run
+    //     locally in localStorage — no API call.
+    const actionsTd = document.createElement('td');
+    actionsTd.className = 'kcc-td col-series-actions';
     const editBtn = document.createElement('button');
     editBtn.type = 'button';
     editBtn.className = 'series-edit-btn';
-    editBtn.title = i18n.seriesEditTitle;
+    editBtn.title = i18n.seriesCardEditButton;
     editBtn.setAttribute('aria-label', fmt(i18n.seriesEditAriaTpl, { name }));
     editBtn.dataset.seriesName = name;
     const svgNs = 'http://www.w3.org/2000/svg';
@@ -2455,13 +3316,73 @@ const i18nBundle = {
     svg.append(p1, p2);
     editBtn.appendChild(svg);
     const editLabel = document.createElement('span');
-    editLabel.textContent = i18n.seriesEditTitle;
+    editLabel.textContent = i18n.seriesCardEditButton;
     editBtn.appendChild(editLabel);
     editBtn.addEventListener('click', () => openSeriesDrawer(name, editBtn));
-    actions.appendChild(editBtn);
-    card.appendChild(actions);
+    actionsTd.appendChild(editBtn);
 
-    return card;
+    const deleteBtn = document.createElement('button');
+    deleteBtn.type = 'button';
+    deleteBtn.className = 'series-delete-btn';
+    deleteBtn.title = i18n.seriesActionDeleteTitle;
+    deleteBtn.setAttribute(
+      'aria-label',
+      fmt(i18n.seriesActionDeleteAriaTpl, {
+        name: seriesMeta.displayTitle || name,
+      }),
+    );
+    const dsvg = document.createElementNS(svgNs, 'svg');
+    dsvg.setAttribute('width', '14');
+    dsvg.setAttribute('height', '14');
+    dsvg.setAttribute('viewBox', '0 0 24 24');
+    dsvg.setAttribute('fill', 'none');
+    dsvg.setAttribute('stroke', 'currentColor');
+    dsvg.setAttribute('stroke-width', '1.8');
+    dsvg.setAttribute('stroke-linecap', 'round');
+    dsvg.setAttribute('stroke-linejoin', 'round');
+    dsvg.setAttribute('aria-hidden', 'true');
+    [
+      'polyline:3 6 5 6 21 6',
+      'path:M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6',
+      'path:M10 11v6',
+      'path:M14 11v6',
+      'path:M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2',
+    ].forEach((spec) => {
+      const [tag, d] = spec.split(':');
+      const el = document.createElementNS(svgNs, tag);
+      if (tag === 'polyline') el.setAttribute('points', d);
+      else el.setAttribute('d', d);
+      dsvg.appendChild(el);
+    });
+    deleteBtn.appendChild(dsvg);
+    deleteBtn.addEventListener('click', () => {
+      const displayTitle = seriesMeta.displayTitle || name;
+      showConfirmModal({
+        heading: i18n.modalHeadingSeries,
+        bodyTpl: i18n.modalBodySeries,
+        title: displayTitle,
+        warning: i18n.modalWarningSeries,
+        onConfirm: () => {
+          // Detach: clear seriesName on every book whose seriesName
+          // normalized to this group (covers whitespace variants).
+          for (const member of members) {
+            setMetadata(member.slug, { seriesName: '' }, member.displayTitle);
+          }
+          // Remove the metadata record under every raw-name variant
+          // so a single dangling record can never resurrect the row.
+          for (const raw of allRawNames) {
+            deleteSeriesMetadata(raw);
+          }
+          renderSeries();
+          showToast(fmt(i18n.seriesToastDeleted, { name: displayTitle }));
+        },
+      });
+    });
+    actionsTd.appendChild(deleteBtn);
+
+    tr.appendChild(actionsTd);
+
+    return tr;
   }
 
   // Series drawer — reuses the .meta-drawer slide animation/CSS class
@@ -2480,10 +3401,23 @@ const i18nBundle = {
 
   const seriesFields = {
     displayTitle: seriesForm.elements.namedItem('displayTitle') as HTMLInputElement,
+    slug: seriesForm.elements.namedItem('slug') as HTMLInputElement,
+    shortDescription: seriesForm.elements.namedItem('shortDescription') as HTMLInputElement,
+    fullDescription: seriesForm.elements.namedItem('fullDescription') as HTMLTextAreaElement,
+    plannedBooksCount: seriesForm.elements.namedItem('plannedBooksCount') as HTMLInputElement,
+    assetFolder: seriesForm.elements.namedItem('assetFolder') as HTMLInputElement,
     order: seriesForm.elements.namedItem('order') as HTMLInputElement,
     isVisibleInUniverse: seriesForm.elements.namedItem('isVisibleInUniverse') as HTMLInputElement,
     visualMode: seriesForm.elements.namedItem('visualMode') as HTMLSelectElement,
+    status: seriesForm.elements.namedItem('status') as HTMLSelectElement,
   };
+
+  // Live label that surfaces the read-only computed `actualBooksCount`
+  // inside the drawer. The value is derived from `members.length` when
+  // the drawer is opened — never editable.
+  const seriesActualLabel = seriesForm.querySelector<HTMLElement>(
+    '.meta-field--readonly-summary .meta-label',
+  );
 
   // Local form state for the optional `color` field. Tracked outside
   // the form because <input type="color"> always produces a value;
@@ -2491,6 +3425,13 @@ const i18nBundle = {
   let editingSeriesName: string | null = null;
   let editingColorOverride: string | undefined = undefined;
   let returnFocusElForSeries: HTMLElement | null = null;
+  // Create vs edit mode. In create mode the slug field is editable
+  // (the user is naming a brand-new series) and the eyebrow swaps to
+  // "Create series". Save reads the name from the slug field and
+  // refuses to overwrite an existing record.
+  let isCreatingSeries = false;
+  const seriesEyebrowEl = document.getElementById('series-drawer-eyebrow')!;
+  const seriesEyebrowDefault = seriesEyebrowEl.textContent || '';
 
   function paintColorSwatch(color: string | undefined): void {
     const applied = color || DEFAULT_SERIES_COLOR;
@@ -2500,19 +3441,52 @@ const i18nBundle = {
   }
 
   function openSeriesDrawer(name: string, trigger: HTMLElement | null): void {
+    isCreatingSeries = false;
     editingSeriesName = name;
     returnFocusElForSeries = trigger;
     const meta = getSeriesMetadata(name);
 
+    // Compute the read-only `actualBooksCount` from the live group so
+    // the drawer always shows the same number as the card. The series
+    // card list is the authoritative count source for the admin.
+    const group = detectSeriesGroups().find(g => g.name === name);
+    const actualBooksCount = group?.members.length ?? 0;
+
+    seriesEyebrowEl.textContent = seriesEyebrowDefault;
     seriesTitleEl.textContent = meta.displayTitle || name;
     seriesNameEl.textContent = name;
 
     seriesFields.displayTitle.value = meta.displayTitle || name;
+    seriesFields.slug.value = name;
+    // The slug is editable both in create mode AND in edit mode.
+    // In edit mode, changing it triggers a rename in the save flow:
+    // every book whose `seriesName` matches any whitespace variant of
+    // the current group is retagged, and the SeriesMetadata record is
+    // moved from the old key to the new one. See seriesSaveBtn handler.
+    seriesFields.slug.readOnly = false;
+    seriesFields.slug.classList.remove('meta-input--readonly');
+    seriesFields.shortDescription.value = meta.shortDescription ?? '';
+    seriesFields.fullDescription.value = meta.fullDescription ?? '';
+    seriesFields.plannedBooksCount.value =
+      typeof meta.plannedBooksCount === 'number' ? String(meta.plannedBooksCount) : '';
+    seriesFields.assetFolder.value = meta.assetFolder ?? '';
     seriesFields.order.value = typeof meta.order === 'number' ? String(meta.order) : '';
     seriesFields.isVisibleInUniverse.checked = meta.isVisibleInUniverse;
     seriesFields.visualMode.value = meta.visualMode;
+    seriesFields.status.value = meta.status ?? 'active';
     editingColorOverride = meta.color;
     paintColorSwatch(editingColorOverride);
+
+    // Read-only computed summary — text + the hidden `actualBooksCount`
+    // mirror so any test or screenshot capture can read the value
+    // straight off the form without relying on the label's content.
+    if (seriesActualLabel) {
+      seriesActualLabel.textContent = fmt(i18n.seriesActualReadOnlyTpl, { n: actualBooksCount });
+    }
+    const actualMirror = seriesForm.querySelector<HTMLInputElement>(
+      'input[data-actual-books-count]',
+    );
+    if (actualMirror) actualMirror.value = String(actualBooksCount);
 
     seriesDrawer.classList.remove('hidden');
     seriesDrawer.setAttribute('aria-hidden', 'false');
@@ -2520,6 +3494,54 @@ const i18nBundle = {
       seriesDrawer.classList.add('is-open');
       seriesFields.displayTitle.focus();
       seriesFields.displayTitle.select();
+    });
+    document.body.style.overflow = 'hidden';
+  }
+
+  /**
+   * Open the series drawer in "create" mode. The slug input becomes
+   * editable and acts as the new series's identifier; saving validates
+   * that the chosen name does not collide with an existing series
+   * (whitespace-insensitive, the same normalization the row grouping
+   * uses) before writing.
+   */
+  function openSeriesDrawerForNew(trigger: HTMLElement | null): void {
+    isCreatingSeries = true;
+    editingSeriesName = null;
+    returnFocusElForSeries = trigger;
+
+    seriesEyebrowEl.textContent = i18n.seriesDrawerEyebrowNew;
+    seriesTitleEl.textContent = i18n.seriesDrawerEyebrowNew;
+    seriesNameEl.textContent = '—';
+
+    seriesFields.displayTitle.value = '';
+    seriesFields.slug.value = '';
+    seriesFields.slug.readOnly = false;
+    seriesFields.slug.classList.remove('meta-input--readonly');
+    seriesFields.shortDescription.value = '';
+    seriesFields.fullDescription.value = '';
+    seriesFields.plannedBooksCount.value = '';
+    seriesFields.assetFolder.value = '';
+    seriesFields.order.value = '';
+    seriesFields.isVisibleInUniverse.checked = true;
+    seriesFields.visualMode.value = 'capsule';
+    seriesFields.status.value = 'active';
+    editingColorOverride = undefined;
+    paintColorSwatch(undefined);
+
+    if (seriesActualLabel) {
+      seriesActualLabel.textContent = fmt(i18n.seriesActualReadOnlyTpl, { n: 0 });
+    }
+    const actualMirror = seriesForm.querySelector<HTMLInputElement>(
+      'input[data-actual-books-count]',
+    );
+    if (actualMirror) actualMirror.value = '0';
+
+    seriesDrawer.classList.remove('hidden');
+    seriesDrawer.setAttribute('aria-hidden', 'false');
+    requestAnimationFrame(() => {
+      seriesDrawer.classList.add('is-open');
+      seriesFields.slug.focus();
     });
     document.body.style.overflow = 'hidden';
   }
@@ -2573,26 +3595,326 @@ const i18nBundle = {
   });
 
   seriesSaveBtn.addEventListener('click', () => {
-    if (!editingSeriesName) return;
-    const name = editingSeriesName;
+    // Resolve the target name AND any rename action.
+    //
+    // Three flows enter this handler:
+    //   1. Create — the slug field is the new series's identifier.
+    //      Validate non-empty + no collision with an existing series
+    //      under the same normalized key.
+    //   2. Edit, no rename — typed slug normalizes to the same key as
+    //      the row being edited. Just write the patch.
+    //   3. Edit, rename — typed slug normalizes to a NEW key. We need
+    //      to (a) move the SeriesMetadata record under the new key,
+    //      (b) retag every book that points at any whitespace variant
+    //      of the old name to use the new name, (c) delete the old
+    //      SeriesMetadata record. The collision check excludes the
+    //      current series's own variants.
+    //
+    // After the handler decides which flow applies, the rest of the
+    // save logic just builds the patch and writes the metadata under
+    // `name`.
+    let name: string;
+    let renameFromName: string | null = null;
+    let renameRawVariants: string[] = [];
+
+    if (isCreatingSeries) {
+      const typed = seriesFields.slug.value.trim();
+      if (!typed) {
+        showToast(i18n.seriesToastNameRequired);
+        seriesFields.slug.focus();
+        return;
+      }
+      const newKey = normalizeSeriesKey(typed);
+      const existingNames = Object.keys(getAllSeriesMetadata());
+      const collision = existingNames.some(
+        (n) => normalizeSeriesKey(n) === newKey,
+      );
+      if (collision) {
+        showToast(fmt(i18n.seriesToastAlreadyExists, { name: typed }));
+        seriesFields.slug.focus();
+        seriesFields.slug.select();
+        return;
+      }
+      name = typed;
+    } else {
+      if (!editingSeriesName) return;
+      const typed = seriesFields.slug.value.trim();
+      if (!typed) {
+        showToast(i18n.seriesToastNameRequired);
+        seriesFields.slug.focus();
+        return;
+      }
+      const oldKey = normalizeSeriesKey(editingSeriesName);
+      const newKey = normalizeSeriesKey(typed);
+
+      if (newKey !== oldKey) {
+        // True rename. Reject if the new name collides with ANOTHER
+        // existing series (excluding the current group's own raw
+        // variants — those are about to be removed).
+        const currentGroup = detectSeriesGroups().find(
+          (g) => normalizeSeriesKey(g.name) === oldKey,
+        );
+        renameRawVariants = currentGroup?.allRawNames ?? [editingSeriesName];
+        const ownVariantKeys = new Set(
+          renameRawVariants.map(normalizeSeriesKey),
+        );
+        const existingNames = Object.keys(getAllSeriesMetadata());
+        const collision = existingNames.some((n) => {
+          const k = normalizeSeriesKey(n);
+          return k === newKey && !ownVariantKeys.has(k);
+        });
+        if (collision) {
+          showToast(fmt(i18n.seriesToastAlreadyExists, { name: typed }));
+          seriesFields.slug.focus();
+          seriesFields.slug.select();
+          return;
+        }
+        renameFromName = editingSeriesName;
+      }
+      name = typed;
+    }
+
     const orderRaw = seriesFields.order.value.trim();
     const orderNum = orderRaw === '' ? undefined : Number(orderRaw);
     const orderValid = orderNum === undefined || Number.isFinite(orderNum);
 
-    const patch: Partial<SeriesMetadata> = {
-      displayTitle: seriesFields.displayTitle.value.trim() || name,
-      visualMode: seriesFields.visualMode.value as SeriesMetadata['visualMode'],
-      color: editingColorOverride,
-      order: orderValid ? orderNum : undefined,
-      isVisibleInUniverse: seriesFields.isVisibleInUniverse.checked,
+    // plannedBooksCount: integer ≥ 0 only. Empty / NaN / negative all
+    // collapse to undefined so an unset field never poisons the
+    // progress bar with a zero-divisor.
+    const plannedRaw = seriesFields.plannedBooksCount.value.trim();
+    const plannedNum = plannedRaw === '' ? undefined : Number(plannedRaw);
+    const plannedClean =
+      typeof plannedNum === 'number' && Number.isFinite(plannedNum) && plannedNum > 0
+        ? Math.floor(plannedNum)
+        : undefined;
+
+    // Optional text fields: trim and fall back to undefined when empty
+    // so the stored shape stays free of empty strings (so consumers can
+    // use simple `?? defaults` without `''` weirdness).
+    const trimOrUndef = (v: string): string | undefined => {
+      const t = v.trim();
+      return t.length === 0 ? undefined : t;
     };
 
+    const status = (
+      ['active', 'draft', 'hidden'].includes(seriesFields.status.value)
+        ? seriesFields.status.value
+        : 'active'
+    ) as SeriesStatus;
+
+    const patch: Partial<SeriesMetadata> = {
+      displayTitle:        seriesFields.displayTitle.value.trim() || name,
+      visualMode:          seriesFields.visualMode.value as SeriesMetadata['visualMode'],
+      color:               editingColorOverride,
+      order:               orderValid ? orderNum : undefined,
+      isVisibleInUniverse: seriesFields.isVisibleInUniverse.checked,
+      shortDescription:    trimOrUndef(seriesFields.shortDescription.value),
+      fullDescription:     trimOrUndef(seriesFields.fullDescription.value),
+      plannedBooksCount:   plannedClean,
+      assetFolder:         trimOrUndef(seriesFields.assetFolder.value),
+      status,
+    };
+
+    // If this is a rename: walk every book attached to any raw
+    // variant of the OLD name and retag its `seriesName` to the NEW
+    // name. We do this BEFORE writing the new SeriesMetadata so the
+    // re-render after save reflects a single coherent state. After
+    // retagging, drop every old-name SeriesMetadata record so the
+    // grouping logic never resurrects the old row.
+    if (renameFromName) {
+      // Build a set of normalized keys we treat as "the same group"
+      // for the purpose of retagging — covers whitespace variants.
+      const oldVariantKeys = new Set(
+        renameRawVariants.map(normalizeSeriesKey),
+      );
+      document.querySelectorAll<HTMLElement>('.book-card[data-slug]').forEach((card) => {
+        const slug = card.dataset.slug;
+        if (!slug) return;
+        const m = getMetadata(slug);
+        const cur = (m.seriesName || '').trim();
+        if (!cur) return;
+        if (oldVariantKeys.has(normalizeSeriesKey(cur))) {
+          setMetadata(slug, { seriesName: name }, m.displayTitle);
+        }
+      });
+      for (const raw of renameRawVariants) {
+        if (raw !== name) deleteSeriesMetadata(raw);
+      }
+    }
+
     const saved = setSeriesMetadata(name, patch);
+    const wasCreating = isCreatingSeries;
+    const wasRenamed = renameFromName !== null;
     renderSeries();
     closeSeriesDrawer();
-    showToast(fmt(i18n.toastSeriesSaved, { name: saved.displayTitle }));
+    showToast(
+      fmt(
+        wasCreating
+          ? i18n.seriesToastCreated
+          : wasRenamed
+            ? i18n.seriesToastRenamed
+            : i18n.toastSeriesSaved,
+        { name: saved.displayTitle },
+      ),
+    );
+  });
+
+  // Wire the section-header "New series" CTA. The button opens the
+  // drawer in create mode; one delegated listener covers the case
+  // where the button is later re-rendered.
+  document.addEventListener('click', (e) => {
+    const btn = (e.target as HTMLElement | null)?.closest<HTMLButtonElement>(
+      'button[data-new-series]',
+    );
+    if (!btn) return;
+    openSeriesDrawerForNew(btn);
   });
 
   // Boot — paint the section once item-metadata overlay has run.
   renderSeries();
+
+  // ─────────────────────────────────────────────────────────────
+  // Front-image upload (books + series tables)
+  //
+  // One delegated click handler covers both tables: each trigger
+  // carries `data-cover-upload="book|series"` and `data-slug` (the
+  // asset-folder slug under src/assets/knowledge-cards/<slug>/).
+  // On click we open a transient file picker, validate locally for
+  // fast feedback, POST to /api/upload-front, and swap the thumb
+  // for an object URL of the just-uploaded file so the user sees
+  // the change immediately. The on-disk file is the source of
+  // truth for the next SSR pass — Vite's import.meta.glob in
+  // knowledge-cards.ts re-resolves on HMR, so a refresh shows the
+  // properly-hashed bundled URL.
+  // ─────────────────────────────────────────────────────────────
+
+  const FRONT_MAX_BYTES = 5 * 1024 * 1024;
+  // PNG only, because the discovery globs `front.png` exclusively.
+  // Saving a JPG with a .png extension would render but plant a
+  // hidden format mismatch in the bundle.
+  const FRONT_ACCEPTED = ['image/png'];
+
+  function pickFrontFile(): Promise<File | null> {
+    return new Promise((resolve) => {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = FRONT_ACCEPTED.join(',');
+      input.style.position = 'fixed';
+      input.style.left = '-9999px';
+      input.addEventListener(
+        'change',
+        () => {
+          const f = input.files && input.files[0] ? input.files[0] : null;
+          input.remove();
+          resolve(f);
+        },
+        { once: true },
+      );
+      // Some browsers fire `cancel` if the user dismisses the dialog;
+      // covering both keeps the promise from leaking.
+      input.addEventListener(
+        'cancel',
+        () => { input.remove(); resolve(null); },
+        { once: true },
+      );
+      document.body.appendChild(input);
+      input.click();
+    });
+  }
+
+  function paintFront(button: HTMLButtonElement, url: string) {
+    const existingImg = button.querySelector<HTMLImageElement>('.cover-thumb:not(.cover-thumb--empty)');
+    if (existingImg) {
+      existingImg.src = url;
+      return;
+    }
+    const empty = button.querySelector('.cover-thumb--empty');
+    if (empty) empty.remove();
+    const img = document.createElement('img');
+    img.className = 'cover-thumb';
+    img.src = url;
+    img.alt = '';
+    img.loading = 'lazy';
+    img.decoding = 'async';
+    // Insert before the overlay so the overlay stays on top.
+    const overlay = button.querySelector('.cover-uploader-overlay');
+    if (overlay) {
+      button.insertBefore(img, overlay);
+    } else {
+      button.appendChild(img);
+    }
+  }
+
+  async function uploadFront(
+    kind: 'book' | 'series',
+    slug: string,
+    file: File,
+  ): Promise<{ ok: true } | { error: string }> {
+    const fd = new FormData();
+    fd.append('kind', kind);
+    fd.append('slug', slug);
+    fd.append('file', file);
+    try {
+      const res = await fetch('/api/upload-front', { method: 'POST', body: fd });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data?.success) {
+        return { error: data?.error || `HTTP ${res.status}` };
+      }
+      return { ok: true };
+    } catch (err: any) {
+      return { error: err?.message || 'network' };
+    }
+  }
+
+  document.addEventListener('click', async (e) => {
+    const btn = (e.target as HTMLElement | null)?.closest<HTMLButtonElement>(
+      'button[data-cover-upload]'
+    );
+    if (!btn) return;
+
+    const kindRaw = btn.dataset.coverUpload;
+    const slug = btn.dataset.slug;
+    if ((kindRaw !== 'book' && kindRaw !== 'series') || !slug) return;
+    const kind = kindRaw;
+
+    const file = await pickFrontFile();
+    if (!file) return;
+
+    if (!FRONT_ACCEPTED.includes(file.type)) {
+      showToast(i18n.toastCoverInvalidType);
+      return;
+    }
+    if (file.size > FRONT_MAX_BYTES) {
+      showToast(i18n.toastCoverTooLarge);
+      return;
+    }
+
+    btn.dataset.uploading = 'true';
+    const result = await uploadFront(kind, slug, file);
+    delete btn.dataset.uploading;
+
+    if ('error' in result) {
+      showToast(fmt(i18n.toastCoverUploadFailed, { msg: result.error }));
+      return;
+    }
+
+    // Instant preview: swap the thumb to a blob URL of the file the
+    // user just selected. The on-disk file IS persisted by the
+    // server; the proper Vite-hashed URL will surface on the next
+    // page load. Object URLs are scoped to the document, so we don't
+    // bother revoking — the next paint reuses or replaces them.
+    paintFront(btn, URL.createObjectURL(file));
+
+    // Resolve a human title for the toast.
+    let title = slug;
+    if (kind === 'book') {
+      const row = btn.closest<HTMLElement>('.book-card');
+      const t = row?.querySelector<HTMLElement>('.book-title');
+      if (t?.textContent?.trim()) title = t.textContent.trim();
+    } else {
+      const card = btn.closest<HTMLElement>('[data-series-name]');
+      title = card?.dataset.seriesName || slug;
+    }
+    showToast(fmt(i18n.toastCoverUploaded, { title }));
+  });
 </script>

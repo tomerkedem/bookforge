@@ -48,22 +48,35 @@
     },
     "Building-AI-Systems-with-MCP": {
       "contentType": "book",
+      "category": "ai-systems"    
+    },
+    "Data-Engineering-for-AI-Systems": {
+      "contentType": "book",
       "category": "ai-systems"
     },
     "Lesson-1-Introduction-To-AI-Engineering-and-Generative-AI": {
       "contentType": "course_lesson",
       "course": "ai-engineering",
-      "lessonNumber": 1
+      "lessonNumber": 1,
+      "category": "foundations"
     },
     "Lesson-2-Machine-Learning": {
       "contentType": "course_lesson",
       "course": "ai-engineering",
-      "lessonNumber": 2
+      "lessonNumber": 2,
+      "category": "foundations"
     },
     "Lesson-3-Natural-Language-Processing": {
       "contentType": "course_lesson",
       "course": "ai-engineering",
-      "lessonNumber": 3
+      "lessonNumber": 3,
+      "category": "ai-systems"
+    },
+    "Lesson-4-LLM-APIs": {
+      "contentType": "course_lesson",
+      "course": "ai-engineering",
+      "lessonNumber": 4,
+      "category": "ai-systems"
     }
   }
 }

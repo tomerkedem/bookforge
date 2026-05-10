@@ -284,6 +284,64 @@ def _extract_sdt_cover_fields(doc) -> dict:
     return found
 
 
+def _normalize_course_lesson_titles(title, subtitle):
+    """
+    Normalize cover-page title/subtitle when the DOCX uses the project's
+    course-lesson convention.
+
+    Course-lesson DOCX files in this project author the Word cover
+    placeholders as:
+      "כותרת"      (Word title)    -> "קורס <CourseName>"
+                                      e.g. "קורס AI Engineering"
+                                      (the SHARED course identifier;
+                                      every lesson in the course
+                                      carries the same string here)
+      "כותרת משנה" (Word subtitle) -> "שיעור N: <Lesson Name>"
+                                      e.g. "שיעור 1: AI Engineering and
+                                      Generative AI מבוא"
+                                      (the lesson-specific title)
+
+    The downstream library treats `titles` as the primary, distinguishing
+    display name. Leaving the manifest as-is collapses every lesson row
+    to "AI Engineering" / "AI Engineering" / "AI Engineering" because
+    only the subtitle differs between siblings. So when the canonical
+    course-lesson signature is detected (title starts with the literal
+    "קורס " AND subtitle starts with "שיעור"), we swap them: the lesson
+    title becomes the manifest title, and the bare course name (with
+    the placeholder marker "קורס " stripped) becomes the new subtitle.
+
+    The signature is intentionally narrow — both prefixes must match —
+    so a regular book whose title happens to contain the word "קורס"
+    elsewhere is not misclassified.
+
+    Returns a (title, subtitle) tuple. Returns the inputs unchanged
+    when the pattern does not match.
+    """
+    if not title or not subtitle:
+        return title, subtitle
+
+    t = title.lstrip()
+    s = subtitle.lstrip()
+
+    # Both prefixes are checked — see docstring for why.
+    course_prefix = "קורס "
+    lesson_prefix = "שיעור"
+
+    if not t.startswith(course_prefix):
+        return title, subtitle
+    if not s.startswith(lesson_prefix):
+        return title, subtitle
+    # Make sure "שיעור" is followed by a word boundary (digit, space,
+    # punctuation), not part of a longer Hebrew word.
+    rest = s[len(lesson_prefix):]
+    if rest and rest[0].isalpha():
+        return title, subtitle
+
+    new_title = subtitle
+    new_subtitle = t[len(course_prefix):].strip() or None
+    return new_title, new_subtitle
+
+
 def _extract_document_metadata(doc, path: Path) -> dict:
     """
     Read title / subtitle / author from the document.
@@ -299,6 +357,10 @@ def _extract_document_metadata(doc, path: Path) -> dict:
 
     Subtitle falls back to core.xml's `subject` because Word's
     "כותרת משנה" cover placeholder writes there on some templates.
+
+    After raw extraction, course-lesson DOCX files are normalized so
+    that the lesson-specific name lands in `title` and the course
+    name lands in `subtitle` — see _normalize_course_lesson_titles.
     """
     sdt_fields = _extract_sdt_cover_fields(doc)
 
@@ -330,6 +392,8 @@ def _extract_document_metadata(doc, path: Path) -> dict:
     title = sdt_fields.get("title") or core_title or path.stem
     subtitle = sdt_fields.get("subtitle") or core_subject or None
     author = sdt_fields.get("author") or core_author or None
+
+    title, subtitle = _normalize_course_lesson_titles(title, subtitle)
 
     return {
         "title": title,

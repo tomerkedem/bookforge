@@ -15,6 +15,7 @@
  */
 import type { Language } from '../../types/index';
 import type { LibraryItem } from '../../types/library';
+import type { KnowledgeCardAssets } from '../../utils/library/knowledge-cards';
 import { t } from '../../i18n';
 import {
   getItemTitle,
@@ -41,19 +42,17 @@ interface Props {
    */
   variant?: 'default' | 'compact' | 'orbit';
   /**
-   * Optional four-face artifact (front / left / right / selected).
-   * When supplied AND `variant === 'orbit'`, the dominant card visual
-   * switches from the abstract medallion+glyph to a real card artifact
-   * whose visible face tracks the card's position around the orbit.
-   * `selected.png` is reserved for the click-focused / centered state
-   * and overrides the angle-based face selection.
+   * Optional knowledge-card artifact. Only `front` is required;
+   * `left`, `right`, and `selected` are legacy faces that, when
+   * present, drive the orbit-rotation effect (the visible face
+   * tracks the card's position around the orbit, and `selected`
+   * is reserved for the click-focused / centered state). When a
+   * legacy face is missing, the consumer falls back to `front`,
+   * so single-image cards render as a static face. The shape is
+   * imported directly from the discovery module so this prop type
+   * stays aligned with `getKnowledgeCardAssets`'s return shape.
    */
-  artifact?: {
-    front: string;
-    left: string;
-    right: string;
-    selected: string;
-  };
+  artifact?: KnowledgeCardAssets;
 }
 const { item, language, variant = 'default', artifact } = Astro.props;
 
@@ -235,7 +234,11 @@ const extraTopics = topics.length - topicChips.length;
         {/* The front face is rendered first and `position: relative`
             so it gives the artifact its natural box dimensions. The
             two side faces overlay it absolutely; CSS picks which face
-            is visible from the card's live `--orbit-active-angle`. */}
+            is visible from the card's live `--orbit-active-angle`.
+            Legacy left/right/selected faces are optional — when a
+            folder ships only `front.png`, all four <img> tags resolve
+            to the same URL and the card renders as a single static
+            face without breaking the markup. */}
         <img
           class="lc-orbit-artifact-face lc-orbit-artifact-face-front"
           src={artifact.front}
@@ -246,7 +249,7 @@ const extraTopics = topics.length - topicChips.length;
         />
         <img
           class="lc-orbit-artifact-face lc-orbit-artifact-face-left"
-          src={artifact.left}
+          src={artifact.left ?? artifact.front}
           alt=""
           loading="lazy"
           decoding="async"
@@ -254,7 +257,7 @@ const extraTopics = topics.length - topicChips.length;
         />
         <img
           class="lc-orbit-artifact-face lc-orbit-artifact-face-right"
-          src={artifact.right}
+          src={artifact.right ?? artifact.front}
           alt=""
           loading="lazy"
           decoding="async"
@@ -262,7 +265,7 @@ const extraTopics = topics.length - topicChips.length;
         />
         <img
           class="lc-orbit-artifact-face lc-orbit-artifact-face-selected"
-          src={artifact.selected}
+          src={artifact.selected ?? artifact.front}
           alt=""
           loading="lazy"
           decoding="async"
@@ -396,7 +399,11 @@ const extraTopics = topics.length - topicChips.length;
         {/* The front face is rendered first and `position: relative`
             so it gives the artifact its natural box dimensions. The
             two side faces overlay it absolutely; CSS picks which face
-            is visible from the card's live `--orbit-active-angle`. */}
+            is visible from the card's live `--orbit-active-angle`.
+            Legacy left/right/selected faces are optional — when a
+            folder ships only `front.png`, all four <img> tags resolve
+            to the same URL and the card renders as a single static
+            face without breaking the markup. */}
         <img
           class="lc-orbit-artifact-face lc-orbit-artifact-face-front"
           src={artifact.front}
@@ -407,7 +414,7 @@ const extraTopics = topics.length - topicChips.length;
         />
         <img
           class="lc-orbit-artifact-face lc-orbit-artifact-face-left"
-          src={artifact.left}
+          src={artifact.left ?? artifact.front}
           alt=""
           loading="lazy"
           decoding="async"
@@ -415,7 +422,7 @@ const extraTopics = topics.length - topicChips.length;
         />
         <img
           class="lc-orbit-artifact-face lc-orbit-artifact-face-right"
-          src={artifact.right}
+          src={artifact.right ?? artifact.front}
           alt=""
           loading="lazy"
           decoding="async"
@@ -423,7 +430,7 @@ const extraTopics = topics.length - topicChips.length;
         />
         <img
           class="lc-orbit-artifact-face lc-orbit-artifact-face-selected"
-          src={artifact.selected}
+          src={artifact.selected ?? artifact.front}
           alt=""
           loading="lazy"
           decoding="async"
@@ -825,6 +832,29 @@ const extraTopics = topics.length - topicChips.length;
     opacity: 0;
   }
 
+  /* Resting-orbit visual: pin the front face fully visible and the
+     side faces fully hidden. The angle-based opacity ramp above is
+     kept in the source (it still drives the side faces during the
+     cross-fade window if anyone re-enables it later), but in
+     practice the resting orbit reads better when each card shows
+     the same face from every station rather than swapping into
+     `left.png` / `right.png` mid-rotation, which made cards appear
+     to flicker between two artworks.
+     Specificity: `.lc-has-artifact .lc-orbit-artifact-face-*`
+     (0,2,0) beats the single-class angle ramp above (0,1,0), so we
+     do NOT need `!important`. The centered-state rules below have
+     the higher specificity of `[data-pos="center"]` + 3 classes
+     (0,4,0) so they cleanly take over once a card is promoted to
+     the middle and reveal `selected.png` (or its `front` fallback
+     for single-image folders like the new series capsule). */
+  .lc-has-artifact .lc-orbit-artifact-face-front {
+    opacity: 1;
+  }
+  .lc-has-artifact .lc-orbit-artifact-face-left,
+  .lc-has-artifact .lc-orbit-artifact-face-right {
+    opacity: 0;
+  }
+
   /* Selected / focused state — `.galaxy-card[data-pos="center"]` is
      set by the orbit when a card is click-focused into the middle.
      The selected face takes over and the angle-based faces step out
@@ -863,21 +893,6 @@ const extraTopics = topics.length - topicChips.length;
 
   @media (prefers-reduced-motion: reduce) {
     .lc-orbit-artifact-face { transition: none; }
-  }
-
-  /* ── TEMP TEST OVERRIDE — always show front.png ──────────────────
-     Pins the front face fully visible and forces the angle-based and
-     selected faces fully transparent at every orbit position AND in
-     the focused state. Use `!important` to beat every prior opacity
-     rule (the angle ramp, the focused-state overrides, etc.).
-     To revert: delete this block. */
-  .lc-has-artifact .lc-orbit-artifact-face-front {
-    opacity: 1 !important;
-  }
-  .lc-has-artifact .lc-orbit-artifact-face-left,
-  .lc-has-artifact .lc-orbit-artifact-face-right,
-  .lc-has-artifact .lc-orbit-artifact-face-selected {
-    opacity: 0 !important;
   }
 
   /* Reference uses ONE bottom-anchored type badge per card. The top
@@ -1070,38 +1085,24 @@ const extraTopics = topics.length - topicChips.length;
     display: block;
   }
 
-  /* Floating title — overlaid on the artwork. Indent reset (corner
-     glyph is gone in artifact mode) and a soft text-shadow for
-     legibility against any artwork color. */
-  /* Floating footer — type pill + progress bar, anchored higher up
-     so the book title can sit BELOW it. Real HTML, not baked into
-     the image. */
+  /* Footer (type pill + count + progress bar) is fully suppressed in
+     artifact mode — the type pill and count were already hidden, and
+     the progress bar is now removed too so the artwork stands alone
+     without any chrome competing with it. The <div> stays in the DOM
+     so progress hydration logic can still find/update it silently if
+     needed without the user seeing a competing UI element. */
   .lc-orbit.lc-has-artifact .lc-orbit-footer {
-    position: absolute;
-    inset-inline: 0.875rem;
-    inset-block-end: 2.25rem;
-    margin: 0;
-    z-index: 2;
-    /* Tighten vertical rhythm in the overlay — the original 0.4375rem
-       gap was tuned for an in-flow footer. */
-    gap: 0.3125rem;
+    display: none;
   }
 
-  /* Title sits at the very bottom edge of the card, beneath the
-     progress bar. Same legibility shadow as before. */
+  /* Title is hidden in artifact mode — the book/series name is already
+     baked into the artwork PNG itself, so an additional HTML title under
+     the image duplicates the same string. Keeping the <h3> in the DOM
+     (just visually suppressed) preserves the wrapper's aria-label and
+     screen-reader announcement; the visible chrome reads from the
+     artwork alone. */
   .lc-orbit.lc-has-artifact .lc-title {
-    position: absolute;
-    inset-inline: 0.875rem;
-    inset-block-end: 0.625rem;
-    margin: 0;
-    z-index: 2;
-    padding-inline-start: 0;
-    color: var(--yuval-galaxy-text, #ececea);
-    font-size: 0.875rem;
-    line-height: 1.25;
-    text-shadow:
-      0 1px 2px rgba(0, 0, 0, 0.7),
-      0 0 10px rgba(0, 0, 0, 0.4);
+    display: none;
   }
 
   /* Hide the count line in artifact mode — it duplicated the type
@@ -1233,21 +1234,11 @@ const extraTopics = topics.length - topicChips.length;
   :global(.galaxy-card[data-pos="center"]) .lc-orbit.lc-has-artifact::before {
     display: none;
   }
-  /* Title pivots to in-flow at the top, no shadow / no overlay anymore. */
+  /* Title stays hidden in focused state too — the artwork already
+     carries the name. The wrapper's aria-label keeps the title
+     accessible to screen readers. */
   :global(.galaxy-card[data-pos="center"]) .lc-orbit.lc-has-artifact .lc-title {
-    position: static;
-    inset: auto;
-    margin: 0;
-    order: 1;
-    text-align: center;
-    text-shadow: none;
-    color: var(--yuval-galaxy-text, #ececea);
-    font-family: 'Spectral', 'Cardo', Georgia, serif;
-    font-size: 0.95rem;
-    font-weight: 500;
-    line-height: 1.25;
-    letter-spacing: -0.005em;
-    padding-inline-start: 0;
+    display: none;
   }
   /* Focused-state artifact: no clipping at all — the artwork's own
      glowing card design is the silhouette. Any CSS border-radius +

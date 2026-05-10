@@ -578,12 +578,23 @@ export const translations: Translations = {
   'admin.button.cancel':                 { he: 'ביטול',                  en: 'Cancel',                  es: 'Cancelar' },
   'admin.button.save':                   { he: 'שמירת מטא-דאטה',         en: 'Save metadata',           es: 'Guardar metadatos' },
 
-  'admin.modal.title':                   { he: 'מחיקת ספר',                                                                              en: 'Delete book',                                                          es: 'Eliminar libro' },
-  'admin.modal.body':                    { he: 'האם אתה בטוח שברצונך למחוק את הספר {{title}}?',                                          en: 'Are you sure you want to delete the book {{title}}?',                  es: '¿Estás seguro de que quieres eliminar el libro {{title}}?' },
-  'admin.modal.warning':                 { he: 'פעולה זו תמחק את כל הקבצים בכל השפות ולא ניתנת לביטול.',                                  en: 'This action will delete all files in all languages and cannot be undone.', es: 'Esta acción eliminará todos los archivos en todos los idiomas y no se puede deshacer.' },
+  // Generic confirm-modal headers — kept as `admin.modal.title` for
+  // backward compat; book-specific copy lives below in
+  // `admin.modal.headingBook` / `bodyBook` / `warningBook` and the
+  // series-specific copy lives next to it.
+  'admin.modal.title':                   { he: 'אישור מחיקה',                                                                            en: 'Confirm delete',                                                       es: 'Confirmar eliminación' },
+  'admin.modal.warning':                 { he: 'פעולה זו אינה ניתנת לביטול.',                                                            en: 'This action cannot be undone.',                                        es: 'Esta acción no se puede deshacer.' },
   'admin.modal.cancel':                  { he: 'ביטול',                                                                                  en: 'Cancel',                                                               es: 'Cancelar' },
   'admin.modal.confirm':                 { he: 'מחק לצמיתות',                                                                            en: 'Delete permanently',                                                   es: 'Eliminar permanentemente' },
   'admin.modal.deleting':                { he: 'מוחק…',                                                                                 en: 'Deleting…',                                                            es: 'Eliminando…' },
+
+  'admin.modal.headingBook':             { he: 'מחיקת ספר',                                                                              en: 'Delete book',                                                          es: 'Eliminar libro' },
+  'admin.modal.bodyBook':                { he: 'האם אתה בטוח שברצונך למחוק את הספר {{title}}?',                                          en: 'Are you sure you want to delete the book {{title}}?',                  es: '¿Estás seguro de que quieres eliminar el libro {{title}}?' },
+  'admin.modal.warningBook':             { he: 'פעולה זו תמחק את כל הקבצים בכל השפות ולא ניתנת לביטול.',                                  en: 'This action will delete all files in all languages and cannot be undone.', es: 'Esta acción eliminará todos los archivos en todos los idiomas y no se puede deshacer.' },
+
+  'admin.modal.headingSeries':           { he: 'מחיקת סדרה',                                                                             en: 'Delete series',                                                        es: 'Eliminar serie' },
+  'admin.modal.bodySeries':              { he: 'האם אתה בטוח שברצונך למחוק את הסדרה {{title}}?',                                         en: 'Are you sure you want to delete the series {{title}}?',                es: '¿Estás seguro de que quieres eliminar la serie {{title}}?' },
+  'admin.modal.warningSeries':           { he: 'הספרים בסדרה לא יימחקו, אבל יאבדו את השיוך לסדרה. הפעולה אינה ניתנת לביטול.',              en: 'Books in the series will be detached from it but not deleted. This action cannot be undone.', es: 'Los libros de la serie quedarán desvinculados pero no se eliminarán. Esta acción no se puede deshacer.' },
 
   'admin.toast.cleanedBook':             { he: 'נוקו {{n}} פריטים עבור "{{slug}}"',                  en: 'Cleaned {{n}} items for "{{slug}}"',                                  es: 'Se limpiaron {{n}} elementos para "{{slug}}"' },
   'admin.toast.noBookData':              { he: 'לא נמצאו נתונים עבור "{{slug}}"',                    en: 'No data found for "{{slug}}"',                                        es: 'No se encontraron datos para "{{slug}}"' },
@@ -614,6 +625,22 @@ export const translations: Translations = {
   'admin.cell.noSeries':                 { he: 'ללא סדרה',       en: 'No series',    es: 'Sin serie' },
   'admin.cell.noCategory':               { he: 'ללא קטגוריה',    en: 'No category',  es: 'Sin categoría' },
 
+  // ── admin.cover.* — cover-image upload UI in both tables ───────────
+  // The thumbnail column reuses these strings for the books table
+  // (kind=book) and the series table (kind=series). The script
+  // composes the file picker / fetch call dynamically; copy is shared
+  // because the user-facing semantics are identical.
+  'admin.column.cover':                  { he: 'כריכה',                          en: 'Cover',                              es: 'Portada' },
+  'admin.cover.upload':                  { he: 'העלה כריכה',                     en: 'Upload cover',                       es: 'Subir portada' },
+  'admin.cover.replace':                 { he: 'החלף כריכה',                     en: 'Replace cover',                      es: 'Reemplazar portada' },
+  'admin.cover.uploading':               { he: 'מעלה...',                        en: 'Uploading...',                       es: 'Subiendo...' },
+  'admin.cover.uploadAria':              { he: 'העלה תמונת כריכה עבור {{title}}', en: 'Upload cover image for {{title}}',   es: 'Subir imagen de portada para {{title}}' },
+  'admin.cover.placeholder':             { he: 'אין כריכה',                      en: 'No cover',                           es: 'Sin portada' },
+  'admin.toast.coverUploaded':           { he: 'כריכה הועלתה עבור "{{title}}"',   en: 'Cover uploaded for "{{title}}"',     es: 'Portada subida para "{{title}}"' },
+  'admin.toast.coverUploadFailed':       { he: 'העלאת הכריכה נכשלה: {{msg}}',     en: 'Cover upload failed: {{msg}}',       es: 'Error al subir la portada: {{msg}}' },
+  'admin.toast.coverInvalidType':        { he: 'סוג קובץ לא נתמך. השתמש ב-PNG, JPG או WEBP.', en: 'Unsupported file type. Use PNG, JPG, or WEBP.', es: 'Tipo de archivo no admitido. Usa PNG, JPG o WEBP.' },
+  'admin.toast.coverTooLarge':           { he: 'הקובץ גדול מדי (מקס׳ 5MB)',       en: 'File too large (max 5MB)',           es: 'Archivo demasiado grande (máx. 5MB)' },
+
   // ── admin.series.* — Series Management on /admin ───────────────────────
   // A series is detected when ≥1 content items share the same non-empty
   // seriesName. The admin section lets the project owner edit the
@@ -621,7 +648,7 @@ export const translations: Translations = {
   // order, visibility, visual mode). Admin-only — the Knowledge Universe
   // rendering does not consume these new fields yet.
   'admin.series.section':                  { he: 'ניהול סדרות',                                                                            en: 'Series Management',                                                                  es: 'Gestión de series' },
-  'admin.series.empty':                    { he: 'אין סדרות עדיין. הוסף שם סדרה בעריכת ספר כדי לקבץ פריטים.',                              en: 'No series yet. Add a series name when editing a book to group items.',               es: 'Sin series todavía. Añade un nombre de serie al editar un libro para agruparlos.' },
+  'admin.series.empty':                    { he: 'עדיין לא הוגדרו סדרות.',                                                                en: 'No series defined yet.',                                                             es: 'Aún no hay series definidas.' },
   'admin.series.count':                    { he: '{{n}} סדרות',                                                                            en: '{{n}} series',                                                                       es: '{{n}} series' },
   'admin.series.itemsLabel':               { he: '{{n}} פריטים',                                                                           en: '{{n}} items',                                                                        es: '{{n}} elementos' },
   'admin.series.availableLabel':           { he: '{{n}} זמינים',                                                                           en: '{{n}} available',                                                                    es: '{{n}} disponibles' },
@@ -644,8 +671,91 @@ export const translations: Translations = {
   'admin.series.field.visibleAria':        { he: 'החלפת גלויות סדרה',                                                                     en: 'Toggle series visibility',                                                           es: 'Alternar visibilidad de la serie' },
   'admin.series.field.visualMode':         { he: 'מצב תצוגה',                                                                             en: 'Visual mode',                                                                        es: 'Modo visual' },
   'admin.series.option.capsule':           { he: 'קפסולה',                                                                                en: 'Capsule',                                                                            es: 'Cápsula' },
+  'admin.series.option.card':              { he: 'כרטיס',                                                                                 en: 'Card',                                                                               es: 'Tarjeta' },
+  'admin.series.option.orbitNode':         { he: 'תחנת מסלול',                                                                            en: 'Orbit node',                                                                         es: 'Nodo de órbita' },
   'admin.series.button.save':              { he: 'שמירת סדרה',                                                                            en: 'Save series',                                                                        es: 'Guardar serie' },
   'admin.series.toast.saved':              { he: 'הסדרה "{{name}}" נשמרה',                                                                en: 'Series "{{name}}" saved',                                                            es: 'Serie "{{name}}" guardada' },
+
+  // ── Series create / delete (admin Series Management) ────────────────
+  // Header CTA opens the series drawer in "create" mode (empty fields,
+  // editable name). Per-row delete uses the shared confirmation modal —
+  // strings live next to the book modal copy above so the two flows
+  // stay aligned.
+  'admin.series.action.new':               { he: 'סדרה חדשה',                                                                              en: 'New series',                                                                         es: 'Nueva serie' },
+  'admin.series.action.delete':            { he: 'מחיקה',                                                                                  en: 'Delete',                                                                             es: 'Eliminar' },
+  'admin.series.action.deleteAriaLabel':   { he: 'מחיקת סדרה {{name}}',                                                                    en: 'Delete series {{name}}',                                                             es: 'Eliminar serie {{name}}' },
+  'admin.series.action.deleteTitle':       { he: 'מחיקת סדרה',                                                                             en: 'Delete series',                                                                      es: 'Eliminar serie' },
+  'admin.series.drawer.eyebrowNew':        { he: 'יצירת סדרה',                                                                             en: 'Create series',                                                                      es: 'Crear serie' },
+  'admin.series.field.name':               { he: 'מזהה הסדרה',                                                                             en: 'Series identifier',                                                                  es: 'Identificador de la serie' },
+  'admin.series.field.nameHint':           { he: 'מחרוזת ייחודית; משמשת לקיבוץ ספרים תחת אותה סדרה.',                                       en: 'Unique string; used to group books under the same series.',                          es: 'Cadena única; se usa para agrupar libros bajo la misma serie.' },
+  'admin.series.toast.deleted':            { he: 'הסדרה "{{name}}" נמחקה',                                                                en: 'Series "{{name}}" deleted',                                                          es: 'Serie "{{name}}" eliminada' },
+  'admin.series.toast.created':            { he: 'הסדרה "{{name}}" נוצרה',                                                                en: 'Series "{{name}}" created',                                                          es: 'Serie "{{name}}" creada' },
+  'admin.series.toast.renamed':            { he: 'הסדרה שונתה ל-"{{name}}"',                                                              en: 'Series renamed to "{{name}}"',                                                       es: 'Serie renombrada a "{{name}}"' },
+  'admin.series.toast.alreadyExists':      { he: 'סדרה בשם "{{name}}" כבר קיימת',                                                          en: 'A series named "{{name}}" already exists',                                           es: 'Ya existe una serie llamada "{{name}}"' },
+  'admin.series.toast.nameRequired':       { he: 'נדרש מזהה לסדרה',                                                                       en: 'A series identifier is required',                                                    es: 'Se requiere un identificador de serie' },
+
+  // Section header — subtitle below "ניהול סדרות".
+  'admin.series.subtitle':                 { he: 'סדרות מייצגות מסלולי לימוד, קורסים או אוספי ספרים במרחב הידע.',                            en: 'Series represent learning paths, courses or book collections in the Knowledge Space.', es: 'Las series representan rutas de aprendizaje, cursos o colecciones de libros en el Espacio de conocimiento.' },
+
+  // Rich card — labels and badges that appear directly on each series card.
+  'admin.series.card.itemsOf':             { he: '{{actual}} מתוך {{planned}} פריטים',                                                    en: '{{actual}} of {{planned}} items',                                                    es: '{{actual}} de {{planned}} elementos' },
+  'admin.series.card.itemsOnly':           { he: '{{n}} פריטים',                                                                          en: '{{n}} items',                                                                        es: '{{n}} elementos' },
+  'admin.series.card.actualLabel':         { he: 'פריטים משויכים בפועל: {{n}}',                                                            en: 'Actually linked items: {{n}}',                                                       es: 'Elementos vinculados realmente: {{n}}' },
+  'admin.series.card.assetFolderLabel':    { he: 'תיקיית נכסים',                                                                          en: 'Asset folder',                                                                       es: 'Carpeta de recursos' },
+  'admin.series.card.assetFolderEmpty':    { he: 'לא הוגדרה',                                                                              en: 'Not set',                                                                            es: 'No definida' },
+  'admin.series.card.editButton':          { he: 'עריכת סדרה',                                                                             en: 'Edit series',                                                                        es: 'Editar serie' },
+  'admin.series.card.noDescription':       { he: 'אין תיאור לסדרה זו.',                                                                    en: 'No description for this series.',                                                    es: 'Sin descripción para esta serie.' },
+  'admin.series.card.progressAria':        { he: 'התקדמות {{actual}} מתוך {{planned}}',                                                    en: 'Progress {{actual}} of {{planned}}',                                                 es: 'Progreso {{actual}} de {{planned}}' },
+
+  // Status badge — three publication states. Hebrew uses the
+  // feminine form because "סדרה" is grammatically feminine.
+  'admin.series.status.active':            { he: 'פעילה',                                                                                 en: 'Active',                                                                             es: 'Activa' },
+  'admin.series.status.draft':             { he: 'טיוטה',                                                                                 en: 'Draft',                                                                              es: 'Borrador' },
+  'admin.series.status.hidden':            { he: 'מוסתרת',                                                                                en: 'Hidden',                                                                             es: 'Oculta' },
+
+  // Visibility badge — derived from `isVisibleInUniverse`.
+  'admin.series.badge.visible':            { he: 'מוצגת במרחב',                                                                            en: 'Shown in universe',                                                                  es: 'Visible en el Espacio' },
+  'admin.series.badge.hiddenFromUniverse': { he: 'מוסתרת מהמרחב',                                                                          en: 'Hidden from universe',                                                               es: 'Oculta del Espacio' },
+
+  // Drawer — additional fields for the rich edit form.
+  // Series identifier — editable in BOTH create mode and edit mode.
+  // Renaming an existing series migrates its metadata record AND
+  // retags every book whose seriesName matches any whitespace
+  // variant of the old name; both writes are local (no API call),
+  // and the row re-renders in place.
+  'admin.series.field.slug':               { he: 'מזהה הסדרה',                                                                             en: 'Series identifier',                                                                  es: 'Identificador de la serie' },
+  'admin.series.field.slugHint':           { he: 'המחרוזת הפנימית שמקשרת ספרים לסדרה. שינוי הערך כאן יעדכן את כל הספרים בסדרה אוטומטית.',     en: 'Internal string that links books to this series. Editing it here renames the series and retags every attached book.', es: 'Cadena interna que vincula los libros con esta serie. Editarla aquí renombra la serie y reetiqueta cada libro vinculado.' },
+  'admin.series.field.shortDescription':   { he: 'תיאור קצר',                                                                             en: 'Short description',                                                                  es: 'Descripción breve' },
+  'admin.series.field.shortDescriptionHint':{ he: 'משפט אחד שמופיע על כרטיס הסדרה.',                                                       en: 'One-line tagline shown on the series card.',                                         es: 'Lema de una línea que aparece en la tarjeta de la serie.' },
+  'admin.series.field.fullDescription':    { he: 'תיאור מלא',                                                                             en: 'Full description',                                                                   es: 'Descripción completa' },
+  'admin.series.field.fullDescriptionHint':{ he: 'פסקה ארוכה לתצוגת הסדרה במלואה.',                                                         en: 'Long-form paragraph for the focused series view.',                                   es: 'Párrafo extenso para la vista detallada de la serie.' },
+  'admin.series.field.plannedBooksCount':  { he: 'מספר ספרים מתוכנן',                                                                     en: 'Planned books count',                                                                es: 'Cantidad planeada de libros' },
+  'admin.series.field.plannedBooksCountHint':{ he: 'יעד עתידי. מניע את סרגל ההתקדמות. השאר ריק כשאין יעד.',                                en: 'Editorial target. Drives the progress bar. Leave empty when no target.',             es: 'Objetivo editorial. Impulsa la barra de progreso. Déjalo vacío si no hay objetivo.' },
+  'admin.series.field.assetFolder':        { he: 'תיקיית נכסים',                                                                          en: 'Asset folder',                                                                       es: 'Carpeta de recursos' },
+  'admin.series.field.assetFolderHint':    { he: 'שם התיקייה תחת src/assets/knowledge-cards/ שמכילה את front.png.',                       en: 'Folder name under src/assets/knowledge-cards/ that holds front.png.',                es: 'Nombre de la carpeta bajo src/assets/knowledge-cards/ que contiene front.png.' },
+  'admin.series.field.status':             { he: 'מצב',                                                                                   en: 'Status',                                                                             es: 'Estado' },
+  'admin.series.field.statusHint':         { he: '"פעיל" = פורסם. "טיוטה" = בעבודה. "מוסתר" = לא לציבור.',                                en: '"Active" = published. "Draft" = in progress. "Hidden" = not public.',                es: '"Activa" = publicada. "Borrador" = en progreso. "Oculta" = no pública.' },
+  'admin.series.field.actualReadOnly':     { he: 'פריטים משויכים בפועל: {{n}}',                                                            en: 'Actually linked items: {{n}}',                                                       es: 'Elementos vinculados realmente: {{n}}' },
+  'admin.series.field.actualReadOnlyHint': { he: 'מחושב אוטומטית מהפריטים ששייכת אליהם — לא ניתן לעריכה.',                                en: 'Auto-computed from linked items — not editable.',                                    es: 'Calculado automáticamente a partir de los elementos vinculados — no editable.' },
+
+  // Table — column headers used by the Series Management table.
+  'admin.series.column.name':              { he: 'שם סדרה',                                                                               en: 'Series',                                                                             es: 'Serie' },
+  'admin.series.column.description':       { he: 'תיאור',                                                                                 en: 'Description',                                                                        es: 'Descripción' },
+  'admin.series.column.status':            { he: 'סטטוס',                                                                                 en: 'Status',                                                                             es: 'Estado' },
+  'admin.series.column.universe':          { he: 'מרחב ידע',                                                                              en: 'Universe',                                                                           es: 'Espacio' },
+  'admin.series.column.actualItems':       { he: 'פריטים בפועל',                                                                          en: 'Actual items',                                                                       es: 'Elementos reales' },
+  'admin.series.column.plannedItems':      { he: 'פריטים מתוכננים',                                                                       en: 'Planned items',                                                                      es: 'Elementos planeados' },
+  'admin.series.column.progress':          { he: 'התקדמות',                                                                               en: 'Progress',                                                                           es: 'Progreso' },
+  'admin.series.column.assetFolder':       { he: 'תיקיית נכסים',                                                                          en: 'Asset folder',                                                                       es: 'Carpeta de recursos' },
+  'admin.series.column.order':             { he: 'סדר תצוגה',                                                                             en: 'Order',                                                                              es: 'Orden' },
+  'admin.series.column.actions':           { he: 'פעולות',                                                                                en: 'Actions',                                                                            es: 'Acciones' },
+
+  // Table cell placeholders — shown inline when an editable field
+  // has not been filled in yet. Distinct phrasings keep each column
+  // self-explanatory at a glance.
+  'admin.series.cell.notSet':              { he: 'לא הוגדר',                                                                              en: 'Not set',                                                                            es: 'No definido' },
+  'admin.series.cell.noFolder':            { he: 'ללא תיקייה',                                                                            en: 'No folder',                                                                          es: 'Sin carpeta' },
+  'admin.series.cell.dash':                { he: '-',                                                                                     en: '-',                                                                                  es: '-' },
 
   // ── library.series.* — series capsule on the orbit ───────────────────────
   // Labels are intentionally short so they fit inside the orbit-card
@@ -657,6 +767,37 @@ export const translations: Translations = {
   // enters series-mode (an active series is expanded into a carousel).
   'library.series.otherKnowledge':  { he: 'ידע אחר',          en: 'Other Knowledge',     es: 'Otro conocimiento' },
   'library.series.itemsShort':      { he: 'פריטים',           en: 'items',               es: 'elementos' },
+
+  // ── library.series.actions.* — focused-capsule action panel ──────────────
+  // Two CTA buttons shown next to a click-focused series capsule on the
+  // orbit. They are the only entry-points to the series children fan and
+  // the series details drawer; both UIs live on /library and never leave
+  // the page (no /series route yet).
+  'library.series.actions.showItems':       { he: 'הצג ספרי הסדרה',          en: 'Show series items',          es: 'Mostrar elementos de la serie' },
+  'library.series.actions.hideItems':       { he: 'הסתר ספרי הסדרה',         en: 'Hide series items',          es: 'Ocultar elementos de la serie' },
+  'library.series.actions.details':         { he: 'פרטי הסדרה',              en: 'Series details',             es: 'Detalles de la serie' },
+
+  // ── library.series.details.* — drawer that opens on the same page ────────
+  'library.series.details.title':           { he: 'פרטי הסדרה',              en: 'Series details',             es: 'Detalles de la serie' },
+  'library.series.details.close':           { he: 'סגור את חלונית הפרטים',   en: 'Close details panel',        es: 'Cerrar panel de detalles' },
+  'library.series.details.shortDescription':{ he: 'תיאור קצר',               en: 'Short description',          es: 'Descripción breve' },
+  'library.series.details.fullDescription': { he: 'תיאור מלא',               en: 'Full description',           es: 'Descripción completa' },
+  'library.series.details.assignedItems':   { he: 'פריטים משויכים',          en: 'Assigned items',             es: 'Elementos asignados' },
+  'library.series.details.plannedItems':    { he: 'פריטים מתוכננים',         en: 'Planned items',              es: 'Elementos planeados' },
+  'library.series.details.status':          { he: 'סטטוס',                    en: 'Status',                     es: 'Estado' },
+  'library.series.details.assetFolder':     { he: 'תיקיית נכסים',            en: 'Asset folder',               es: 'Carpeta de recursos' },
+  'library.series.details.visibleInUniverse':{ he: 'מוצגת ביקום הידע',       en: 'Visible in universe',        es: 'Visible en el universo' },
+  'library.series.details.visibleYes':      { he: 'כן',                       en: 'Yes',                        es: 'Sí' },
+  'library.series.details.visibleNo':       { he: 'לא',                       en: 'No',                         es: 'No' },
+  'library.series.details.noDescription':   { he: 'אין תיאור לסדרה הזו עדיין.', en: 'No description for this series yet.', es: 'Aún no hay descripción para esta serie.' },
+  'library.series.details.noAssignedItems': { he: 'עדיין לא שויכו פריטים לסדרה הזו.', en: 'No items have been assigned to this series yet.', es: 'Todavía no se han asignado elementos a esta serie.' },
+
+  // ── library.series.children.* — local fan around focused capsule ─────────
+  'library.series.children.empty':          { he: 'הסדרה הזו עדיין ריקה.',    en: 'This series is still empty.', es: 'Esta serie aún está vacía.' },
+  'library.series.children.show':           { he: 'הצג ספרי הסדרה',           en: 'Show series items',           es: 'Mostrar elementos de la serie' },
+  'library.series.children.hide':           { he: 'הסתר ספרי הסדרה',          en: 'Hide series items',           es: 'Ocultar elementos de la serie' },
+  'library.series.children.region':         { he: 'פריטי הסדרה הממוקדת',      en: 'Items of the focused series', es: 'Elementos de la serie en foco' },
+  'library.series.children.placeholderType':{ he: 'פריט בסדרה',               en: 'Series item',                 es: 'Elemento de la serie' },
 
   // ── library.mobileGalaxy.* — mobile-only horizontal carousel ──────────────
   'library.mobileGalaxy.title':     { he: 'תכני AI זמינים',                                            en: 'Available AI content',                                       es: 'Contenido de IA disponible' },

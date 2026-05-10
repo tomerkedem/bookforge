@@ -56,10 +56,24 @@ export const CONTENT_METADATA_VERSION = 1;
  */
 
 /**
- * Visual mode for a series, single value for now (`'capsule'`) so the
- * type can grow later (e.g. 'shelf', 'tile') without breaking callers.
+ * Visual mode for a series. Drives how the series capsule renders in
+ * the universe. The list grows additively — new modes append at the
+ * end; `'capsule'` remains the default so older stored records keep
+ * working without migration.
  */
-export type SeriesVisualMode = 'capsule';
+export type SeriesVisualMode = 'capsule' | 'card' | 'orbit-node';
+
+/**
+ * Editorial publication state. Distinct from `isVisibleInUniverse`:
+ *   - `status` is the publication lifecycle of the series record itself
+ *     (still being authored vs. ready for the public universe).
+ *   - `isVisibleInUniverse` is the runtime show/hide toggle on a
+ *     status='active' series, kept for back-compat with prior code.
+ *
+ * Default behaviour for legacy (pre-status) records is `'active'` so
+ * existing series remain visible.
+ */
+export type SeriesStatus = 'active' | 'draft' | 'hidden';
 
 export interface SeriesMetadata {
   /**
@@ -89,6 +103,68 @@ export interface SeriesMetadata {
   order?: number;
   /** Default true — when false, the universe should hide the series. */
   isVisibleInUniverse: boolean;
+
+  // ── Optional editorial fields, added in the rich-card redesign ────
+  // All of these are optional on disk: legacy stored records (which
+  // simply do not have these keys) keep working unchanged. Each field
+  // is `undefined` when the user has not yet filled it in.
+
+  /** One-line tagline shown on the series card under the title. */
+  shortDescription?: string;
+  /** Long-form paragraph; used by the focused presentation later. */
+  fullDescription?: string;
+  /**
+   * Editorial intent — how many books / items this series will
+   * eventually contain. Drives the "X מתוך Y" counter and the progress
+   * bar on the admin series card. Undefined → only "X items" is shown
+   * with no Y target and no progress bar.
+   */
+  plannedBooksCount?: number;
+  /**
+   * Folder name under `src/assets/knowledge-cards/<slug>/` that holds
+   * the series's visual artifact (front.png at minimum). When omitted,
+   * the admin card surfaces a hint that no folder is wired yet.
+   * Editable text; the asset discovery in `knowledge-cards.ts` matches
+   * folder names case-insensitively. This is also the storage slug
+   * used by /api/upload-front when the user uploads a series's front
+   * image from the admin table; if the user has not authored an
+   * `assetFolder` value, the upload uses `slugifySeriesName(name)`.
+   */
+  assetFolder?: string;
+  /** Publication lifecycle. Defaults to `'active'` on read. */
+  status?: SeriesStatus;
+}
+
+/**
+ * Deterministic slug for a series name, used as the asset-folder name
+ * under `src/assets/knowledge-cards/<slug>/` when the user has not set
+ * a custom `assetFolder` for the series. Kept intentionally aggressive
+ * (ASCII-only, lowercase, hyphenated) so the same name always maps to
+ * the same folder regardless of casing or surrounding whitespace; for
+ * fully non-ASCII (e.g. Hebrew) names a stable hex-hashed fallback is
+ * emitted so different names still produce different folders.
+ */
+export function slugifySeriesName(name: string): string {
+  const trimmed = (name ?? '').trim();
+  if (!trimmed) return '';
+  // Keep ASCII alphanumerics and a few separators; replace everything
+  // else with a hyphen, then collapse and trim hyphens.
+  let s = trimmed.toLowerCase();
+  s = s.replace(/[^a-z0-9]+/g, '-');
+  s = s.replace(/^-+|-+$/g, '');
+  // If the original name contained no ASCII alphanumerics (e.g. pure
+  // Hebrew name), fall back to a stable hex-encoded form so different
+  // names still produce different filenames.
+  if (!s) {
+    let hash = 0;
+    for (let i = 0; i < trimmed.length; i++) {
+      hash = ((hash << 5) - hash + trimmed.charCodeAt(i)) | 0;
+    }
+    s = `series-${(hash >>> 0).toString(16)}`;
+  }
+  // Filesystem cap; avoids accidentally producing a 1KB filename from a
+  // very long series name.
+  return s.slice(0, 80);
 }
 
 export interface SeriesMetadataStore {

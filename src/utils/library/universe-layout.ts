@@ -249,12 +249,37 @@ export function initStageLayout(stage: HTMLElement): void {
   }, true);
 
   // Keyboard: Enter on the inner <a> bubbles up as a click and is
-  // handled by the click listener above (preventDefault + open). We
-  // only need Esc here to close a focused card. Document-level because
-  // focus may be on the close button or open CTA when Esc is pressed,
-  // both of which sit inside the stage.
+  // handled by the click listener above (preventDefault + open). Esc
+  // closes a focused card. ArrowLeft / ArrowRight rotate the orbit by
+  // one station — same call the chevron buttons use, so snap, focus
+  // dismissal and the live station count are all shared. Document-
+  // level because the stage doesn't naturally hold keyboard focus and
+  // arrows should work whenever the universe is the visible content.
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && focused) closeCenter();
+    if (e.key === 'Escape' && focused) {
+      closeCenter();
+      return;
+    }
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    // Don't hijack arrows while the user is typing or holding a
+    // modifier (Ctrl/Cmd-arrow are reserved for browser nav, Alt-arrow
+    // for back/forward, Shift-arrow for selection).
+    if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return;
+    const active = document.activeElement as HTMLElement | null;
+    if (active) {
+      const tag = active.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      if (active.isContentEditable) return;
+    }
+    // Skip if the universe stage isn't even on screen — the listener
+    // is global and would otherwise scroll-jack pages that share the
+    // body. `offsetParent === null` means display:none / detached.
+    if (stage.offsetParent === null) return;
+    e.preventDefault();
+    // ArrowLeft → prev chevron (-1), ArrowRight → next chevron (+1).
+    // Matches the visual chevron icons in both LTR and RTL; the
+    // existing rotateOrbit call carries snap + focus dismissal.
+    rotateOrbit(e.key === 'ArrowLeft' ? -1 : 1);
   });
 }
 

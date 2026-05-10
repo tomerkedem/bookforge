@@ -47,7 +47,7 @@ import {
   getSeriesMetadata,
 } from '../content-metadata';
 import type { SeriesMetadata } from '../../types/content-metadata';
-import { bookAngle, lessonAngle } from './universe-angle-utils';
+import { getEvenOrbitAngle } from './universe-angle-utils';
 
 export interface UniverseLabels {
   badgeLabel: string;
@@ -145,53 +145,35 @@ export function hydrateUniverse(stage: HTMLElement): UniverseState {
       if (slug && isHidden(slug)) row.remove();
     });
 
-  // ── Phase 3 — series grouping (desktop orbit only) ────────────────
-  // For every visible series with ≥2 visible members we:
-  //   1. tag every member with data-series-member (CSS hides it in
-  //      universe mode; series mode reveals it via .is-active-series-member)
-  //   2. insert ONE capsule node before the first member, inheriting
-  //      its orbit angle.
-  // Members + capsule live as distinct nodes so series-mode can toggle
-  // them by data-attributes without re-creating any LibraryCard markup.
+  // ── Phase 3 — series grouping ─────────────────────────────────────
+  // INTENTIONALLY DISABLED. The SeriesCapsule orbit station was
+  // removed at editorial request: a capsule that sums up "N items in
+  // series, M available" doesn't represent a readable artifact, only
+  // a grouping abstraction, and it cluttered the universe view by
+  // adding a station that competed with real book cards.
   //
-  // A series whose SeriesMetadata.isVisibleInUniverse=false produced
-  // zero live members in Phase 2, so the loop below naturally skips it.
-  const liveCards = Array.from(
-    stage.querySelectorAll<HTMLElement>('.galaxy-card[data-slug]'),
-  );
-
-  const seenSeries = new Set<string>();
-  liveCards.forEach(card => {
-    const slug = card.dataset.slug!;
-    const m = getMetadata(slug);
-    const sn = m.seriesName.trim();
-    if (!sn) return;
-
-    const total = seriesTotal.get(sn) || 0;
-    if (total < 2) return; // a "series of one" stays a normal book card
-
-    card.dataset.seriesMember = sn;
-
-    if (seenSeries.has(sn)) return;
-    seenSeries.add(sn);
-
-    const seriesMeta = getSeriesMetadata(sn);
-    const capsule = buildSeriesNode({
-      seriesName: sn,
-      seriesMeta,
-      total,
-      available: seriesAvailable.get(sn) || 0,
-      kind: card.dataset.kind === 'lesson' ? 'lesson' : 'book',
-      angle: card.style.getPropertyValue('--orbit-angle') || '270deg',
-      labels,
-    });
-    // Astro scopes <style> by appending data-astro-cid-* to every
-    // selector; SSR elements get the matching attribute, but JS-created
-    // ones do not. Without this the capsule renders unstyled (no orbit
-    // positioning, no colors). Inherit from the SSR sibling card.
-    inheritAstroScope(card, capsule);
-    card.before(capsule);
-  });
+  // Consequence of disabling capsule injection:
+  //   • Books that share a `seriesName` now render as their own
+  //     individual orbit stations — exactly like books with no
+  //     series. The grouping still exists in the editorial layer
+  //     (admin Series Management, ContentMetadata.seriesName), but
+  //     it has no visual on the orbit.
+  //   • `data-series-member` is NOT applied, so the existing CSS
+  //     rule that hides members in universe mode no longer matches
+  //     anything. The rule itself is left in place defensively.
+  //   • The Phase-1 `seriesAvailable` map is still computed and
+  //     surfaced through `UniverseState`. It currently has no
+  //     consumer (the series-mode "Other Knowledge" count was its
+  //     only reader, and that flow is unreachable without a
+  //     capsule), but it costs nothing and keeps the public state
+  //     shape stable for any future reintroduction of capsules.
+  //
+  // To re-enable capsules in the future, restore the loop that ran
+  // here (see git history) and the corresponding member-hiding CSS
+  // / click-handler wiring in universe-series-mode.
+  void seriesTotal;
+  void buildSeriesNode;
+  void inheritAstroScope;
 
   // ── Phase 4 — recompute --orbit-angle per kind ────────────────────
   // Members are NOT stations (they're hidden in universe mode); capsules
@@ -208,26 +190,21 @@ export function hydrateUniverse(stage: HTMLElement): UniverseState {
   // DOM order is intentionally NOT changed — angle alone drives layout
   // in CSS — so tab order, accessibility tree and progress hydration
   // remain identical to before.
+  // Unified distribution. Every visible station — book, lesson, series
+  // capsule, future kinds — shares one global index space and is laid
+  // out evenly around the full 360° circle. Item TYPE drives CSS only,
+  // not orbit position. The same `getEvenOrbitAngle` runs at SSR time
+  // (library.astro frontmatter) so the post-metadata recompute below
+  // always matches the initial paint.
   const stations = Array.from(
     stage.querySelectorAll<HTMLElement>(
       '.galaxy-card:not([data-series-member])',
     ),
   );
-  const byKind: Record<'book' | 'lesson', HTMLElement[]> = { book: [], lesson: [] };
-  stations.forEach(card => {
-    const k = card.dataset.kind;
-    if (k === 'book' || k === 'lesson') byKind[k].push(card);
-  });
 
-  const orderedBooks = sortStations(byKind.book);
-  const orderedLessons = sortStations(byKind.lesson);
-
-  orderedBooks.forEach((card, i) => {
-    const angle = bookAngle(i, orderedBooks.length);
-    card.style.setProperty('--orbit-angle', `${angle}deg`);
-  });
-  orderedLessons.forEach((card, i) => {
-    const angle = lessonAngle(i, orderedLessons.length);
+  const orderedStations = sortStations(stations);
+  orderedStations.forEach((card, i) => {
+    const angle = getEvenOrbitAngle(i, orderedStations.length);
     card.style.setProperty('--orbit-angle', `${angle}deg`);
   });
 
