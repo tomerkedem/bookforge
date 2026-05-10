@@ -52,6 +52,30 @@ export interface InteractiveEarthOptions {
   idleSpeed?: number;
 }
 
+export interface RefitDiagnostic {
+  /** Bounding-rect width of the host container at refit time (CSS px). */
+  containerWidth: number;
+  containerHeight: number;
+  /** Canvas's CSS-laid-out size — what the user sees on screen. */
+  canvasClientWidth: number;
+  canvasClientHeight: number;
+  /** Canvas's drawing-buffer size — pixels actually rendered by WebGL. */
+  canvasWidth: number;
+  canvasHeight: number;
+  /** Renderer pixel ratio cap (currently min(devicePixelRatio, 2)). */
+  rendererPixelRatio: number;
+  /** Three.js's reported drawing-buffer size (sanity check vs canvas.width). */
+  drawingBufferWidth: number;
+  drawingBufferHeight: number;
+  /** Window DPR — independent of the renderer's clamp. */
+  devicePixelRatio: number;
+  /** Currently-bound day texture's image dimensions. Null if undecodable. */
+  textureWidth: number | null;
+  textureHeight: number | null;
+  /** Whether the real WebP or the canvas-generated fallback is bound. */
+  textureSource: 'real-webp' | 'fallback';
+}
+
 export interface InteractiveEarthHandle {
   /** Stop animation, remove listeners, dispose all GPU resources, remove canvas. */
   destroy(): void;
@@ -59,6 +83,15 @@ export interface InteractiveEarthHandle {
   focusLatLng(lat: number, lng: number): void;
   /** Pause/resume idle rotation + rAF loop. Does NOT dispose. */
   setIdleRotation(enabled: boolean): void;
+  /**
+   * Re-read the host container rect, resize the renderer to match,
+   * update camera aspect/projection, render one frame. Returns a
+   * snapshot of the resulting size state. Intended to be called once
+   * after the launch flight completes (or after any layout change
+   * the ResizeObserver might miss because it was driven by transform
+   * rather than box size).
+   */
+  refit(): RefitDiagnostic;
   /** Convenience flag for callers that want to know the canvas is up. */
   readonly canvas: HTMLCanvasElement;
 }
@@ -159,24 +192,61 @@ export function createInteractiveEarth(
   options: InteractiveEarthOptions = {}
 ): InteractiveEarthHandle {
   const idleSpeed = options.idleSpeed ?? 0.06; // ≈ 3.4°/sec
-  // Cloud drift relative to the Earth surface — a touch faster than
-  // the planet so atmosphere reads as alive without becoming the
-  // focal point. Tuned by eye on the overlay's 440 px stage.
-  const cloudDriftSpeed = idleSpeed * 0.32;
+  // Cloud drift used to live here. The cloud layer was disabled in
+  // the clarity-cleanup pass — generated blob clouds were washing out
+  // the real Blue Marble continents. A real cloud WebP comes back in
+  // Step D; until then the constant stays out so nothing references
+  // a cloud mesh that doesn't exist.
 
   // ── Scene ────────────────────────────────────────────────────────
   const scene = new THREE.Scene();
 
-  const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
-  camera.position.set(0, 0, 2.7);
+  // Composition: FOV 35° + camera at z=3.85 frames the unit-radius
+  // Earth so the sphere fills ~82% of the viewport vertically with
+  // the atmosphere halo (radius 1.06) sitting at ~87% — ~6% margin
+  // on every side. Two reasons this beats the previous 42° / z=2.7:
+  //   • At 42° / 2.7, the visible half-height was 1.037 — barely
+  //     larger than the atmosphere's 1.06 radius. The halo was
+  //     clipped at the top and bottom and the planet felt cramped.
+  //   • A narrower FOV gives telephoto compression: less perspective
+  //     bulge at the silhouette, so the sphere reads as a real
+  //     distant planet instead of a wide-angle ball. This is the
+  //     framing NASA / cinema use for hero Earth shots.
+  // The camera lives at the world origin's +Z axis; the planet stays
+  // centered in the frame at all stage sizes because the renderer
+  // square aspect-ratio (1:1) means horizontal and vertical FOV
+  // match.
+  const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 100);
+  camera.position.set(0, 0, 3.85);
 
   const renderer = new THREE.WebGLRenderer({
     antialias: true,
     alpha: true,
-    powerPreference: 'low-power',
+    // The Earth overlay is a deliberate, short-lived modal — it only
+    // exists between user-initiated open and close. While it's up we
+    // want the cleanest possible render; the rest of the time no GL
+    // work is happening at all (canvas isn't mounted, rAF is paused
+    // on close). On laptops with switchable graphics this hint asks
+    // the browser to use the discrete GPU for the session, which is
+    // safe given the short duration. Mobile and integrated-only
+    // devices ignore the hint and pay nothing.
+    powerPreference: 'high-performance',
   });
+  // Cap the pixel ratio at 2. Beyond 2 the visible sharpness gain is
+  // marginal but the fragment-shader cost grows quadratically — a
+  // DPR=3 phone would render 2.25× more pixels than at DPR=2 with no
+  // perceptible improvement at the overlay's stage size. The browser
+  // downscales our 2× buffer to the device's native pixel grid; the
+  // result is sharper than letting Three.js render at 1× and CSS-up
+  // would ever be.
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.setClearColor(0x000000, 0);
+  // Output color space — Three.js r152+ defaults this to sRGB, but we
+  // set it explicitly so a future Three upgrade that changes the
+  // default can't silently desaturate the Earth. Color textures
+  // (loaded with colorSpace = SRGBColorSpace) are decoded correctly
+  // only when the renderer's output is also sRGB.
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
   // Linear tone-mapping keeps the ocean specular from clipping when
   // the directional light hits it at glancing angles. We deliberately
   // do NOT enable HDR / ACES / bloom — the look stays flat-to-camera
@@ -192,7 +262,14 @@ export function createInteractiveEarth(
   canvas.setAttribute('aria-hidden', 'true');
   container.appendChild(canvas);
 
-  const maxAniso = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+  // Anisotropic filtering — applied to every Earth-sphere texture so
+  // the equator stays sharp at the overlay's natural framing AND the
+  // texels near the silhouette (which the camera samples at extreme
+  // grazing angles) don't smear. 16× is the de-facto desktop maximum
+  // and is essentially free on modern GPUs; we still clamp to the
+  // device's reported capability so older mobile parts that report 4
+  // or 8 fall back gracefully.
+  const maxAniso = Math.min(16, renderer.capabilities.getMaxAnisotropy());
 
   // ── Earth sphere ─────────────────────────────────────────────────
   // Three textures, all CPU-generated, all disposable:
@@ -201,19 +278,35 @@ export function createInteractiveEarth(
   //   • cloudTex — RGBA cloud cover (1024×512)
   // No remote assets. Total GPU memory ≈ 7 MB.
   const colorTex = generateEarthColorTexture(maxAniso);
-  const specularTex = generateEarthSpecularTexture(maxAniso);
-  const cloudTex = generateCloudTexture(maxAniso);
 
-  // The earth material is MeshPhongMaterial with a specularMap, which
-  // is what lets the ocean glint while the continents stay matte.
-  // Specular base color #3a5e8c reads as cool moonlight on water; the
-  // shininess of 90 keeps the highlight tight (a cinematic glint, not
-  // a plastic-toy hotspot).
+  // Earth material — MeshPhongMaterial without a specularMap.
+  //
+  // The Step-B day texture shows real coastlines (Blue Marble), but
+  // the polygon-derived specular mask we used to bind here was traced
+  // from ~12 hand-drawn continents that don't line up with those
+  // coastlines at all. The misalignment leaked ocean glint onto land
+  // and matte zones into the Pacific — a subtle wrongness that drained
+  // realism even when no single frame looked broken. Dropping the
+  // mask entirely until Step C swaps in a real specular WebP gives
+  // the whole sphere one consistent, gentle response to the sun.
+  //
+  // The remaining specular tuning aims for "cinematic restraint":
+  //   • specular = #1c2a3a — deep cool steel-blue at ~30% the
+  //     intensity of the previous #3a5e8c. Reads as moonlit ocean
+  //     reflection rather than chrome.
+  //   • shininess = 22 — broad soft sheen that wraps across the
+  //     day-side instead of punching a single tight hotspot. The
+  //     previous 90 was in the plastic/varnish range; planets earn
+  //     their drama from the terminator, not from a glint.
+  // Land regions in the Blue Marble texture are dark enough (forests,
+  // mountains) that the soft sheen barely reads on them — the sphere
+  // still feels matte where it should and ocean still picks up a
+  // subtle highlight. We don't add a color tint or emissive: the
+  // texture is already calibrated natural color.
   const earthMaterial = new THREE.MeshPhongMaterial({
     map: colorTex,
-    specularMap: specularTex,
-    specular: new THREE.Color(0x3a5e8c),
-    shininess: 90,
+    specular: new THREE.Color(0x1c2a3a),
+    shininess: 22,
   });
   const earthGeometry = new THREE.SphereGeometry(1, 96, 96);
   const earth = new THREE.Mesh(earthGeometry, earthMaterial);
@@ -226,21 +319,74 @@ export function createInteractiveEarth(
     earth.rotation.x = clamp(options.initialFocus.lat * DEG, -POLE_CLAMP, POLE_CLAMP);
   }
 
-  // ── Cloud layer ──────────────────────────────────────────────────
-  // Child of the Earth so dragging rotates them together. The
-  // cloudDrift in the rAF loop adds a tiny extra rotation so the
-  // clouds appear to glide across the surface over time. Lambert
-  // (not Phong) for the clouds: water vapor doesn't have a specular
-  // glint, so saving the highlight pass is a small win.
-  const cloudGeometry = new THREE.SphereGeometry(1.012, 64, 64);
-  const cloudMaterial = new THREE.MeshLambertMaterial({
-    map: cloudTex,
-    transparent: true,
-    opacity: 0.55,
-    depthWrite: false,
-  });
-  const clouds = new THREE.Mesh(cloudGeometry, cloudMaterial);
-  earth.add(clouds);
+  // ── Real Earth day texture (deferred upgrade) ────────────────────
+  // Async-load the local Blue Marble WebP and swap it onto the Earth
+  // material once decoded. The CPU-generated colorTex stays bound
+  // until the swap completes, so the first frame of the launch
+  // animation always has a textured planet — no black flash.
+  //
+  // No remote URLs, no hotlinks. The asset is shipped under
+  // public/assets/globe/ and served by Astro at the root path below.
+  // If the load fails (404, decode error, offline) we keep the
+  // fallback bound and log a single warning — the overlay remains
+  // fully functional because the canvas-drawn Earth is still there.
+  let upgradedDayTex: THREE.Texture | null = null;
+  let fallbackColorDisposed = false;
+  let disposed = false;
+  // Tracks which texture is currently bound to earthMaterial.map so the
+  // refit() diagnostic can report it without inspecting the material.
+  let textureSource: 'real-webp' | 'fallback' = 'fallback';
+
+  const DAY_TEXTURE_URL = '/assets/globe/earth-day-2k.webp';
+  const textureLoader = new THREE.TextureLoader();
+  textureLoader.load(
+    DAY_TEXTURE_URL,
+    (tex) => {
+      // If destroy() ran while the request was in flight, the material
+      // and renderer are already gone. Release the GPU memory we just
+      // uploaded and bail — never touch a disposed material.
+      if (disposed) {
+        tex.dispose();
+        return;
+      }
+      tex.colorSpace = THREE.SRGBColorSpace;
+      tex.anisotropy = maxAniso;
+      tex.needsUpdate = true;
+
+      upgradedDayTex = tex;
+      earthMaterial.map = tex;
+      earthMaterial.needsUpdate = true;
+
+      // Fallback pixels are no longer sampled — release the canvas
+      // texture's GPU memory now rather than at destroy().
+      colorTex.dispose();
+      fallbackColorDisposed = true;
+      textureSource = 'real-webp';
+
+      // Clarity diagnostic: confirm the real WebP arrived and was
+      // bound to the material. Logs once per Earth instance.
+      console.info('[interactive-earth-3d] Earth day texture loaded', {
+        url: DAY_TEXTURE_URL,
+        width: tex.image?.width,
+        height: tex.image?.height,
+        source: 'real-webp',
+      });
+    },
+    undefined,
+    (err) => {
+      console.warn(
+        `[interactive-earth-3d] Failed to load Earth day texture at ${DAY_TEXTURE_URL}; using generated fallback.`,
+        { source: 'fallback', error: err }
+      );
+    }
+  );
+
+  // ── Cloud layer (disabled) ───────────────────────────────────────
+  // Previously a separate sphere at radius 1.012 with an alpha-blended
+  // generated cloud texture. Removed in the clarity-cleanup pass: the
+  // procedural blobs were sitting on top of the real Blue Marble
+  // continents and reading as smudges, which is what made the planet
+  // feel hazy and cheap. A real cloud WebP comes back in Step D.
 
   // ── Atmospheric glow ─────────────────────────────────────────────
   // Single back-side sphere at radius 1.06 with an additive Fresnel
@@ -264,12 +410,20 @@ export function createInteractiveEarth(
       varying vec3 vNormal;
       void main() {
         float rim = 1.0 - dot(vNormal, vec3(0.0, 0.0, 1.0));
-        float intensity = pow(clamp(rim, 0.0, 1.0), 4.0);
+        // Falloff tightened from pow(rim, 4.0) to pow(rim, 6.0) and
+        // the intensity ceiling pulled from 0.78 to 0.55 in the
+        // clarity-cleanup pass. The previous halo was bleeding a
+        // faint cyan haze across the outer ~10% of the day-side disc
+        // and washing out continent edges. Keeping pow at 6 and the
+        // ceiling at 0.55 leaves a thin, premium rim glow that dies
+        // quickly inward — atmosphere as silhouette accent, not as
+        // global wash.
+        float intensity = pow(clamp(rim, 0.0, 1.0), 6.0);
         // Two-tone halo: cooler core, warmer edge as it fades out.
         vec3 inner = vec3(0.36, 0.58, 0.96);
         vec3 outer = vec3(0.62, 0.82, 1.00);
         vec3 col = mix(inner, outer, smoothstep(0.0, 1.0, intensity));
-        gl_FragColor = vec4(col, 1.0) * clamp(intensity * 0.78, 0.0, 1.0);
+        gl_FragColor = vec4(col, 1.0) * clamp(intensity * 0.55, 0.0, 1.0);
       }
     `,
     blending: THREE.AdditiveBlending,
@@ -372,13 +526,8 @@ export function createInteractiveEarth(
     if (!dragging && idleSpeed > 0) {
       earth.rotation.y += idleSpeed * dt;
     }
-    // Clouds drift relative to Earth at all times — even while
-    // dragging — so the atmosphere stays alive when the user is
-    // exploring. The relative speed is small (~30% of idle), so a
-    // single drag still feels like rotating both together.
-    if (cloudDriftSpeed > 0) {
-      clouds.rotation.y += cloudDriftSpeed * dt;
-    }
+    // Cloud drift removed alongside the cloud layer in the
+    // clarity-cleanup pass. Step D restores it with a real cloud WebP.
     renderer.render(scene, camera);
     rafId = requestAnimationFrame(tick);
   };
@@ -403,6 +552,10 @@ export function createInteractiveEarth(
   return {
     canvas,
     destroy(): void {
+      // Mark disposed BEFORE releasing GPU resources so any in-flight
+      // texture load that resolves during teardown disposes its own
+      // result instead of binding it to a freed material.
+      disposed = true;
       stopLoop();
       idleEnabled = false;
 
@@ -419,11 +572,12 @@ export function createInteractiveEarth(
       // their geometry/material/texture need explicit dispose.
       earthGeometry.dispose();
       earthMaterial.dispose();
-      colorTex.dispose();
-      specularTex.dispose();
-      cloudGeometry.dispose();
-      cloudMaterial.dispose();
-      cloudTex.dispose();
+      // The fallback color texture may already be disposed by the
+      // upgrade swap. Guard so we don't double-dispose.
+      if (!fallbackColorDisposed) colorTex.dispose();
+      if (upgradedDayTex) upgradedDayTex.dispose();
+      // Cloud geometry / material / texture disposals removed with
+      // the cloud layer itself. Step D will restore them.
       atmosphereGeometry.dispose();
       atmosphereMaterial.dispose();
       renderer.dispose();
@@ -443,6 +597,57 @@ export function createInteractiveEarth(
       } else {
         stopLoop();
       }
+    },
+    refit(): RefitDiagnostic {
+      // Re-read the container's current bounding rect, resize the
+      // renderer's drawing buffer to match, update the camera, and
+      // render one frame. Two reasons this exists:
+      //
+      //   1) Compositor invalidation. A WAAPI flight from a small
+      //      transform back to identity can leave the parent layer
+      //      rasterized at the smallest size of the animation. The
+      //      cached low-res bitmap then gets GPU-upscaled to the
+      //      final natural size — what the user perceives as a
+      //      "blurry" Earth. Calling renderer.setSize re-allocates
+      //      the WebGL backing store (or no-ops if size matches),
+      //      and the immediate render() pushes a fresh frame which
+      //      forces the browser to invalidate and re-rasterize the
+      //      composited layer at its true resolution.
+      //
+      //   2) ResizeObserver only fires on box-size changes. CSS
+      //      transforms don't change box size, so layouts driven by
+      //      transform-based animations can leave the renderer with
+      //      stale dimensions if the box was actually different at
+      //      construction time. refit() is the single defensive call
+      //      that guarantees buffer == final layout.
+      const rect = container.getBoundingClientRect();
+      const w = Math.max(1, Math.round(rect.width));
+      const h = Math.max(1, Math.round(rect.height));
+      renderer.setSize(w, h, false);
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.render(scene, camera);
+
+      const buf = renderer.getDrawingBufferSize(new THREE.Vector2());
+      const activeMap = earthMaterial.map;
+      const texW = activeMap?.image?.width ?? null;
+      const texH = activeMap?.image?.height ?? null;
+
+      return {
+        containerWidth: rect.width,
+        containerHeight: rect.height,
+        canvasClientWidth: canvas.clientWidth,
+        canvasClientHeight: canvas.clientHeight,
+        canvasWidth: canvas.width,
+        canvasHeight: canvas.height,
+        rendererPixelRatio: renderer.getPixelRatio(),
+        drawingBufferWidth: buf.x,
+        drawingBufferHeight: buf.y,
+        devicePixelRatio: window.devicePixelRatio,
+        textureWidth: texW,
+        textureHeight: texH,
+        textureSource,
+      };
     },
   };
 }

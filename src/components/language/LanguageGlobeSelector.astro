@@ -461,7 +461,11 @@ const focusByCode = JSON.stringify(
     align-items: center;
     gap: clamp(20px, 3.5vh, 36px);
     padding: clamp(16px, 4vh, 36px);
-    width: min(720px, 92vw);
+    /* Widened from 720 → 880 to give the larger Earth stage (now up
+       to 600 px) elbow room and to keep the language row flowing on
+       a single line at common desktop widths. The vw cap keeps
+       narrower viewports unaffected. */
+    width: min(880px, 94vw);
     /* The stage container has no own animation. Children animate
        independently:
          - .lgs-overlay-earth: WAAPI flight on open/close (driven by JS)
@@ -604,7 +608,12 @@ const focusByCode = JSON.stringify(
      directly inside this element on first open. */
   .lgs-overlay-earth {
     position: relative;
-    width: min(440px, 70vw, 60vh);
+    /* Desktop default: cinematic 600 px target, with vw / vh
+       constraints to keep the globe within the viewport on narrower
+       or shorter screens. The renderer is sized via refit() to
+       whatever this CSS resolves to — never CSS-scaled — so the
+       drawing buffer always matches the visible pixel count. */
+    width: min(600px, 78vw, 68vh);
     aspect-ratio: 1 / 1;
     /* Keeps the rAF/render contained so the rest of the page can
        paint independently. */
@@ -615,6 +624,15 @@ const focusByCode = JSON.stringify(
     display: block;
     width: 100% !important;
     height: 100% !important;
+  }
+
+  /* Tablet — language row often wraps onto two lines, which eats
+     vertical room. Slightly tighter cap than desktop and a stricter
+     vh constraint keep the globe from pushing the row off screen. */
+  @media (max-width: 768px) {
+    .lgs-overlay-earth {
+      width: min(520px, 84vw, 64vh);
+    }
   }
 
   @media (max-width: 480px) {
@@ -634,7 +652,11 @@ const focusByCode = JSON.stringify(
       display: none;
     }
     .lgs-overlay-earth {
-      width: min(80vw, 60vh);
+      /* Phone — slightly more generous than the prior 80vw / 60vh,
+         since the rest of the overlay is dimmed and the Earth is the
+         hero. Still leaves margin in landscape and on short
+         viewports. */
+      width: min(86vw, 62vh);
     }
   }
 
@@ -917,10 +939,18 @@ const focusByCode = JSON.stringify(
     // If we were torn down mid-init, abort cleanly.
     if (state !== 'launching') return;
 
+    // Diagnostic bypass: setting `window.__lgsBypassFlight = true`
+    // before clicking the trigger skips the WAAPI launch flight and
+    // opens the overlay directly at its final centered size. Used to
+    // confirm whether the FLIP / compositor path is the source of
+    // perceived softness on the Earth canvas. Has no effect in
+    // production unless the flag is explicitly set in DevTools.
+    const bypassFlight = (window as unknown as { __lgsBypassFlight?: boolean }).__lgsBypassFlight === true;
+
     if (stage) {
-      if (isReducedMotion()) {
-        // Reduced motion: no flight. Just reveal the row alongside
-        // the backdrop fade-in (which is CSS-driven and harmless).
+      if (isReducedMotion() || bypassFlight) {
+        // Reduced motion (or the diagnostic bypass): no flight. Just
+        // reveal the row alongside the backdrop fade-in.
         if (row) row.classList.add('is-revealed');
       } else {
         // Run the flight, then reveal the row a beat after it lands.
@@ -929,6 +959,28 @@ const focusByCode = JSON.stringify(
         if (state !== 'launching') return;
         if (row) row.classList.add('is-revealed');
       }
+    }
+
+    // Refit the renderer once the stage is at its final centered
+    // size. This is the actual fix for the "blurry Earth after
+    // launch" symptom: a WAAPI flight that animates a parent
+    // transform from a small scale to identity can leave the
+    // composited layer rasterized at the smallest size, which then
+    // gets GPU-upscaled. refit() resizes the WebGL drawing buffer
+    // to the current layout and forces a fresh render frame, which
+    // invalidates the cached layer and gives us a sharp planet.
+    if (handle && stage) {
+      const diag = handle.refit();
+      const stageStyle = window.getComputedStyle(stage);
+      const canvasStyle = window.getComputedStyle(handle.canvas);
+      console.info('[interactive-earth-3d] DIAG refit after open', {
+        ...diag,
+        bypassFlight,
+        stageTransform: stageStyle.transform,
+        stageFilter: stageStyle.filter,
+        canvasFilter: canvasStyle.filter,
+        canvasImageRendering: canvasStyle.imageRendering,
+      });
     }
 
     state = 'open';

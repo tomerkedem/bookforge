@@ -1,0 +1,84 @@
+Earth surface imagery — Language Globe selector
+================================================
+
+This directory holds the local Earth texture assets used by the
+Language Globe overlay (src/scripts/interactive-earth-3d.ts). Until
+a verified asset is committed, no texture is present here yet.
+
+Status
+------
+PLACEHOLDER. No image asset has been added yet. The application
+continues to render the CPU-generated fallback texture.
+
+Required first asset
+--------------------
+File:        earth-day-2k.webp
+Path:        public/assets/globe/earth-day-2k.webp
+Resolution:  2048 x 1024 (equirectangular, 2:1)
+Encoding:    WebP, lossy, q=85
+Target size: ~350-550 KB (hard ceiling 700 KB)
+Purpose:     Albedo / color map for the Earth sphere.
+
+Expected source
+---------------
+NASA Earth Observatory / Visible Earth — "Blue Marble Next Generation"
+Collection page (for navigation only — license is per-image, NOT
+inherited from the collection page):
+    https://visibleearth.nasa.gov/collection/1484/blue-marble
+
+Verification required BEFORE committing earth-day-2k.webp
+---------------------------------------------------------
+Open the specific image page chosen as the source and verify ALL of
+the following. Do not assume — each item must be confirmed against
+the actual image page text:
+
+  [ ] The image is in the public domain, OR is offered under NASA's
+      standard "free to use with attribution" Image Use Policy.
+      Reference: https://www.nasa.gov/multimedia/guidelines/index.html
+  [ ] The credit line shown on the image page (typically
+      "NASA Earth Observatory / Reto Stöckli", sometimes also
+      "Robert Simmon"). Record the exact wording in this file
+      under "Verified credit" before committing the asset.
+  [ ] Resampling and re-encoding to WebP is permitted (it is for
+      public-domain NASA imagery, but confirm against the page).
+  [ ] The chosen month / variant is recorded below.
+
+If any of these checks fail, STOP. Do not commit the asset. Replace
+the source candidate or escalate before continuing.
+
+NASA branding restriction
+-------------------------
+Even where a NASA image is public domain, the NASA name, logo,
+insignia, mission identifiers, and personnel likenesses are NOT
+licensed for general use. They must not appear in:
+  - any UI surface in the product
+  - any marketing or social copy
+  - any derivative file shipped under public/assets/globe/
+This restriction applies regardless of how clean the underlying
+image license is.
+
+Verified source record (fill in before committing the asset)
+------------------------------------------------------------
+Image page URL:        <to be filled after verification>
+Image variant / month: <e.g. September, Blue Marble Next Generation>
+Original resolution:   <e.g. 21600 x 10800>
+Verified credit line:  <exact wording from image page>
+Verified license:      <e.g. Public domain — NASA Image Use Policy>
+Verification date:     <YYYY-MM-DD>
+Verified by:           <name>
+
+Files derived from the verified source
+--------------------------------------
+earth-day-2k.webp   — resampled to 2048x1024, encoded with cwebp -q 85 -m 6
+                      (file not yet present)
+
+Reserved filenames for later phases (do not pre-create)
+-------------------------------------------------------
+earth-clouds-2k.webp     — Step D, RGBA cloud cover
+earth-specular-2k.webp   — Step C, grayscale specular mask
+earth-normal-2k.webp     — Step F, surface relief
+earth-night-2k.webp      — Step G (gated), city lights emissive
+earth-day-4k.webp        — Step H (gated), high-DPR upgrade
+
+Each future asset requires its own license verification pass and a
+matching entry in this file before being committed.
