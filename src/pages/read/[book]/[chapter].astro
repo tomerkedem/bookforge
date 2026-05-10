@@ -5,7 +5,7 @@ import ChapterSidebars from '../../../components/ChapterSidebars.astro';
 import ChapterMeta from '../../../components/ChapterMeta.astro';
 import PlatformStatusBar from '../../../components/PlatformStatusBar.astro';
 import type { Language, Chapter } from '../../../types/index';
-import { SUPPORTED_LANGUAGES, SOURCE_LANGUAGE } from '../../../utils/language';
+import { SUPPORTED_LANGUAGES, SOURCE_LANGUAGE, resolveContextLanguage } from '../../../utils/language';
 import { t } from '../../../i18n';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
@@ -130,7 +130,11 @@ const contentByLang = Object.fromEntries(
   )
 ) as Record<string, string>;
 
-const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] || SOURCE_LANGUAGE) as Language;
+// Server-rendered initial language. Reading pages pre-render every
+// translation and switch client-side via ReadingLayout's
+// allowClientLanguageOverride, so the server pick only matters for the
+// first paint when no ?lang= is present. Hebrew → English → first.
+const language = resolveContextLanguage(SOURCE_LANGUAGE, langs) as Language;
 ---
 
 <ReadingLayout

@@ -5,6 +5,7 @@ import { getKnowledgeCardAssets } from '../utils/library/knowledge-cards';
 import type { Language } from '../types/index';
 import {
   DEFAULT_LANGUAGE,
+  LANGUAGE_CODES,
   getLanguageDirection,
   isValidLanguage,
 } from '../utils/language';
@@ -151,7 +152,7 @@ const i18nBundle = {
 <BaseLayout
   title={`${t('admin.title', language)} - Yuval`}
   language={language}
-  availableLanguages={['he', 'en', 'es']}
+  availableLanguages={LANGUAGE_CODES}
   allowClientLanguageOverride={true}
 >
   <div

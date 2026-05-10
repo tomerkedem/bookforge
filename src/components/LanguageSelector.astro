@@ -16,23 +16,16 @@ const availableLangs = (!languages || languages.length === 0)
   ? SUPPORTED_LANGUAGES
   : SUPPORTED_LANGUAGES.filter(l => languages.includes(l.code as Language));
 
-// Get metadata for available languages
+// Get metadata for available languages. The flag glyph lives on the
+// central language registry (src/utils/language.ts) so adding a fourth
+// language only requires one edit, not a map duplicated in this file.
 const langOptions = availableLangs.map(meta => ({
   code: meta.code as Language,
   label: meta.label,
   labelEn: meta.labelEn,
   dir: meta.dir,
-  flag: getFlagEmoji(meta.code),
+  flag: meta.flag ?? '🌐',
 }));
-
-function getFlagEmoji(code: string): string {
-  const flags: Record<string, string> = {
-    he: '🇮🇱',
-    en: '🇬🇧',
-    es: '🇪🇸',
-  };
-  return flags[code] || '🌐';
-}
 
 const currentLang = langOptions.find(l => l.code === current) || langOptions[0];
 const isRtl = getLanguageDirection(currentLang.code) === 'rtl';

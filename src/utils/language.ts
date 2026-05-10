@@ -5,9 +5,9 @@ import type { Language, LanguageContext, LanguageMeta, LanguageName } from '../t
  * Add new languages here only.
  */
 export const SUPPORTED_LANGUAGES: LanguageMeta[] = [
-  { code: 'he', label: 'עברית', labelEn: 'Hebrew', dir: 'rtl', locale: 'he-IL' },
-  { code: 'en', label: 'English', labelEn: 'English', dir: 'ltr', locale: 'en-US' },
-  { code: 'es', label: 'Español', labelEn: 'Spanish', dir: 'ltr', locale: 'es-ES' },
+  { code: 'he', label: 'עברית', labelEn: 'Hebrew', dir: 'rtl', locale: 'he-IL', flag: '🇮🇱' },
+  { code: 'en', label: 'English', labelEn: 'English', dir: 'ltr', locale: 'en-US', flag: '🇬🇧' },
+  { code: 'es', label: 'Español', labelEn: 'Spanish', dir: 'ltr', locale: 'es-ES', flag: '🇪🇸' },
 ];
 
 export const LANGUAGE_CODES = SUPPORTED_LANGUAGES.map((l) => l.code);
@@ -169,6 +169,28 @@ export const dispatchLanguageChangeEvent = (lang: Language): void => {
       bubbles: true,
     })
   );
+};
+
+/**
+ * Resolve the language to render when entering a context whose
+ * `available` list may not include the caller's preferred `active`
+ * language (e.g. the user prefers Spanish but this book is Hebrew/English
+ * only).
+ *
+ * Priority: requested active → Hebrew → English → first available. The
+ * caller is responsible for *not* writing the resolved value back to
+ * localStorage — the user's global preference must survive a visit to a
+ * book that doesn't support it.
+ */
+export const resolveContextLanguage = (
+  active: string | null | undefined,
+  available: readonly string[]
+): Language => {
+  if (available.length === 0) return DEFAULT_LANGUAGE;
+  if (active && available.includes(active)) return active;
+  if (available.includes('he')) return 'he';
+  if (available.includes('en')) return 'en';
+  return available[0];
 };
 
 /**

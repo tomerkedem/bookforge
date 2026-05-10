@@ -35,7 +35,7 @@ import FloatingSidebar from '../components/library/FloatingSidebar.astro';
 
 import type { Language } from '../types/index';
 import type { LibraryItem } from '../types/library';
-import { DEFAULT_LANGUAGE, getLanguageDirection, isValidLanguage } from '../utils/language';
+import { DEFAULT_LANGUAGE, LANGUAGE_CODES, getLanguageDirection, isValidLanguage } from '../utils/language';
 import { t } from '../i18n';
 import {
   getLibraryItems,
@@ -240,8 +240,9 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
   title={t('library.galaxy.title', language)}
   description={t('library.galaxy.subtitle', language)}
   language={language}
-  availableLanguages={['he', 'en', 'es']}
+  availableLanguages={LANGUAGE_CODES}
   allowClientLanguageOverride={true}
+  useGlobeLanguageSelector={true}
 >
   <div
     class="library-dark-showcase library-root"
@@ -793,6 +794,14 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
      contribute to layout, height, or accidental visibility. */
   .lb-area-featured     { display: none; }
 
+  /* Small-screen baseline for the orbit scene's vertical offset. The
+     orbit itself is hidden below 1024px (see `.lb-area-featured` above),
+     but the variable is defined here so the responsive ladder
+     (32 → 56 → 72) is complete at every breakpoint. The transform is
+     applied on `.library-galaxy` inside the 1024+ query, so a parent
+     transform never affects mobile layout. */
+  .library-galaxy { --orbit-vertical-offset: 32px; }
+
   /* ── Tablet (≥640px): same mobile flow, more padding ── */
   @media (min-width: 640px) {
     .library-root { padding: 1.75rem 1.5rem 4rem; }
@@ -980,6 +989,14 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       padding: 0;
       scrollbar-width: auto;
       scrollbar-color: auto;
+      /* Vertical offset of the entire orbit scene (rings, central core,
+         floating cards, glow, rotation controls) so rotated carousel
+         items never overlap the page title above. Lives on the orbit
+         container only — page title, breadcrumb, side panels and grid
+         shell are unaffected. Responsive steps below override the value
+         per breakpoint; the transform itself stays the same. */
+      --orbit-vertical-offset: 56px;
+      transform: translateY(var(--orbit-vertical-offset));
     }
     /* The earlier `.library-galaxy::before` underlay halo and
        `.galaxy-stage-veil` overlay were experimental edge-blending
@@ -1907,6 +1924,11 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
 
   /* ── Wide desktop (≥1280px): wider orbit cards + larger orbit. ─── */
   @media (min-width: 1280px) {
+    /* Larger orbit scene gets a deeper vertical offset so rotating
+       cards along the wider ellipse still clear the page title. */
+    .library-galaxy {
+      --orbit-vertical-offset: 72px;
+    }
     .galaxy-card {
       width: 210px;
       --orbit-rx: clamp(320px, 30vw, 440px);

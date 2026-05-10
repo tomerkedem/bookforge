@@ -3,7 +3,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import BookCard from '../components/BookCard.astro';
 import CourseCard from '../components/CourseCard.astro';
 import type { Language } from '../types/index';
-import { DEFAULT_LANGUAGE, getLanguageDirection, isValidLanguage } from '../utils/language';
+import { DEFAULT_LANGUAGE, LANGUAGE_CODES, getLanguageDirection, isValidLanguage } from '../utils/language';
 import { discoverAllBooks, discoverCourses } from '../utils/book-discovery';
 import { t } from '../i18n';
 
@@ -75,13 +75,11 @@ for (const key of Object.keys(allByCategory)) {
   });
 }
 
-// Detect available languages from all content (books + course lessons)
-const availableLanguagesSet = new Set<Language>();
-allBooks.forEach((book) => {
-  const bookLangs = book.languages?.length ? book.languages : Object.keys(book.titles || {});
-  bookLangs.forEach((lang) => { if (lang) availableLanguagesSet.add(lang as Language); });
-});
-const availableLanguages = Array.from(availableLanguagesSet);
+// Platform-level screen: the selector shows the full set of platform UI
+// languages, regardless of which books currently exist. The home screen
+// must not lose a language just because no current book uses it — that
+// behavior belongs to per-book screens, not the platform shell.
+const availableLanguages = LANGUAGE_CODES as Language[];
 
 // Count every individual piece of content — books + course lessons —
 // not courses-as-single-items. Matches what the user actually sees on

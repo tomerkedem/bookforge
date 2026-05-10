@@ -8,7 +8,7 @@ import type { Language } from '../types/index';
 import Header from '../components/Header.astro';
 import ReadingProgress from '../components/ReadingProgress.astro';
 import BackToTop from '../components/BackToTop.astro';
-import { SOURCE_LANGUAGE, getLanguageDirection } from '../utils/language';
+import { SOURCE_LANGUAGE, LANGUAGE_CODES, getLanguageDirection } from '../utils/language';
 
 interface Props {
   title: string;
@@ -26,6 +26,12 @@ interface Props {
    * so the /library dashboard reads as a focused product surface.
    */
   showQuote?: boolean;
+  /**
+   * Forwarded to Header. Opts the page into the new circular
+   * LanguageGlobeSelector. Defaults to false — every existing route
+   * keeps the legacy selector until explicitly opted in.
+   */
+  useGlobeLanguageSelector?: boolean;
   class?: string;
 }
 
@@ -39,6 +45,7 @@ const {
   showProgress = false,
   showLanguageToggle = true,
   showQuote = true,
+  useGlobeLanguageSelector = false,
   class: className,
 } = Astro.props;
 
@@ -141,30 +148,41 @@ const isDev = import.meta.env.DEV;
     <!-- Sync language between URL ?lang= and localStorage before the page renders.
          If user has a saved language preference but the URL doesn't reflect it,
          redirect so the server re-renders in the correct language. -->
-    <script is:inline define:vars={{ serverLang: language, availableLangs: availableLanguages ?? [language], allowClientLanguageOverride }}>
+    <script is:inline define:vars={{ serverLang: language, availableLangs: availableLanguages ?? [language], allowClientLanguageOverride, validLangs: LANGUAGE_CODES }}>
       (function() {
         try {
           var params = new URLSearchParams(window.location.search);
           var urlLang = params.get('lang');
           var storedLang = localStorage.getItem('yuval_language');
-          var valid = ['he','en','es'];
+          // valid = the full platform language registry (LANGUAGE_CODES,
+          // single source of truth from src/utils/language.ts). allowed =
+          // the subset actually available in the current context (book,
+          // course, chapter, or full platform on platform-level screens).
+          var valid = Array.isArray(validLangs) && validLangs.length > 0 ? validLangs : ['he','en','es'];
           var allowed = Array.isArray(availableLangs) && availableLangs.length > 0 ? availableLangs : [serverLang];
 
           if (urlLang && valid.indexOf(urlLang) !== -1) {
             if (allowed.indexOf(urlLang) !== -1 && (urlLang === serverLang || allowClientLanguageOverride)) {
               if (storedLang !== urlLang) localStorage.setItem('yuval_language', urlLang);
             } else {
+              // ?lang= is a valid platform language but not available in
+              // this context — drop the URL override and re-render in
+              // serverLang. Do NOT rewrite the user's stored preference:
+              // visiting a Hebrew/English-only book shouldn't erase a
+              // Spanish global preference.
               params.set('lang', serverLang);
-              localStorage.setItem('yuval_language', serverLang);
               window.location.replace(window.location.pathname + '?' + params.toString() + window.location.hash);
             }
           } else if (!allowClientLanguageOverride && storedLang && valid.indexOf(storedLang) !== -1 && storedLang !== serverLang && allowed.indexOf(storedLang) !== -1) {
             // No URL override, but stored preference differs from what server rendered - redirect
             params.set('lang', storedLang);
             window.location.replace(window.location.pathname + '?' + params.toString() + window.location.hash);
-          } else if (storedLang && valid.indexOf(storedLang) !== -1 && allowed.indexOf(storedLang) === -1) {
-            localStorage.setItem('yuval_language', serverLang);
           }
+          // else: stored language exists but isn't available in this
+          // context — leave localStorage alone. The page renders in
+          // serverLang (already resolved server-side via
+          // resolveContextLanguage), and the user's global preference
+          // survives until they explicitly pick a different one.
         } catch(e) {}
       })();
     </script>
@@ -189,6 +207,7 @@ const isDev = import.meta.env.DEV;
         availableLanguages={availableLanguages}
         showLanguageToggle={showLanguageToggle}
         showQuote={showQuote}
+        useGlobeLanguageSelector={useGlobeLanguageSelector}
       />
     )}
 

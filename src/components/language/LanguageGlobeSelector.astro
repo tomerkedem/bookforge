@@ -1,0 +1,493 @@
+---
+/**
+ * LanguageGlobeSelector — circular language trigger.
+ *
+ * Step-2 visual surface for the language switcher. Renders as a perfect
+ * 44×44 circle: a conic gold/silver "ring" outside, deep-space radial
+ * gradient inside, with a small SVG globe (no continents yet, parallels
+ * + meridians + a soft specular highlight). On click it opens a small
+ * native-label menu; behavior mirrors the legacy LanguageSelector so
+ * existing listeners keep working unchanged.
+ *
+ * Inputs (from Step-1 data flow — never re-derived inside the component):
+ *   activeLanguage      — the language currently rendered by the page.
+ *   availableLanguages  — the context's resolved list (platform OR book
+ *                         OR course OR chapter, decided upstream).
+ *
+ * The component does NOT fall back to SUPPORTED_LANGUAGES — if a parent
+ * passes a 2-language array, only those 2 appear. That's the contract
+ * established in Step 1.
+ */
+
+import type { Language } from '../../types/index';
+import { getLanguageMeta, getLanguageDirection } from '../../utils/language';
+
+interface Props {
+  activeLanguage: Language;
+  availableLanguages: Language[];
+  class?: string;
+  /** Force-disable the menu (e.g. while parent is mid-redirect). The
+   *  single-language case is handled automatically via availableLanguages. */
+  disabled?: boolean;
+}
+
+const {
+  activeLanguage,
+  availableLanguages,
+  class: className,
+  disabled = false,
+} = Astro.props;
+
+const options = availableLanguages.map((code) => {
+  const meta = getLanguageMeta(code);
+  return {
+    code,
+    label: meta.label,
+    labelEn: meta.labelEn,
+    dir: meta.dir,
+    flag: meta.flag ?? '🌐',
+  };
+});
+
+const activeMeta = getLanguageMeta(activeLanguage);
+const isRtl = getLanguageDirection(activeLanguage) === 'rtl';
+const onlyOne = options.length <= 1;
+const triggerDisabled = disabled || onlyOne;
+
+const triggerAriaLabel = onlyOne
+  ? `Only one language available: ${activeMeta.labelEn}`
+  : `Change language. Current: ${activeMeta.labelEn}`;
+---
+
+<div
+  class:list={['lgs-root', className]}
+  data-current={activeLanguage}
+  data-rtl={isRtl}
+>
+  <button
+    type="button"
+    class="lgs-trigger"
+    aria-haspopup={onlyOne ? 'false' : 'listbox'}
+    aria-expanded="false"
+    aria-disabled={triggerDisabled ? 'true' : 'false'}
+    aria-label={triggerAriaLabel}
+    title={onlyOne ? `Only one language available: ${activeMeta.labelEn}` : undefined}
+    data-only-one={onlyOne ? 'true' : 'false'}
+  >
+    <span class="lgs-disc" aria-hidden="true">
+      <svg class="lgs-globe" viewBox="0 0 32 32" aria-hidden="true">
+        <defs>
+          <radialGradient id="lgs-globe-fill" cx="40%" cy="35%" r="65%">
+            <stop offset="0%" stop-color="#3a5e8f" />
+            <stop offset="55%" stop-color="#1c2f55" />
+            <stop offset="100%" stop-color="#0a1024" />
+          </radialGradient>
+        </defs>
+        <circle cx="16" cy="16" r="12" fill="url(#lgs-globe-fill)" />
+        <ellipse cx="16" cy="16" rx="12" ry="12" fill="none" stroke="rgba(180,200,240,0.55)" stroke-width="0.5"/>
+        <ellipse cx="16" cy="16" rx="4.5" ry="12" fill="none" stroke="rgba(180,200,240,0.32)" stroke-width="0.4"/>
+        <ellipse cx="16" cy="16" rx="8.5" ry="12" fill="none" stroke="rgba(180,200,240,0.22)" stroke-width="0.4"/>
+        <ellipse cx="16" cy="16" rx="12" ry="4.5" fill="none" stroke="rgba(180,200,240,0.22)" stroke-width="0.4"/>
+        <ellipse cx="16" cy="16" rx="12" ry="8.5" fill="none" stroke="rgba(180,200,240,0.18)" stroke-width="0.4"/>
+        <circle cx="12" cy="12" r="2.5" fill="rgba(255,255,255,0.18)" />
+      </svg>
+    </span>
+  </button>
+
+  {!onlyOne && (
+    <div class="lgs-panel" role="listbox" aria-label="Available languages">
+      <div class="lgs-panel-inner">
+        {options.map((option) => (
+          <button
+            type="button"
+            class:list={['lgs-option', option.code === activeLanguage && 'is-active']}
+            data-language={option.code}
+            data-dir={option.dir}
+            role="option"
+            aria-selected={option.code === activeLanguage}
+            aria-label={option.labelEn}
+          >
+            <span class="lgs-option-flag" aria-hidden="true">{option.flag}</span>
+            <span class="lgs-option-labels">
+              <span class="lgs-option-native">{option.label}</span>
+              <span class="lgs-option-en">{option.labelEn}</span>
+            </span>
+            {option.code === activeLanguage && (
+              <span class="lgs-option-check" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+                </svg>
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+    </div>
+  )}
+</div>
+
+<style>
+  .lgs-root {
+    position: relative;
+    display: inline-block;
+    line-height: 0;
+  }
+
+  /* ── Trigger: perfect 46×46 circle. The visible gold/silver ring is
+       the 2px gap between this element (conic gradient) and the inner
+       .lgs-disc; the disc resolves to 42px, leaving the globe SVG room
+       to occupy ~75% of the inner disc diameter (within the 72–78%
+       target band) without overpowering the ring. */
+  .lgs-trigger {
+    width: 46px;
+    height: 46px;
+    min-width: 46px;
+    min-height: 46px;
+    border-radius: 50%;
+    padding: 0;
+    border: none;
+    cursor: pointer;
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    /* Mixed gold + silver ring built from a multi-stop conic so the
+       metal reads as multi-toned rather than two concentric stripes.
+       Gold at 0/270/360°, silver at 130/320°, deep bronze shadow at 200°. */
+    background: conic-gradient(
+      from 210deg,
+      #c9a227 0deg,
+      #f0e3b0 60deg,
+      #c0c4cc 130deg,
+      #8b7355 200deg,
+      #d4af55 270deg,
+      #e8eaee 320deg,
+      #c9a227 360deg
+    );
+    box-shadow:
+      0 4px 12px rgba(0, 0, 0, 0.45),
+      0 0 14px rgba(201, 169, 110, 0.20);
+    transition:
+      transform 220ms var(--ease-emphasized, cubic-bezier(0.2, 0.7, 0.2, 1)),
+      box-shadow 220ms var(--ease-emphasized, cubic-bezier(0.2, 0.7, 0.2, 1));
+  }
+
+  .lgs-trigger:hover {
+    transform: translateY(-1px);
+    box-shadow:
+      0 6px 16px rgba(0, 0, 0, 0.5),
+      0 0 22px rgba(201, 169, 110, 0.32);
+  }
+
+  .lgs-trigger:focus-visible {
+    outline: none;
+    box-shadow:
+      0 0 0 3px rgba(232, 197, 71, 0.45),
+      0 6px 16px rgba(0, 0, 0, 0.5);
+  }
+
+  .lgs-trigger[aria-disabled="true"] {
+    cursor: default;
+  }
+
+  .lgs-trigger[aria-disabled="true"]:hover {
+    transform: none;
+  }
+
+  /* Inner space disc — sits 2px inside the conic ring. */
+  .lgs-disc {
+    position: absolute;
+    inset: 2px;
+    border-radius: 50%;
+    background: radial-gradient(
+      circle at 50% 42%,
+      #0e1428 0%,
+      #04070f 65%,
+      #000000 100%
+    );
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .lgs-globe {
+    /* SVG canvas matches the inner disc (42px). The globe circle inside
+       the 32×32 viewBox has r=12 → diameter 24/32 = 75% of the canvas,
+       which renders as ~31.5px on screen → 75% of the 42px inner disc.
+       The 4-unit margin around the globe in the viewBox preserves the
+       deep-space ring inside the disc. */
+    width: 42px;
+    height: 42px;
+    display: block;
+  }
+
+  /* ── Dropdown panel ── */
+  .lgs-panel {
+    position: absolute;
+    top: calc(100% + 10px);
+    inset-inline-start: 0;
+    min-width: 200px;
+    background: var(--yuval-surface, #1a1a1a);
+    border: 1.5px solid rgba(201, 162, 39, 0.35);
+    border-radius: 14px;
+    box-shadow:
+      0 12px 32px rgba(0, 0, 0, 0.35),
+      0 4px 12px rgba(0, 0, 0, 0.2),
+      0 0 0 1px rgba(201, 162, 39, 0.18);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-8px) scale(0.96);
+    transition: all 220ms var(--ease-emphasized, cubic-bezier(0.2, 0.7, 0.2, 1));
+    pointer-events: none;
+    z-index: 99;
+    backdrop-filter: blur(8px);
+    overflow: hidden;
+  }
+
+  .lgs-trigger[aria-expanded="true"] + .lgs-panel {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+  }
+
+  /* RTL: anchor panel to the inline-end side instead of inline-start. */
+  .lgs-root[data-rtl="true"] .lgs-panel {
+    inset-inline-start: auto;
+    inset-inline-end: 0;
+  }
+
+  .lgs-panel-inner {
+    display: flex;
+    flex-direction: column;
+    padding: 6px;
+  }
+
+  .lgs-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    width: 100%;
+    padding: 10px 12px;
+    background: transparent;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 180ms var(--ease-standard, ease);
+    color: var(--yuval-text-secondary, #c4b8a8);
+    font-family: var(--font-heading, inherit);
+    font-size: 13px;
+    text-align: start;
+    line-height: 1.2;
+  }
+
+  .lgs-option:hover {
+    background: linear-gradient(135deg, rgba(201, 162, 39, 0.10), rgba(232, 197, 71, 0.05));
+    color: var(--yuval-text, #f0e6d0);
+  }
+
+  .lgs-option:focus-visible {
+    outline: 2px solid rgba(232, 197, 71, 0.6);
+    outline-offset: -2px;
+  }
+
+  /* Active option: multiple non-color cues (background, weight, checkmark, aria-selected). */
+  .lgs-option.is-active {
+    background: linear-gradient(135deg, rgba(201, 162, 39, 0.16), rgba(232, 197, 71, 0.10));
+    color: var(--yuval-text, #f0e6d0);
+    font-weight: 700;
+  }
+
+  .lgs-option-flag {
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+
+  .lgs-option-labels {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+    gap: 2px;
+  }
+
+  .lgs-option-native {
+    font-weight: 600;
+    font-size: 13px;
+  }
+
+  .lgs-option-en {
+    font-size: 11px;
+    color: var(--yuval-text-tertiary, #9a8e7c);
+    font-weight: 500;
+  }
+
+  .lgs-option-check {
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #e8c547, #c9a227);
+    color: #1a1a1a;
+    flex-shrink: 0;
+  }
+
+  .lgs-option-check svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .lgs-trigger,
+    .lgs-panel {
+      transition: none !important;
+    }
+    .lgs-trigger:hover {
+      transform: none;
+    }
+  }
+</style>
+
+<script>
+  function initGlobeSelectors() {
+    const roots = document.querySelectorAll<HTMLElement>('.lgs-root');
+
+    roots.forEach((root) => {
+      if (root.dataset.initialized === 'true') return;
+      root.dataset.initialized = 'true';
+
+      const trigger = root.querySelector<HTMLButtonElement>('.lgs-trigger');
+      const panel = root.querySelector<HTMLElement>('.lgs-panel');
+      const options = root.querySelectorAll<HTMLButtonElement>('.lgs-option');
+
+      if (!trigger) return;
+
+      const onlyOne = trigger.dataset.onlyOne === 'true';
+      if (onlyOne || !panel) {
+        // Single-language: the button stays visible (so layout doesn't
+        // shift between contexts) but it never opens a menu. The title
+        // attribute already carries the explanation for hover/SR users.
+        trigger.addEventListener('click', (e) => e.preventDefault());
+        return;
+      }
+
+      const togglePanel = () => {
+        const open = trigger.getAttribute('aria-expanded') === 'true';
+        trigger.setAttribute('aria-expanded', String(!open));
+      };
+
+      const closePanel = () => {
+        trigger.setAttribute('aria-expanded', 'false');
+      };
+
+      const selectOption = (option: HTMLButtonElement) => {
+        const lang = option.dataset.language;
+        if (!lang) return;
+
+        // Step-1 invariant: localStorage is written ONLY on user
+        // selection, never on render-time fallbacks.
+        localStorage.setItem('yuval_language', lang);
+        closePanel();
+
+        // Mirror the legacy LanguageSelector dual-mode behavior:
+        // chapter pages pre-render every translation and switch
+        // client-side via the existing `language-selector-change`
+        // → `language-changed` bridge in Header.astro. Other pages
+        // are server-rendered per-language, so a full reload with
+        // ?lang=xx is the only safe way to swap content.
+        const supportsClientSwitch = !!document.getElementById('chapter-container');
+
+        if (supportsClientSwitch) {
+          window.dispatchEvent(
+            new CustomEvent('language-selector-change', {
+              detail: { language: lang },
+              bubbles: true,
+            })
+          );
+        } else {
+          const url = new URL(window.location.href);
+          url.searchParams.set('lang', lang);
+          window.location.href = url.toString();
+        }
+      };
+
+      trigger.addEventListener('click', togglePanel);
+
+      trigger.addEventListener('keydown', (e: KeyboardEvent) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          togglePanel();
+        } else if (e.key === 'ArrowDown' && options.length > 0) {
+          e.preventDefault();
+          trigger.setAttribute('aria-expanded', 'true');
+          options[0].focus();
+        }
+      });
+
+      options.forEach((option) => {
+        option.addEventListener('click', () => selectOption(option));
+      });
+
+      panel.addEventListener('keydown', (e: KeyboardEvent) => {
+        const focused = document.activeElement as HTMLButtonElement;
+        const idx = Array.from(options).indexOf(focused);
+        if (e.key === 'ArrowDown' && idx < options.length - 1) {
+          e.preventDefault();
+          options[idx + 1].focus();
+        } else if (e.key === 'ArrowUp' && idx > 0) {
+          e.preventDefault();
+          options[idx - 1].focus();
+        } else if (e.key === 'Enter' && idx >= 0) {
+          e.preventDefault();
+          selectOption(focused);
+        } else if (e.key === 'Escape') {
+          closePanel();
+          trigger.focus();
+        }
+      });
+
+      document.addEventListener('click', (e: Event) => {
+        if (!root.contains(e.target as Node)) closePanel();
+      });
+    });
+  }
+
+  // Visual sync: when ANY selector (legacy or globe) changes the
+  // language, every globe instance updates its active marker without
+  // a remount. Reads the same canonical events the legacy selector
+  // already emits (language-changed, language-ui-sync), so co-existing
+  // with the legacy selector during the rollout window is safe.
+  function syncToLang(lang: string) {
+    document.querySelectorAll<HTMLElement>('.lgs-root').forEach((root) => {
+      if (root.dataset.current === lang) return;
+      root.dataset.current = lang;
+      root.querySelectorAll<HTMLButtonElement>('.lgs-option').forEach((opt) => {
+        const isActive = opt.dataset.language === lang;
+        opt.classList.toggle('is-active', isActive);
+        opt.setAttribute('aria-selected', String(isActive));
+      });
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initGlobeSelectors);
+  } else {
+    initGlobeSelectors();
+  }
+  document.addEventListener('astro:page-load', initGlobeSelectors);
+  document.addEventListener('astro:after-swap', initGlobeSelectors);
+
+  window.addEventListener('language-changed', (e: Event) => {
+    const lang = (e as CustomEvent<{ language: string }>).detail?.language;
+    if (lang) syncToLang(lang);
+  });
+  window.addEventListener('language-ui-sync', (e: Event) => {
+    const lang = (e as CustomEvent<{ language: string }>).detail?.language;
+    if (lang) syncToLang(lang);
+  });
+</script>

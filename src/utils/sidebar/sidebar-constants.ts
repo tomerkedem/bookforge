@@ -6,6 +6,8 @@
  * code.
  */
 
+import { LANGUAGE_CODES } from '../language';
+
 /**
  * Reading speed (words per minute) per UI language. Hebrew readers
  * trend slower than English; the gap shrinks for technical material
@@ -35,5 +37,8 @@ export const AUTO_COMPLETE_THRESHOLD = 95;
  * data-lang attributes carrying values outside this set are ignored
  * (those values name code-block syntax dialects like "bash" or
  * "python", not UI languages).
+ *
+ * Derived from the central platform registry so adding a fourth
+ * platform language doesn't require remembering to edit this file.
  */
-export const KNOWN_UI_LANGS = new Set(['he', 'en', 'es']);
+export const KNOWN_UI_LANGS = new Set<string>(LANGUAGE_CODES);

@@ -42,6 +42,8 @@ interface Props {
   availableLanguages?: Language[];
   allowClientLanguageOverride?: boolean;
   showLanguageToggle?: boolean;
+  /** Forwarded to Header. Lets /library opt into the new circular selector. */
+  useGlobeLanguageSelector?: boolean;
 }
 
 const {
@@ -51,6 +53,7 @@ const {
   availableLanguages,
   allowClientLanguageOverride,
   showLanguageToggle,
+  useGlobeLanguageSelector,
 } = Astro.props;
 ---
 
@@ -64,6 +67,7 @@ const {
   showHeader={true}
   showProgress={false}
   showQuote={false}
+  useGlobeLanguageSelector={useGlobeLanguageSelector}
 >
   <div class="library-layout-shell">
     <slot />

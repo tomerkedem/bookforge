@@ -8,7 +8,7 @@ import BookOverviewLearn from '../../components/book-overview/BookOverviewLearn.
 import BookOverviewChapters from '../../components/book-overview/BookOverviewChapters.astro';
 import { getLocalizedText } from '../../components/book-overview/utils';
 import type { Language } from '../../types/index';
-import { SOURCE_LANGUAGE, getLanguageDirection, isValidLanguage } from '../../utils/language';
+import { SOURCE_LANGUAGE, getLanguageDirection, isValidLanguage, resolveContextLanguage } from '../../utils/language';
 import { discoverAllBooks } from '../../utils/book-discovery';
 
 interface Props {
@@ -52,7 +52,11 @@ const requestedLanguage =
     ? urlLang
     : (propLanguage && availableLanguages.includes(propLanguage) ? propLanguage : undefined);
 
-const language = (requestedLanguage ?? (availableLanguages.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : availableLanguages[0] ?? SOURCE_LANGUAGE)) as Language;
+// Content context: fall back through Hebrew → English → first available
+// when the requested language isn't translated for this book. The
+// resolver does not touch localStorage — the user's global preference
+// survives this book even if it doesn't carry their preferred language.
+const language = resolveContextLanguage(requestedLanguage, availableLanguages) as Language;
 const isRtl = getLanguageDirection(language) === 'rtl';
 
 const book = {

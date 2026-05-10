@@ -207,6 +207,7 @@ export interface LanguageMeta {
   labelEn: string;       // English name
   dir: 'rtl' | 'ltr';
   locale: string;        // BCP 47 locale, e.g. 'he-IL', 'en-US', 'fr-FR'
+  flag?: string;         // emoji glyph used by the selector trigger / option row
 }
 
 export interface LanguageContext {

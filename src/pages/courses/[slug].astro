@@ -2,7 +2,7 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Breadcrumbs from '../../components/Breadcrumbs.astro';
 import type { Language } from '../../types/index';
-import { SOURCE_LANGUAGE, DEFAULT_LANGUAGE, getLanguageDirection, isValidLanguage } from '../../utils/language';
+import { SOURCE_LANGUAGE, DEFAULT_LANGUAGE, getLanguageDirection, isValidLanguage, resolveContextLanguage } from '../../utils/language';
 import { discoverCourses, type DiscoveredCourse, type DiscoveredBook } from '../../utils/book-discovery';
 import { t } from '../../i18n';
 
@@ -45,7 +45,9 @@ const requestedLanguage =
     ? urlLang
     : (propLanguage && availableLanguages.includes(propLanguage) ? propLanguage : undefined);
 
-const language = (requestedLanguage ?? (availableLanguages.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : availableLanguages[0] ?? SOURCE_LANGUAGE)) as Language;
+// Course context: fall back through Hebrew → English → first available
+// when the requested language isn't covered by this course's lessons.
+const language = resolveContextLanguage(requestedLanguage, availableLanguages) as Language;
 const isRtl = getLanguageDirection(language) === 'rtl';
 
 const courseTitle = pickLocalized(courseData.titles, language) || courseData.slug;

@@ -1,6 +1,7 @@
 ---
 import type { Language } from '../types/index';
 import LanguageSelector from './LanguageSelector.astro';
+import LanguageGlobeSelector from './language/LanguageGlobeSelector.astro';
 import ThemeToggle from './ThemeToggle.astro';
 import { SOURCE_LANGUAGE, SUPPORTED_LANGUAGES, getLanguageDirection, getLanguageMeta } from '../utils/language';
 
@@ -15,6 +16,15 @@ interface Props {
    * surface, not a content page.
    */
   showQuote?: boolean;
+  /**
+   * Step-2 rollout switch. When true, the new circular
+   * LanguageGlobeSelector is rendered instead of the legacy
+   * LanguageSelector. Defaults to `false` so every existing route
+   * keeps its current selector until explicitly opted in. The two
+   * selectors share the same events and storage keys, so co-existence
+   * across pages is safe.
+   */
+  useGlobeLanguageSelector?: boolean;
   class?: string;
 }
 
@@ -23,6 +33,7 @@ const {
   availableLanguages,
   showLanguageToggle = true,
   showQuote = true,
+  useGlobeLanguageSelector = false,
   class: className
 } = Astro.props;
 
@@ -86,13 +97,27 @@ const isRtl = getLanguageDirection(language) === 'rtl';
     )}
 
     <div class:list={['flex', 'items-center', 'gap-3', isRtl && 'flex-row-reverse']}>
-      <ThemeToggle />
+      {/* Source order is [Language, Theme] so the physical layout in
+          BOTH LTR and RTL is: Language on the inline-start side of this
+          group, Theme pinned at the far edge (physical right in LTR;
+          also physical right in RTL because the parent header-inner
+          uses `flex-row-reverse` to keep this controls group on the
+          page's inline-end side). The visual reading is always
+          [Language Globe] [Theme] with Theme at the far right. */}
       {showLanguageToggle && (
-        <LanguageSelector
-          languages={effectiveLanguages}
-          current={language}
-        />
+        useGlobeLanguageSelector ? (
+          <LanguageGlobeSelector
+            activeLanguage={language}
+            availableLanguages={effectiveLanguages}
+          />
+        ) : (
+          <LanguageSelector
+            languages={effectiveLanguages}
+            current={language}
+          />
+        )
       )}
+      <ThemeToggle />
     </div>
   </div>
 </header>
