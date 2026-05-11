@@ -946,6 +946,23 @@ const searchAriaLabel = t('header.searchAriaLabel', language);
     margin-left: -8px;
   }
 
+  /* Suppress the tooltip while the cinematic overlay owns the screen.
+     The trigger gets .is-launched-out from the moment the launch
+     animation starts and keeps it until the return flight's cross-
+     fade hands the small header globe back. During that entire
+     window the trigger button still sits under the cursor (the
+     mouse hasn't moved), so :hover stays active and the tooltip's
+     ::after would otherwise show floating over an empty header
+     spot — perceived as "stuck until refresh." Forcing opacity 0
+     with 0 ms transition overrides the :hover / :focus-visible
+     rules above and clears any pending 250 ms reveal delay. */
+  :global(.header-controls-rail .lgs-trigger.is-launched-out[data-tooltip])::after,
+  :global(.header-controls-rail .lgs-trigger.is-launched-out[data-tooltip])::before {
+    opacity: 0 !important;
+    transition-delay: 0ms !important;
+    transition-duration: 0ms !important;
+  }
+
   /* ── Language globe ring — refined inside the header only ─────
      The globe trigger ships with a champagne/pewter conic ring that
      reads as warm and heavy against the new darker header. We scope

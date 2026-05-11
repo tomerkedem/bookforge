@@ -401,25 +401,19 @@ const focusByCode = JSON.stringify(
       opacity 200ms cubic-bezier(0.2, 0.7, 0.2, 1);
   }
 
-  /* Atmospheric cyan rim — thin band just inside the silhouette.
-     Tightened from 68% → 72% inner edge so the rim sits closer
-     to the actual silhouette, and lifted slightly in cyan
-     saturation (0.26 → 0.30 peak alpha) so the planet reads as a
-     sphere with atmosphere rather than a flat circular crop.
-     Still inside the globe — no glow spilling into the disc. */
-  .lgs-globe::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: 50%;
-    background: radial-gradient(
-      circle at center,
-      transparent 72%,
-      rgba(150, 215, 255, 0.30) 92%,
-      rgba(150, 215, 255, 0.10) 100%
-    );
-    pointer-events: none;
-  }
+  /* Atmospheric cyan rim removed at the 34 px header size. The
+     cyan halo drew the eye as a separate crescent on the LEFT
+     side of the globe where the Earth texture happens to show
+     dark Atlantic ocean — the cyan band stood out against the
+     dark ocean and read as "a leftover circle not attached to
+     anything." On other sides where the texture shows brighter
+     land (Africa, Europe) the rim blended in fine, but the left
+     side was a perception bug.
+     The silhouette is still clearly defined by the box-shadow
+     stack on .lgs-globe (edge vignette + directional terminator
+     + warm upper-left highlight) — enough sphere cue at this
+     scale. The cinematic Earth's atmosphere shader on the big
+     globe stays untouched; at 600 px the rim earns its place. */
 
   /* Specular highlight — soft warm-white pool at the upper-left
      quadrant. Softened from the previous pass: peak alpha 0.44
@@ -1468,10 +1462,19 @@ const focusByCode = JSON.stringify(
     //    the normal close — the resume path comes from a fresh page
     //    where lastFocusedBeforeOpen is null and just focuses the
     //    new trigger.
+    //    `focusVisible: false` tells the browser NOT to apply
+    //    :focus-visible to this programmatic focus. Without it,
+    //    Chromium treats a .focus() that fires hundreds of ms after
+    //    the originating mouse click as keyboard-like and shows the
+    //    focus ring + the data-tooltip — appearing as a "ghost
+    //    tooltip" over the header after the return animation
+    //    completes. Mouse users get focus restored quietly;
+    //    keyboard users still see :focus-visible the moment they
+    //    Tab or arrow-key away and back.
     if (lastFocusedBeforeOpen && document.contains(lastFocusedBeforeOpen)) {
-      lastFocusedBeforeOpen.focus();
+      lastFocusedBeforeOpen.focus({ focusVisible: false } as unknown as FocusOptions);
     } else {
-      trigger.focus();
+      trigger.focus({ focusVisible: false } as unknown as FocusOptions);
     }
     lastFocusedBeforeOpen = null;
 
@@ -1709,7 +1712,12 @@ const focusByCode = JSON.stringify(
     // Focus the new page's trigger — the previous page's
     // lastFocusedBeforeOpen reference was destroyed at navigation,
     // so falling through to the trigger is the safest restoration.
-    trigger.focus();
+    // `focusVisible: false` suppresses the focus-ring + data-tooltip
+    // that would otherwise appear after the return flight in
+    // Chromium (it treats focus() fired hundreds of ms after the
+    // originating click as keyboard-like). See the matching
+    // comment in closeOverlay above.
+    trigger.focus({ focusVisible: false } as unknown as FocusOptions);
   }
 
   function initGlobeSelectors(): void {
