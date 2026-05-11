@@ -73,7 +73,7 @@ const triggerAriaLabel = onlyOne
  */
 const LANGUAGE_FOCUS: Record<string, { lat: number; lng: number; label: string }> = {
   he: { lat: 32, lng: 35, label: 'Israel / Eastern Mediterranean' },
-  en: { lat: 54, lng: -2, label: 'United Kingdom' },
+  en: { lat: 40, lng: -100, label: 'North America' },
   es: { lat: 40, lng: -3, label: 'Spain' },
 };
 
@@ -95,6 +95,8 @@ const focusByCode = JSON.stringify(
     aria-disabled={triggerDisabled ? 'true' : 'false'}
     aria-label={triggerAriaLabel}
     title={onlyOne ? `Only one language available: ${activeMeta.labelEn}` : undefined}
+    data-tooltip={onlyOne ? undefined : 'Change language'}
+    data-i18n-tooltip={onlyOne ? undefined : 'header.languageTooltip'}
     data-only-one={onlyOne ? 'true' : 'false'}
   >
     <span class="lgs-disc" aria-hidden="true">
@@ -264,25 +266,29 @@ const focusByCode = JSON.stringify(
     transform: none;
   }
 
-  /* Inner space disc — sits 2px inside the conic ring. The inset
-     shadows are the second 3D cue: a darker arc inside the upper rim
-     (light-from-above blocked by the ring's lip) plus a faint cool
-     blue lift along the bottom (atmospheric bounce). Together they
-     make the disc read as recessed inside the ring rather than pasted
-     onto it, without any literal bevel chrome. */
+  /* Inner space disc — sits 2px inside the conic ring. Polished in
+     the mini-globe pass to feel more refined and less "heavy":
+       • Outer perimeter softened from pitch #000000 to #060912 (a
+         very dark cool blue). The ring around the globe still reads
+         as "space" but doesn't punch a visible black hole at the
+         disc's edge, which made the frame compete with the planet
+         for attention.
+       • Inset shadows toned down (0.55 → 0.38 on the top dark; cool
+         bottom bounce lifted slightly to 0.13). The "recessed inside
+         the ring" cue stays, but quieter — same role, less weight. */
   .lgs-disc {
     position: absolute;
     inset: 2px;
     border-radius: 50%;
     background: radial-gradient(
       circle at 50% 42%,
-      #0e1428 0%,
-      #04070f 65%,
-      #000000 100%
+      #131c30 0%,
+      #0a1020 60%,
+      #060912 100%
     );
     box-shadow:
-      inset 0 2px 3px rgba(0, 0, 0, 0.55),
-      inset 0 -1px 2px rgba(60, 90, 140, 0.10);
+      inset 0 1.5px 2.5px rgba(0, 0, 0, 0.38),
+      inset 0 -1px 2px rgba(70, 100, 150, 0.13);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -325,53 +331,82 @@ const focusByCode = JSON.stringify(
          left quadrant. */
   .lgs-globe {
     position: relative;
-    width: 32px;
-    height: 32px;
+    /* Polished from 32 → 34 px (~+6%, inside the requested 5–8%
+       window). At 34 px the globe is ~81% of the 42 px disc, with
+       a thin ~4 px breathing ring of disc gradient on every side.
+       Bigger planet, smaller frame, same premium 1:1 button. */
+    width: 34px;
+    height: 34px;
     display: block;
     border-radius: 50%;
     background-image: url('/assets/globe/earth-day-2k.webp');
     background-repeat: no-repeat;
-    background-size: 230px 115px;
-    /* Default focus — Greenwich / Africa. Per-language selectors
-       below shift this to the focus region for each known lang. */
-    background-position: -99px -42px;
-    /* Mini-scale color correction. At 32 px the human eye needs
-       stronger separation than at 600 px or the Blue Marble
-       muddies into a generic blue-green smear. saturate boosts
-       ocean blues and continent greens / desert tans; brightness
-       lifts the visible hemisphere out of "dim" territory;
-       contrast crispens land/ocean edges. Filter also lightly
-       amplifies the atmospheric ::before and specular ::after
-       below — values tuned so they stay subtle, not neon. */
-    filter: saturate(1.25) brightness(1.10) contrast(1.06);
+    /* Background-size for a 50° equirectangular crop at 34 px:
+         scale = 34 / (5.69 × 50) ≈ 0.1195
+         → 2048 × 0.1195 ≈ 245 wide, 1024 × 0.1195 ≈ 122 tall */
+    background-size: 245px 122px;
+    /* Background-position composed via calc() from two pairs of
+       CSS custom properties:
+         --lgs-base-x / --lgs-base-y — language-specific focus
+           region. Set by the .lgs-root[data-current="<lang>"]
+           selectors below so each language has a stable default
+           that says "this is your part of the planet."
+         --lgs-px / --lgs-py — pointer-hover parallax offsets.
+           Default 0. Updated by the trigger's pointermove handler
+           (JS, mouse-only) within a ±12 / ±8 px window so the
+           globe gently tilts toward the cursor. Reset to 0 on
+           pointerleave / pointercancel / blur — so the globe
+           always returns to its language-default position.
+       Keyboard focus, touch, pen, and prefers-reduced-motion all
+       skip the parallax update path, which means those users see
+       the stable language default at all times. */
+    --lgs-base-x: -105px;
+    --lgs-base-y: -44px;
+    --lgs-px: 0px;
+    --lgs-py: 0px;
+    background-position-x: calc(var(--lgs-base-x) + var(--lgs-px));
+    background-position-y: calc(var(--lgs-base-y) + var(--lgs-py));
+    /* Mini-scale color correction — slightly stronger than the
+       previous tuning. The small globe sits next to the Theme
+       selector at ~16 px on-screen visual mass; a touch more
+       saturation + brightness keeps it from reading as a darker
+       neighbour. Filter also lightly amplifies the atmospheric
+       ::before and specular ::after below; values are tuned so
+       both stay restrained, never neon. */
+    filter: saturate(1.32) brightness(1.14) contrast(1.08);
     /* Three layered inset shadows model the lit-sphere depth:
-         1. Soft all-edge vignette darkens the perimeter so the
-            silhouette curves away from the viewer.
-         2. Directional terminator: stronger darkening on the
-            lower-right matches the cinematic Earth's sun
-            direction (upper-left, forward).
-         3. Warm highlight: subtle warm-white tint on the
-            upper-left — same lit quadrant the big globe's
-            DirectionalLight illuminates. */
+         1. Soft all-edge vignette — silhouette curves away from
+            the viewer. Slightly lifted (0.25 → 0.22) since the
+            larger globe needs less darkening to feel round.
+         2. Directional terminator: lower-right darkening matches
+            the cinematic Earth's sun direction (upper-left).
+         3. Warm highlight — bumped from 0.16 → 0.20 alpha and
+            offset 2.5 px (was 2) so the upper-left lift is now
+            clearly perceptible at 34 px but still restrained.
+            This is the requested "subtle 3D highlight." */
     box-shadow:
-      inset 0 0 4px rgba(0, 0, 0, 0.25),
-      inset -2.5px -2.5px 5px rgba(0, 0, 0, 0.32),
-      inset 2px 2px 4px rgba(255, 245, 220, 0.16);
-    /* Smooth pan when active language changes (data-current
-       attribute) so the globe rotates rather than snapping.
-       The launched-out opacity transition is layered on top. */
+      inset 0 0 4px rgba(0, 0, 0, 0.22),
+      inset -2.5px -2.5px 5px rgba(0, 0, 0, 0.30),
+      inset 2.5px 2.5px 4.5px rgba(255, 248, 230, 0.20);
+    /* Single transition timing handles both flows that change
+       the background position: a language switch (a jump of tens
+       of px on one or both axes), and pointer-hover parallax (a
+       gentle drift of up to ±12 px). 220 ms ease-out makes the
+       language change feel deliberate without being lazy, and the
+       parallax follow feel like a gravitational pull toward the
+       cursor rather than a jittery snap on every pointermove. */
     transition:
-      background-position 360ms var(--ease-emphasized, cubic-bezier(0.2, 0.7, 0.2, 1)),
-      opacity 200ms var(--ease-emphasized, cubic-bezier(0.2, 0.7, 0.2, 1));
+      background-position-x 220ms cubic-bezier(0.2, 0.7, 0.2, 1),
+      background-position-y 220ms cubic-bezier(0.2, 0.7, 0.2, 1),
+      opacity 200ms cubic-bezier(0.2, 0.7, 0.2, 1);
   }
 
   /* Atmospheric cyan rim — thin band just inside the silhouette.
-     The Fresnel-style ramp keeps the core fully transparent so
-     the Earth photo reads cleanly through the middle, and only
-     the outer ~10% gets the soft cyan halo that says "this is a
-     planet with an atmosphere." Slightly brighter than the
-     previous tuning since the smaller globe needs more
-     definition at the edge to feel like a sphere. */
+     Tightened from 68% → 72% inner edge so the rim sits closer
+     to the actual silhouette, and lifted slightly in cyan
+     saturation (0.26 → 0.30 peak alpha) so the planet reads as a
+     sphere with atmosphere rather than a flat circular crop.
+     Still inside the globe — no glow spilling into the disc. */
   .lgs-globe::before {
     content: '';
     position: absolute;
@@ -379,57 +414,63 @@ const focusByCode = JSON.stringify(
     border-radius: 50%;
     background: radial-gradient(
       circle at center,
-      transparent 68%,
-      rgba(140, 210, 250, 0.26) 90%,
-      rgba(140, 210, 250, 0.10) 100%
+      transparent 72%,
+      rgba(150, 215, 255, 0.30) 92%,
+      rgba(150, 215, 255, 0.10) 100%
     );
     pointer-events: none;
   }
 
   /* Specular highlight — soft warm-white pool at the upper-left
-     quadrant. Mirrors the cinematic Earth's lit hemisphere so
-     the two globes feel like the same object at different
-     scales. Sized at 26% × 26% so it's clearly a point of light
-     rather than half the disc. */
+     quadrant. Softened from the previous pass: peak alpha 0.44
+     → 0.34, and slightly enlarged (26% → 30%) so the light pool
+     reads as a gentle gradient rather than a glossy dot. Mirrors
+     the cinematic Earth's lit-from-upper-left direction. */
   .lgs-globe::after {
     content: '';
     position: absolute;
-    top: 12%;
-    left: 18%;
-    width: 26%;
-    height: 26%;
+    top: 13%;
+    left: 19%;
+    width: 30%;
+    height: 30%;
     border-radius: 50%;
     background: radial-gradient(
       circle at 40% 40%,
-      rgba(255, 253, 240, 0.44) 0%,
-      rgba(255, 255, 255, 0.20) 38%,
-      rgba(255, 255, 255, 0.06) 72%,
+      rgba(255, 252, 235, 0.34) 0%,
+      rgba(255, 255, 255, 0.15) 38%,
+      rgba(255, 255, 255, 0.04) 72%,
       transparent 100%
     );
     pointer-events: none;
   }
 
-  /* ── Per-language background-position ────────────────────────────
-     Each entry centers a 50° × 50° patch of Blue Marble on the
-     focus region the cinematic overlay will land on for that
-     language. Values precomputed from:
+  /* ── Per-language background position ─────────────────────────────
+     Each entry sets the language's stable focus region as a base
+     pair of CSS custom properties. The pointer-hover parallax adds
+     ±12 px on top of these values; when the cursor leaves, the
+     parallax resets to 0 and the globe returns to exactly this
+     position. Values recomputed for the 34 px globe at the 50°
+     equirectangular crop:
        source_x  = ((lng + 180) / 360) × 2048
        source_y  = ((90 - lat) / 180) × 1024
-       display_x = source_x × 0.1125
-       display_y = source_y × 0.1125
-       bg-pos    = (16 - display_x, 16 - display_y)
+       display_x = source_x × 0.1195
+       display_y = source_y × 0.1195
+       bg-pos    = (17 - display_x, 17 - display_y)
      Stay in lockstep with LANGUAGE_FOCUS in the component frontmatter. */
   .lgs-root[data-current="he"] .lgs-globe {
     /* Israel / Eastern Mediterranean — lat 32, lng 35 */
-    background-position: -122px -21px;
+    --lgs-base-x: -129px;
+    --lgs-base-y: -22px;
   }
   .lgs-root[data-current="en"] .lgs-globe {
-    /* United Kingdom — lat 54, lng -2 */
-    background-position: -98px -7px;
+    /* North America — lat 40, lng -100 */
+    --lgs-base-x: -37px;
+    --lgs-base-y: -17px;
   }
   .lgs-root[data-current="es"] .lgs-globe {
-    /* Spain — lat 40, lng -3 */
-    background-position: -97px -16px;
+    /* Spain / Iberian Peninsula — lat 40, lng -3 */
+    --lgs-base-x: -103px;
+    --lgs-base-y: -17px;
   }
 
   /* Header globe is hidden whenever the cinematic overlay is "out" —
@@ -826,6 +867,14 @@ const focusByCode = JSON.stringify(
     }
     .lgs-trigger:hover {
       transform: none;
+    }
+    /* Reduced-motion: snap the language change instead of panning,
+       and ignore pointer-hover parallax (the JS handler also
+       short-circuits under this media query — belt + braces).
+       Opacity transition is preserved so the launched-out
+       cross-fade with the cinematic Earth still works. */
+    .lgs-globe {
+      transition: opacity 200ms cubic-bezier(0.2, 0.7, 0.2, 1) !important;
     }
     .lgs-overlay-backdrop,
     .lgs-overlay-stage,
@@ -1721,6 +1770,59 @@ const focusByCode = JSON.stringify(
           }
         }
       });
+
+      // ── Pointer-hover parallax ─────────────────────────────────
+      // Gentle "globe tilts toward the cursor" effect, mouse-only.
+      // The .lgs-globe CSS uses calc(--lgs-base-* + --lgs-p*) for
+      // its background-position; this handler writes --lgs-px and
+      // --lgs-py within ±12 / ±8 px based on where the cursor sits
+      // inside the 46 px trigger. Coefficients are negative so the
+      // visible region of the globe shifts toward the cursor (the
+      // surface near the cursor "comes forward"), matching the
+      // 3D card-tilt parallax convention.
+      //
+      // Skipped under prefers-reduced-motion. Skipped for non-mouse
+      // pointer types (touch, pen) — those don't have a meaningful
+      // "hover before commit" phase and triggering parallax on a
+      // tap would shift the globe right when the user is about to
+      // click. Keyboard focus keeps the language default at all
+      // times. Reset to 0 on pointerleave / pointercancel / blur so
+      // the globe always returns to its language-default region.
+      const globe = trigger.querySelector<HTMLElement>('.lgs-globe');
+      const reducedMotion =
+        typeof window.matchMedia === 'function' &&
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (globe && !reducedMotion) {
+        const PARALLAX_X = 12; // px
+        const PARALLAX_Y = 8;  // px (smaller — latitude shift is more visually sensitive)
+
+        trigger.addEventListener('pointermove', (e: PointerEvent) => {
+          if (e.pointerType !== 'mouse') return;
+          const rect = trigger.getBoundingClientRect();
+          if (rect.width === 0 || rect.height === 0) return;
+          // Normalize to -1..+1 across the trigger box.
+          const nx = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+          const ny = ((e.clientY - rect.top) / rect.height) * 2 - 1;
+          // Clamp in case a fast pointer move lands the event
+          // slightly outside the rect.
+          const cx = Math.max(-1, Math.min(1, nx));
+          const cy = Math.max(-1, Math.min(1, ny));
+          // Negative coefficient = visible region shifts toward
+          // the cursor (the side near the cursor rotates forward).
+          const px = -cx * PARALLAX_X;
+          const py = -cy * PARALLAX_Y;
+          globe.style.setProperty('--lgs-px', `${px.toFixed(1)}px`);
+          globe.style.setProperty('--lgs-py', `${py.toFixed(1)}px`);
+        });
+
+        const resetParallax = () => {
+          globe.style.setProperty('--lgs-px', '0px');
+          globe.style.setProperty('--lgs-py', '0px');
+        };
+        trigger.addEventListener('pointerleave', resetParallax);
+        trigger.addEventListener('pointercancel', resetParallax);
+        trigger.addEventListener('blur', resetParallax);
+      }
 
       // Click anywhere marked data-lgs-close (the backdrop) closes
       // without changing language. The stage's option buttons handle

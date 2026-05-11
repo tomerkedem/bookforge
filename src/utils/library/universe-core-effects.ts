@@ -71,7 +71,7 @@ const BOOK_REL_Y = 0.40;
  *  position is computed. Use these for fine-tuning without re-deriving
  *  fractional anchors. Positive Y = lower on screen.                  */
 const BOOK_OFFSET_X_PX = 10;
-const BOOK_OFFSET_Y_PX = 60;
+const BOOK_OFFSET_Y_PX = 160;
 
 /** Card kind → CSS variable reference for the bolt's accent colour.
  *  Mirrors the `.galaxy-card[data-kind="…"]` rules in library.astro;

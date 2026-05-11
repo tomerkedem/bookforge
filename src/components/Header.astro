@@ -806,6 +806,146 @@ const searchAriaLabel = t('header.searchAriaLabel', language);
       inset 0 1px 0 rgba(200, 215, 255, 0.03);
   }
 
+  /* Desktop only — the sky window widens from 84 → 110 px (+26 px) on
+     ≥1024px screens (see ThemeToggle.astro). The 62 px gap was tuned
+     for an 84 px theme; with a 110 px theme the globe would drift
+     +26 px further past the card's left edge, breaking the
+     "slightly outside" alignment we previously locked in. Pull the
+     gap back by the same 26 px so the globe stays ≈6 px past the
+     card's inline-start boundary — exact alignment preserved. */
+  @media (min-width: 1024px) {
+    .header-controls-rail {
+      gap: 36px;
+    }
+  }
+
+  /* ── Cosmic tooltip ──────────────────────────────────────────────
+     Custom tooltip that replaces the browser's native `title` popup
+     for the two header controls (language globe + theme window).
+     Design intent: match the page's premium palette — charcoal-navy
+     glass surface, faint gold hairline, serif typography (per the
+     project's "luxury micro-elements = serif" principle), no neon /
+     indigo. The bolt-thin gold halo around the pill echoes the same
+     accent used by the LeftSidebar and the BookCard frames, so the
+     tooltip feels like part of the same material family rather than
+     a foreign overlay.
+
+     Behavior:
+       - Hidden until hover/focus-visible on the host element.
+       - 250 ms hover delay before fade-in (matches the cadence the
+         eye expects from a deliberate tooltip rather than a flicker).
+       - Centered under the host with a tiny upward translate that
+         resolves on appearance — that small motion is the only
+         animation; everything else is static so the tooltip never
+         distracts.
+       - Pointer-events: none on the pseudo-element so it never
+         intercepts clicks or steals the cursor away from the host.
+       - z-index above siblings so the rail's box-shadow ring never
+         cuts into the tooltip's pill.
+
+     The tooltip is scoped to `.header-controls-rail` so the
+     [data-tooltip] hook stays a header concept — adding the
+     attribute elsewhere on the site won't accidentally render this
+     specific design. */
+  :global(.header-controls-rail [data-tooltip]) {
+    position: relative;
+  }
+
+  :global(.header-controls-rail [data-tooltip])::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    top: calc(100% + 14px);
+    left: 50%;
+    transform: translateX(-50%) translateY(-4px);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 50;
+    white-space: nowrap;
+
+    /* Typography — serif for the premium register; tight letterspacing
+       so the small size still reads as crafted, not casual. */
+    font-family: 'Crimson Pro', 'Source Serif Pro', 'Cormorant Garamond', Georgia, serif;
+    font-size: 0.8rem;
+    font-weight: 500;
+    letter-spacing: 0.015em;
+    line-height: 1;
+    color: rgba(243, 222, 155, 0.94);
+
+    /* Surface — same charcoal-navy glass family as the floating
+       cards. Border replaced with a soft gold ring via box-shadow
+       so the corners stay clean inside the pill radius. */
+    padding: 9px 16px 10px;
+    border-radius: 9999px;
+    background:
+      radial-gradient(
+        ellipse 80% 60% at 50% 0%,
+        rgba(40, 60, 110, 0.30) 0%,
+        transparent 70%
+      ),
+      linear-gradient(
+        180deg,
+        rgba(10, 14, 32, 0.96) 0%,
+        rgba(4, 6, 18, 0.96) 100%
+      );
+    box-shadow:
+      0 0 0 1px rgba(232, 197, 71, 0.22),
+      0 8px 22px rgba(0, 0, 0, 0.55),
+      0 0 18px rgba(232, 197, 71, 0.10),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+
+    transition:
+      opacity 200ms var(--ease-standard, cubic-bezier(0.4, 0, 0.2, 1)),
+      transform 200ms var(--ease-emphasized, cubic-bezier(0.2, 0.7, 0.2, 1));
+  }
+
+  /* Small gold arrow above the pill, pointing up at the host control.
+     Built from a rotated square with the same gold hairline + glass
+     fill, then masked so only its top half shows above the pill. */
+  :global(.header-controls-rail [data-tooltip])::before {
+    content: '';
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 50%;
+    width: 10px;
+    height: 10px;
+    transform: translateX(-50%) rotate(45deg) translateY(-4px);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 51;
+    background: linear-gradient(135deg, rgba(10, 14, 32, 0.96), rgba(4, 6, 18, 0.96));
+    box-shadow:
+      -1px -1px 0 0 rgba(232, 197, 71, 0.22);
+    transition:
+      opacity 200ms var(--ease-standard, cubic-bezier(0.4, 0, 0.2, 1)),
+      transform 200ms var(--ease-emphasized, cubic-bezier(0.2, 0.7, 0.2, 1));
+  }
+
+  :global(.header-controls-rail [data-tooltip]:hover)::after,
+  :global(.header-controls-rail [data-tooltip]:focus-visible)::after {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+    transition-delay: 250ms;
+  }
+
+  :global(.header-controls-rail [data-tooltip]:hover)::before,
+  :global(.header-controls-rail [data-tooltip]:focus-visible)::before {
+    opacity: 1;
+    transform: translateX(-50%) rotate(45deg) translateY(0);
+    transition-delay: 250ms;
+  }
+
+  /* The globe trigger uses transform: translateX(8px) at rest (see
+     the nudge rule below). That parent transform shifts ITS pseudo-
+     elements too, so the tooltip would appear 8 px to the right of
+     the disc's visual center. Compensate by sliding the tooltip back
+     by the same 8 px so it sits dead-centered under the visible disc. */
+  :global(.header-controls-rail .lgs-trigger[data-tooltip])::after,
+  :global(.header-controls-rail .lgs-trigger[data-tooltip])::before {
+    margin-left: -8px;
+  }
+
   /* ── Language globe ring — refined inside the header only ─────
      The globe trigger ships with a champagne/pewter conic ring that
      reads as warm and heavy against the new darker header. We scope

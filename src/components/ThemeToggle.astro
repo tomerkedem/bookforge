@@ -12,6 +12,8 @@ const { class: className } = Astro.props;
   role="switch"
   aria-checked="false"
   aria-label="Toggle dark mode"
+  data-tooltip="Toggle theme"
+  data-i18n-tooltip="header.themeTooltip"
   dir="ltr"
   class:list={['sky-window', className]}
 >
@@ -94,6 +96,18 @@ const { class: className } = Astro.props;
     background: transparent;
     transition: transform 300ms var(--ease-standard),
                 filter 600ms var(--ease-standard);
+  }
+
+  /* Desktop only — widen the sky window by ~30% (84→110) so the
+     clouds, birds, sun/moon and stars inside have more room to read
+     as a tiny living scene. Height stays at 37 px so the header
+     controls rail keeps its current 50 px height (the globe still
+     drives the rail's vertical extent). Phones/tablets keep the
+     compact 84 px width — vertical real estate is too precious there. */
+  @media (min-width: 1024px) {
+    .sky-window {
+      width: 110px;
+    }
   }
 
   .sky-window:hover {

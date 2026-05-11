@@ -108,8 +108,9 @@ export function isRtlLang(lang: string): boolean {
 /**
  * Apply translations to DOM nodes marked with:
  * - data-i18n="key"            → textContent
- * - data-i18n-title="key"      → title attribute
+ * - data-i18n-title="key"      → title attribute (native browser tooltip)
  * - data-i18n-aria-label="key" → aria-label attribute
+ * - data-i18n-tooltip="key"    → data-tooltip attribute (custom CSS tooltip)
  */
 export function applyTranslations(root: ParentNode, lang: string): void {
   const resolvedLang = resolveLanguage(lang);
@@ -137,5 +138,15 @@ export function applyTranslations(root: ParentNode, lang: string): void {
     const key = node.dataset.i18nAriaLabel;
     if (!key) return;
     node.setAttribute('aria-label', t(key as TranslationKey, resolvedLang));
+  });
+
+  // Custom tooltip: writes to data-tooltip rather than title, so the CSS
+  // `[data-tooltip]::after` cosmic-glass tooltip can render the text
+  // without triggering the browser's native title-attribute popup on top.
+  const tooltipNodes = root.querySelectorAll<HTMLElement>('[data-i18n-tooltip]');
+  tooltipNodes.forEach(node => {
+    const key = node.dataset.i18nTooltip;
+    if (!key) return;
+    node.setAttribute('data-tooltip', t(key as TranslationKey, resolvedLang));
   });
 }

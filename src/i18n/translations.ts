@@ -174,6 +174,16 @@ export const translations: Translations = {
     en: 'Search the knowledge space',
     es: 'Buscar en el espacio de conocimiento',
   },
+  'header.languageTooltip': {
+    he: 'החלף שפה',
+    en: 'Change language',
+    es: 'Cambiar idioma',
+  },
+  'header.themeTooltip': {
+    he: 'החלף ערכת נושא',
+    en: 'Toggle theme',
+    es: 'Cambiar tema',
+  },
 
   // ── Breadcrumbs ─────────────────────────────────────────────────────────────
   'breadcrumb.books':      { he: 'ספרים',          en: 'Books',            es: 'Libros' },
