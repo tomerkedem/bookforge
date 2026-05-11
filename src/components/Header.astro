@@ -781,29 +781,16 @@ const searchAriaLabel = t('header.searchAriaLabel', language);
     padding-left: 0;
     padding-right: 0;
     border-radius: 9999px;
-    /* The hairline ring is rendered as a 1 px outer box-shadow instead
-       of a CSS `border`. A real border would consume 1 px of inline
-       layout space, pushing the theme pill 1 px inside the card's right
-       boundary — invisible to most eyes, but it breaks the "exact
-       alignment" requirement. The visual identity (faint cool hairline
-       + inner highlight) is unchanged. */
+    /* Frame removed: the rail used to carry a hairline ring + faint
+       glass gradient so the globe and theme pill read as one zone.
+       That extra container made the two premium controls feel boxed
+       in, so the surrounding surface is now fully transparent. The
+       gap, padding and alignment math above are unchanged — the two
+       controls remain anchored to the card's edges, just without a
+       shared frame around them. */
     border: none;
-    background: linear-gradient(
-      180deg,
-      rgba(7, 16, 38, 0.18) 0%,
-      rgba(0, 2, 12, 0.10) 100%
-    );
-    box-shadow:
-      0 0 0 1px rgba(120, 145, 200, 0.08),
-      inset 0 1px 0 rgba(200, 215, 255, 0.03);
-    transition: box-shadow 240ms var(--ease-standard, cubic-bezier(0.4, 0, 0.2, 1));
-  }
-
-  .header-controls-rail:hover,
-  .header-controls-rail:focus-within {
-    box-shadow:
-      0 0 0 1px rgba(120, 145, 200, 0.18),
-      inset 0 1px 0 rgba(200, 215, 255, 0.03);
+    background: transparent;
+    box-shadow: none;
   }
 
   /* Desktop only — the sky window widens from 84 → 110 px (+26 px) on
@@ -965,52 +952,36 @@ const searchAriaLabel = t('header.searchAriaLabel', language);
   }
 
   /* ── Language globe ring — refined inside the header only ─────
-     The globe trigger ships with a champagne/pewter conic ring that
-     reads as warm and heavy against the new darker header. We scope
-     a softer, cooler, thinner ring override that ONLY applies inside
-     the header rail, so the component itself is untouched and any
-     other context (overlay, future placements) keeps the original.
-     The override:
-       1. Replaces the warm champagne→pewter conic with a cool
-          slate/steel conic so the ring stops reading gold-adjacent.
-       2. Softens the resting drop-shadow so the disc no longer
-          appears to float above the surface.
-       3. Pulls the inner disc inward by 1px (inset 2 → 3) so the
-          visible ring thins from ~2px to ~1px.
-       4. Removes the warm halo that returns on hover/focus and
-          replaces it with a cool blue echo. */
+     Previous treatment painted a cool slate conic ring (and a
+     blue-tinted hover halo) over the LGS default's champagne ring,
+     because the warm gold default clashed with the darker header
+     surface. Both treatments are now removed at the user's request:
+     the small globe should feel like the SAME Earth that opens
+     into the large center stage, not like a UI button containing
+     a tiny photo. The transparent background lets the cosmic
+     header surface show through right up to the globe silhouette,
+     same visual ground the large Earth sits over against the
+     overlay backdrop. The component default (set in
+     LanguageGlobeSelector.astro) is already transparent — the
+     overrides below are kept only as explicit !important
+     declarations so any future header-only treatment can't
+     accidentally re-introduce a frame without revisiting this
+     decision. inset: 3px is preserved so the inner clip area
+     stays consistent with the slightly larger 50 px trigger
+     used inside the rail. */
   :global(.header-controls-rail .lgs-trigger) {
-    background:
-      radial-gradient(
-        ellipse 80% 55% at 50% 0%,
-        rgba(220, 230, 255, 0.10) 0%,
-        rgba(220, 230, 255, 0) 48%
-      ),
-      conic-gradient(
-        from 210deg,
-        #364260 0deg,
-        #4d5a78 60deg,
-        #5b677e 130deg,
-        #2c344b 200deg,
-        #43506e 270deg,
-        #525e76 320deg,
-        #364260 360deg
-      ) !important;
-    box-shadow:
-      0 1px 3px rgba(0, 0, 0, 0.40),
-      0 0 0 1px rgba(120, 145, 200, 0.06) !important;
+    background: transparent !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.28) !important;
   }
 
   :global(.header-controls-rail .lgs-trigger:hover) {
-    box-shadow:
-      0 2px 6px rgba(0, 0, 0, 0.45),
-      0 0 12px rgba(90, 140, 255, 0.16) !important;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.34) !important;
   }
 
   :global(.header-controls-rail .lgs-trigger:focus-visible) {
-    box-shadow:
-      0 0 0 3px rgba(90, 140, 255, 0.40),
-      0 2px 6px rgba(0, 0, 0, 0.45) !important;
+    outline: 2px solid rgba(120, 170, 220, 0.55) !important;
+    outline-offset: 2px !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.28) !important;
   }
 
   :global(.header-controls-rail .lgs-disc) {
@@ -1068,12 +1039,42 @@ const searchAriaLabel = t('header.searchAriaLabel', language);
      second row inside the same header so the bar remains
      reachable without hiding the language or theme toggle. */
   @media (max-width: 767px) {
+    /* ── Mobile header row structure ─────────────────────────────
+       The mobile top row hosts brand on one side and the controls
+       rail (globe + theme) on the other, with justify-content
+       between. The previous layout had three sources of crowding
+       that this block now fixes together:
+
+         1. .header-inner inherited Tailwind's px-4 (16 px on each
+            side). Combined with the brand's own internal padding,
+            the book icon sat ~20 px from the screen edge — too far
+            in, eating usable middle width. Mobile now overrides
+            horizontal padding to 6 px on each side so the row's
+            content area is ~28 px wider than before.
+         2. .header-controls-rail had its OWN padding-left/right
+            (6/4) on top of the header-inner padding — a second
+            inset that pushed the theme pill 4-6 px inward from
+            where justify-between would have anchored it. Mobile
+            now sets both rail paddings to 0, so the theme pill's
+            outer edge lands exactly at the row's clean 6 px
+            margin from the screen edge.
+         3. The .lgs-trigger had a global transform: translateX(8px)
+            (set unconditionally outside any media query, for the
+            desktop card-grid alignment). On mobile this leaked in
+            and ATE 8 px from the gap between the globe and the
+            theme. The override below cancels it on mobile only.
+       Result on a 320 px viewport: ~6 px from edge to brand, ~6 px
+       from edge to theme, ~18 px gap between globe and theme, and
+       ~20 px of breathing space between the brand cluster and the
+       controls cluster in the middle. */
     .header-inner {
       flex-wrap: wrap;
       height: auto;
       min-height: 64px;
       padding-top: 8px;
       padding-bottom: 8px;
+      padding-left: 6px !important;
+      padding-right: 6px !important;
       row-gap: 8px;
     }
 
@@ -1090,16 +1091,51 @@ const searchAriaLabel = t('header.searchAriaLabel', language);
       padding: 0 18px;
     }
 
-    /* On phones the brand + rail share one row and the
-       ContinueLearningCard is hidden — drop the desktop card-width
-       padding, tighten the gap, and revert the globe to its native
-       size so the rail stays inside the viewport on narrow widths.
-       Physical padding (left/right) so theme stays anchored to the
-       rail's physical right edge in both LTR and RTL. */
+    /* Controls rail — pin to the physical edge of the row and
+       open up the globe↔theme gap. With padding 0 on each side,
+       justify-content: between on the parent anchors the rail's
+       outer edge directly at the row's 6 px screen-edge margin.
+       Gap raised from 10 → 18 px so the two controls read as a
+       clear pair, not a glued pill. */
     .header-controls-rail {
+      gap: 18px;
+      padding-left: 0;
+      padding-right: 0;
+    }
+
+    /* Cancel the desktop translateX(8 px) nudge on mobile — there's
+       no ContinueLearningCard below to align against, and the
+       8 px shift would consume a third of the new globe↔theme
+       gap. Hover keeps the vertical lift only. */
+    :global(.header-controls-rail .lgs-trigger) {
+      transform: none;
+    }
+    :global(.header-controls-rail .lgs-trigger:hover) {
+      transform: translateY(-1px);
+    }
+
+    /* Brand cluster — consume only the width it really needs.
+       padding-inline-start 16 → 4 px puts the book icon 4 px from
+       the brand's start edge (so the hover background still has
+       a tiny breath, not glued to the edge). padding-inline-end
+       16 → 8 px tightens the right side of the brand so it
+       doesn't stretch toward the middle of the row. Logical
+       properties handle RTL automatically: start = right edge
+       on Hebrew pages, where the icon also sits visually.
+       Combined with the header-inner's 6 px screen-edge padding,
+       the book icon ends up ~10 px from the screen edge — close
+       enough to feel anchored to the edge, far enough to avoid
+       looking glued. */
+    .yuval-logo {
+      padding-inline-start: 4px;
+      padding-inline-end: 8px;
       gap: 10px;
-      padding-left: 6px;
-      padding-right: 4px;
+    }
+    .logo-mark {
+      transform: translateY(-2px);
+    }
+    .yuval-logo:hover .logo-mark {
+      transform: translateY(-3px);
     }
 
     :global(.header-controls-rail .lgs-trigger) {

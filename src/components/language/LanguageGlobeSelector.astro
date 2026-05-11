@@ -369,41 +369,20 @@ const focusByCode = JSON.stringify(
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    /* Two layered backgrounds:
-       (1) An upper-rim highlight — a faint cool-cream radial parked at
-           the top of the disc. This is the only "light from above" cue
-           on the ring; it gives the metal a soft bevel without any
-           literal gloss reflection. Sits ON TOP of the conic so it
-           lifts whichever stop currently lies along the upper arc.
-       (2) Softened gold/silver conic. Versus the previous palette
-           (saturated #c9a227 and near-white #f0e3b0 / #e8eaee), the
-           lightness range is compressed and saturations are pulled
-           down so the metal reads as brushed champagne/pewter rather
-           than polished jewelry. Same hue rotation (gold → champagne
-           → silver → deep taupe → gold → warm-silver) so the
-           multi-toned identity survives. */
-    background:
-      radial-gradient(
-        ellipse 80% 55% at 50% 0%,
-        rgba(255, 250, 235, 0.22) 0%,
-        rgba(255, 250, 235, 0) 48%
-      ),
-      conic-gradient(
-        from 210deg,
-        #a89060 0deg,
-        #c8b890 60deg,
-        #afb2b8 130deg,
-        #7e6f5c 200deg,
-        #b39872 270deg,
-        #c1bdb4 320deg,
-        #a89060 360deg
-      );
-    /* Outer shadow trimmed: drop softer + tighter, gold halo removed
-       from the resting state. The ring should ground the disc, not
-       glow on its own. Hover/focus restore a touch of warmth. */
-    box-shadow:
-      0 2px 5px rgba(0, 0, 0, 0.32),
-      0 1px 2px rgba(0, 0, 0, 0.18);
+    /* Outer ring / halo / drop-shadow stack removed. The previous
+       gold-silver conic + radial highlight read as a separate UI
+       icon framing the planet — the user wants the trigger to feel
+       like the SAME Earth that opens into the large center stage,
+       not like a polished button containing a tiny photo. Background
+       is now transparent so the header surface (cosmic dashboard)
+       shows through the area around the globe, mirroring the way
+       the large Earth sits over the dimmed backdrop. A whisper-thin
+       grounding shadow stays so the globe still reads as a body
+       resting in space, not a floating decal. The pre-launch charge
+       keyframe still adds its own short halo on click — that's the
+       intentional handoff cue and is unchanged. */
+    background: transparent;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.22);
     transition:
       transform 220ms var(--ease-emphasized, cubic-bezier(0.2, 0.7, 0.2, 1)),
       box-shadow 220ms var(--ease-emphasized, cubic-bezier(0.2, 0.7, 0.2, 1));
@@ -411,17 +390,20 @@ const focusByCode = JSON.stringify(
 
   .lgs-trigger:hover {
     transform: translateY(-1px);
-    box-shadow:
-      0 4px 10px rgba(0, 0, 0, 0.38),
-      0 1px 3px rgba(0, 0, 0, 0.20),
-      0 0 14px rgba(201, 169, 110, 0.16);
+    /* Hover lift uses a slightly heavier ground shadow only — no
+       gold halo, since that re-introduces the UI-ring feel the
+       resting state just shed. */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.30);
   }
 
   .lgs-trigger:focus-visible {
-    outline: none;
-    box-shadow:
-      0 0 0 3px rgba(232, 197, 71, 0.40),
-      0 4px 10px rgba(0, 0, 0, 0.35);
+    /* Keyboard focus indicator via outline (not box-shadow) so it
+       doesn't paint a ring around the empty area outside the globe.
+       Outline-offset spaces the ring just past the button so it
+       still marks the hit target clearly for keyboard users. */
+    outline: 2px solid rgba(232, 197, 71, 0.60);
+    outline-offset: 2px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.22);
   }
 
   .lgs-trigger[aria-disabled="true"] {
@@ -432,33 +414,28 @@ const focusByCode = JSON.stringify(
     transform: none;
   }
 
-  /* Inner space disc — sits 2px inside the conic ring. Polished in
-     the mini-globe pass to feel more refined and less "heavy":
-       • Outer perimeter softened from pitch #000000 to #060912 (a
-         very dark cool blue). The ring around the globe still reads
-         as "space" but doesn't punch a visible black hole at the
-         disc's edge, which made the frame compete with the planet
-         for attention.
-       • Inset shadows toned down (0.55 → 0.38 on the top dark; cool
-         bottom bounce lifted slightly to 0.13). The "recessed inside
-         the ring" cue stays, but quieter — same role, less weight. */
+  /* Inner placement area — sits 2px inside the trigger's circular
+     hit box and centers the globe. The previous dark-space radial
+     + inset shadows belonged to the "globe-in-a-bezel" treatment
+     that was rejected; the disc stays transparent so the header
+     surface shows through the area just outside the globe.
+     overflow: visible (was: hidden) lets the globe's outer
+     atmospheric halo paint past the disc edge — same role as the
+     large Earth's back-side atmosphere sphere (radius 1.06), which
+     paints a cyan Fresnel rim BEYOND the planet's silhouette.
+     The globe's own border-radius: 50% still clips its background
+     image to a circle, so removing overflow: hidden here has no
+     other visual effect (the ::after specular pseudo-element that
+     used to live inside was removed in an earlier pass). */
   .lgs-disc {
     position: absolute;
     inset: 2px;
     border-radius: 50%;
-    background: radial-gradient(
-      circle at 50% 42%,
-      #131c30 0%,
-      #0a1020 60%,
-      #060912 100%
-    );
-    box-shadow:
-      inset 0 1.5px 2.5px rgba(0, 0, 0, 0.38),
-      inset 0 -1px 2px rgba(70, 100, 150, 0.13);
+    background: transparent;
     display: flex;
     align-items: center;
     justify-content: center;
-    overflow: hidden;
+    overflow: visible;
     pointer-events: none;
   }
 
@@ -532,28 +509,47 @@ const focusByCode = JSON.stringify(
     --lgs-py: 0px;
     background-position-x: calc(var(--lgs-base-x) + var(--lgs-px));
     background-position-y: calc(var(--lgs-base-y) + var(--lgs-py));
-    /* Mini-scale color correction — slightly stronger than the
-       previous tuning. The small globe sits next to the Theme
-       selector at ~16 px on-screen visual mass; a touch more
-       saturation + brightness keeps it from reading as a darker
-       neighbour. Filter also lightly amplifies the atmospheric
-       ::before and specular ::after below; values are tuned so
-       both stay restrained, never neon. */
-    filter: saturate(1.32) brightness(1.14) contrast(1.08);
-    /* Three layered inset shadows model the lit-sphere depth:
-         1. Soft all-edge vignette — silhouette curves away from
-            the viewer. Slightly lifted (0.25 → 0.22) since the
-            larger globe needs less darkening to feel round.
-         2. Directional terminator: lower-right darkening matches
-            the cinematic Earth's sun direction (upper-left).
-         3. Warm highlight — bumped from 0.16 → 0.20 alpha and
-            offset 2.5 px (was 2) so the upper-left lift is now
-            clearly perceptible at 34 px but still restrained.
-            This is the requested "subtle 3D highlight." */
+    /* Mini-scale color correction — calibrated to read as the
+       same Earth at small scale. The previous "natural palette"
+       pass (saturate 1.18 / brightness 1.06 / contrast 1.04) made
+       the globe read as a flat texture thumbnail against the dark
+       header; the new values lift saturation and contrast enough
+       that continents resolve clearly at 42 px without crossing
+       into the icon-bright range. The large Earth's tone-mapped
+       linear lighting (exposure 1.12) achieves that contrast
+       through actual surface shading, which CSS can't replicate
+       — so a touch more filter is the miniature-scale tax that
+       buys back the same perceived richness. */
+    filter: saturate(1.28) brightness(1.10) contrast(1.10);
+    /* Sphere + atmosphere — five-layer box-shadow stack that
+       reconstructs the large Earth's material treatment at
+       miniature scale. From front-painted to back-painted (CSS
+       box-shadow paints the first list entry on top):
+         1. Outer atmospheric halo — cyan glow that extends past
+            the silhouette. Mimics the cinematic Earth's back-side
+            atmosphere sphere (radius 1.06) which paints a Fresnel
+            rim BEYOND the planet's body. Subtle (0.28 alpha,
+            5 px spread) so it reads as glow, not UI ring.
+         2. Inner atmospheric rim — cyan tint on the inside of
+            the silhouette. Completes the rim band so the
+            atmosphere reads as a real layer wrapped around the
+            planet, not a halo floating beside it.
+         3. Edge vignette — silhouette curve, soft all-edge.
+         4. Directional terminator — lower-right darkening,
+            matches the cinematic Earth's upper-left sun
+            (DirectionalLight at -1.2, 1.3, 3.2).
+         5. Warm specular lift — upper-left highlight, the
+            miniature analogue of the MeshPhongMaterial's
+            specular response on the lit limb (specular #1c2a3a,
+            shininess 22 on the large Earth). Re-added after
+            being trimmed in the previous pass — without it the
+            sphere read as flat. */
     box-shadow:
+      0 0 5px 0.5px rgba(135, 195, 240, 0.28),
+      inset 0 0 2.5px rgba(155, 210, 245, 0.30),
       inset 0 0 4px rgba(0, 0, 0, 0.22),
-      inset -2.5px -2.5px 5px rgba(0, 0, 0, 0.30),
-      inset 2.5px 2.5px 4.5px rgba(255, 248, 230, 0.20);
+      inset -2.5px -2.5px 5px rgba(0, 0, 0, 0.28),
+      inset 2.5px 2.5px 4.5px rgba(255, 245, 220, 0.20);
     /* Single transition timing handles both flows that change
        the background position: a language switch (a jump of tens
        of px on one or both axes), and pointer-hover parallax (a
@@ -581,28 +577,14 @@ const focusByCode = JSON.stringify(
      scale. The cinematic Earth's atmosphere shader on the big
      globe stays untouched; at 600 px the rim earns its place. */
 
-  /* Specular highlight — soft warm-white pool at the upper-left
-     quadrant. Softened from the previous pass: peak alpha 0.44
-     → 0.34, and slightly enlarged (26% → 30%) so the light pool
-     reads as a gentle gradient rather than a glossy dot. Mirrors
-     the cinematic Earth's lit-from-upper-left direction. */
-  .lgs-globe::after {
-    content: '';
-    position: absolute;
-    top: 13%;
-    left: 19%;
-    width: 30%;
-    height: 30%;
-    border-radius: 50%;
-    background: radial-gradient(
-      circle at 40% 40%,
-      rgba(255, 252, 235, 0.34) 0%,
-      rgba(255, 255, 255, 0.15) 38%,
-      rgba(255, 255, 255, 0.04) 72%,
-      transparent 100%
-    );
-    pointer-events: none;
-  }
+  /* Specular highlight ::after removed. It was a CSS gloss pool
+     in the upper-left quadrant — a stylized UI cue that didn't
+     exist on the large center Earth, where reflection comes from
+     Three.js's actual surface-light response. Keeping it here made
+     the small globe read as a "shinier" sibling of the cinematic
+     one. With the inset shadows above doing the lit-sphere work
+     (directional terminator + edge vignette), the texture alone
+     carries the planet identity, same as on the large stage. */
 
   /* ── Per-language background position ─────────────────────────────
      Each entry sets the language's stable focus region as a base
@@ -631,6 +613,36 @@ const focusByCode = JSON.stringify(
     /* Spain / Iberian Peninsula — lat 40, lng -3 */
     --lgs-base-x: -103px;
     --lgs-base-y: -17px;
+  }
+
+  /* When the Three.js header globe is mounted, strip the CSS
+     approximation layers — the canvas paints the real Earth
+     (texture + lighting + atmosphere shader, same as the large
+     overlay Earth, just smaller). Background image, filter, and
+     box-shadow stack are no longer needed because the canvas
+     provides the silhouette, the sphere depth, the atmospheric
+     rim, and the specular response — all in WebGL pixels rather
+     than CSS interpretation. The canvas is positioned absolutely
+     to fill the .lgs-globe element; its own border-radius keeps
+     the circular silhouette even if the host's CSS were stripped.
+     If the .has-canvas class is NOT applied (e.g. WebGL init failed
+     or the dynamic import hasn't resolved yet), the original CSS
+     bg-image + box-shadow treatment stays as the visible fallback. */
+  .lgs-globe.has-canvas {
+    background-image: none;
+    filter: none;
+    box-shadow: none;
+    /* Keep the parallax CSS custom properties around — host JS still
+       updates them on pointermove, but with the canvas mounted the
+       values are also forwarded to handle.setParallax() which does
+       the actual visual work. The transition on background-position
+       is no longer needed since the canvas doesn't pan a bg-image. */
+  }
+  .lgs-globe.has-canvas > canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
   }
 
   /* Header globe is hidden whenever the cinematic overlay is "out" —
@@ -1634,6 +1646,7 @@ const focusByCode = JSON.stringify(
 
 <script>
   import type { InteractiveEarthHandle, FocusPoint } from '../../scripts/interactive-earth-3d';
+  import type { HeaderEarthHandle } from '../../scripts/header-earth-3d';
 
   // Single shared Earth instance per page. We keep the canvas alive
   // across open/close so reopening is instant and no second canvas is
@@ -1642,6 +1655,16 @@ const focusByCode = JSON.stringify(
   let earthHandle: InteractiveEarthHandle | null = null;
   let earthLoading: Promise<InteractiveEarthHandle | null> | null = null;
   let lastFocusedBeforeOpen: HTMLElement | null = null;
+
+  // ── Header earth (Step: real miniature renderer) ────────────────
+  // The small header globe is now a real Three.js miniature Earth
+  // (header-earth-3d module) rather than a CSS bg-image + shadow
+  // stack. One handle per .lgs-trigger on the page. Keyed by the
+  // trigger element so multiple selector instances each get their
+  // own renderer; in practice the header has one. Destroyed
+  // alongside the overlay's interactive earth on view transitions
+  // and on page unload.
+  const headerEarthHandles = new WeakMap<HTMLElement, HeaderEarthHandle>();
 
   // ── Animation state machine ────────────────────────────────────
   // The launch and return animations cover ~500ms and ~480ms. During
@@ -2203,7 +2226,23 @@ const focusByCode = JSON.stringify(
     // Strip Step-1 transient classes from every trigger on the page —
     // a teardown right after a click would otherwise leave is-charging
     // or is-docking stuck on the trigger until the next interaction.
-    document.querySelectorAll<HTMLElement>('.lgs-trigger').forEach(stripTransientClasses);
+    document.querySelectorAll<HTMLElement>('.lgs-trigger').forEach((trigger) => {
+      stripTransientClasses(trigger);
+      // Dispose the per-trigger miniature header earth alongside the
+      // overlay earth. WeakMap.delete is fine even if no handle was
+      // mounted (e.g. WebGL init failed) — silent no-op.
+      const headerHandle = headerEarthHandles.get(trigger);
+      if (headerHandle) {
+        headerHandle.destroy();
+        headerEarthHandles.delete(trigger);
+      }
+      // Drop the has-canvas marker so the CSS fallback (bg-image +
+      // box-shadow stack) re-engages if the page rebuilds without
+      // re-mounting the canvas. Defensive — the next initGlobeSelectors
+      // pass would re-add it anyway when it re-imports the module.
+      const globeEl = trigger.querySelector<HTMLElement>('.lgs-globe');
+      if (globeEl) globeEl.classList.remove('has-canvas');
+    });
     if (earthHandle) {
       earthHandle.destroy();
       earthHandle = null;
@@ -3258,6 +3297,40 @@ const focusByCode = JSON.stringify(
       const overlay = root.nextElementSibling as HTMLElement | null;
       if (!overlay || !overlay.classList.contains('lgs-overlay')) return;
 
+      // ── Mount the real miniature Earth into the header globe ───
+      // Lazy-load header-earth-3d (separate chunk; the cinematic
+      // module loads only on overlay open). Once the handle resolves
+      // it's tracked in headerEarthHandles keyed by the trigger so
+      // the language-changed listener below can call setFocus, and
+      // destroyEarth() can dispose it on view transitions.
+      // The host CSS keeps its bg-image fallback on .lgs-globe until
+      // we add the .has-canvas class — same element, same opacity
+      // animation on launch/return, no DOM structure change.
+      const headerGlobeEl = trigger.querySelector<HTMLElement>('.lgs-globe');
+      if (headerGlobeEl && !headerEarthHandles.has(trigger)) {
+        const headerFocusMap = readFocusMap(overlay);
+        const initialLang = root.dataset.current || overlay.dataset.initialLanguage || '';
+        const initialFocus = headerFocusMap[initialLang] ?? null;
+        const focusPoint = initialFocus
+          ? { lat: initialFocus.lat, lng: initialFocus.lng }
+          : null;
+        // Dynamic import — header-earth-3d is its own chunk, kept
+        // separate from interactive-earth-3d so the overlay's
+        // larger code doesn't sit in the header bundle. Failures
+        // (no WebGL, dynamic-import rejected) silently fall back to
+        // the CSS bg-image already painted underneath.
+        void import('../../scripts/header-earth-3d')
+          .then(({ createHeaderEarth }) => {
+            if (!document.body.contains(trigger)) return; // teardown raced us
+            const handle = createHeaderEarth(headerGlobeEl, focusPoint);
+            headerEarthHandles.set(trigger, handle);
+            headerGlobeEl.classList.add('has-canvas');
+          })
+          .catch((err) => {
+            console.warn('[LanguageGlobeSelector] header Earth init failed:', err);
+          });
+      }
+
       const open = () => {
         // Defer the async open so the click handler returns quickly.
         void openOverlay(root, overlay, trigger);
@@ -3329,13 +3402,23 @@ const focusByCode = JSON.stringify(
           // the cursor (the side near the cursor rotates forward).
           const px = -cx * PARALLAX_X;
           const py = -cy * PARALLAX_Y;
+          // Write the CSS vars even when the canvas is mounted —
+          // they remain the source of truth for the bg-image
+          // fallback, and a no-op when .has-canvas suppresses the
+          // background. The Three.js handle gets the same numbers
+          // forwarded so its camera rotation matches the visual
+          // intent of the CSS parallax it replaces.
           globe.style.setProperty('--lgs-px', `${px.toFixed(1)}px`);
           globe.style.setProperty('--lgs-py', `${py.toFixed(1)}px`);
+          const handle = headerEarthHandles.get(trigger);
+          if (handle) handle.setParallax(px, py);
         });
 
         const resetParallax = () => {
           globe.style.setProperty('--lgs-px', '0px');
           globe.style.setProperty('--lgs-py', '0px');
+          const handle = headerEarthHandles.get(trigger);
+          if (handle) handle.setParallax(0, 0);
         };
         trigger.addEventListener('pointerleave', resetParallax);
         trigger.addEventListener('pointercancel', resetParallax);
@@ -3616,8 +3699,23 @@ const focusByCode = JSON.stringify(
   // co-existence with the legacy selector during rollout is safe.
   function syncToLang(lang: string): void {
     document.querySelectorAll<HTMLElement>('.lgs-root').forEach((root) => {
-      if (root.dataset.current === lang) return;
-      root.dataset.current = lang;
+      if (root.dataset.current !== lang) {
+        root.dataset.current = lang;
+      }
+      // Update the miniature header earth too — same focus map as
+      // the overlay so the small globe rotates to the same region
+      // the large globe shows when it launches. Fail-silent if the
+      // handle hasn't loaded yet; the next syncToLang call (e.g.
+      // after page reload) will catch up.
+      const trigger = root.querySelector<HTMLElement>('.lgs-trigger');
+      if (!trigger) return;
+      const handle = headerEarthHandles.get(trigger);
+      if (!handle) return;
+      const overlay = root.nextElementSibling as HTMLElement | null;
+      if (!overlay || !overlay.classList.contains('lgs-overlay')) return;
+      const focusMap = readFocusMap(overlay);
+      const focus = focusMap[lang];
+      if (focus) handle.setFocus(focus.lat, focus.lng);
     });
     document.querySelectorAll<HTMLButtonElement>('.lgs-overlay-option').forEach((opt) => {
       const isActive = opt.dataset.language === lang;
