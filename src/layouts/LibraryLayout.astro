@@ -67,6 +67,7 @@ const {
   showHeader={true}
   showProgress={false}
   showQuote={false}
+  showSearch={true}
   useGlobeLanguageSelector={useGlobeLanguageSelector}
 >
   <div class="library-layout-shell">
@@ -89,9 +90,16 @@ const {
   .library-layout-shell {
     --library-header-offset: 72px;
     --library-dashboard-min-height: calc(100dvh - var(--library-header-offset));
-    --continue-learning-card-height: 360px;
-    --floating-card-width: 190px;
-    --floating-card-gap: 12px;
+    /* Fluid sizing for the floating side panels (FloatingSidebar +
+       ContinueLearningCard + LibraryStatsPanel). Each consumes one
+       of these tokens for its `width` (or `min-height` in the case
+       of the continue card), so changing a clamp here cascades to
+       all three panels at once. The clamps keep panels visible at
+       every viewport rather than hiding them below 768px — they
+       shrink gradually and stay on-screen. */
+    --continue-learning-card-height: clamp(220px, 28vw, 360px);
+    --floating-card-width: clamp(120px, 15vw, 190px);
+    --floating-card-gap: clamp(8px, 1vw, 12px);
     width: 100%;
   }
 </style>

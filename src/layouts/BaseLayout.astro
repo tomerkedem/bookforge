@@ -27,6 +27,13 @@ interface Props {
    */
   showQuote?: boolean;
   /**
+   * Forwarded to Header. When true, the global header search field is
+   * rendered (and the rotating quote is suppressed). Defaults to false
+   * so every existing route keeps the quote. Used by LibraryLayout so
+   * the /library dashboard surfaces search in the header.
+   */
+  showSearch?: boolean;
+  /**
    * Forwarded to Header. Opts the page into the new circular
    * LanguageGlobeSelector. Defaults to false — every existing route
    * keeps the legacy selector until explicitly opted in.
@@ -45,7 +52,8 @@ const {
   showProgress = false,
   showLanguageToggle = true,
   showQuote = true,
-  useGlobeLanguageSelector = false,
+  showSearch = false,
+  useGlobeLanguageSelector = true,
   class: className,
 } = Astro.props;
 
@@ -215,6 +223,7 @@ const isDev = import.meta.env.DEV;
         availableLanguages={availableLanguages}
         showLanguageToggle={showLanguageToggle}
         showQuote={showQuote}
+        showSearch={showSearch}
         useGlobeLanguageSelector={useGlobeLanguageSelector}
       />
     )}

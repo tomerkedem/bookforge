@@ -21,6 +21,7 @@
 
 import type { Language } from '../../types/index';
 import { getLanguageMeta, getLanguageDirection } from '../../utils/language';
+import { t } from '../../i18n';
 
 interface Props {
   activeLanguage: Language;
@@ -116,8 +117,17 @@ const onlyOne = options.length <= 1;
 const triggerDisabled = disabled || onlyOne;
 
 const triggerAriaLabel = onlyOne
-  ? `Only one language available: ${activeMeta.labelEn}`
-  : `Change language. Current: ${activeMeta.labelEn}`;
+  ? t('language.onlyOne', activeLanguage, { lang: activeMeta.label })
+  : t('language.changeCurrent', activeLanguage, { lang: activeMeta.label });
+// Localized text for the styled cosmic-glass tooltip. SSR-only for the
+// single-language case (the interpolated `{{lang}}` can't be re-applied
+// by the runtime data-i18n-tooltip path, and a single-language context
+// can't switch language without a full reload anyway, so SSR is enough).
+const triggerTooltipText = onlyOne
+  ? t('language.onlyOne', activeLanguage, { lang: activeMeta.label })
+  : t('header.languageTooltip', activeLanguage);
+const overlayDialogLabel = t('language.chooseDialog', activeLanguage);
+const overlayListLabel = t('language.availableList', activeLanguage);
 
 /**
  * Per-language focus points used to rotate the 3D Earth on overlay
@@ -189,11 +199,19 @@ const LANGUAGE_FOCUS: Record<
 const focusByCode = JSON.stringify(
   Object.fromEntries(options.map((o) => [o.code, LANGUAGE_FOCUS[o.code] ?? null]))
 );
+
+// Active-language focus snapshot — emitted on the root so the
+// header Earth can mount even when there is no overlay (single-
+// language context). Without this, the `onlyOne` early-return left
+// the trigger as a black disc on chapter pages whose book has just
+// one language.
+const activeFocusJson = JSON.stringify(LANGUAGE_FOCUS[activeLanguage] ?? null);
 ---
 
 <div
   class:list={['lgs-root', className]}
   data-current={activeLanguage}
+  data-active-focus={activeFocusJson}
   data-rtl={isRtl}
 >
   <button
@@ -203,8 +221,7 @@ const focusByCode = JSON.stringify(
     aria-expanded="false"
     aria-disabled={triggerDisabled ? 'true' : 'false'}
     aria-label={triggerAriaLabel}
-    title={onlyOne ? `Only one language available: ${activeMeta.labelEn}` : undefined}
-    data-tooltip={onlyOne ? undefined : 'Change language'}
+    data-tooltip={triggerTooltipText}
     data-i18n-tooltip={onlyOne ? undefined : 'header.languageTooltip'}
     data-only-one={onlyOne ? 'true' : 'false'}
   >
@@ -229,7 +246,7 @@ const focusByCode = JSON.stringify(
     class="lgs-overlay"
     role="dialog"
     aria-modal="true"
-    aria-label="Choose language"
+    aria-label={overlayDialogLabel}
     data-open="false"
     data-initial-language={activeLanguage}
     data-language-focus={focusByCode}
@@ -247,7 +264,7 @@ const focusByCode = JSON.stringify(
       <ul
         class="lgs-overlay-row"
         role="listbox"
-        aria-label="Available languages"
+        aria-label={overlayListLabel}
       >
         {/* Step 3.5 — visible orbit path.
             A single thin SVG curve traced beneath the pills so the
@@ -3490,24 +3507,12 @@ const focusByCode = JSON.stringify(
       if (!trigger) return;
 
       const onlyOne = trigger.dataset.onlyOne === 'true';
-      if (onlyOne) {
-        // Single-language: the button stays visible (so header layout
-        // doesn't shift between contexts) but it never opens anything.
-        // The title attribute already carries the explanation.
-        trigger.addEventListener('click', (e) => e.preventDefault());
-        return;
-      }
-
-      // The overlay was rendered as a SIBLING of .lgs-root (not a
-      // child) so its position:fixed isn't pinned to the header's
-      // stacking context. Find it via the next-sibling lookup that
-      // Astro guarantees: each LanguageGlobeSelector instance emits
-      // exactly one .lgs-root followed by its .lgs-overlay (when the
-      // language count > 1).
-      const overlay = root.nextElementSibling as HTMLElement | null;
-      if (!overlay || !overlay.classList.contains('lgs-overlay')) return;
 
       // ── Mount the real miniature Earth into the header globe ───
+      // Runs in BOTH modes (multi-language AND single-language) so
+      // the header trigger always shows a real Three.js Earth, not a
+      // black disc. In single-language mode the canvas mounts but
+      // the click handler below is a no-op (no overlay to open).
       // Lazy-load header-earth-3d (separate chunk; the cinematic
       // module loads only on overlay open). Once the handle resolves
       // it's tracked in headerEarthHandles keyed by the trigger so
@@ -3519,12 +3524,31 @@ const focusByCode = JSON.stringify(
       // Three.js Earth is visible.
       const headerGlobeEl = trigger.querySelector<HTMLElement>('.lgs-globe');
       if (headerGlobeEl && !headerEarthHandles.has(trigger)) {
-        const headerFocusMap = readFocusMap(overlay);
-        const initialLang = root.dataset.current || overlay.dataset.initialLanguage || '';
-        const initialFocus = headerFocusMap[initialLang] ?? null;
-        const focusPoint = initialFocus
-          ? { lat: initialFocus.lat, lng: initialFocus.lng }
-          : null;
+        // In multi-language mode, read the per-language focus map
+        // from the overlay (next sibling). In single-language mode
+        // there is no overlay — fall back to the active-language
+        // focus snapshot emitted on the root itself.
+        let focusPoint: { lat: number; lng: number } | null = null;
+        const overlayPeek = root.nextElementSibling as HTMLElement | null;
+        if (overlayPeek && overlayPeek.classList.contains('lgs-overlay')) {
+          const headerFocusMap = readFocusMap(overlayPeek);
+          const initialLang =
+            root.dataset.current || overlayPeek.dataset.initialLanguage || '';
+          const initialFocus = headerFocusMap[initialLang] ?? null;
+          if (initialFocus) {
+            focusPoint = { lat: initialFocus.lat, lng: initialFocus.lng };
+          }
+        } else {
+          try {
+            const raw = root.dataset.activeFocus;
+            if (raw) {
+              const parsed = JSON.parse(raw) as { lat: number; lng: number } | null;
+              if (parsed) focusPoint = { lat: parsed.lat, lng: parsed.lng };
+            }
+          } catch {
+            // Bad JSON ⇒ no focus; Earth opens at lat=0/lng=0.
+          }
+        }
         // Dynamic import — header-earth-3d is its own chunk, kept
         // separate from interactive-earth-3d so the overlay's
         // larger code doesn't sit in the header bundle. Failures
@@ -3542,37 +3566,6 @@ const focusByCode = JSON.stringify(
             console.warn('[LanguageGlobeSelector] header Earth init failed:', err);
           });
       }
-
-      const open = () => {
-        // Defer the async open so the click handler returns quickly.
-        void openOverlay(root, overlay, trigger);
-      };
-      const close = () => {
-        void closeOverlay(overlay, trigger);
-      };
-
-      trigger.addEventListener('click', (e) => {
-        e.preventDefault();
-        // Only react when fully open or fully closed. Mid-animation
-        // clicks are deliberately ignored — the cinematic flight is
-        // short enough that this feels intentional, not unresponsive.
-        if (state === 'open') {
-          close();
-        } else if (state === 'closed') {
-          open();
-        }
-      });
-
-      trigger.addEventListener('keydown', (e: KeyboardEvent) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          if (state === 'open') {
-            close();
-          } else if (state === 'closed') {
-            open();
-          }
-        }
-      });
 
       // ── Pointer-hover parallax ─────────────────────────────────
       // Gentle "globe tilts toward the cursor" effect, mouse-only.
@@ -3635,6 +3628,54 @@ const focusByCode = JSON.stringify(
         trigger.addEventListener('pointercancel', resetParallax);
         trigger.addEventListener('blur', resetParallax);
       }
+
+      // Single-language mode: Earth + parallax already wired above.
+      // No overlay exists for this trigger, so the button is a no-op
+      // click target and the rest of the wiring (overlay listeners,
+      // option buttons, language switching) is skipped.
+      if (onlyOne) {
+        trigger.addEventListener('click', (e) => e.preventDefault());
+        return;
+      }
+
+      // The overlay was rendered as a SIBLING of .lgs-root (not a
+      // child) so its position:fixed isn't pinned to the header's
+      // stacking context. Find it via the next-sibling lookup that
+      // Astro guarantees: each LanguageGlobeSelector instance emits
+      // exactly one .lgs-root followed by its .lgs-overlay.
+      const overlay = root.nextElementSibling as HTMLElement | null;
+      if (!overlay || !overlay.classList.contains('lgs-overlay')) return;
+
+      const open = () => {
+        // Defer the async open so the click handler returns quickly.
+        void openOverlay(root, overlay, trigger);
+      };
+      const close = () => {
+        void closeOverlay(overlay, trigger);
+      };
+
+      trigger.addEventListener('click', (e) => {
+        e.preventDefault();
+        // Only react when fully open or fully closed. Mid-animation
+        // clicks are deliberately ignored — the cinematic flight is
+        // short enough that this feels intentional, not unresponsive.
+        if (state === 'open') {
+          close();
+        } else if (state === 'closed') {
+          open();
+        }
+      });
+
+      trigger.addEventListener('keydown', (e: KeyboardEvent) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          if (state === 'open') {
+            close();
+          } else if (state === 'closed') {
+            open();
+          }
+        }
+      });
 
       // Click anywhere marked data-lgs-close (the backdrop) closes
       // without changing language. The stage's option buttons handle

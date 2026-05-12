@@ -18,6 +18,13 @@ interface Props {
    */
   showQuote?: boolean;
   /**
+   * Renders the global header search field (desktop strip + mobile
+   * reveal). Defaults to `false` so every existing route keeps the
+   * rotating quote in its place. /library opts in — search is the
+   * dashboard's primary header affordance there.
+   */
+  showSearch?: boolean;
+  /**
    * Step-2 rollout switch. When true, the new circular
    * LanguageGlobeSelector is rendered instead of the legacy
    * LanguageSelector. Defaults to `false` so every existing route
@@ -34,7 +41,8 @@ const {
   availableLanguages,
   showLanguageToggle = true,
   showQuote = true,
-  useGlobeLanguageSelector = false,
+  showSearch = false,
+  useGlobeLanguageSelector = true,
   class: className
 } = Astro.props;
 
@@ -154,26 +162,37 @@ const searchAriaLabel = t('header.searchAriaLabel', language);
       <span class="logo-word">Yuval</span>
     </a>
 
-    <div class="header-search" data-rtl={isRtl ? 'true' : 'false'}>
-      <label class="header-search-field">
-        <span class="header-search-icon" aria-hidden="true">
-          <svg viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" focusable="false">
-            <circle cx="9" cy="9" r="6.2" fill="none" stroke="currentColor" stroke-width="1.4" />
-            <line x1="13.6" y1="13.6" x2="17.2" y2="17.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
-          </svg>
-        </span>
-        <input
-          id="yuval-header-search"
-          type="search"
-          autocomplete="off"
-          spellcheck="false"
-          class="header-search-input"
-          placeholder={searchPlaceholder}
-          aria-label={searchAriaLabel}
-          dir={isRtl ? 'rtl' : 'ltr'}
-        />
-      </label>
-    </div>
+    {showSearch && (
+      <div class="header-search" data-rtl={isRtl ? 'true' : 'false'}>
+        <label class="header-search-field">
+          <span class="header-search-icon" aria-hidden="true">
+            <svg viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" focusable="false">
+              <circle cx="9" cy="9" r="6.2" fill="none" stroke="currentColor" stroke-width="1.4" />
+              <line x1="13.6" y1="13.6" x2="17.2" y2="17.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+            </svg>
+          </span>
+          <input
+            id="yuval-header-search"
+            type="search"
+            autocomplete="off"
+            spellcheck="false"
+            class="header-search-input"
+            placeholder={searchPlaceholder}
+            aria-label={searchAriaLabel}
+            dir={isRtl ? 'rtl' : 'ltr'}
+          />
+        </label>
+      </div>
+    )}
+
+    {showQuote && !showSearch && (
+      <div class="quote-container hidden sm:block">
+        <div class="quote-stack">
+          <p class="quote-text" id="header-quote"></p>
+          <cite class="quote-author" id="header-quote-author"></cite>
+        </div>
+      </div>
+    )}
 
     <div class:list={['header-controls-rail', 'flex', 'items-center', isRtl && 'flex-row-reverse']}>
       {/* Source order is [Language, Theme] so the physical layout in

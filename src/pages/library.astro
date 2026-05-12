@@ -818,43 +818,30 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
     display: contents;
   }
 
-  /* ── Mobile content area — STILL CLEARED, but the hero text returns
-     The mobile shell is being reset before the new Vertical Knowledge
-     Orbit lands. These slots remain hidden so the future orbit has
-     a clean stage to fill:
-        .lb-area-mobile-discovery  — old MobileGalaxyCarousel
-        .lb-area-quick-mobile      — old AI assistant / quick-actions panel
-     The desktop-only `.lb-area-featured` (galaxy orbit stage) is also
-     hidden on mobile so the desktop orbit never leaks down here.
-     `.lb-area-hero` is INTENTIONALLY visible on mobile now — the user
-     asked for the welcome text (eyebrow + title + subtitle) to appear,
-     just without the panel chrome of the legacy mobile card. The
-     `:global(.lb-area-hero .lh*)` overrides further down strip that
-     chrome and apply the desktop-style clean cosmic look on mobile.
-     ContinueLearningCard, LibraryStatsPanel and FloatingSidebar are
-     already `display: none` on mobile from inside their own components.
-     The cosmic scene background (`.knowledge-scene-background`, fixed,
-     z-index 0) stays visible behind the page so it reads as part of
-     the Knowledge Space universe. Order tokens for legacy mobile
-     sequence are kept commented below for ease of reconstruction. */
+  /* ── Mobile content area ──────────────────────────────────────────
+     Mobile slots that stay hidden:
+        .lb-area-mobile-discovery  — legacy MobileGalaxyCarousel
+        .lb-area-quick-mobile      — legacy AI assistant / quick-actions
+     `.lb-area-featured` (galaxy orbit stage) is now visible on mobile
+     too — the user wants the SAME orbit composition that desktop shows,
+     just scaled down proportionally. The mobile-specific orbit sizing
+     lives in the `@media (max-width: 1023px)` block further below. */
   .lb-area-mobile-discovery,  /* legacy mobile order: 2 */
-  .lb-area-quick-mobile,      /* legacy mobile order: 6 */
-  .lb-area-featured {
+  .lb-area-quick-mobile {
     display: none;
   }
 
-  /* ── Mobile LibraryHero — strip the legacy card chrome ───────────
-     The legacy mobile LibraryHero rendered as a discrete card with
-     border, panel background, blur, inline mini-core and a readonly
-     search input. The user wants only the welcome text (eyebrow +
-     title + subtitle) on mobile, framed by the cosmic page rather
-     than by a panel — the same identity as the desktop hero strip.
-     Overrides reach into the LibraryHero component via `:global()`
-     because `.lh*` classes are scoped to that component. Tablet
-     (≥768px and <1024px) keeps its own intermediate styling from
-     inside LibraryHero. Desktop (≥1024px) already strips chrome
-     via its own @media rule. */
-  @media (max-width: 767px) {
+  /* ── LibraryHero — strip the legacy card chrome ─────────────────
+     The legacy mobile + tablet LibraryHero rendered as a discrete
+     card with border, panel background, blur and overflow:hidden
+     (which clipped the nowrap title when the central area got
+     narrow and a fixed side panel encroached on the right edge).
+     The user wants only the welcome text (eyebrow + title +
+     subtitle) framed by the cosmic page, not by a panel — the same
+     identity as the desktop hero strip. Override applies at every
+     viewport below the desktop dashboard (≤1023px). Desktop
+     (≥1024px) strips chrome via LibraryHero's own @media rule. */
+  @media (max-width: 1023px) {
     :global(.lb-area-hero .lh) {
       /* No top padding — the hero text should land right under the
          header line. Side + bottom paddings keep modest breathing
@@ -868,9 +855,7 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       overflow: visible;
       text-align: center;
     }
-    :global(.lb-area-hero .lh-halo),
-    :global(.lb-area-hero .lh-core),
-    :global(.lb-area-hero .lh-search) {
+    :global(.lb-area-hero .lh-halo) {
       display: none;
     }
     :global(.lb-area-hero .lh-header) {
@@ -913,6 +898,113 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       margin-inline: auto;
       font-size: 0.9rem;
       line-height: 1.4;
+    }
+
+    /* ── Mobile orbit — same composition as desktop, scaled down ─────
+       The user asked for the SAME orbit (every readable item on its
+       own station around the central core) on phone + tablet, just
+       smaller. We re-show the featured section (hidden globally by the
+       base reset), then re-declare the orbit positioning rules with
+       smaller card width + smaller ellipse radii. The math is identical
+       to the desktop rule inside `@media (min-width: 1024px)`. */
+    .lb-area-featured {
+      display: block;
+    }
+
+    .library-galaxy {
+      position: relative;
+      display: block;
+      height: 100%;
+      /* Mobile-friendly stage height. clamp() lets the orbit grow on
+         large phones / portrait tablets without ever exceeding the
+         desktop 540px floor (which kicks in at ≥1024px). */
+      min-height: clamp(320px, 60vw, 480px);
+      margin: 0;
+      overflow: visible;
+      padding: 0;
+      /* No vertical offset on mobile — the hero text sits naturally
+         above the orbit in the column flow, so the orbit can stay
+         centered in its own slot. */
+      transform: none;
+      /* The orbit math (cos/sin) is direction-agnostic via --galaxy-dir
+         (set inline on the element in markup). Setting `direction: ltr`
+         here keeps absolute positioning consistent; per-card content
+         still picks up page direction via `.galaxy-card { direction: var(--page-direction, ltr); }` below. */
+      direction: ltr;
+    }
+
+    .galaxy-card {
+      position: absolute;
+      flex: initial;
+      max-width: none;
+      /* Card width shrinks proportionally to viewport. 96px is the
+         floor (still legible on 360px-wide phones), 140px is the cap
+         (so on a 1023px tablet the cards never grow past their desktop
+         190px peer at 1024px). */
+      width: clamp(96px, 22vw, 140px);
+      cursor: pointer;
+      top: 50%;
+      left: 50%;
+      /* Smaller ellipse radii so the orbit fits inside the mobile
+         stage. Tuned so 4-6 stations distribute comfortably without
+         neighbours touching. */
+      --orbit-rx: clamp(110px, 38vw, 220px);
+      --orbit-ry: clamp(110px, 28vh, 200px);
+      --orbit-active-angle: calc(var(--orbit-angle, 0deg) + var(--orbit-rotation, 0deg));
+      --orbit-depth: calc((sin(var(--orbit-active-angle, 0deg)) + 1) / 2);
+      --slot-scale: calc(0.88 + 0.12 * var(--orbit-depth));
+      --slot-opacity: calc(0.86 + 0.14 * var(--orbit-depth));
+      --tilt: calc(cos(var(--orbit-active-angle, 0deg)) * 4deg * var(--galaxy-dir, 1) * -1);
+      transform:
+        translate(-50%, -50%)
+        translate(
+          calc(cos(var(--orbit-active-angle, 0deg)) * var(--orbit-rx) * var(--galaxy-dir, 1)),
+          calc(sin(var(--orbit-active-angle, 0deg)) * var(--orbit-ry))
+        )
+        rotate(var(--tilt))
+        scale(var(--slot-scale));
+      opacity: var(--slot-opacity);
+      transition:
+        transform 0.55s cubic-bezier(0.4, 0, 0.2, 1),
+        opacity 0.3s ease;
+      z-index: 2;
+      direction: var(--page-direction, ltr);
+    }
+
+    /* Series capsule a touch wider than a book card, same ratio as desktop. */
+    .galaxy-card[data-role="series"] {
+      width: clamp(108px, 25vw, 156px);
+      --series-color-resolved: var(--series-color, var(--yuval-galaxy-accent-gold, #c9a96e));
+    }
+
+    /* Per-kind accent tint — books gold, lessons cyan, series violet.
+       Sets a CSS variable that the inner LibraryCard reads for its
+       accent strip; same contract as desktop. */
+    .galaxy-card[data-kind="book"]   { --card-accent-slot: var(--yuval-galaxy-accent-gold); }
+    .galaxy-card[data-kind="lesson"] { --card-accent-slot: var(--yuval-galaxy-accent-cyan); }
+    .galaxy-card[data-kind="series"] { --card-accent-slot: var(--yuval-galaxy-accent-purple); }
+
+    /* Drag-to-rotate: kill the transform transition while a drag is
+       in flight so the carousel tracks the cursor in real time. */
+    .library-galaxy[data-galaxy-dragging] .galaxy-card {
+      transition: none;
+      cursor: grabbing;
+    }
+
+    /* Block the browser's native image-drag ghost on every card and
+       on its descendant artwork so pointermove tracking stays smooth. */
+    .galaxy-card,
+    .galaxy-card *,
+    .galaxy-card img,
+    .galaxy-card svg {
+      -webkit-user-drag: none;
+    }
+
+    /* Galaxy orbit controls (rotate ←/→ buttons) on mobile — shrink
+       them slightly and pull closer to the orbit. */
+    .galaxy-orbit-controls {
+      transform: scale(0.85);
+      transform-origin: center;
     }
   }
 
@@ -1129,10 +1221,12 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
          container only — page title, breadcrumb, side panels and grid
          shell are unaffected. Responsive steps below override the value
          per breakpoint; the transform itself stays the same.
-         Lifted 50px upward per the user's preference (56 → 6 on the
-         base desktop step; the ≥1280px step is reduced by the same
-         50 px). */
-      --orbit-vertical-offset: 6px;
+         Compromise value: the user asked to lift the scene 50px so the
+         core sits higher, but at 6px the top cards overlapped the hero
+         subtitle. Pulled the orbit back down to 36px (still ~20px
+         higher than the original 56px, but with enough headroom that
+         the subtitle reads cleanly above the top-of-orbit cards). */
+      --orbit-vertical-offset: 36px;
       transform: translateY(var(--orbit-vertical-offset));
     }
     /* The earlier `.library-galaxy::before` underlay halo and
@@ -2119,11 +2213,13 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
   /* ── Wide desktop (≥1280px): wider orbit cards + larger orbit. ─── */
   @media (min-width: 1280px) {
     /* Larger orbit scene gets a deeper vertical offset so rotating
-       cards along the wider ellipse still clear the page title.
-       Reduced 50 px (72 → 22) to match the global lift applied at
-       the base desktop step. */
+       cards along the wider ellipse still clear the page title. Set
+       to 52px — same +30 px lift over the base desktop step (36px)
+       that the original ladder used (72-56=16px → 52-36=16px) so
+       the wide-desktop hierarchy stays consistent while keeping the
+       subtitle clear of the top cards. */
     .library-galaxy {
-      --orbit-vertical-offset: 22px;
+      --orbit-vertical-offset: 52px;
     }
     .galaxy-card {
       width: 210px;

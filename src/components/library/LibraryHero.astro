@@ -1,18 +1,13 @@
 ---
 /**
- * LibraryHero — futuristic knowledge-hub anchor for the /library page.
+ * LibraryHero — text-only header strip for the /library page.
  *
- * Visual upgrade (Prompt 7):
- *   - Stronger title hierarchy via background-clip:text gradient.
- *   - Decorative "knowledge core" preview: a CSS-only orb with three
- *     concentric orbit rings and a soft purple aura. Static — no
- *     animation, no canvas, no SVG. aria-hidden, pointer-events:none.
- *   - Subtle inner halo at the top edge of the hero panel using a
- *     radial-gradient overlay.
- *   - Search input keeps `readonly` (honest non-functional state).
- *   - Premium pill CTAs that are clearly disabled.
- *
- * Search and CTAs are still inert. Behavior arrives in a later prompt.
+ * Surfaces three localized lines: eyebrow welcome, gradient title,
+ * and a single-line subtitle. The previous decorative knowledge-core
+ * preview, the readonly search input and the inner mini-CTA panel
+ * were removed once the global header carried the canonical search;
+ * the .lh-halo behind the text is the only chrome that remains,
+ * scoped to the tablet range via the @media block below.
  */
 import type { Language } from '../../types/index';
 import { t } from '../../i18n';
@@ -36,29 +31,7 @@ const { language } = Astro.props;
       <p class="lh-subtitle">{t('library.galaxy.subtitle', language)}</p>
     </div>
 
-    {/* Knowledge-core preview: CSS-only, decorative, static. */}
-    <div class="lh-core" aria-hidden="true">
-      <div class="lh-core-aura"></div>
-      <div class="lh-core-ring lh-core-ring-1"></div>
-      <div class="lh-core-ring lh-core-ring-2"></div>
-      <div class="lh-core-ring lh-core-ring-3"></div>
-      <div class="lh-core-orb"></div>
-    </div>
   </div>
-
-  <form class="lh-search" role="search" onsubmit="return false;">
-    <label for="library-search-input" class="sr-only">
-      {t('library.a11y.searchInput', language)}
-    </label>
-    <input
-      id="library-search-input"
-      type="search"
-      readonly
-      placeholder={t('library.galaxy.searchPlaceholder', language)}
-      aria-label={t('library.a11y.searchInput', language)}
-      class="lh-search-input"
-    />
-  </form>
 </section>
 
 <style>
@@ -102,16 +75,6 @@ const { language } = Astro.props;
   }
   .lh-text { min-width: 0; flex: 1 1 auto; }
 
-  .sr-only {
-    position: absolute;
-    width: 1px; height: 1px;
-    padding: 0; margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border: 0;
-  }
-
   .lh-eyebrow {
     font-size: 0.75rem;
     color: var(--yuval-galaxy-text-soft);
@@ -121,11 +84,19 @@ const { language } = Astro.props;
     font-weight: 600;
   }
   .lh-title {
-    font-size: clamp(1.625rem, 5.5vw, 3rem);
+    /* Compact responsive clamp: 18px → 26px across all viewports.
+       Previous bounds (22px → 32px) still read as oversized on tablet
+       widths once the side panels were brought in, because the central
+       hero strip is much narrower than the page. `white-space: nowrap`
+       keeps the title on a single line so it never breaks into two
+       lines (which would make the title VISUALLY take more vertical
+       space than its font-size suggests). */
+    font-size: clamp(1.125rem, 2.2vw, 1.625rem);
     font-weight: 700;
     line-height: 1.1;
     letter-spacing: -0.01em;
-    margin: 0 0 0.625rem;
+    margin: 0 0 0.5rem;
+    white-space: nowrap;
     background: var(--yuval-galaxy-title-gradient);
     background-clip: text;
     -webkit-background-clip: text;
@@ -133,91 +104,34 @@ const { language } = Astro.props;
     -webkit-text-fill-color: transparent;
   }
   .lh-subtitle {
-    font-size: 0.9375rem;
-    line-height: 1.5;
+    /* Subtitle scales softly so it stays a single line wherever
+       possible without forcing a hard min on narrow phones. */
+    font-size: clamp(0.8125rem, 1.6vw, 0.9375rem);
+    line-height: 1.45;
     color: var(--yuval-galaxy-text-muted);
     margin: 0;
     max-width: 56ch;
   }
 
-  /* ── Knowledge-core preview ──────────────────────────────────────── */
-  /* Hidden on mobile (<768px) — saves vertical space; the hero is
-     compact and gets the user to real content faster. Revealed in the
-     tablet range below, then hidden again on desktop where the BIG
-     central core lives in library.astro's galaxy stage. */
-  .lh-core {
-    display: none;
-    position: relative;
-    width: 110px;
-    height: 110px;
-    flex-shrink: 0;
-    pointer-events: none;
-    align-self: center;
-  }
-  .lh-core-aura {
-    position: absolute;
-    inset: -16px;
-    border-radius: 50%;
-    background: radial-gradient(circle,
-      var(--yuval-galaxy-accent-purple) 0%,
-      transparent 65%);
-    opacity: 0.45;
-    filter: blur(14px);
-  }
-  .lh-core-orb {
-    position: absolute;
-    inset: 38%;
-    border-radius: 50%;
-    background: radial-gradient(circle at 30% 30%,
-      var(--yuval-galaxy-accent-cyan) 0%,
-      var(--yuval-galaxy-accent-purple) 75%);
-    box-shadow: var(--yuval-galaxy-glow-core);
-  }
-  .lh-core-ring {
-    position: absolute;
-    border-radius: 50%;
-    border: 1px solid var(--yuval-galaxy-border-strong);
-  }
-  .lh-core-ring-1 { inset: 0;   opacity: 0.45; }
-  .lh-core-ring-2 { inset: 16%; opacity: 0.35; border-color: var(--yuval-galaxy-border-glow); }
-  .lh-core-ring-3 { inset: 28%; opacity: 0.30; }
-
-  /* ── Search ─────────────────────────────────────────────────────── */
-  .lh-search { position: relative; z-index: 1; margin: 0 0 0.75rem; }
-  .lh-search-input {
-    width: 100%;
-    /* 16px font-size prevents iOS Safari from auto-zooming on focus. */
-    font-size: 1rem;
-    padding: 0.875rem 1.125rem;
-    color: var(--yuval-galaxy-text);
-    background-color: var(--yuval-galaxy-surface-muted);
-    border: 1px solid var(--yuval-galaxy-border);
-    border-radius: 999px;
-    outline: none;
-    box-shadow: var(--yuval-galaxy-glow-soft);
-  }
-  .lh-search-input::placeholder { color: var(--yuval-galaxy-text-soft); }
-  .lh-search-input:focus-visible {
-    border-color: var(--yuval-galaxy-border-glow);
-    box-shadow: var(--yuval-galaxy-glow-primary);
-  }
-
-  /* ── Tablet (768–1023px): hero header becomes a row, core revealed. ── */
+  /* ── Tablet (768–1023px): hero stays centered, more breathing room. ──
+        The previous row-layout override was paired with the inline
+        knowledge-core preview that's been removed, so it pushed the
+        single remaining child (.lh-text) to the inline-start edge,
+        where it collided with the fixed ContinueLearningCard on the
+        right (RTL inline-start = right). The hero now keeps the
+        mobile column layout at this breakpoint and simply gains a
+        little extra padding. */
   @media (min-width: 768px) and (max-width: 1023px) {
-    .lh { padding: 2rem 2rem; }
+    .lh { padding: 1.5rem 1.5rem; text-align: center; }
     .lh-header {
-      flex-direction: row;
+      flex-direction: column;
       align-items: center;
-      justify-content: space-between;
-      gap: 2rem;
-      margin-block-end: 1.5rem;
+      justify-content: center;
+      text-align: center;
+      gap: 0;
+      margin-block-end: 0.5rem;
     }
-    .lh-core {
-      display: block;
-      width: 150px;
-      height: 150px;
-      align-self: auto;
-    }
+    .lh-text { text-align: center; }
   }
 
   /* ── Desktop (≥1024px): hero text floats over the galaxy stage.
@@ -271,27 +185,20 @@ const { language } = Astro.props;
       color: transparent;
       -webkit-text-fill-color: transparent;
     }
-    .lh-eyebrow-spark {
-      font-size: 1rem;
-      line-height: 1;
-      color: var(--yuval-galaxy-accent-cyan);
-      -webkit-text-fill-color: var(--yuval-galaxy-accent-cyan);
-      text-shadow: 0 0 12px var(--yuval-galaxy-accent-cyan);
-    }
-    /* Title — strong but tighter clamp; line-height 1 so the
-       title block is exactly its glyph height + nothing extra. */
+    /* Title on desktop keeps the base responsive clamp (≤32px) and
+       only adjusts the trailing rhythm — line-height + margin —
+       since the hero is a centered strip above the galaxy stage.
+       The previous fixed 2.25rem clamp competed with the base
+       declaration and produced an oversized title at common desktop
+       widths. */
     .lh-title {
-      font-size: clamp(1.625rem, 2.6vw, 2.25rem);
       line-height: 1;
       margin-block-end: 0.1875rem;
     }
     .lh-subtitle {
       margin-inline: auto;
       max-width: 60ch;
-      font-size: 0.875rem;
       line-height: 1.35;
     }
-    .lh-search { display: none; }
-    .lh-core { display: none; }
   }
 </style>

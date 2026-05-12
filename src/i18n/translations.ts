@@ -179,6 +179,26 @@ export const translations: Translations = {
     en: 'Change language',
     es: 'Cambiar idioma',
   },
+  'language.changeCurrent': {
+    he: 'החלף שפה. כעת: {{lang}}',
+    en: 'Change language. Current: {{lang}}',
+    es: 'Cambiar idioma. Actual: {{lang}}',
+  },
+  'language.onlyOne': {
+    he: 'רק שפה אחת זמינה: {{lang}}',
+    en: 'Only one language available: {{lang}}',
+    es: 'Solo un idioma disponible: {{lang}}',
+  },
+  'language.chooseDialog': {
+    he: 'בחר שפה',
+    en: 'Choose language',
+    es: 'Elegir idioma',
+  },
+  'language.availableList': {
+    he: 'שפות זמינות',
+    en: 'Available languages',
+    es: 'Idiomas disponibles',
+  },
   'header.themeTooltip': {
     he: 'החלף ערכת נושא',
     en: 'Toggle theme',

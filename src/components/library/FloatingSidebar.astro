@@ -104,6 +104,15 @@ const historyLabel     = t('library.action.history',     language);
      keeps `translateY(-50%)` for vertical centering throughout, so the
      keyframe animates the X component only.
   */
+  /* Mobile + tablet (≤1023px): hidden — the mobile flow surfaces the
+     same actions (AI assistant / bookmarks / history) via quick-actions
+     and other native phone affordances, not as a fixed floating rail
+     that would overlap content. Matches library.astro's own mobile/
+     tablet breakpoint so the entire mobile composition flips together. */
+  @media (max-width: 1023px) {
+    .floating-sidebar { display: none !important; }
+  }
+
   .floating-sidebar {
     position: fixed;
     inset-inline-end: clamp(8px, 1vw, 16px);
@@ -112,14 +121,17 @@ const historyLabel     = t('library.action.history',     language);
     transform: translateY(-50%);
     z-index: 30;
 
-    /* Width: 92 (was 80). Reference shows the rail noticeably wider
-       than a strict-icon column — leaves more room for Hebrew labels
-       like "היסטוריה" without crowding the pill walls. */
-    width: 92px;
-    /* Padding: more generous than 24/12. Reference shows ~32 vertical
-       breathing room above the AI item and below the History item,
-       and ~14 horizontal so dividers/labels don't kiss the edge. */
-    padding: 32px 14px;
+    /* Width scales smoothly from a compact 64px on narrow phones up
+       to the original 92px on wide desktop, so the rail stays
+       readable at every viewport instead of being hidden below the
+       legacy 768px breakpoint. The clamp's middle anchor (7.5vw)
+       hits 92px around the 1230px viewport, matching the previous
+       fixed desktop value. */
+    width: clamp(64px, 7.5vw, 92px);
+    /* Padding also scales — generous on desktop, tighter on phones —
+       so the icons + labels keep proper breathing room at every
+       viewport without making the rail too tall on small screens. */
+    padding: clamp(18px, 2.5vw, 32px) clamp(8px, 1vw, 14px);
     display: flex;
     flex-direction: column;
     /* Gap: bumped 28 → 34 to match the looser inter-item rhythm visible
@@ -292,13 +304,9 @@ const historyLabel     = t('library.action.history',     language);
      the 34px gap alone. The previous hairline was an extra accent the
      reference image does not show. */
 
-  /* ── Mobile (≤768px): hidden ─────────────────────────────────
-     Per Stage 3 product decision (option C), the floating rail is
-     desktop-only. The legacy LibraryQuickActions default-variant
-     panel still owns the mobile quick-actions UX from `library.astro`. */
-  @media (max-width: 768px) {
-    .floating-sidebar {
-      display: none;
-    }
-  }
+  /* Rail stays visible at every viewport — per the user's preference
+     for graceful scaling instead of disappearing controls. Width is
+     scaled below via `clamp()` so the rail shrinks gradually on
+     narrow screens but never collapses. The legacy mobile-only
+     LibraryQuickActions panel is no longer used as a fallback. */
 </style>

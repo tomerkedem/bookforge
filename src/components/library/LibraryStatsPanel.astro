@@ -91,6 +91,15 @@ const showCourseGroup = visibleCourses.length > 0;
 </article>
 
 <style>
+  /* Mobile + tablet (≤1023px): hidden — the stats surface on mobile
+     lives inside the phone flow (LibraryHero / mobile stats list),
+     not as a fixed floating panel that would overlap the content.
+     1023px matches library.astro's own mobile/tablet reset breakpoint
+     so the entire mobile composition flips in lockstep. */
+  @media (max-width: 1023px) {
+    .library-stats-panel { display: none !important; }
+  }
+
   .library-stats-panel {
     /* Fixed positioning — pinned to the inline-start edge of the
        viewport, stacked below ContinueLearningCard with a 20px gap.
@@ -103,7 +112,7 @@ const showCourseGroup = visibleCourses.length > 0;
       + var(--continue-learning-card-height, 360px)
       + var(--floating-card-gap)
     );
-    inset-inline-start: 20px;
+    inset-inline-start: 1px;
     inset-inline-end: auto;
     z-index: 30;
     /* Layered surface adopted from FloatingSidebar / ContinueLearningCard
@@ -271,9 +280,8 @@ const showCourseGroup = visibleCourses.length > 0;
     height: 100%;
   }
 
-  @media (max-width: 768px) {
-    .library-stats-panel {
-      display: none;
-    }
-  }
+  /* Panel stays visible at every viewport — width scales via
+     `--floating-card-width` (clamped in LibraryLayout). Replaces
+     the previous mobile hide rule per the user's preference for
+     graceful scaling instead of disappearing controls. */
 </style>
