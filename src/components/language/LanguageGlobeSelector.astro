@@ -209,17 +209,14 @@ const focusByCode = JSON.stringify(
     data-only-one={onlyOne ? 'true' : 'false'}
   >
     <span class="lgs-disc" aria-hidden="true">
-      {/* Earth visual driven by the same /assets/globe/earth-day-2k.webp
-          texture the cinematic overlay uses. Implemented as a styled
-          div with background-image so the header pays no Three.js or
-          WebGL cost — at 42 px we don't need a 3D sphere, just a
-          well-cropped slice of the equirectangular Blue Marble map.
-          Atmospheric rim and specular highlight are added by
-          ::before / ::after in CSS. The crop is shifted per active
-          language via .lgs-root[data-current="<lang>"] selectors, so
-          when Hebrew is active the disc shows the Israel / Eastern
-          Mediterranean region — visually consistent with where the
-          big cinematic globe will land when it launches. */}
+      {/* Earth visual is driven entirely by the Three.js miniature
+          renderer (`createHeaderEarth` in scripts/header-earth-3d.ts).
+          A canvas is appended to `.lgs-globe` once the module
+          resolves; the canvas wrapper keeps Earth + atmosphere
+          meshes hidden until the real NASA Blue Marble WebP
+          decodes. The base `.lgs-globe` state is a neutral dark
+          disc — there is no CSS approximation of Earth here, so
+          nothing can flash before the Three.js Earth appears. */}
       <span class="lgs-globe" aria-hidden="true"></span>
     </span>
   </button>
@@ -474,170 +471,54 @@ const focusByCode = JSON.stringify(
          left quadrant. */
   .lgs-globe {
     position: relative;
-    /* Polished from 32 → 34 px (~+6%, inside the requested 5–8%
-       window). At 34 px the globe is ~81% of the 42 px disc, with
-       a thin ~4 px breathing ring of disc gradient on every side.
-       Bigger planet, smaller frame, same premium 1:1 button. */
+    /* 34 px is ~81% of the 42 px disc, leaving a thin ~4 px
+       breathing ring of disc gradient on every side. Bigger
+       planet, smaller frame, same premium 1:1 button. */
     width: 34px;
     height: 34px;
     display: block;
     border-radius: 50%;
-    background-image: url('/assets/globe/earth-day-2k.webp');
-    background-repeat: no-repeat;
-    /* Background-size for a 50° equirectangular crop at 34 px:
-         scale = 34 / (5.69 × 50) ≈ 0.1195
-         → 2048 × 0.1195 ≈ 245 wide, 1024 × 0.1195 ≈ 122 tall */
-    background-size: 245px 122px;
-    /* Background-position composed via calc() from two pairs of
-       CSS custom properties:
-         --lgs-base-x / --lgs-base-y — language-specific focus
-           region. Set by the .lgs-root[data-current="<lang>"]
-           selectors below so each language has a stable default
-           that says "this is your part of the planet."
-         --lgs-px / --lgs-py — pointer-hover parallax offsets.
-           Default 0. Updated by the trigger's pointermove handler
-           (JS, mouse-only) within a ±12 / ±8 px window so the
-           globe gently tilts toward the cursor. Reset to 0 on
-           pointerleave / pointercancel / blur — so the globe
-           always returns to its language-default position.
-       Keyboard focus, touch, pen, and prefers-reduced-motion all
-       skip the parallax update path, which means those users see
-       the stable language default at all times. */
-    --lgs-base-x: -105px;
-    --lgs-base-y: -44px;
+    /* Neutral dark placeholder — the Three.js canvas (added via
+       the `.has-canvas` class once `createHeaderEarth` resolves)
+       paints the real NASA Blue Marble Earth, and the canvas
+       wrapper keeps Earth + atmosphere meshes hidden until the
+       texture decodes. We deliberately do NOT paint a CSS
+       approximation of Earth here — any CSS-styled bg-image
+       (even of the real WebP) is visually distinct from the
+       Three.js rendering and reads as "fake then real" during
+       the brief mount/load window. A flat dark disc is the
+       graceful invisible state. */
+    background-color: #0a0a0a;
+    /* Parallax CSS custom properties retained as a JS handshake:
+       the trigger's pointermove handler still writes --lgs-px /
+       --lgs-py for compatibility with any future consumer, but
+       the visual parallax is now driven entirely by the Three.js
+       handle's setParallax(camera rotation). No CSS rule reads
+       these vars anymore. */
     --lgs-px: 0px;
     --lgs-py: 0px;
-    background-position-x: calc(var(--lgs-base-x) + var(--lgs-px));
-    background-position-y: calc(var(--lgs-base-y) + var(--lgs-py));
-    /* Mini-scale color correction — calibrated to read as the
-       same Earth at small scale. The previous "natural palette"
-       pass (saturate 1.18 / brightness 1.06 / contrast 1.04) made
-       the globe read as a flat texture thumbnail against the dark
-       header; the new values lift saturation and contrast enough
-       that continents resolve clearly at 42 px without crossing
-       into the icon-bright range. The large Earth's tone-mapped
-       linear lighting (exposure 1.12) achieves that contrast
-       through actual surface shading, which CSS can't replicate
-       — so a touch more filter is the miniature-scale tax that
-       buys back the same perceived richness. */
-    filter: saturate(1.28) brightness(1.10) contrast(1.10);
-    /* Sphere + atmosphere — five-layer box-shadow stack that
-       reconstructs the large Earth's material treatment at
-       miniature scale. From front-painted to back-painted (CSS
-       box-shadow paints the first list entry on top):
-         1. Outer atmospheric halo — cyan glow that extends past
-            the silhouette. Mimics the cinematic Earth's back-side
-            atmosphere sphere (radius 1.06) which paints a Fresnel
-            rim BEYOND the planet's body. Subtle (0.28 alpha,
-            5 px spread) so it reads as glow, not UI ring.
-         2. Inner atmospheric rim — cyan tint on the inside of
-            the silhouette. Completes the rim band so the
-            atmosphere reads as a real layer wrapped around the
-            planet, not a halo floating beside it.
-         3. Edge vignette — silhouette curve, soft all-edge.
-         4. Directional terminator — lower-right darkening,
-            matches the cinematic Earth's upper-left sun
-            (DirectionalLight at -1.2, 1.3, 3.2).
-         5. Warm specular lift — upper-left highlight, the
-            miniature analogue of the MeshPhongMaterial's
-            specular response on the lit limb (specular #1c2a3a,
-            shininess 22 on the large Earth). Re-added after
-            being trimmed in the previous pass — without it the
-            sphere read as flat. */
-    box-shadow:
-      0 0 5px 0.5px rgba(135, 195, 240, 0.28),
-      inset 0 0 2.5px rgba(155, 210, 245, 0.30),
-      inset 0 0 4px rgba(0, 0, 0, 0.22),
-      inset -2.5px -2.5px 5px rgba(0, 0, 0, 0.28),
-      inset 2.5px 2.5px 4.5px rgba(255, 245, 220, 0.20);
-    /* Single transition timing handles both flows that change
-       the background position: a language switch (a jump of tens
-       of px on one or both axes), and pointer-hover parallax (a
-       gentle drift of up to ±12 px). 220 ms ease-out makes the
-       language change feel deliberate without being lazy, and the
-       parallax follow feel like a gravitational pull toward the
-       cursor rather than a jittery snap on every pointermove. */
-    transition:
-      background-position-x 220ms cubic-bezier(0.2, 0.7, 0.2, 1),
-      background-position-y 220ms cubic-bezier(0.2, 0.7, 0.2, 1),
-      opacity 200ms cubic-bezier(0.2, 0.7, 0.2, 1);
+    /* Opacity transition kept for launch/return choreography
+       (`.is-launched-out .lgs-globe` fades the small globe out
+       while the cinematic overlay is open). All bg-position /
+       filter transitions removed — no CSS bg-image to animate. */
+    transition: opacity 200ms cubic-bezier(0.2, 0.7, 0.2, 1);
   }
 
-  /* Atmospheric cyan rim removed at the 34 px header size. The
-     cyan halo drew the eye as a separate crescent on the LEFT
-     side of the globe where the Earth texture happens to show
-     dark Atlantic ocean — the cyan band stood out against the
-     dark ocean and read as "a leftover circle not attached to
-     anything." On other sides where the texture shows brighter
-     land (Africa, Europe) the rim blended in fine, but the left
-     side was a perception bug.
-     The silhouette is still clearly defined by the box-shadow
-     stack on .lgs-globe (edge vignette + directional terminator
-     + warm upper-left highlight) — enough sphere cue at this
-     scale. The cinematic Earth's atmosphere shader on the big
-     globe stays untouched; at 600 px the rim earns its place. */
-
-  /* Specular highlight ::after removed. It was a CSS gloss pool
-     in the upper-left quadrant — a stylized UI cue that didn't
-     exist on the large center Earth, where reflection comes from
-     Three.js's actual surface-light response. Keeping it here made
-     the small globe read as a "shinier" sibling of the cinematic
-     one. With the inset shadows above doing the lit-sphere work
-     (directional terminator + edge vignette), the texture alone
-     carries the planet identity, same as on the large stage. */
-
-  /* ── Per-language background position ─────────────────────────────
-     Each entry sets the language's stable focus region as a base
-     pair of CSS custom properties. The pointer-hover parallax adds
-     ±12 px on top of these values; when the cursor leaves, the
-     parallax resets to 0 and the globe returns to exactly this
-     position. Values recomputed for the 34 px globe at the 50°
-     equirectangular crop:
-       source_x  = ((lng + 180) / 360) × 2048
-       source_y  = ((90 - lat) / 180) × 1024
-       display_x = source_x × 0.1195
-       display_y = source_y × 0.1195
-       bg-pos    = (17 - display_x, 17 - display_y)
-     Stay in lockstep with LANGUAGE_FOCUS in the component frontmatter. */
-  .lgs-root[data-current="he"] .lgs-globe {
-    /* Israel / Eastern Mediterranean — lat 32, lng 35 */
-    --lgs-base-x: -129px;
-    --lgs-base-y: -22px;
-  }
-  .lgs-root[data-current="en"] .lgs-globe {
-    /* North America — lat 40, lng -100 */
-    --lgs-base-x: -37px;
-    --lgs-base-y: -17px;
-  }
-  .lgs-root[data-current="es"] .lgs-globe {
-    /* Spain / Iberian Peninsula — lat 40, lng -3 */
-    --lgs-base-x: -103px;
-    --lgs-base-y: -17px;
-  }
-
-  /* When the Three.js header globe is mounted, strip the CSS
-     approximation layers — the canvas paints the real Earth
-     (texture + lighting + atmosphere shader, same as the large
-     overlay Earth, just smaller). Background image, filter, and
-     box-shadow stack are no longer needed because the canvas
-     provides the silhouette, the sphere depth, the atmospheric
-     rim, and the specular response — all in WebGL pixels rather
-     than CSS interpretation. The canvas is positioned absolutely
-     to fill the .lgs-globe element; its own border-radius keeps
-     the circular silhouette even if the host's CSS were stripped.
-     If the .has-canvas class is NOT applied (e.g. WebGL init failed
-     or the dynamic import hasn't resolved yet), the original CSS
-     bg-image + box-shadow treatment stays as the visible fallback. */
-  .lgs-globe.has-canvas {
-    background-image: none;
-    filter: none;
-    box-shadow: none;
-    /* Keep the parallax CSS custom properties around — host JS still
-       updates them on pointermove, but with the canvas mounted the
-       values are also forwarded to handle.setParallax() which does
-       the actual visual work. The transition on background-position
-       is no longer needed since the canvas doesn't pan a bg-image. */
-  }
+  /* When the Three.js header globe is mounted (`.has-canvas` is
+     added once `createHeaderEarth` resolves), the canvas paints
+     the real NASA Blue Marble Earth — texture + lighting +
+     atmosphere shader, same as the large overlay Earth, just
+     smaller. The base `.lgs-globe` state is already a neutral
+     dark disc (see above), so there is no CSS approximation to
+     strip when the canvas mounts. This rule positions the
+     canvas to fill the disc and round its corners; nothing
+     else. The wrapper's `border-radius: 50%` on the canvas itself
+     keeps the silhouette circular even if this rule were
+     stripped — defensive belt-and-suspenders.
+     If the dynamic import / WebGL init fails (`.has-canvas`
+     never added), the neutral dark disc remains visible. The
+     button remains functional; no "old generated Earth"
+     fallback exists in any pipeline. */
   .lgs-globe.has-canvas > canvas {
     position: absolute;
     inset: 0;
@@ -1656,12 +1537,12 @@ const focusByCode = JSON.stringify(
   let earthLoading: Promise<InteractiveEarthHandle | null> | null = null;
   let lastFocusedBeforeOpen: HTMLElement | null = null;
 
-  // ── Header earth (Step: real miniature renderer) ────────────────
-  // The small header globe is now a real Three.js miniature Earth
-  // (header-earth-3d module) rather than a CSS bg-image + shadow
-  // stack. One handle per .lgs-trigger on the page. Keyed by the
-  // trigger element so multiple selector instances each get their
-  // own renderer; in practice the header has one. Destroyed
+  // ── Header earth (real miniature renderer) ──────────────────────
+  // The small header globe is a real Three.js miniature Earth
+  // (header-earth-3d module). No CSS approximation of Earth exists
+  // anywhere — the base `.lgs-globe` is a neutral dark disc until
+  // the canvas mounts and the NASA texture decodes. One handle per
+  // .lgs-trigger on the page, keyed by the trigger element. Destroyed
   // alongside the overlay's interactive earth on view transitions
   // and on page unload.
   const headerEarthHandles = new WeakMap<HTMLElement, HeaderEarthHandle>();
@@ -2236,8 +2117,8 @@ const focusByCode = JSON.stringify(
         headerHandle.destroy();
         headerEarthHandles.delete(trigger);
       }
-      // Drop the has-canvas marker so the CSS fallback (bg-image +
-      // box-shadow stack) re-engages if the page rebuilds without
+      // Drop the has-canvas marker so the base neutral-dark
+      // .lgs-globe state remains if the page rebuilds without
       // re-mounting the canvas. Defensive — the next initGlobeSelectors
       // pass would re-add it anyway when it re-imports the module.
       const globeEl = trigger.querySelector<HTMLElement>('.lgs-globe');
@@ -3303,9 +3184,10 @@ const focusByCode = JSON.stringify(
       // it's tracked in headerEarthHandles keyed by the trigger so
       // the language-changed listener below can call setFocus, and
       // destroyEarth() can dispose it on view transitions.
-      // The host CSS keeps its bg-image fallback on .lgs-globe until
-      // we add the .has-canvas class — same element, same opacity
-      // animation on launch/return, no DOM structure change.
+      // The base `.lgs-globe` is a neutral dark disc until the
+      // canvas mounts and the NASA texture decodes — no CSS Earth
+      // approximation exists, so nothing can flash before the real
+      // Three.js Earth is visible.
       const headerGlobeEl = trigger.querySelector<HTMLElement>('.lgs-globe');
       if (headerGlobeEl && !headerEarthHandles.has(trigger)) {
         const headerFocusMap = readFocusMap(overlay);
@@ -3317,8 +3199,9 @@ const focusByCode = JSON.stringify(
         // Dynamic import — header-earth-3d is its own chunk, kept
         // separate from interactive-earth-3d so the overlay's
         // larger code doesn't sit in the header bundle. Failures
-        // (no WebGL, dynamic-import rejected) silently fall back to
-        // the CSS bg-image already painted underneath.
+        // (no WebGL, dynamic-import rejected) leave the neutral
+        // dark disc visible; the button remains functional and no
+        // "fake Earth" approximation appears in any code path.
         void import('../../scripts/header-earth-3d')
           .then(({ createHeaderEarth }) => {
             if (!document.body.contains(trigger)) return; // teardown raced us
@@ -3402,12 +3285,11 @@ const focusByCode = JSON.stringify(
           // the cursor (the side near the cursor rotates forward).
           const px = -cx * PARALLAX_X;
           const py = -cy * PARALLAX_Y;
-          // Write the CSS vars even when the canvas is mounted —
-          // they remain the source of truth for the bg-image
-          // fallback, and a no-op when .has-canvas suppresses the
-          // background. The Three.js handle gets the same numbers
-          // forwarded so its camera rotation matches the visual
-          // intent of the CSS parallax it replaces.
+          // Write the CSS vars as a JS handshake — no CSS rule
+          // consumes them today, but keeping the write keeps the
+          // contract stable for any future consumer / debug
+          // overlay. The Three.js handle does the actual visual
+          // parallax via camera rotation.
           globe.style.setProperty('--lgs-px', `${px.toFixed(1)}px`);
           globe.style.setProperty('--lgs-py', `${py.toFixed(1)}px`);
           const handle = headerEarthHandles.get(trigger);

@@ -1,64 +1,114 @@
 /**
  * header-earth-3d
  *
- * Tiny dedicated Three.js renderer that paints the SMALL header
- * globe as a real miniature Earth, using the same rendering family
- * as the cinematic overlay Earth (`interactive-earth-3d.ts`). The
- * goal is identity continuity: when the user clicks the small
- * globe, the large globe that launches is recognizably the SAME
- * object scaled up — same texture, same sun direction, same
- * atmospheric rim, same material response — not a CSS sticker
- * opening into a photorealistic sphere.
+ * Tiny dedicated Three.js wrapper that paints the SMALL header globe
+ * as a real miniature Earth. Built on top of `earth-rendering-core.ts`
+ * (the shared visual source of truth), so the small globe is now a
+ * true miniature of the cinematic overlay Earth — same texture,
+ * same material, same sun direction, same atmospheric rim, same
+ * lighting model. Identity continuity: when the user clicks the
+ * small globe, the large globe that launches is recognizably the
+ * SAME object scaled up, not a CSS sticker opening into a
+ * photorealistic sphere.
  *
- * Differences from the large module — performance trims only, no
- * visual-language changes:
+ * What's different from the overlay wrapper — miniature-presentation
+ * pass + interaction surface only, NOT visual identity. None of these
+ * changes touch material, lighting, exposure, sun position, or the
+ * atmosphere shader; all of those are inherited from the core
+ * identically to the overlay.
  *
- *   • Geometry: sphere segments 96 → 32, atmosphere 64 → 32. The
- *     header canvas is 42-50 px on screen; 32 segments is enough
- *     to read as a smooth sphere at that scale.
- *   • Rendering: on-demand only. No requestAnimationFrame loop,
- *     no idle rotation, no drag handlers, no focus animation.
- *     A render() runs on three events:
- *       1. Texture-load completion (after async fetch)
- *       2. setFocus() — language change
- *       3. setParallax() — pointer-hover offset
- *     Total cost while the header sits idle: 0 GPU work.
- *   • No CPU-generated fallback texture. If the WebP fails to
- *     load (rare — the same URL is cached by the overlay's loader
- *     and by other pages), the material stays at a neutral solid
- *     color. The host component keeps its CSS bg-image as the
- *     final visible fallback.
+ *   • Geometry density: matches the overlay exactly (earth 96,
+ *     atmosphere 64). The header now renders the full-resolution
+ *     sphere so the silhouette and the Fresnel rim are byte-identical
+ *     to the overlay's. Earlier passes used reduced counts (32, then
+ *     64) on the assumption that small canvas == fewer triangles
+ *     needed; the cost difference at 50 px viewport is invisible on
+ *     any modern GPU and the silhouette quality gain reads clearly.
+ *   • Pixel-ratio cap: 3 (vs 2 for the overlay). The header canvas
+ *     is ~50 CSS px; even at DPR 3 the backing buffer is just 150²
+ *     pixels, well under the overlay's 880² at DPR 2. The extra
+ *     subpixel density makes the rim glow, the specular highlight,
+ *     and the silhouette curve crisper — small render targets
+ *     amplify perception of partially-blended thin pixel bands, so
+ *     adding density there is the cheapest "presence" gain
+ *     available without touching the lighting model.
+ *   • Camera distance: 3.55 (vs 3.85 for the overlay). Brings the
+ *     Earth slightly forward inside the canvas so it fills ~89% of
+ *     the viewport vertically and the atmosphere halo sits at ~94%
+ *     — eliminating the empty margin between the rim glow and the
+ *     circular `border-radius: 50%` clip that previously read as
+ *     "wasted space" in the header. Camera is still in telephoto
+ *     range (FOV 35° unchanged), so perspective compression and the
+ *     cinematic framing character are preserved. 3.55 keeps the
+ *     atmosphere a comfortable margin inside the canvas; values
+ *     under ~3.4 risk clipping the rim at the border-radius edge.
+ *   • Renderer hint: powerPreference 'low-power'. The header canvas
+ *     renders on demand only; no point waking a discrete GPU.
+ *   • Render cadence: on-demand only. No requestAnimationFrame loop,
+ *     no idle rotation, no drag handlers, no focus animation. A
+ *     render() runs on four events:
+ *       1. First paint (after constructor wires up the scene)
+ *       2. Texture-load completion (after async fetch)
+ *       3. setFocus() — language change
+ *       4. setParallax() — pointer-hover offset
+ *       5. ResizeObserver — host container size change
+ *     Total cost while the header sits idle: zero GPU work.
+ *   • No drag interaction. The CSS `pointer-events: none` on the
+ *     canvas ensures the host's existing click + hover handlers on
+ *     `.lgs-trigger` fire on the button, not the canvas.
  *
- * What is identical to the large module — these are the visual
- * properties the user explicitly asked us to preserve:
+ * What's identical to the overlay — the shared core enforces this:
  *
  *   • Texture URL                 /assets/globe/earth-day-2k.webp
+ *   • Fallback canvas texture     none — there is no fake-continents
+ *                                 fallback anywhere in the pipeline.
+ *                                 The Earth + atmosphere are hidden
+ *                                 until the real NASA WebP decodes;
+ *                                 on failure they are revealed with
+ *                                 a neutral dark solid color.
  *   • Texture color space         sRGB, anisotropy capped at 16
  *   • Camera                      35° FOV, position (0, 0, 3.85)
  *   • Sun world position          (-1.2, 1.3, 3.2)
  *   • Material                    MeshPhongMaterial, specular
- *                                 #1c2a3a, shininess 22
+ *                                 #1c2a3a, shininess 22, no specularMap
  *   • Lighting                    Ambient #fff3dc 0.55,
- *                                 DirectionalLight 1.55 at sun,
+ *                                 DirectionalLight white 1.55 at sun,
  *                                 HemisphereLight 0x9ab8ff/
  *                                 0x7a5e3a 0.48
  *   • Tone mapping                Linear, exposure 1.12
  *   • Atmosphere shader           same vertex + fragment program
- *                                 (back-side sphere at 1.06,
- *                                 Fresnel × sun-side blend,
- *                                 additive blend, no depth write)
- *   • Rotation convention         rotation.y = (-90° - lng),
- *                                 rotation.x = +lat (clamped at
- *                                 the poles). Same -90° UV
- *                                 calibration as the large module.
+ *                                 (back-side sphere at 1.06, Fresnel
+ *                                 `pow(rim, 5.0)`, sun-side blend
+ *                                 with mix(0.18, 0.78), additive,
+ *                                 no depth write)
+ *   • Rotation convention         rotation.y = (-90° - lng) DEG,
+ *                                 rotation.x = +lat DEG (clamped at
+ *                                 the poles). Same UV calibration as
+ *                                 the overlay.
  *
- * The handle returned to the host exposes a deliberately narrow
- * surface: setFocus, setParallax, destroy. No projectLatLng (no
- * hotspot at the header scale), no setIdleRotation (no rAF loop),
- * no refit (the canvas auto-resizes via ResizeObserver).
+ * The previous header-specific tuning (exposure 1.25, sun 2.10,
+ * specular #4a6c98 / shininess 30, atmosphere pow 3.0 with intensity
+ * mix(0.26, 1.00)) was an attempt to compensate for perceived
+ * dimming at small render targets. The compensations DROVE the
+ * miniature away from the overlay's visual identity — wider fuzzy
+ * halo, brighter plastic specular, washed-out terminator. Dropped.
+ * The shared core's values give the same visual at every size; the
+ * brightness illusion that motivated those overrides came from
+ * different sources (silhouette resolution, fallback solid color,
+ * lack of fallback continents) that are now fixed in the core.
+ *
+ * The handle's public surface is unchanged from the previous
+ * implementation: createHeaderEarth, setFocus, setParallax, destroy,
+ * canvas. LanguageGlobeSelector.astro is not touched.
  */
 
-import * as THREE from 'three';
+import {
+  createEarthScene,
+  rotationYForLng,
+  clamp,
+  DEG,
+  POLE_CLAMP,
+} from './earth-rendering-core';
 
 export interface HeaderEarthFocus {
   lat: number;
@@ -66,368 +116,253 @@ export interface HeaderEarthFocus {
 }
 
 export interface HeaderEarthHandle {
-  /** Stop rendering, dispose all GPU resources, remove the canvas. */
+  /** Stop rendering, dispose all GPU resources, remove the canvas.
+   *  Safe to call more than once (the core's disposed flag prevents
+   *  double-free). */
   destroy(): void;
   /** Snap-rotate so (lat, lng) faces the camera. Triggers one render. */
   setFocus(lat: number, lng: number): void;
   /**
-   * Apply a small visual parallax — slight rotation offsets driven
-   * by the host's pointer-move handler. Values are in pixels (the
-   * host's existing -12..+12 / -8..+8 budget for px / py). They are
-   * mapped to small radian deltas so a 12 px shift produces a few
-   * degrees of nudge, not a half-globe spin. Triggers one render.
-   * Pass (0, 0) on pointerleave to reset.
+   * Apply a small visual parallax — slight camera-rotation offsets
+   * driven by the host's pointer-move handler. Values are in pixels
+   * (the host's existing ±12 / ±8 px budget). Mapped to small radian
+   * deltas so a 12 px shift produces a few degrees of nudge, not a
+   * half-globe spin. Triggers one render. Pass (0, 0) on
+   * pointerleave to reset to the base orientation.
    */
   setParallax(px: number, py: number): void;
   /** The mounted <canvas>. Host uses this only for cleanup hooks. */
   readonly canvas: HTMLCanvasElement;
 }
 
-const DEG = Math.PI / 180;
-const POLE_CLAMP = Math.PI / 2 - 0.05;
-// Same UV-calibration offset as the large module — keeps the same
-// "rotation.y = (-90° - lng) DEG" formula. See the LNG_TO_ROTATION_Y_OFFSET_DEG
-// comment in interactive-earth-3d.ts for the full derivation.
-const LNG_TO_ROTATION_Y_OFFSET_DEG = -90;
-
-function clamp(v: number, lo: number, hi: number): number {
-  return v < lo ? lo : v > hi ? hi : v;
-}
-
 export function createHeaderEarth(
   container: HTMLElement,
   initialFocus: HeaderEarthFocus | null = null,
 ): HeaderEarthHandle {
-  // ── Scene ────────────────────────────────────────────────────────
-  const scene = new THREE.Scene();
-
-  // Camera — same composition as the cinematic Earth (35° FOV,
-  // z = 3.85). Aspect 1:1 because the host container is square.
-  const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 100);
-  camera.position.set(0, 0, 3.85);
-
-  // Sun position — identical to the large module's SUN_WORLD_POSITION.
-  // The DirectionalLight and the atmosphere shader's uSunDir both
-  // reference this vector, so the surface terminator and the
-  // atmospheric rim's lit limb stay aligned (same as on the large
-  // Earth).
-  const SUN_WORLD_POSITION = new THREE.Vector3(-1.2, 1.3, 3.2);
-
-  // ── Renderer ─────────────────────────────────────────────────────
-  // power preference 'low-power': the header canvas paints at 42-50 px
-  // and renders on demand only. A discrete GPU isn't needed; on
-  // laptops with switchable graphics this hint lets the integrated
-  // GPU handle the work.
-  const renderer = new THREE.WebGLRenderer({
-    antialias: true,
-    alpha: true,
+  // ── Build shared Earth scene ─────────────────────────────────────
+  // Header-specific options only. Everything else (material, lighting,
+  // exposure, atmosphere, sun position, rotation convention) is the
+  // canonical visual identity that lives in earth-rendering-core.ts.
+  //
+  // No CPU fallback texture is generated anywhere in the pipeline.
+  // The material starts with `map: null` and the neutral
+  // `fallbackSolidColor` set below; Earth + atmosphere meshes are
+  // hidden immediately after construction (see below) and revealed
+  // only when the NASA WebP decodes (or, on failure, with the
+  // neutral dark color and a logged warning).
+  const core = createEarthScene(container, {
+    // Miniature-presentation pass: full overlay-grade geometry, plus
+    // higher pixel-ratio cap, slightly tighter framing, and a tiny
+    // atmosphere-readability lift. Material, lighting, exposure, and
+    // sun position are inherited from the core unchanged. The
+    // atmosphere shader PROGRAM is the same one the overlay uses —
+    // only two uniforms differ, and they are presentation knobs
+    // (band width + lit-limb intensity ceiling), not a separate
+    // visual model. The night-limb cap is hardcoded inside the
+    // shader and stays at 0.18 for both Earths, so the lit/dark
+    // asymmetry that makes the rim read as real atmosphere is
+    // preserved exactly. See earth-rendering-core.ts for the
+    // option-by-option rationale.
+    earthSegments: 96,
+    atmosphereSegments: 64,
+    pixelRatioCap: 3,
+    cameraDistance: 3.55,
+    // Widen the rim band from 5.0 → 4.0. At 50 px viewport the
+    // overlay's tight band has only a handful of high-alpha
+    // fragments along the silhouette; 4.0 adds ~7% of radial
+    // direction's worth of additional visible band, enough to make
+    // the lit (left) limb register clearly without the band ever
+    // bleeding inward across the continents.
+    atmosphereRimExponent: 4.0,
+    // Lift the lit-limb intensity ceiling from 0.78 → 0.88. Affects
+    // ONLY the sun-facing side via the shader's sun-side mix; night
+    // limb is hardcoded at 0.18 inside the shader and stays
+    // restrained. Net: the left atmospheric crescent reads brighter
+    // while the right side stays a quiet desaturated halo —
+    // directional, not uniform.
+    atmosphereMaxIntensityLit: 0.88,
+    // Tiny-size readability multiplier on tone-mapping exposure:
+    // 1.12 → 1.17. Stays inside the documented "noticeable but not
+    // filmic" 1.10-1.18 range, well below the 1.18 hard ceiling.
+    // Small render targets perceptually compress the visible
+    // luminosity range; +5% of exposure on the composited frame
+    // brings the camera-facing hemisphere back to roughly the same
+    // perceived brightness the overlay has at large size.
+    toneMappingExposure: 1.17,
     powerPreference: 'low-power',
+    // Neutral dark color used while the WebP is loading and after a
+    // failure. Lifted slightly above the overlay's 0x1a2540 so the
+    // tiny disc reads as "present" rather than "empty" during the
+    // brief unloaded window (typically just a frame or two since
+    // the WebP is usually in the HTTP cache from a prior page).
+    fallbackSolidColor: 0x1a2540,
   });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-  renderer.setClearColor(0x000000, 0);
-  renderer.outputColorSpace = THREE.SRGBColorSpace;
-  renderer.toneMapping = THREE.LinearToneMapping;
-  // Exposure pushed to 1.25 for the miniature. The large module
-  // sits at 1.12 (documented "noticeable but not filmic" 1.10-1.18
-  // range). Crossing the upper edge here is deliberate: the
-  // miniature has to overcome the perceptual dimming that small
-  // render targets impose. The previous 1.18 was still subtle.
-  // 1.25 lifts the lit hemisphere into "polished and present"
-  // territory; combined with the brighter key light below it
-  // produces the same visible luminosity at 50 px that the large
-  // Earth has at 600 px. Linear tone-mapping keeps the ratio
-  // between lit / dark sides identical to before — the terminator
-  // stays clean, not blown out.
-  renderer.toneMappingExposure = 1.25;
+  const { scene, camera, renderer, canvas, earth, atmosphere } = core;
 
-  const canvas = renderer.domElement;
-  canvas.style.display = 'block';
-  canvas.style.width = '100%';
-  canvas.style.height = '100%';
+  // Hide Earth + atmosphere until the NASA texture is bound. With
+  // the renderer constructed alpha-on, the canvas paints fully
+  // transparent during the load window — the disc's underlying
+  // CSS gradient shows through inside the circular border-radius,
+  // which reads as a quiet placeholder rather than the old
+  // hand-drawn continents flashing in for a frame.
+  earth.visible = false;
+  atmosphere.visible = false;
+
+  // Header-specific canvas styling — preserved from the previous
+  // implementation. The circular border-radius keeps the silhouette
+  // perfectly round even if the host's CSS were stripped; the
+  // `pointer-events: none` makes the host's existing click / hover
+  // handlers on `.lgs-trigger` fire on the button, not the canvas.
   canvas.style.borderRadius = '50%';
-  canvas.setAttribute('aria-hidden', 'true');
-  // pointer-events: none so the host's existing trigger click /
-  // hover-parallax handlers fire on the .lgs-trigger button rather
-  // than on the canvas (the canvas is purely a visual surface).
   canvas.style.pointerEvents = 'none';
-  container.appendChild(canvas);
-
-  const maxAniso = Math.min(16, renderer.capabilities.getMaxAnisotropy());
-
-  // ── Earth sphere ─────────────────────────────────────────────────
-  // Lower geometry detail than the large module (32×32 vs 96×96) —
-  // at the header's 42-50 px display size, the extra triangles of a
-  // higher-poly sphere would never resolve. Material settings are
-  // identical: specular, shininess, no specularMap (same reason as
-  // the large module — the polygon mask doesn't align with the
-  // Blue Marble continents).
-  // Specular tuned for "polished / waxed surface, oceans catching
-  // the sun" — the quality the user explicitly called out as still
-  // missing. Two changes compound: brighter specular base + tighter
-  // (higher) shininess.
-  //
-  //   • specular color #355478 → #4a6c98. A meaningful jump in
-  //     lightness, kept in the same cool-blue family. At 50 px,
-  //     the previous #355478 produced a sheen that was technically
-  //     present but read as "soft fill," not "lit ocean." #4a6c98
-  //     pushes the highlight into the visible-pixel range.
-  //   • shininess 18 → 30. The previous "broad pool" approach was
-  //     a compromise — it kept the highlight in pixels but lost
-  //     the polished character (tight bright glints are what
-  //     reads as "waxed / lacquered"). At shininess 30 the
-  //     specular pool tightens but stays visible at miniature
-  //     because the brighter specular color compensates for the
-  //     narrower angular footprint. Net: ocean glint becomes a
-  //     small, bright, distinctly polished highlight along the
-  //     lit limb — the wet/waxed look on real Earth photos from
-  //     orbit.
-  //
-  // No specularMap (the large module also doesn't use one) — the
-  // continents in the Blue Marble texture are dark enough that
-  // they read as matte even with this higher specular response,
-  // while oceans (lighter bluescale areas) take the highlight
-  // beautifully. The large module's MeshPhongMaterial is
-  // untouched at #1c2a3a / 22.
-  const earthMaterial = new THREE.MeshPhongMaterial({
-    color: 0x6478a0, // neutral fallback while the WebP is in flight
-    specular: new THREE.Color(0x4a6c98),
-    shininess: 30,
-  });
-  const earthGeometry = new THREE.SphereGeometry(1, 32, 32);
-  const earth = new THREE.Mesh(earthGeometry, earthMaterial);
-  scene.add(earth);
 
   // Apply the initial focus BEFORE the first render so the very
   // first frame paints with the active language's region already
   // facing the camera — no visible "flash at lat=0/lng=0" before
-  // the setFocus call would correct it.
+  // the host's setFocus call would correct it.
+  //
+  // Uses the SAME `rotationYForLng` helper the overlay uses (both
+  // imported from earth-rendering-core), so the longitude
+  // calibration is byte-identical: the same language code resolves
+  // to the same visible region on both Earths.
   if (initialFocus) {
-    earth.rotation.y = (LNG_TO_ROTATION_Y_OFFSET_DEG - initialFocus.lng) * DEG;
+    earth.rotation.y = rotationYForLng(initialFocus.lng);
     earth.rotation.x = clamp(initialFocus.lat * DEG, -POLE_CLAMP, POLE_CLAMP);
+    logFocus('initial', initialFocus.lat, initialFocus.lng);
+  } else {
+    logFocus('initial-null', null, null);
   }
 
-  // ── Real Earth day texture ───────────────────────────────────────
-  // Same WebP as the large Earth. The browser cache dedupes the
-  // request when the user opens the cinematic overlay later — the
-  // header is usually the first thing to load this file on a fresh
-  // session. If decode fails we keep the solid color material; the
-  // host CSS also has a fallback bg-image rule on .lgs-globe that
-  // shows through the transparent canvas areas.
-  let upgradedDayTex: THREE.Texture | null = null;
-  let disposed = false;
-  const DAY_TEXTURE_URL = '/assets/globe/earth-day-2k.webp';
-  const textureLoader = new THREE.TextureLoader();
-  textureLoader.load(
-    DAY_TEXTURE_URL,
-    (tex) => {
-      if (disposed) {
-        tex.dispose();
-        return;
-      }
-      tex.colorSpace = THREE.SRGBColorSpace;
-      tex.anisotropy = maxAniso;
-      tex.needsUpdate = true;
-      upgradedDayTex = tex;
-      earthMaterial.map = tex;
-      earthMaterial.color.setHex(0xffffff); // texture provides the color now
-      earthMaterial.needsUpdate = true;
-      // Repaint with the textured planet — the only "scheduled"
-      // render that fires outside an explicit setFocus / setParallax
-      // call. Cost: one WebGL draw call to a 42-50 px viewport.
-      requestRender();
-    },
-    undefined,
-    () => {
-      // Silent fallback — the solid-color material stays bound, and
-      // the host CSS bg-image (still present on .lgs-globe) remains
-      // visible behind the canvas's transparent areas. No console
-      // noise; production header builds should stay quiet.
-    },
-  );
-
-  // ── Atmosphere halo ──────────────────────────────────────────────
-  // Same shader program as the large module — back-side sphere at
-  // radius 1.06, Fresnel × sun-side blend, additive, no depth write.
-  // The geometry is simplified (32×32 vs 64×64), but the shader is
-  // byte-for-byte identical so the cyan-white lit-limb / blue-violet
-  // night-limb mix is exactly the same color identity at small size.
-  const atmosphereGeometry = new THREE.SphereGeometry(1.06, 32, 32);
-  const atmosphereMaterial = new THREE.ShaderMaterial({
-    uniforms: {
-      uSunDir: { value: SUN_WORLD_POSITION.clone().normalize() },
-    },
-    vertexShader: /* glsl */ `
-      varying vec3 vNormalView;
-      varying vec3 vNormalWorld;
-      void main() {
-        vNormalView = normalize(normalMatrix * normal);
-        vNormalWorld = normalize(normal);
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-      }
-    `,
-    fragmentShader: /* glsl */ `
-      uniform vec3 uSunDir;
-      varying vec3 vNormalView;
-      varying vec3 vNormalWorld;
-      void main() {
-        float rim = 1.0 - dot(vNormalView, vec3(0.0, 0.0, 1.0));
-        // pow exponent 4.0 → 3.0 for the header miniature only.
-        // Each step down meaningfully widens the visible rim band:
-        // pow 5 ≈ "razor-thin, mostly invisible at 50 px",
-        // pow 4 ≈ "1-2 px line, still subtle",
-        // pow 3 ≈ "2-3 px atmospheric band, clearly readable as
-        // real planetary atmosphere". The user called the previous
-        // 4.0 pass too subtle — pow 3 is the visible-rim threshold
-        // the user is asking for. Crucially, the rim still decays
-        // to zero past ~25 % of the way inward, so it never bleeds
-        // across the continents — it stays an EDGE phenomenon.
-        float rimI = pow(clamp(rim, 0.0, 1.0), 3.0);
-        float sunFacing = dot(vNormalWorld, uSunDir);
-        float sunSide = smoothstep(-0.2, 0.4, sunFacing);
-        vec3 dayInner = vec3(0.30, 0.62, 1.05);
-        vec3 dayOuter = vec3(0.72, 0.92, 1.10);
-        vec3 dayCol = mix(dayInner, dayOuter, smoothstep(0.0, 1.0, rimI));
-        vec3 nightTint = vec3(0.16, 0.24, 0.55);
-        vec3 col = mix(nightTint, dayCol, sunSide);
-        // Intensity ceiling lifted: 0.22/0.88 → 0.26/1.00. The lit
-        // limb now saturates at full alpha — the same "thin bright
-        // crescent against space" the large Earth achieves at
-        // 600 px. The Fresnel × sun-side product keeps that
-        // saturation CONFINED to the sun-facing limb edge; it
-        // never spills around the full silhouette. The night limb
-        // moves only +0.04 (0.22 → 0.26) so the dark side stays a
-        // quiet desaturated halo — the atmosphere is asymmetric,
-        // brilliant on the lit side, almost-invisible on the
-        // dark side, which is exactly how a real planet looks
-        // from orbit when the sun is off-camera.
-        float maxIntensity = mix(0.26, 1.00, sunSide);
-        float alpha = clamp(rimI * maxIntensity, 0.0, 1.0);
-        gl_FragColor = vec4(col, 1.0) * alpha;
-      }
-    `,
-    blending: THREE.AdditiveBlending,
-    side: THREE.BackSide,
-    transparent: true,
-    depthWrite: false,
-  });
-  const atmosphere = new THREE.Mesh(atmosphereGeometry, atmosphereMaterial);
-  scene.add(atmosphere);
-
-  // ── Lights ───────────────────────────────────────────────────────
-  // Three-light rig pushed harder for the header miniature only.
-  // The previous pass (sun 1.80, ambient 0.65, hemi 0.58) was on
-  // the right track but landed too subtle — the user explicitly
-  // said the difference wasn't visible enough. This pass is more
-  // assertive while staying inside realistic-planet territory.
-  //
-  //   • Sun (key light)  1.80 → 2.10   (+17 %)
-  //       Combined with exposure 1.25 (vs the large module's
-  //       1.12), the lit hemisphere now lands with roughly the
-  //       same perceived luminosity at 50 px that the large
-  //       Earth has at 600 px. This is the "polished surface"
-  //       carrier — strong key light is what makes the brighter
-  //       specular pop instead of feeling decorative.
-  //   • Ambient (warm fill)  0.65 → 0.70   (+8 %)
-  //       Small bump to keep the dark side from sinking after
-  //       the higher exposure pulls the lit side up. The ratio
-  //       lit:dark is preserved so the terminator stays clean.
-  //   • Hemi (atmospheric scatter)  0.58 → 0.62   (+7 %)
-  //       Matches the ambient bump. The hemi's cool top + warm
-  //       bottom gives the planet its dimensional richness
-  //       (polar caps cooler, equator warmer) — small uptick
-  //       so the dimensional cue stays in step with the
-  //       brighter key light.
-  //
-  // Combined with the brighter atmospheric rim and the
-  // specular/shininess changes above, this pass should be
-  // noticeably more visible than the previous one. Still no new
-  // light objects, no shadow maps, no post-processing. The large
-  // module's intensities are not touched.
-  const ambient = new THREE.AmbientLight(0xfff3dc, 0.70);
-  scene.add(ambient);
-  const sun = new THREE.DirectionalLight(0xffffff, 2.10);
-  sun.position.copy(SUN_WORLD_POSITION);
-  scene.add(sun);
-  const hemi = new THREE.HemisphereLight(0x9ab8ff, 0x7a5e3a, 0.62);
-  scene.add(hemi);
-
-  // ── Resize handling ──────────────────────────────────────────────
-  // The host container can change size on viewport breakpoint hits
-  // (mobile 42 → desktop 44 → desktop rail 50). ResizeObserver picks
-  // up the change and resizes the renderer + camera + repaints.
-  const sizeFromContainer = () => {
-    const rect = container.getBoundingClientRect();
-    const w = Math.max(1, Math.round(rect.width));
-    const h = Math.max(1, Math.round(rect.height));
-    renderer.setSize(w, h, false);
-    camera.aspect = w / h;
-    camera.updateProjectionMatrix();
-    requestRender();
-  };
-  sizeFromContainer();
-  const resizeObserver = new ResizeObserver(sizeFromContainer);
-  resizeObserver.observe(container);
+  // Diagnostic gate — flip `window.__lgsDebug = true` in DevTools to
+  // print one line each time the small globe orientation is set or
+  // changed. Off by default; matches the host's existing __lgsDebug
+  // flag so logs from both sides can be turned on together.
+  function logFocus(
+    source: 'initial' | 'initial-null' | 'setFocus',
+    lat: number | null,
+    lng: number | null,
+  ): void {
+    if (typeof window === 'undefined') return;
+    if (!(window as unknown as { __lgsDebug?: boolean }).__lgsDebug) return;
+    console.info('[header-earth-3d] focus applied', {
+      source,
+      lat,
+      lng,
+      rotationX: earth.rotation.x,
+      rotationY: earth.rotation.y,
+    });
+  }
 
   // ── On-demand render scheduling ──────────────────────────────────
   // We don't run a rAF loop — the header globe is static unless the
   // language changes or the cursor moves. Coalesce multiple change
   // events fired in the same frame (e.g. setParallax called from a
-  // pointermove handler) into a single render. The pendingRender
+  // pointermove stream) into a single render. The pendingRender
   // guard makes the per-frame cost worst-case one draw call even
   // under a rapid pointer-move stream.
   let pendingRender = false;
   function requestRender(): void {
-    if (disposed || pendingRender) return;
+    if (core.isDisposed() || pendingRender) return;
     pendingRender = true;
     requestAnimationFrame(() => {
       pendingRender = false;
-      if (disposed) return;
+      if (core.isDisposed()) return;
       renderer.render(scene, camera);
     });
   }
-  // First paint — solid material until the texture upgrades, then
-  // the load callback above schedules a second paint with the WebP.
+
+  // ── Real Earth day texture (reveal-on-load) ──────────────────────
+  // Same WebP as the overlay. The browser HTTP cache dedupes the
+  // request when the user opens the cinematic overlay later — the
+  // header is usually the first thing to load this file on a fresh
+  // session, so subsequent navigations resolve nearly instantly.
+  //
+  // The Earth + atmosphere are hidden at construction; this callback
+  // is the SINGLE place that reveals them — on success with the
+  // NASA texture bound, on failure with the neutral dark
+  // `fallbackSolidColor` (and a logged warning so the failure is
+  // visible without breaking the page). Never the old fake
+  // continents — those are no longer generated anywhere in the
+  // pipeline.
+  core.loadDayTexture({
+    onLoad: () => {
+      earth.visible = true;
+      atmosphere.visible = true;
+      requestRender();
+    },
+    onError: (err) => {
+      // Reveal with the neutral dark color so the header isn't
+      // permanently empty if a CDN/asset failure prevents the
+      // WebP from loading. The disc stays "present" — a quiet
+      // dark sphere with the atmospheric rim — instead of a blank
+      // canvas. Logged loudly so the failure is observable.
+      earth.visible = true;
+      atmosphere.visible = true;
+      console.warn(
+        `[header-earth-3d] Failed to load Earth day texture at /assets/globe/earth-day-2k.webp; showing neutral dark placeholder.`,
+        { source: 'neutral-dark-placeholder', error: err },
+      );
+      requestRender();
+    },
+  });
+
+  // ── Resize handling ──────────────────────────────────────────────
+  // The host container can change size on viewport breakpoint hits
+  // (mobile 42 → desktop 44 → desktop rail 50). ResizeObserver picks
+  // up the change and resizes the renderer + camera + repaints.
+  core.sizeFromContainer();
+  const resizeObserver = new ResizeObserver(() => {
+    if (core.isDisposed()) return;
+    core.sizeFromContainer();
+    requestRender();
+  });
+  resizeObserver.observe(container);
+
+  // First paint — fallback continents until the texture upgrades,
+  // then the load callback above schedules a second paint with the
+  // real WebP.
   requestRender();
 
-  // ── Handle ───────────────────────────────────────────────────────
   return {
     canvas,
     destroy(): void {
       // Mark disposed BEFORE releasing resources so a still-in-flight
-      // texture-load callback or rAF tick can no-op cleanly without
-      // touching a freed material.
-      disposed = true;
+      // texture-load callback or coalesced rAF tick will no-op cleanly
+      // without touching a freed material. disposeAll is idempotent —
+      // calling destroy() twice is safe.
+      core.markDisposed();
       resizeObserver.disconnect();
-      earthGeometry.dispose();
-      earthMaterial.dispose();
-      if (upgradedDayTex) upgradedDayTex.dispose();
-      atmosphereGeometry.dispose();
-      atmosphereMaterial.dispose();
-      renderer.dispose();
-      if (canvas.parentNode) {
-        canvas.parentNode.removeChild(canvas);
-      }
+      core.disposeAll();
     },
     setFocus(lat: number, lng: number): void {
-      earth.rotation.y = (LNG_TO_ROTATION_Y_OFFSET_DEG - lng) * DEG;
+      // Rotate the earth to face the language's focus point. Same
+      // helper the overlay uses (rotationYForLng from the shared
+      // core) so a given language resolves to the same visible
+      // region on both Earths.
+      earth.rotation.y = rotationYForLng(lng);
       earth.rotation.x = clamp(lat * DEG, -POLE_CLAMP, POLE_CLAMP);
+      // Reset any stale parallax that may still be on the camera
+      // from a prior pointer hover. Without this, a hover followed
+      // by a language switch would leave the visible region offset
+      // by a few degrees of camera tilt — close to the target but
+      // not exactly the language's focus point. setFocus is the
+      // canonical "show me language X" call; it should land on the
+      // language target exactly, regardless of prior input state.
+      // Parallax can re-engage on the next pointermove.
+      camera.rotation.set(0, 0, 0);
+      logFocus('setFocus', lat, lng);
       requestRender();
     },
     setParallax(px: number, py: number): void {
-      // Map host's ±12 / ±8 px budget to small radian offsets. The
-      // earth's BASE rotation comes from setFocus; parallax adds an
-      // additional rotation on top via the matrix multiplication
-      // baked into earth.rotation. To keep base rotation stable
-      // across parallax updates, we instead apply the offset to a
-      // CHILD rotation: the camera. Rotating the camera by a tiny
-      // angle in opposite direction of the cursor offset reads as
-      // the planet tilting toward the cursor — same percept as the
-      // background-position-px parallax it replaces.
+      // Earth's BASE rotation comes from setFocus. Parallax is applied
+      // to the CAMERA rotation instead, so a parallax update never
+      // overwrites the language-driven base orientation — rotating
+      // the camera by a tiny angle in the OPPOSITE direction of the
+      // cursor offset reads as the planet tilting toward the cursor,
+      // matching the percept of the bg-position-px parallax this
+      // replaced. setParallax(0, 0) resets to the base orientation.
       const RAD_PER_PX_X = 0.0035; // ~0.20° per px of cursor offset
       const RAD_PER_PX_Y = 0.0030;
-      // Negate so cursor going right → planet appears to rotate
-      // toward the right side (the surface near the cursor "comes
-      // forward"), matching the CSS-version sign convention.
       camera.rotation.y = -px * RAD_PER_PX_X;
       camera.rotation.x = -py * RAD_PER_PX_Y;
       requestRender();
