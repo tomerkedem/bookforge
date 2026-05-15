@@ -383,6 +383,15 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
                     <span class="reading-entry-spine"></span>
                   </span>
                 )}
+                {/* Reading-entry overlay (image-based, in-card).
+                    Premium glass-style asset (PNG, no baked text) sits
+                    inside the centered card. All visible text is live,
+                    localized HTML rendered on top — never embedded in
+                    the image. The <a> preserves native link behavior
+                    (Ctrl/Cmd-click, middle-click, right-click); plain
+                    left-click and Enter are intercepted by the launch
+                    handler in `universe-layout.ts` via the
+                    `data-reading-entry` attribute. */}
                 {isSafeLibraryHref(item.href) && (
                   <a
                     class="reading-entry-overlay"
@@ -390,125 +399,12 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
                     data-reading-entry
                     data-reading-entry-href={item.href}
                     data-reading-entry-slug={item.slug}
-                    aria-label="כניסה לקריאה"
+                    aria-label={t('library.readingEntry.ariaLabel', language)}
                   >
-                    <span class="reading-entry-glass" aria-hidden="true"></span>
-                    {/* Dome — SVG with smoothly flared base curves so
-                        the seam between the dome and the pill top
-                        flows instead of meeting at a hard L-corner.
-                        Drawn as two paths: filled body + open stroke
-                        (no bottom segment), so the bottom blends
-                        seamlessly into the pill's top border. */}
-                    <svg
-                      class="reading-entry-dome"
-                      viewBox="0 0 64 20"
-                      preserveAspectRatio="none"
-                      aria-hidden="true"
-                    >
-                      {/* Per-card unique gradient ID so multiple
-                          dome SVGs on the same page don't clash. The
-                          gradient mimics the pill body's vertical
-                          gradient + inset cyan inner glow so the
-                          dome looks like a smooth color continuation
-                          of the pill rather than a flat stamp. */}
-                      <defs>
-                        <linearGradient
-                          id={`reading-entry-dome-grad-${item.slug}`}
-                          x1="0"
-                          y1="0"
-                          x2="0"
-                          y2="1"
-                        >
-                          {/* Direction flipped: dome BOTTOM is brighter
-                              (meets the pill's top edge which carries
-                              the `inset 0 1px 0 rgba(170,220,255,0.24)`
-                              highlight + strongest part of the inner
-                              cyan glow), dome TOP is darker (sits over
-                              cosmic only with no pill influence).
-                              The dome now reads as a continuous
-                              continuation of the pill: at the seam
-                              both surfaces share the same lit-up
-                              cyan-violet hue. */}
-                          <stop offset="0%" stop-color="rgb(22, 28, 70)" />
-                          <stop offset="50%" stop-color="rgb(26, 33, 84)" />
-                          <stop offset="100%" stop-color="rgb(30, 40, 96)" />
-                        </linearGradient>
-                      </defs>
-                      <path
-                        class="reading-entry-dome-fill"
-                        fill={`url(#reading-entry-dome-grad-${item.slug})`}
-                        d="M 4 24 C 4 19 5 16 9 13 C 13 8 19 3 32 3 C 45 3 51 8 55 13 C 59 16 60 19 60 24 Z"
-                      />
-                      {/* Hover-state brightening layer — fades in
-                          (opacity 0→1) when the overlay is hovered or
-                          keyboard-focused. Lockstep with the pill body's
-                          background brightening so dome + pill appear
-                          to lift together as ONE surface, not two
-                          separately-animated objects. */}
-                      <path
-                        class="reading-entry-dome-fill-hover"
-                        d="M 4 24 C 4 19 5 16 9 13 C 13 8 19 3 32 3 C 45 3 51 8 55 13 C 59 16 60 19 60 24 Z"
-                      />
-                      <path
-                        class="reading-entry-dome-stroke"
-                        d="M 4 20 C 4 19 5 16 9 13 C 13 8 19 3 32 3 C 45 3 51 8 55 13 C 59 16 60 19 60 20"
-                      />
-                    </svg>
-                    {/* Anchor diamond — a small luminous sparkle that
-                        sits at the EXACT meeting point of the dome's
-                        peak and the selected card's bottom edge. The
-                        diamond is universal: same position for every
-                        book regardless of cover artwork, because both
-                        the dome peak and the diamond anchor are
-                        positioned relative to the pill (which itself
-                        is anchored to card_bottom + 16px). */}
-                    <svg
-                      class="reading-entry-anchor"
-                      viewBox="0 0 24 24"
-                      width="14"
-                      height="14"
-                      aria-hidden="true"
-                    >
-                      {/* 4-pointed sparkle — thin rays converge on a
-                          bright center, evokes "precious light". */}
-                      <path
-                        d="M 12 0 L 13.5 10.5 L 24 12 L 13.5 13.5 L 12 24 L 10.5 13.5 L 0 12 L 10.5 10.5 Z"
-                      />
-                    </svg>
-                    <span class="reading-entry-aura" aria-hidden="true"></span>
-                    <span class="reading-entry-content">
-                      {/* Icon lives OUTSIDE the flex action band so it
-                          can be absolutely positioned to sit inside
-                          the dome bump on the pill's top edge, rather
-                          than stacked above the title in normal flow. */}
-                      <svg
-                        class="reading-entry-icon"
-                        viewBox="0 0 24 24"
-                        width="22"
-                        height="22"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="1.5"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        aria-hidden="true"
-                      >
-                        {/* Left page — top edge curves gently up toward
-                            the spine (Bézier C-curve from the outer-top
-                            corner up to the spine top) so the page reads
-                            as a real open page bowing, not a flat tab. */}
-                        <path d="M 4 6 C 4 4.5 5 4 6 4 L 10 4 C 11 4 12 4.5 12 6 L 12 19 C 11 18 9.5 18 8 18 L 5.5 18 C 4.7 18 4 18.5 4 19 Z" />
-                        {/* Right page — mirrored sweep. */}
-                        <path d="M 20 6 C 20 4.5 19 4 18 4 L 14 4 C 13 4 12 4.5 12 6 L 12 19 C 13 18 14.5 18 16 18 L 18.5 18 C 19.3 18 20 18.5 20 19 Z" />
-                        {/* Page lines — soft horizontal hints of text. */}
-                        <path d="M 5.5 9 H 9.5" />
-                        <path d="M 5.5 12 H 8.5" />
-                        <path d="M 14.5 9 H 18.5" />
-                        <path d="M 15.5 12 H 18.5" />
-                      </svg>
-                      <span class="reading-entry-action">
-                        <span class="reading-entry-title">כניסה לקריאה</span>
-                        <span class="reading-entry-subtitle">פתח את מרחב הספר</span>
+                    <span class="reading-entry-asset" aria-hidden="true"></span>
+                    <span class="reading-entry-text">
+                      <span class="reading-entry-title">
+                        {t('library.readingEntry.title', language)}
                       </span>
                     </span>
                   </a>
@@ -2350,60 +2246,34 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       display: none !important;
     }
 
-    /* ── Reading-entry overlay: floating violet-blue light-gate pill ──
-       Visual redesign brief: the entry control is a rounded pill that
-       FLOATS BELOW the selected card, visually connected to the book
-       by a soft glow bridge above it. The book cover, title and
-       artwork stay completely unobstructed — the pill lives outside
-       the card box, anchored to its bottom edge.
+    /* ── Reading-entry overlay: in-card image-based premium panel ──────
+       The entry control sits INSIDE the centered book card (not below
+       it). The visual is a textless PNG asset; all visible text is
+       live, localized HTML rendered on top — the image never carries
+       baked text.
 
-       Stacking (source order = paint order, plus explicit z-index):
-         .reading-entry-aura     — top connection bridge above the pill
-         .reading-entry-glass    — pill background + border + glow
-         .reading-entry-content  — flex column: icon + title + subtitle
+       Stacking inside the overlay <a>:
+         .reading-entry-asset  — background-image PNG (decorative)
+         .reading-entry-text   — title + subtitle, live i18n
 
-       The <a> itself (`.reading-entry-overlay`) sizes to the pill's
-       bounding box and provides the hit area; clicks and focus are
-       scoped to the pill only — not the card area above.
+       The <a> itself is the hit area and preserves native link
+       behavior (Ctrl/Cmd-click → new tab, middle-click → new tab,
+       right-click → context menu). Plain left-click and Enter are
+       intercepted by the launch handler in `universe-layout.ts` via
+       the `data-reading-entry` attribute.
 
-       Behavior, click logic, launch state and opening animation are
-       unchanged: phase 3's selectors (which fade `.reading-entry-glass`,
-       `.reading-entry-aura`, `.reading-entry-content` during opening)
-       continue to match the same class names. */
+       Phase-3 launch animation: the overlay's two child layers
+       (.reading-entry-asset + .reading-entry-text) fade out cleanly
+       when `data-reading-entry-state="opening"` is set on the stage.
+       Opacity-only fade keeps the link in the accessibility tree
+       until the launch is committed. */
     .reading-entry-overlay {
       position: absolute;
-      /* The pill is positioned so the DOME's PEAK lands exactly on
-         the card's bottom edge — same anchor for every book, no
-         matter what artwork lives on the cover. Math:
-            dome SVG height            = 20px
-            dome peak in viewBox       = y=3 (3px from SVG top)
-            dome bottom (CSS `bottom`) = 1px above the overlay bottom
-              → so the SVG's top edge is overlay_top + 1 - 20 = overlay_top - 19
-              → the peak (y=3) sits at  overlay_top - 19 + 3 = overlay_top - 16
-            For peak to align with card bottom (i.e. overlay_top - 16 = 0
-            relative to card_bottom), the overlay's top must be 16px
-            below card_bottom — hence `calc(100% + 16px)`. The small
-            luminous diamond anchor below renders at exactly this
-            meeting point to mark the connection visually.
-            (Polish: 14px instead of 16px — pulls the whole pill 2px
-            closer to the book; the diamond + dome peak now overlap
-            the card by a hair, reading as "anchored into" rather
-            than "floating below".) */
-      top: calc(100% + 14px);
       left: 50%;
-      transform: translateX(-50%);
-      /* Integrated entry panel — narrower than the card so the pill
-         feels deliberately sized to its CTA rather than stretching
-         to fill the card footprint and leaving big empty side
-         margins. The 1.5× centered-state transform on
-         `.galaxy-card[data-pos="center"]` scales this width along
-         with the card, so visual proportions stay locked at every
-         viewport. */
-      width: 78%;
-      max-width: 210px;
-      /* Shorter pill now that the icon is in the dome and the action
-         band only carries the two text lines. */
-      min-height: 62px;
+      top: 64%;
+      width: 66%;
+      height: 108px;
+      transform: translate(-50%, -50%);
       display: block;
       margin: 0;
       padding: 0;
@@ -2414,459 +2284,100 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       text-decoration: none;
       -webkit-tap-highlight-color: transparent;
       opacity: 0;
-      pointer-events: none;
-      /* `visibility: hidden` removes the link from the keyboard focus
-         order on non-centered cards — replaces the previous
-         `tabindex="-1"`. The visibility flip is delayed by the opacity
-         duration on fade-out so the panel can finish fading before it
-         becomes truly invisible; on fade-in it flips immediately so
-         the focus state is reachable as soon as the card centers. */
       visibility: hidden;
-      transition:
-        opacity 280ms cubic-bezier(0.4, 0, 0.2, 1),
-        transform 280ms cubic-bezier(0.4, 0, 0.2, 1),
-        visibility 0s linear 280ms;
-      /* The parent `.galaxy-card[data-pos="center"]` is already at
-         z-index 30 (existing rule), which creates a stacking context
-         that paints the entire centered card + pill above every
-         sibling orbit station. This z-index is therefore intra-card —
-         it only matters relative to the LibraryCard art, the close
-         button, the opening-animation layers, and the overlay's own
-         children. Setting it to 30 keeps the pill on top of the
-         opening-animation layers if both happen to render. */
+      pointer-events: none;
+      /* Sits over the card art, the opening-animation layers
+         (.reading-entry-opening at z-index 5), and the LibraryCard
+         caption. Centered card already creates a stacking context at
+         z-index 30, so this z-index is intra-card only. */
       z-index: 30;
-      direction: rtl;
-      text-align: center;
-      font-family:
-        'Heebo', 'Inter', system-ui, -apple-system,
-        'Segoe UI', 'Noto Sans Hebrew', sans-serif;
+      /* Direction is inherited from the page (rtl for Hebrew, ltr for
+         English) so RTL/LTR fall out automatically — no per-language
+         override here. */
+      transition:
+        opacity 240ms cubic-bezier(0.4, 0, 0.2, 1),
+        transform 240ms cubic-bezier(0.4, 0, 0.2, 1),
+        visibility 0s linear 240ms;
     }
     .galaxy-card[data-pos="center"] .reading-entry-overlay {
       opacity: 1;
-      pointer-events: auto;
       visibility: visible;
+      pointer-events: auto;
       transition:
-        opacity 280ms cubic-bezier(0.4, 0, 0.2, 1),
-        transform 280ms cubic-bezier(0.4, 0, 0.2, 1),
+        opacity 240ms cubic-bezier(0.4, 0, 0.2, 1),
+        transform 240ms cubic-bezier(0.4, 0, 0.2, 1),
         visibility 0s linear 0s;
     }
     .reading-entry-overlay:focus-visible {
       outline: none;
     }
-    .reading-entry-overlay:focus-visible .reading-entry-glass {
-      /* Premium cyan/violet focus ring — visible without overpowering. */
-      border-color: rgba(160, 145, 255, 0.92);
+    .reading-entry-overlay:focus-visible .reading-entry-asset {
       box-shadow:
-        0 0 0 2px rgba(150, 200, 255, 0.36),
-        0 0 24px rgba(112, 87, 255, 0.6),
-        0 0 40px rgba(30, 190, 255, 0.28),
-        inset 0 1px 0 rgba(170, 220, 255, 0.34),
-        inset 0 0 18px rgba(80, 120, 255, 0.22);
+        0 0 0 2px rgba(150, 200, 255, 0.45),
+        0 0 22px rgba(112, 87, 255, 0.45);
     }
 
-    /* ── Top connection bridge ────────────────────────────────────────
-       Repurposed `.reading-entry-aura` — a small vertical bloom that
-       sits ABOVE the pill, half overlapping the gap between card
-       bottom and pill top. Reads as a thin light beam running from
-       the card's underside into the pill, so the pill feels like an
-       extension of the book's bottom glow rather than a separate UI
-       chip. Kept deliberately small + faint per the brief. */
-    /* ── Top-light beam with central sparkle ─────────────────────────
-       Repurposed `.reading-entry-aura`: now a wide horizontal beam
-       sitting across the top edge of the pill with a 4-pointed
-       sparkle bursting from the centerline. Mirrors the visual
-       Tomer attached — the pill's "top accent" reads as a luminous
-       seam catching light from the book above, with a concentrated
-       hot core at its midpoint.
-
-       Composition (three layers):
-         - element background: the long cyan→white→cyan horizontal
-                               beam with violet falloff at the ends
-         - ::before          : narrow vertical ray crossing the beam
-                               (gives the sparkle its second axis)
-         - ::after           : tiny white-hot core ellipse at center
-
-       mix-blend-mode: screen lets the beam brighten the pill body
-       in the overlap region without needing to raise z-index above
-       the glass — both layers stack cleanly within their parent's
-       opacity, so phase-3's opacity:0 fade still works as before. */
-    .reading-entry-aura {
-      position: absolute;
-      bottom: calc(100% - 12px);   /* center of beam at pill's top edge */
-      left: 50%;
-      transform: translateX(-50%);
-      width: 88%;
-      height: 24px;
-      background: linear-gradient(
-        90deg,
-        transparent 0%,
-        rgba(112, 87, 255, 0.30) 10%,
-        rgba(150, 200, 255, 0.55) 32%,
-        rgba(220, 240, 255, 0.85) 47%,
-        rgba(255, 255, 255, 0.98) 50%,
-        rgba(220, 240, 255, 0.85) 53%,
-        rgba(150, 200, 255, 0.55) 68%,
-        rgba(112, 87, 255, 0.30) 90%,
-        transparent 100%
-      );
-      filter: blur(2px);
-      opacity: 0;
-      transition: opacity 280ms ease, filter 280ms ease;
-      pointer-events: none;
-      z-index: 0;
-      mix-blend-mode: screen;
-    }
-    .reading-entry-aura::before {
-      /* Vertical sparkle ray — perpendicular to the beam, gives the
-         center its 4-point star feel. */
-      content: "";
-      position: absolute;
-      left: 50%;
-      top: 50%;
-      transform: translate(-50%, -50%);
-      width: 2.5px;
-      height: 30px;
-      background: linear-gradient(
-        180deg,
-        transparent 0%,
-        rgba(200, 230, 255, 0.55) 30%,
-        rgba(255, 255, 255, 0.98) 50%,
-        rgba(200, 230, 255, 0.55) 70%,
-        transparent 100%
-      );
-      filter: blur(0.6px);
-      border-radius: 50%;
-    }
-    .reading-entry-aura::after {
-      /* Hot core — small bright ellipse at the crossing point. */
-      content: "";
-      position: absolute;
-      left: 50%;
-      top: 50%;
-      width: 18px;
-      height: 5px;
-      transform: translate(-50%, -50%);
-      background: radial-gradient(
-        ellipse 100% 100% at center,
-        rgba(255, 255, 255, 1) 0%,
-        rgba(225, 240, 255, 0.85) 35%,
-        rgba(180, 220, 255, 0) 100%
-      );
-      border-radius: 50%;
-      filter: blur(0.6px);
-    }
-    .galaxy-card[data-pos="center"] .reading-entry-aura {
-      opacity: 1;
-    }
-
-    /* ── Pill body ────────────────────────────────────────────────────
-       Deep blue/violet glass with a thin glowing violet-blue edge,
-       layered cyan + violet outer glow, and a tiny inner top
-       highlight. Fills the whole `<a>` (inset: 0) so the hit area
-       and the visual match exactly. */
-    .reading-entry-glass {
+    /* Decorative PNG asset — the visual card. No baked text. Sized to
+       fully cover the overlay and carry its border-radius so the
+       focus ring traces the panel's actual shape. */
+    .reading-entry-asset {
       position: absolute;
       inset: 0;
-      border-radius: 24px;          /* tightened from 36px (~33% less) */
-      /* Higher alpha (0.92 / 0.97) so the wider, taller integrated
-         panel reads as a solid surface — orbit stations behind it
-         must never show through, especially now that the panel
-         covers more vertical space below the centered card. */
-      background: linear-gradient(
-        180deg,
-        rgba(20, 24, 64, 0.95) 0%,
-        rgba(10, 13, 38, 0.99) 100%
-      );
-      border: 1px solid rgba(122, 105, 255, 0.76);
-      box-shadow:
-        /* Outer violet bloom + cooler cyan wash farther out */
-        0 0 22px rgba(112, 87, 255, 0.45),
-        0 0 38px rgba(30, 190, 255, 0.18),
-        /* Soft grounding shadow so the pill reads as floating */
-        0 10px 26px -10px rgba(0, 0, 0, 0.55),
-        /* Inner highlights — top seam + faint violet inner glow */
-        inset 0 1px 0 rgba(170, 220, 255, 0.24),
-        inset 0 0 18px rgba(80, 120, 255, 0.18);
-      backdrop-filter: blur(14px) saturate(140%);
-      -webkit-backdrop-filter: blur(14px) saturate(140%);
+      border-radius: 24px;
+      background-image: url('/assets/ui/reading-entry/reading-entry-card.png');
+      background-size: 100% 100%;
+      background-repeat: no-repeat;
+      background-position: center;
+      pointer-events: none;
       transition:
-        border-color 220ms ease,
+        transform 220ms cubic-bezier(0.4, 0, 0.2, 1),
         box-shadow 220ms ease,
-        background 220ms ease,
-        transform 180ms cubic-bezier(0.4, 0, 0.2, 1);
-      z-index: 1;
-      pointer-events: none;
+        filter 220ms ease;
     }
 
-    /* ── Top dome (SVG) ───────────────────────────────────────────────
-       Replaced the previous CSS half-circle dome with an inline SVG
-       path so the dome's base can flare smoothly OUTWARD into the
-       pill's top edge — a hard L-corner between dome and pill
-       wouldn't sell the "extension of the same frame" feel.
-
-       Two-path technique:
-         .reading-entry-dome-fill   — closed shape filled with the
-                                       pill body color, covers the
-                                       pill's top border in the
-                                       dome zone so they merge.
-         .reading-entry-dome-stroke — same path but OPEN (no closing
-                                       segment), so the violet edge
-                                       traces only the curved top
-                                       and flared sides. No bottom
-                                       stroke ⇒ no visible seam where
-                                       the dome meets the pill top.
-
-       `vector-effect: non-scaling-stroke` keeps the 1px edge crisp
-       when the centered orbit card scales to 1.5×.
-
-       1px overlap with the pill (`bottom: calc(100% - 1px)`) seats
-       the path's flat baseline right on the pill's top border line. */
-    .reading-entry-dome {
+    /* Live i18n text rendered over the lower text area of the asset.
+       Single title line — sits below the asset's built-in icon and
+       above the card's author area. The i18n subtitle key still
+       exists in translations.ts for future reuse, but no element
+       renders it in this overlay. */
+    .reading-entry-text {
       position: absolute;
-      bottom: calc(100% - 1px);
       left: 50%;
-      width: 64px;
-      height: 20px;              /* 30% shorter than the previous 28px */
-      transform: translateX(-50%);
-      pointer-events: none;
-      overflow: visible;
-      z-index: 2;                /* over the glass body, under content */
-      filter:
-        drop-shadow(0 -2px 10px rgba(112, 87, 255, 0.42))
-        drop-shadow(0 -1px 16px rgba(30, 190, 255, 0.22));
-      /* Sync with the pill body's hover transitions so dome+pill
-         animate as a single surface (NOT two objects with different
-         timing). Matches `.reading-entry-glass`'s 220ms ease. */
-      transition: filter 220ms ease;
-    }
-    .reading-entry-dome-fill {
-      /* No CSS `fill` here — the inline SVG attribute
-         `fill="url(#reading-entry-dome-grad-<slug>)"` references a
-         per-card linearGradient defined in the SVG's <defs>. In SVG 2
-         CSS rules would normally beat inline presentation attributes,
-         so a CSS `fill` declaration here would clobber the gradient.
-
-         The gradient runs top→bottom and intentionally matches the
-         pill's apparent color profile at the dome's height range:
-           offset 0%   = rgb(34, 44, 100) — brighter, accounts for
-                         the pill's `inset 0 1px 0` highlight + the
-                         strongest part of its inset cyan inner glow
-           offset 60%  = rgb(28, 36,  86) — transitional
-           offset 100% = rgb(22, 28,  72) — settles to roughly the
-                         pill body's apparent color where the dome
-                         bleeds down into it
-         Result: the seam between dome and pill has matching color
-         on BOTH sides, instead of a flat dome stamped onto a
-         vertically-shaded pill. */
-    }
-    .reading-entry-dome-stroke {
-      fill: none;
-      stroke: rgba(122, 105, 255, 0.76);
-      stroke-width: 1;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-      vector-effect: non-scaling-stroke;
-      /* Synced with `.reading-entry-glass`'s border-color transition.
-         Without this the stroke was snapping to the brighter hover
-         colour instantly while the pill's border smoothly faded —
-         that desync was the main reason the dome read as a separate
-         object on hover. */
-      transition: stroke 220ms ease;
-    }
-    /* Hover-state fill overlay on the dome. Transparent at rest, fades
-       in to a cyan-violet lift that matches the pill body's
-       brightening on hover. Same 220ms ease so dome + pill body
-       brighten in lockstep — eye reads it as one surface lifting. */
-    .reading-entry-dome-fill-hover {
-      fill: rgba(80, 120, 255, 0.20);
-      opacity: 0;
-      transition: opacity 220ms ease;
-    }
-    .reading-entry-overlay:hover .reading-entry-dome-fill-hover,
-    .reading-entry-overlay:focus-visible .reading-entry-dome-fill-hover {
-      opacity: 1;
-    }
-    .reading-entry-overlay:hover .reading-entry-dome-stroke,
-    .reading-entry-overlay:focus-visible .reading-entry-dome-stroke {
-      stroke: rgba(160, 145, 255, 0.92);
-    }
-    .reading-entry-overlay:hover .reading-entry-dome,
-    .reading-entry-overlay:focus-visible .reading-entry-dome {
-      filter:
-        drop-shadow(0 -2px 14px rgba(112, 87, 255, 0.55))
-        drop-shadow(0 -1px 22px rgba(30, 190, 255, 0.32));
-    }
-
-    /* ── Anchor diamond ───────────────────────────────────────────────
-       Universal luminous marker at the dome-peak / card-bottom
-       junction. Positioned 16 px above the pill's top — which, by
-       construction, is exactly where the dome peak meets the card
-       bottom (see the `top: calc(100% + 16px)` comment on
-       `.reading-entry-overlay`). Same coordinates for every book. */
-    .reading-entry-anchor {
-      position: absolute;
-      top: -16px;
-      left: 50%;
+      top: 68%;
+      width: 92%;
       transform: translate(-50%, -50%);
-      width: 14px;
-      height: 14px;
-      pointer-events: none;
-      overflow: visible;
-      z-index: 5;                  /* above dome (2) and content (2) */
-      opacity: 0;
-      visibility: hidden;
-      transition: opacity 280ms ease, visibility 0s linear 280ms;
-      /* Layered luminous halo — tight bright white core, mid-radius
-         cyan-cool, outer violet wash. Reads as "precious light". */
-      filter:
-        drop-shadow(0 0 2px rgba(255, 255, 255, 0.95))
-        drop-shadow(0 0 6px rgba(180, 220, 255, 0.85))
-        drop-shadow(0 0 12px rgba(140, 160, 255, 0.65))
-        drop-shadow(0 0 20px rgba(112, 87, 255, 0.45));
-    }
-    .reading-entry-anchor path {
-      fill: rgba(255, 252, 245, 0.98);
-    }
-    .galaxy-card[data-pos="center"] .reading-entry-anchor {
-      opacity: 1;
-      visibility: visible;
-      transition: opacity 280ms ease, visibility 0s linear 0s;
-    }
-    /* Phase-3 launch fade — the anchor + dome go with the rest of the
-       pill so the entire entry control fades cleanly during the
-       opening animation. */
-    .library-galaxy[data-reading-entry-state="opening"]
-      .galaxy-card[data-pos="center"] .reading-entry-anchor,
-    .library-galaxy[data-reading-entry-state="opening"]
-      .galaxy-card[data-pos="center"] .reading-entry-dome {
-      opacity: 0;
-      transition: opacity 200ms ease-out;
-    }
-
-    /* Content: stacked icon + title + subtitle, vertically centered. */
-    /* Content holder — the panel now hosts only the action band
-       (icon + CTA + secondary CTA). Metadata/divider markup and
-       their styles were removed when the title + author + Hebrew
-       description were taken out of the panel per Tomer's request. */
-    .reading-entry-content {
-      position: absolute;
-      inset: 0;
-      padding: 11px 18px 13px;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      gap: 0;
-      z-index: 2;
+      text-align: center;
       pointer-events: none;
-      transition: transform 180ms cubic-bezier(0.4, 0, 0.2, 1);
+      font-family:
+        'Heebo', 'Inter', system-ui, -apple-system,
+        'Segoe UI', 'Noto Sans Hebrew', sans-serif;
     }
-
-    /* ── Action band — title + secondary CTA only ─────────────────────
-       The icon now lives inside the top dome (positioned absolutely
-       on `.reading-entry-content`), so the flex action band only
-       holds the two text lines. */
-    .reading-entry-action {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 1px;
-    }
-    /* Icon — anchored to the dome bump's center (≈ 4px above the pill
-       top). Absolute positioning takes it out of the flex flow so the
-       title/subtitle below sit cleanly centered in the pill, and
-       reducing icon size to 22px fits it neatly inside the half-circle
-       dome (radius 22px after the 20% downsize). */
-    .reading-entry-icon {
-      position: absolute;
-      /* Centered around the dome-pill junction — high enough to sit
-         inside the dome cap, low enough for the lower half to anchor
-         in the pill body. */
-      top: 1px;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 22px;
-      height: 22px;
-      /* Glowing lavender-purple tone — sits inside a violet dome on a
-         violet pill, so a warm purple icon reads as "luminous from
-         within" instead of a clinical white glyph. */
-      color: rgb(200, 165, 255);
-      filter:
-        /* Tight inner halo close to the icon's own purple */
-        drop-shadow(0 0 4px rgba(190, 140, 255, 0.92))
-        /* Mid-radius bloom — a touch deeper violet */
-        drop-shadow(0 0 10px rgba(160, 110, 255, 0.7))
-        /* Wide outer wash that pools into the dome interior */
-        drop-shadow(0 0 18px rgba(120, 80, 255, 0.5));
-      z-index: 3;                /* above the dome (which is on .glass z:1) */
-      pointer-events: none;
-    }
-
-    /* The previous CSS rule that hid `.lc-title`, `.lc-orbit-subtitle`,
-       and `.lc-orbit-author` on launchable centered cards has been
-       removed: those elements are no longer emitted into the DOM at
-       all. LibraryCard.astro now accepts `suppressOrbitCaption` and
-       skips rendering them when `variant === 'orbit'` and the prop is
-       true. index.astro passes the prop for orbit cards whose href is
-       safe (i.e., cards that get a reading-entry panel below them).
-       Mobile carousel, recommendation strip, hero, and the non-safe
-       orbit cards (series capsules) all leave the prop at its default
-       `false`, so they keep their full caption stack. */
     .reading-entry-title {
-      font-family: inherit;
+      font-size: 15px;
       font-weight: 700;
-      font-size: 1rem;               /* 16px */
-      line-height: 1.2;
-      letter-spacing: 0.01em;
-      color: rgba(238, 245, 255, 0.96);
-      text-shadow: 0 1px 2px rgba(0, 8, 24, 0.6);
-    }
-    .reading-entry-subtitle {
-      font-family: inherit;
-      font-weight: 400;
-      font-size: 0.75rem;            /* 12px */
-      line-height: 1.3;
-      letter-spacing: 0.015em;
-      color: rgba(185, 205, 245, 0.78);
+      line-height: 1.1;
+      white-space: nowrap;
+      color: rgba(248, 252, 255, 0.98);
+      text-shadow:
+        0 0 10px rgba(90, 160, 255, 0.35),
+        0 2px 4px rgba(0, 0, 0, 0.65);
     }
 
-    /* Hover/focus — brighten the violet-blue edge and intensify the
-       glow, no vertical jump (the brief explicitly excludes hop). */
-    .reading-entry-overlay:hover .reading-entry-glass,
-    .reading-entry-overlay:focus-visible .reading-entry-glass {
-      border-color: rgba(160, 145, 255, 0.92);
-      /* Hover background must stay at least as opaque as the resting
-         state (0.90/0.96) or the see-through artifact will re-appear
-         on hover. Keeping the same alphas and only deepening the hue. */
-      background: linear-gradient(
-        180deg,
-        rgba(26, 32, 76, 0.92) 0%,
-        rgba(12, 16, 44, 0.97) 100%
-      );
-      box-shadow:
-        0 0 28px rgba(112, 87, 255, 0.6),
-        0 0 48px rgba(30, 190, 255, 0.28),
-        0 12px 30px -10px rgba(0, 0, 0, 0.6),
-        inset 0 1px 0 rgba(170, 220, 255, 0.32),
-        inset 0 0 22px rgba(80, 120, 255, 0.26);
+    /* Hover / focus — gentle lift on the asset, no jump. */
+    .reading-entry-overlay:hover .reading-entry-asset,
+    .reading-entry-overlay:focus-visible .reading-entry-asset {
+      filter: brightness(1.06) saturate(1.05);
     }
-    .reading-entry-overlay:hover .reading-entry-aura,
-    .reading-entry-overlay:focus-visible .reading-entry-aura {
-      /* Slightly amplify the beam on hover — keep the same blur radius
-         so the central sparkle stays crisp, just push the beam wider
-         and brighter via brightness boost. */
-      opacity: 1;
-      filter: blur(2px) brightness(1.18);
-    }
-    .reading-entry-overlay:active .reading-entry-glass,
-    .reading-entry-overlay:active .reading-entry-content {
+    .reading-entry-overlay:active .reading-entry-asset {
       transform: scale(0.985);
     }
 
     @media (prefers-reduced-motion: reduce) {
       .reading-entry-overlay,
-      .reading-entry-glass,
-      .reading-entry-aura {
+      .reading-entry-asset {
         transition: none;
       }
     }
@@ -2884,11 +2395,16 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
          --reading-entry-glow-color  — beam glow + bloom tint
          --reading-entry-cover-tilt  — outward rotation of each cover */
     .library-galaxy {
-      --reading-entry-duration: 480ms;
+      --reading-entry-duration: 600ms;
       --reading-entry-ease: cubic-bezier(0.22, 0.61, 0.36, 1);
       --reading-entry-beam-color: #6f7dff;
-      --reading-entry-glow-color: rgba(120, 130, 255, 0.55);
-      --reading-entry-cover-tilt: 22deg;
+      --reading-entry-glow-color: rgba(120, 130, 255, 0.6);
+      --reading-entry-cover-tilt: 42deg;
+      --reading-entry-cover-shift: 16px;
+      /* Dark blue-violet sitting in the centerline gap. Read as the
+         "inside" of the opening book — not a black bar. */
+      --reading-entry-void-color: #0a0719;
+      --reading-entry-edge-color: rgba(220, 226, 255, 0.85);
     }
 
     /* Opening container — sits between the card art and the
@@ -2903,12 +2419,48 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       overflow: hidden;
       border-radius: 12px;
       z-index: 5;
-      perspective: 700px;
+      perspective: 750px;
       transform-style: preserve-3d;
       transition: opacity 180ms ease-out;
     }
     .reading-entry-opening > * {
       pointer-events: none;
+    }
+
+    /* Void — vertical dark blue-violet slit sitting in the seam, behind
+       the spine and below the cover halves (::before paints first). At
+       rest the covers fully cover it; as they rotate/translate outward
+       the void becomes visible inside the opening, so the gap reads as
+       depth rather than just a light line on top of the card art.
+       Soft radial fade keeps the edges from looking like a black bar. */
+    .reading-entry-opening::before {
+      content: "";
+      position: absolute;
+      inset-block: 4%;
+      inset-inline-start: 50%;
+      width: 14px;
+      transform: translateX(-50%) scaleY(0);
+      transform-origin: center;
+      background:
+        radial-gradient(
+          ellipse at center,
+          var(--reading-entry-void-color) 0%,
+          color-mix(in srgb, var(--reading-entry-void-color) 55%, transparent) 40%,
+          transparent 80%
+        );
+      filter: blur(3px);
+      opacity: 0;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .library-galaxy[data-reading-entry-state="opening"]
+      .galaxy-card[data-pos="center"]
+      .reading-entry-opening::before {
+      animation:
+        reading-entry-void
+        var(--reading-entry-duration)
+        var(--reading-entry-ease)
+        forwards;
     }
     .library-galaxy[data-reading-entry-state="opening"]
       .galaxy-card[data-pos="center"]
@@ -2955,23 +2507,14 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       position: absolute;
       inset-block: 0;
       width: 50%;
-      background:
-        linear-gradient(
-          180deg,
-          color-mix(in srgb, #1c1410 62%, transparent) 0%,
-          color-mix(in srgb, #110b08 70%, transparent) 100%
-        ),
-        linear-gradient(
-          90deg,
-          color-mix(in srgb, var(--reading-entry-beam-color) 14%, transparent),
-          transparent 60%
-        );
-      border: 1px solid color-mix(in srgb, #d4a857 42%, transparent);
-      backdrop-filter: blur(3px) saturate(120%);
-      -webkit-backdrop-filter: blur(3px) saturate(120%);
-      box-shadow:
-        0 0 0 1px color-mix(in srgb, #d4a857 18%, transparent) inset,
-        0 8px 18px -6px rgba(0, 0, 0, 0.55);
+      /* Translucent glass: lightly tinted near the spine where the
+         light beam catches, fading to near-transparent at the outer
+         edge so the original card art reads through. Per-half rules
+         below set the gradient direction. */
+      border: none;
+      backdrop-filter: blur(1px) saturate(115%);
+      -webkit-backdrop-filter: blur(1px) saturate(115%);
+      box-shadow: none;
       opacity: 0;
       will-change: transform, opacity;
     }
@@ -2990,15 +2533,83 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
        `inset-inline-start: 50%` with `translateX(-50%)`, which
        resolves to the visual center in both directions, so spine and
        hinges stay aligned regardless of page direction. */
+    /* Per-half box-shadows layer two depth cues on top of the base
+       warm-gold inset and drop shadow from `.reading-entry-cover`:
+         1. A 1px bright edge on the seam side reads as a backlit page
+            edge catching the spine glow.
+         2. An inner shadow falling away from the seam makes the gap
+            feel recessed, so the eye reads the centerline as depth
+            (the inside of the book) instead of a flat highlight. */
+    /* Per-half glass cover. Three things keep these from reading as
+       dark stripes:
+         1. Background gradient is strongest near the spine (right edge
+            of the left half / left edge of the right half) and fades
+            to ~transparent at the outer edge, so the cover is visibly
+            anchored to the seam, not a full rectangle.
+         2. mask-image fades the outer edge to fully transparent so
+            the cover dissolves into the card art instead of clipping.
+         3. Box-shadows are now: a thin luminous spine-side highlight
+            and a much softer (-14px spread) seam-side inner shadow.
+            No dark stroke around the perimeter. */
     .reading-entry-cover-left {
       left: 0;
       transform-origin: right center;
-      transform: rotateY(0deg);
+      transform: rotateY(0deg) translateX(0);
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      background: linear-gradient(
+        90deg,
+        rgba(8, 12, 34, 0.04) 0%,
+        rgba(20, 26, 64, 0.22) 68%,
+        rgba(150, 180, 255, 0.18) 100%
+      );
+      box-shadow:
+        inset -1px 0 0 0 var(--reading-entry-edge-color),
+        inset -14px 0 22px -16px rgba(0, 0, 0, 0.45);
+      mask-image: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(0, 0, 0, 0.35) 22%,
+        #000 65%,
+        #000 100%
+      );
+      -webkit-mask-image: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(0, 0, 0, 0.35) 22%,
+        #000 65%,
+        #000 100%
+      );
     }
     .reading-entry-cover-right {
       right: 0;
       transform-origin: left center;
-      transform: rotateY(0deg);
+      transform: rotateY(0deg) translateX(0);
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      background: linear-gradient(
+        270deg,
+        rgba(8, 12, 34, 0.04) 0%,
+        rgba(20, 26, 64, 0.22) 68%,
+        rgba(150, 180, 255, 0.18) 100%
+      );
+      box-shadow:
+        inset 1px 0 0 0 var(--reading-entry-edge-color),
+        inset 14px 0 22px -16px rgba(0, 0, 0, 0.45);
+      mask-image: linear-gradient(
+        270deg,
+        transparent 0%,
+        rgba(0, 0, 0, 0.35) 22%,
+        #000 65%,
+        #000 100%
+      );
+      -webkit-mask-image: linear-gradient(
+        270deg,
+        transparent 0%,
+        rgba(0, 0, 0, 0.35) 22%,
+        #000 65%,
+        #000 100%
+      );
     }
     .library-galaxy[data-reading-entry-state="opening"]
       .galaxy-card[data-pos="center"]
@@ -3062,15 +2673,22 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
        stays in the accessibility tree until launch is committed. */
     .library-galaxy[data-reading-entry-state="opening"]
       .galaxy-card[data-pos="center"]
-      .reading-entry-glass,
+      .reading-entry-asset,
     .library-galaxy[data-reading-entry-state="opening"]
       .galaxy-card[data-pos="center"]
-      .reading-entry-aura,
-    .library-galaxy[data-reading-entry-state="opening"]
-      .galaxy-card[data-pos="center"]
-      .reading-entry-content {
+      .reading-entry-text {
       opacity: 0;
       transition: opacity 200ms ease-out;
+    }
+
+    /* Camera push — the centered card scales up a touch during opening
+       so the user feels pulled into the book rather than just watching
+       the covers part. Rides the existing 0.55s transform transition on
+       `.galaxy-card`, so no new animation infra is added. Override is
+       scoped to opening + center, so resting layout is untouched. */
+    .library-galaxy[data-reading-entry-state="opening"]
+      .galaxy-card[data-pos="center"] {
+      transform: translate(-50%, -50%) scale(1.56);
     }
 
     /* Non-centered orbit cards — dim + soft blur so attention shifts
@@ -3096,26 +2714,49 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       transition: filter var(--reading-entry-duration) var(--reading-entry-ease);
     }
 
+    /* Portal beat: in the first ~250ms (≈40% of 600ms) the spine flares
+       to 7px and reaches full brightness, reading as a portal cracking
+       open. It then narrows back to a 3px settled beam while the covers
+       finish rotating outward. The wider settled width (3px vs 2px)
+       gives the light line enough body to read against the dark void
+       behind it. */
     @keyframes reading-entry-spine {
-      0%   { opacity: 0;   transform: translateX(-50%) scaleY(0);    width: 2px; }
-      30%  { opacity: 1;                                                          }
-      70%  {               transform: translateX(-50%) scaleY(1);    width: 3px; }
-      100% { opacity: 0.92; transform: translateX(-50%) scaleY(1);   width: 2px; }
+      0%   { opacity: 0;    transform: translateX(-50%) scaleY(0);    width: 3px; }
+      18%  { opacity: 1;    transform: translateX(-50%) scaleY(0.55); width: 7px; }
+      40%  { opacity: 1;    transform: translateX(-50%) scaleY(0.9);  width: 5px; }
+      100% { opacity: 0.92; transform: translateX(-50%) scaleY(1);    width: 3px; }
     }
+    /* Both halves: hinge at the spine, rotate outward, and shift a few
+       pixels off-center so the seam visibly parts. Final opacity 0.78
+       keeps the original card readable underneath while the covers
+       stay clearly legible as opening pages. */
     @keyframes reading-entry-cover-left {
-      0%   { opacity: 0;   transform: rotateY(0deg); }
-      18%  { opacity: 0.95;                          }
-      100% { opacity: 0.55; transform: rotateY(calc(var(--reading-entry-cover-tilt) * -1)); }
+      0%   { opacity: 0;    transform: rotateY(0deg) translateX(0); }
+      18%  { opacity: 0.7;                                           }
+      100% { opacity: 0.55; transform: rotateY(var(--reading-entry-cover-tilt))
+                                       translateX(calc(var(--reading-entry-cover-shift) * -1)); }
     }
     @keyframes reading-entry-cover-right {
-      0%   { opacity: 0;   transform: rotateY(0deg); }
-      18%  { opacity: 0.95;                          }
-      100% { opacity: 0.55; transform: rotateY(var(--reading-entry-cover-tilt)); }
+      0%   { opacity: 0;    transform: rotateY(0deg) translateX(0); }
+      18%  { opacity: 0.7;                                           }
+      100% { opacity: 0.55; transform: rotateY(calc(var(--reading-entry-cover-tilt) * -1))
+                                       translateX(var(--reading-entry-cover-shift)); }
     }
+    /* Void grows in lockstep with the spine, then settles softer than
+       peak so the recess hints at depth without dominating. Narrow
+       width (14px) + low settle opacity (0.4) keeps it as a soft slit,
+       not a dark vertical band. */
+    @keyframes reading-entry-void {
+      0%   { opacity: 0;    transform: translateX(-50%) scaleY(0);    }
+      30%  { opacity: 0.5;                                             }
+      100% { opacity: 0.4;  transform: translateX(-50%) scaleY(1);    }
+    }
+    /* Bloom hits its brightness peak alongside the portal flare (~35%)
+       then expands and softens, supporting the spine without competing. */
     @keyframes reading-entry-bloom {
       0%   { opacity: 0;    transform: translate(50%, -50%) scale(0);    }
-      60%  { opacity: 0.85;                                              }
-      100% { opacity: 0.7;  transform: translate(50%, -50%) scale(1.35); }
+      35%  { opacity: 0.95;                                              }
+      100% { opacity: 0.6;  transform: translate(50%, -50%) scale(1.5);  }
     }
 
     /* Reduced motion: no rotating doors, no scale-pulses. The spine
@@ -3123,11 +2764,20 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
        that the launch was acknowledged, but nothing flashes. */
     @media (prefers-reduced-motion: reduce) {
       .reading-entry-opening,
+      .reading-entry-opening::before,
       .reading-entry-bloom,
       .reading-entry-cover,
       .reading-entry-spine {
         animation: none !important;
         transition: opacity 200ms linear;
+      }
+      /* Void requires the cover rotation to make sense; without rotation
+         there is no gap to fill, so keep it hidden under reduced motion. */
+      .library-galaxy[data-reading-entry-state="opening"]
+        .galaxy-card[data-pos="center"]
+        .reading-entry-opening::before {
+        opacity: 0;
+        transform: translateX(-50%) scaleY(0);
       }
       .library-galaxy[data-reading-entry-state="opening"]
         .galaxy-card[data-pos="center"]
@@ -3145,6 +2795,13 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
         .galaxy-card[data-pos="center"]
         .reading-entry-cover {
         opacity: 0;  /* covers don't appear at all under reduced motion */
+      }
+      /* No camera push under reduced motion — keep the centered card
+         exactly where it rests. The spine/bloom soft-fade alone
+         confirms the launch. */
+      .library-galaxy[data-reading-entry-state="opening"]
+        .galaxy-card[data-pos="center"] {
+        transform: translate(-50%, -50%) scale(1.5);
       }
       .library-galaxy[data-reading-entry-state="opening"]
         .galaxy-card:not([data-pos="center"]) {

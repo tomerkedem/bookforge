@@ -550,6 +550,11 @@ export const translations: Translations = {
   // ── library.galaxy.* — orbit interactions (click-to-center, pagination) ──
   'library.galaxy.openItem':        { he: 'פתח את הספר',      en: 'Open',                es: 'Abrir' },
   'library.galaxy.closeItem':       { he: 'סגור',             en: 'Close',               es: 'Cerrar' },
+
+  // ── Reading-entry overlay (in-card image overlay on the centered card) ──
+  'library.readingEntry.title':     { he: 'כניסה לקריאה',          en: 'Enter reading',                  es: 'Entrar a la lectura' },
+  'library.readingEntry.subtitle':  { he: 'לחץ כדי לפתוח את מרחב הספר', en: 'Click to open the book space',   es: 'Haz clic para abrir el espacio del libro' },
+  'library.readingEntry.ariaLabel': { he: 'כניסה לקריאה',          en: 'Enter reading',                  es: 'Entrar a la lectura' },
   'library.galaxy.nextBooks':       { he: 'ספרים הבאים',      en: 'Next books',          es: 'Siguientes libros' },
   'library.galaxy.prevBooks':       { he: 'ספרים קודמים',     en: 'Previous books',      es: 'Libros anteriores' },
   'library.galaxy.nextLessons':     { he: 'שיעורים הבאים',    en: 'Next lessons',        es: 'Siguientes lecciones' },
