@@ -2270,10 +2270,10 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
     .reading-entry-overlay {
       position: absolute;
       left: 50%;
-      top: 64%;
+      top: calc(100% - 34px);
       width: 66%;
       height: 108px;
-      transform: translate(-50%, -50%);
+      transform: translate(-50%, 0);
       display: block;
       margin: 0;
       padding: 0;
@@ -2343,7 +2343,7 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
     .reading-entry-text {
       position: absolute;
       left: 50%;
-      top: 68%;
+      top: calc(60% + 2px);
       width: 92%;
       transform: translate(-50%, -50%);
       display: flex;
@@ -2356,7 +2356,7 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
         'Segoe UI', 'Noto Sans Hebrew', sans-serif;
     }
     .reading-entry-title {
-      font-size: 15px;
+      font-size: 12px;
       font-weight: 700;
       line-height: 1.1;
       white-space: nowrap;
