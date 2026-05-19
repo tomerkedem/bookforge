@@ -359,25 +359,6 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
                   artifact={resolveOrbitArtifact(item)}
                   suppressOrbitCaption={isSafeLibraryHref(item.href)}
                 />
-                {/* Reading-entry overlay (phase 1).
-                    Replaces the visual side open orb (`.galaxy-cta-open`)
-                    with an internal premium panel that appears only when
-                    the card is centered (`[data-pos="center"]`). The
-                    `<a href={item.href}>` for the orb is still rendered
-                    inside `.galaxy-cta` below (hidden via CSS) so the
-                    href stays in the DOM. Routing is NOT touched yet:
-                    clicking this overlay logs slug + href and is wired
-                    to bypass capture-phase click handling in
-                    `universe-layout.ts` via the `data-reading-entry`
-                    attribute. */}
-                {isSafeLibraryHref(item.href) && (
-                  <span class="reading-entry-opening" aria-hidden="true">
-                    <span class="reading-entry-bloom"></span>
-                    <span class="reading-entry-cover reading-entry-cover-left"></span>
-                    <span class="reading-entry-cover reading-entry-cover-right"></span>
-                    <span class="reading-entry-spine"></span>
-                  </span>
-                )}
                 {/* Reading-entry overlay (image-based, in-card).
                     Premium glass-style asset (PNG, no baked text) sits
                     inside the centered card. All visible text is live,
@@ -623,6 +604,7 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
         ><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
       </div>
     )}
+
 
   </div>
 </LibraryLayout>
@@ -1171,6 +1153,44 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       opacity: 1;
       z-index: 30;
       cursor: default;
+    }
+
+    /* Mobile non-centre recede — the desktop counterpart at
+       `.library-galaxy[data-galaxy-focused] .galaxy-card:not([data-pos="center"])`
+       lives inside `@media (min-width: 1024px)` so it never reaches
+       phones. Duplicated here with gentler values: mobile cards sit
+       closer to the viewport edges and aggressive blur/dim reads as
+       harsh on a small screen.
+
+       Specificity (0, 4, 0) wins over the mobile `.galaxy-card` (0, 1, 0)
+       opacity rule, so `var(--slot-opacity)` is correctly overridden.
+       `scale` is the individual CSS property (not `transform: scale`)
+       so it composes with the orbit's cos/sin transform without us
+       having to recompute coordinates. Trigger is `data-galaxy-focused`,
+       set by universe-layout.ts when any card is centred — same flag
+       as desktop, no carousel-logic changes. */
+    .library-galaxy[data-galaxy-focused]
+      .galaxy-card:not([data-pos="center"]) {
+      filter: blur(2px) saturate(0.85);
+      opacity: 0.42;
+      scale: 0.9;
+      transition:
+        filter 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+        opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+        scale 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Reduced motion: skip the recede entirely on mobile too. The
+       desktop reduced-motion guard at line ~3077 lives inside the
+       desktop media block, so phones need their own. */
+    @media (prefers-reduced-motion: reduce) {
+      .library-galaxy[data-galaxy-focused]
+        .galaxy-card:not([data-pos="center"]) {
+        transition: none;
+        scale: 1;
+        filter: none;
+        opacity: var(--slot-opacity);
+      }
     }
 
     /* On mobile we drop the open-orb + X-close cluster — Tomer asked to
@@ -2530,10 +2550,11 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       opacity: 0;
       visibility: hidden;
       pointer-events: none;
-      /* Sits over the card art, the opening-animation layers
-         (.reading-entry-opening at z-index 5), and the LibraryCard
-         caption. Centered card already creates a stacking context at
-         z-index 30, so this z-index is intra-card only. */
+      /* Sits over the card art and the LibraryCard caption. Centered
+         card already creates a stacking context at z-index 30, so this
+         z-index is intra-card only. The viewport-level portal overlay
+         used for the launch animation lives at the page root (z-index
+         9999), independent of this stacking context. */
       z-index: 30;
       /* Direction is inherited from the page (rtl for Hebrew, ltr for
          English) so RTL/LTR fall out automatically — no per-language
@@ -2626,295 +2647,32 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       }
     }
 
-    /* ── Phase 3: opening animation ──────────────────────────────────
-       Activated only when BOTH conditions hold:
-         - the stage carries data-reading-entry-state="opening"
-         - the card has data-pos="center"
-       so non-centered cards and non-launching stages remain unaffected.
+    /* ── Reading-entry confirmation ─────────────────────────────────
+       Minimal confirmation transition for the reading-button click.
+       The earlier cinematic portal (seam + aura + scan + neural nodes
+       + scene/hero dim + camera push) was retired — Tomer asked for a
+       mature, professional, fast handoff. What survives:
+         1. The reading-entry pill fades out quickly (~100ms).
+         2. The selected card gets a very subtle cyan halo + brightness
+            lift (~200ms).
+         3. JS navigates to the same href after ~200ms.
 
-       Tunables (all read off `.library-galaxy`):
-         --reading-entry-duration    — total animation length (480ms)
-         --reading-entry-ease        — shared easing curve
-         --reading-entry-beam-color  — beam mid-tone (blue-violet)
-         --reading-entry-glow-color  — beam glow + bloom tint
-         --reading-entry-cover-tilt  — outward rotation of each cover */
-    .library-galaxy {
-      --reading-entry-duration: 600ms;
+       Carousel focus (recede on non-centred cards, scale on centred)
+       lives in its own block below and is independent — it runs on
+       every card-centring event, not just on launch.
+
+       Tunables on `:root` so JS and CSS share one source of truth.
+       JS reads `--reading-entry-total` via getComputedStyle and uses
+       it as the setTimeout delay before navigation. */
+    :root {
+      --reading-entry-total: 200ms;
       --reading-entry-ease: cubic-bezier(0.22, 0.61, 0.36, 1);
-      --reading-entry-beam-color: #6f7dff;
-      --reading-entry-glow-color: rgba(120, 130, 255, 0.6);
-      --reading-entry-cover-tilt: 42deg;
-      --reading-entry-cover-shift: 16px;
-      /* Dark blue-violet sitting in the centerline gap. Read as the
-         "inside" of the opening book — not a black bar. */
-      --reading-entry-void-color: #0a0719;
-      --reading-entry-edge-color: rgba(220, 226, 255, 0.85);
+      --reading-entry-halo-color: rgba(120, 210, 255, 0.45);
     }
 
-    /* Opening container — sits between the card art and the
-       reading-entry overlay. Stacks above the card image (default
-       z-index) and below the overlay panel (z-index: 6). Always
-       inert — `pointer-events: none` here AND on every descendant. */
-    .reading-entry-opening {
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-      opacity: 0;
-      overflow: hidden;
-      border-radius: 12px;
-      z-index: 5;
-      perspective: 750px;
-      transform-style: preserve-3d;
-      transition: opacity 180ms ease-out;
-    }
-    .reading-entry-opening > * {
-      pointer-events: none;
-    }
-
-    /* Void — vertical dark blue-violet slit sitting in the seam, behind
-       the spine and below the cover halves (::before paints first). At
-       rest the covers fully cover it; as they rotate/translate outward
-       the void becomes visible inside the opening, so the gap reads as
-       depth rather than just a light line on top of the card art.
-       Soft radial fade keeps the edges from looking like a black bar. */
-    .reading-entry-opening::before {
-      content: "";
-      position: absolute;
-      inset-block: 4%;
-      inset-inline-start: 50%;
-      width: 14px;
-      transform: translateX(-50%) scaleY(0);
-      transform-origin: center;
-      background:
-        radial-gradient(
-          ellipse at center,
-          var(--reading-entry-void-color) 0%,
-          color-mix(in srgb, var(--reading-entry-void-color) 55%, transparent) 40%,
-          transparent 80%
-        );
-      filter: blur(3px);
-      opacity: 0;
-      pointer-events: none;
-      z-index: 0;
-    }
-    .library-galaxy[data-reading-entry-state="opening"]
-      .galaxy-card[data-pos="center"]
-      .reading-entry-opening::before {
-      animation:
-        reading-entry-void
-        var(--reading-entry-duration)
-        var(--reading-entry-ease)
-        forwards;
-    }
-    .library-galaxy[data-reading-entry-state="opening"]
-      .galaxy-card[data-pos="center"]
-      .reading-entry-opening {
-      opacity: 1;
-    }
-
-    /* Bloom — soft radial light that expands behind the spine. Paints
-       first (source order) so the spine and covers overlay it. */
-    .reading-entry-bloom {
-      position: absolute;
-      inset: 50% 50% auto auto;
-      transform: translate(50%, -50%) scale(0);
-      width: 60%;
-      aspect-ratio: 1;
-      border-radius: 50%;
-      background:
-        radial-gradient(
-          circle at center,
-          var(--reading-entry-glow-color) 0%,
-          color-mix(in srgb, var(--reading-entry-glow-color) 45%, transparent) 35%,
-          transparent 70%
-        );
-      filter: blur(10px);
-      opacity: 0;
-      mix-blend-mode: screen;
-    }
-    .library-galaxy[data-reading-entry-state="opening"]
-      .galaxy-card[data-pos="center"]
-      .reading-entry-bloom {
-      animation:
-        reading-entry-bloom
-        var(--reading-entry-duration)
-        var(--reading-entry-ease)
-        forwards;
-    }
-
-    /* Glass cover halves — appear during the animation, hinged on the
-       outer edge, rotating outward to "open" the card like a book.
-       Subtle warm-gold edge keeps the cover halves consistent with the
-       Yuval premium palette; the inner gradient mimics translucent
-       leaded glass. */
-    .reading-entry-cover {
-      position: absolute;
-      inset-block: 0;
-      width: 50%;
-      /* Translucent glass: lightly tinted near the spine where the
-         light beam catches, fading to near-transparent at the outer
-         edge so the original card art reads through. Per-half rules
-         below set the gradient direction. */
-      border: none;
-      backdrop-filter: blur(1px) saturate(115%);
-      -webkit-backdrop-filter: blur(1px) saturate(115%);
-      box-shadow: none;
-      opacity: 0;
-      will-change: transform, opacity;
-    }
-    /* Hinge fix: the covers must open from the CENTER SPINE, so the
-       left half is hinged on its RIGHT edge (touching the spine) and
-       the right half is hinged on its LEFT edge (also touching the
-       spine). The previous values (`left center` / `right center`)
-       pinned each half to its outer edge, which would swing the inner
-       edges around the outer hinge — the opposite of a book opening.
-
-       Physical `left: 0` / `right: 0` (not logical inline-start/end)
-       is intentional: the animation is direction-symmetric (two halves
-       meeting at the centerline of the card), so we want the visual
-       layout to stay identical in LTR and RTL rather than swap which
-       half sits on the inline-start side. The spine itself uses
-       `inset-inline-start: 50%` with `translateX(-50%)`, which
-       resolves to the visual center in both directions, so spine and
-       hinges stay aligned regardless of page direction. */
-    /* Per-half box-shadows layer two depth cues on top of the base
-       warm-gold inset and drop shadow from `.reading-entry-cover`:
-         1. A 1px bright edge on the seam side reads as a backlit page
-            edge catching the spine glow.
-         2. An inner shadow falling away from the seam makes the gap
-            feel recessed, so the eye reads the centerline as depth
-            (the inside of the book) instead of a flat highlight. */
-    /* Per-half glass cover. Three things keep these from reading as
-       dark stripes:
-         1. Background gradient is strongest near the spine (right edge
-            of the left half / left edge of the right half) and fades
-            to ~transparent at the outer edge, so the cover is visibly
-            anchored to the seam, not a full rectangle.
-         2. mask-image fades the outer edge to fully transparent so
-            the cover dissolves into the card art instead of clipping.
-         3. Box-shadows are now: a thin luminous spine-side highlight
-            and a much softer (-14px spread) seam-side inner shadow.
-            No dark stroke around the perimeter. */
-    .reading-entry-cover-left {
-      left: 0;
-      transform-origin: right center;
-      transform: rotateY(0deg) translateX(0);
-      backface-visibility: hidden;
-      -webkit-backface-visibility: hidden;
-      background: linear-gradient(
-        90deg,
-        rgba(8, 12, 34, 0.04) 0%,
-        rgba(20, 26, 64, 0.22) 68%,
-        rgba(150, 180, 255, 0.18) 100%
-      );
-      box-shadow:
-        inset -1px 0 0 0 var(--reading-entry-edge-color),
-        inset -14px 0 22px -16px rgba(0, 0, 0, 0.45);
-      mask-image: linear-gradient(
-        90deg,
-        transparent 0%,
-        rgba(0, 0, 0, 0.35) 22%,
-        #000 65%,
-        #000 100%
-      );
-      -webkit-mask-image: linear-gradient(
-        90deg,
-        transparent 0%,
-        rgba(0, 0, 0, 0.35) 22%,
-        #000 65%,
-        #000 100%
-      );
-    }
-    .reading-entry-cover-right {
-      right: 0;
-      transform-origin: left center;
-      transform: rotateY(0deg) translateX(0);
-      backface-visibility: hidden;
-      -webkit-backface-visibility: hidden;
-      background: linear-gradient(
-        270deg,
-        rgba(8, 12, 34, 0.04) 0%,
-        rgba(20, 26, 64, 0.22) 68%,
-        rgba(150, 180, 255, 0.18) 100%
-      );
-      box-shadow:
-        inset 1px 0 0 0 var(--reading-entry-edge-color),
-        inset 14px 0 22px -16px rgba(0, 0, 0, 0.45);
-      mask-image: linear-gradient(
-        270deg,
-        transparent 0%,
-        rgba(0, 0, 0, 0.35) 22%,
-        #000 65%,
-        #000 100%
-      );
-      -webkit-mask-image: linear-gradient(
-        270deg,
-        transparent 0%,
-        rgba(0, 0, 0, 0.35) 22%,
-        #000 65%,
-        #000 100%
-      );
-    }
-    .library-galaxy[data-reading-entry-state="opening"]
-      .galaxy-card[data-pos="center"]
-      .reading-entry-cover-left {
-      animation:
-        reading-entry-cover-left
-        var(--reading-entry-duration)
-        var(--reading-entry-ease)
-        forwards;
-    }
-    .library-galaxy[data-reading-entry-state="opening"]
-      .galaxy-card[data-pos="center"]
-      .reading-entry-cover-right {
-      animation:
-        reading-entry-cover-right
-        var(--reading-entry-duration)
-        var(--reading-entry-ease)
-        forwards;
-    }
-
-    /* Spine — thin vertical beam down the centerline. Paints last so
-       the glow reads as the focal point. Two box-shadows produce the
-       layered halo (tight inner core, wider outer wash). */
-    .reading-entry-spine {
-      position: absolute;
-      inset-block: 6%;
-      inset-inline-start: 50%;
-      width: 2px;
-      transform: translateX(-50%) scaleY(0);
-      transform-origin: center;
-      background: linear-gradient(
-        180deg,
-        transparent 0%,
-        color-mix(in srgb, var(--reading-entry-beam-color) 55%, transparent) 12%,
-        #cfd4ff 50%,
-        color-mix(in srgb, var(--reading-entry-beam-color) 55%, transparent) 88%,
-        transparent 100%
-      );
-      box-shadow:
-        0 0 6px var(--reading-entry-glow-color),
-        0 0 16px var(--reading-entry-glow-color),
-        0 0 28px color-mix(in srgb, var(--reading-entry-glow-color) 55%, transparent);
-      border-radius: 4px;
-      opacity: 0;
-      mix-blend-mode: screen;
-      will-change: transform, opacity, width;
-    }
-    .library-galaxy[data-reading-entry-state="opening"]
-      .galaxy-card[data-pos="center"]
-      .reading-entry-spine {
-      animation:
-        reading-entry-spine
-        var(--reading-entry-duration)
-        var(--reading-entry-ease)
-        forwards;
-    }
-
-    /* Hide the reading-entry overlay panel during opening — the user
-       just activated it, so its job is done and it shouldn't compete
-       with the unfolding animation. Opacity-only so the link itself
-       stays in the accessibility tree until launch is committed. */
+    /* Pill fade — the user just activated it, so its job is done.
+       Opacity-only so the link itself stays in the accessibility tree
+       until the navigation timer fires. */
     .library-galaxy[data-reading-entry-state="opening"]
       .galaxy-card[data-pos="center"]
       .reading-entry-asset,
@@ -2922,138 +2680,59 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       .galaxy-card[data-pos="center"]
       .reading-entry-text {
       opacity: 0;
-      transition: opacity 200ms ease-out;
+      transition: opacity 100ms ease-out;
     }
 
-    /* Camera push — the centered card scales up a touch during opening
-       so the user feels pulled into the book rather than just watching
-       the covers part. Rides the existing 0.55s transform transition on
-       `.galaxy-card`, so no new animation infra is added. Override is
-       scoped to opening + center, so resting layout is untouched. */
+    /* Subtle confirmation on the selected card — a small brightness
+       lift plus a single cyan halo that traces the artifact's alpha
+       silhouette via drop-shadow. Calibrated to read as "the AI heard
+       you" within 200ms, without theatrics. */
     .library-galaxy[data-reading-entry-state="opening"]
-      .galaxy-card[data-pos="center"] {
-      transform: translate(-50%, -50%) scale(1.56);
+      .galaxy-card[data-pos="center"] :global(.lc-orbit-artifact-face-front) {
+      filter:
+        brightness(1.05)
+        drop-shadow(0 0 8px var(--reading-entry-halo-color));
+      transition: filter var(--reading-entry-total) var(--reading-entry-ease);
     }
 
-    /* Non-centered orbit cards — dim + soft blur so attention shifts
-       to the launching card. Limited to the launching stage, so other
-       library views and the mobile carousel are unaffected. */
-    .library-galaxy[data-reading-entry-state="opening"]
+    /* ── Carousel focus: non-centred cards recede ─────────────────────
+       Trigger is `data-galaxy-focused` on the stage (set by
+       universe-layout.ts whenever a card is centred), NOT the launch-
+       state attribute. The recede is a NORMAL carousel-focus behaviour:
+       pick any card via orbit navigation and the rest of the field
+       recedes immediately — no reading-button click required.
+
+       `scale` is the individual CSS property (not `transform: scale`)
+       so it composes after the orbit's cos/sin transform without us
+       having to recompute coordinates here. Transition runs at 0.4s
+       to match the orbit's snappy focus pace. */
+    .library-galaxy[data-galaxy-focused]
       .galaxy-card:not([data-pos="center"]) {
-      filter: blur(2px) saturate(0.78);
-      opacity: 0.42;
+      filter: blur(3px) saturate(0.78);
+      opacity: 0.28;
+      scale: 0.86;
       transition:
-        filter var(--reading-entry-duration) var(--reading-entry-ease),
-        opacity var(--reading-entry-duration) var(--reading-entry-ease);
+        filter 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+        opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+        scale 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    /* Cosmic scene darkening — only the background image dims, so
-       the global header (top app bar), the left sidebar, and the
-       narrow right pill toolbar all remain at full opacity / fully
-       usable. `:has()` lets the rule live next to the rest of the
-       launch styling without a JS-driven body class. */
-    .library-root:has(.library-galaxy[data-reading-entry-state="opening"])
-      .knowledge-scene-background img {
-      filter: brightness(0.68) saturate(0.9);
-      transition: filter var(--reading-entry-duration) var(--reading-entry-ease);
-    }
-
-    /* Portal beat: in the first ~250ms (≈40% of 600ms) the spine flares
-       to 7px and reaches full brightness, reading as a portal cracking
-       open. It then narrows back to a 3px settled beam while the covers
-       finish rotating outward. The wider settled width (3px vs 2px)
-       gives the light line enough body to read against the dark void
-       behind it. */
-    @keyframes reading-entry-spine {
-      0%   { opacity: 0;    transform: translateX(-50%) scaleY(0);    width: 3px; }
-      18%  { opacity: 1;    transform: translateX(-50%) scaleY(0.55); width: 7px; }
-      40%  { opacity: 1;    transform: translateX(-50%) scaleY(0.9);  width: 5px; }
-      100% { opacity: 0.92; transform: translateX(-50%) scaleY(1);    width: 3px; }
-    }
-    /* Both halves: hinge at the spine, rotate outward, and shift a few
-       pixels off-center so the seam visibly parts. Final opacity 0.78
-       keeps the original card readable underneath while the covers
-       stay clearly legible as opening pages. */
-    @keyframes reading-entry-cover-left {
-      0%   { opacity: 0;    transform: rotateY(0deg) translateX(0); }
-      18%  { opacity: 0.7;                                           }
-      100% { opacity: 0.55; transform: rotateY(var(--reading-entry-cover-tilt))
-                                       translateX(calc(var(--reading-entry-cover-shift) * -1)); }
-    }
-    @keyframes reading-entry-cover-right {
-      0%   { opacity: 0;    transform: rotateY(0deg) translateX(0); }
-      18%  { opacity: 0.7;                                           }
-      100% { opacity: 0.55; transform: rotateY(calc(var(--reading-entry-cover-tilt) * -1))
-                                       translateX(var(--reading-entry-cover-shift)); }
-    }
-    /* Void grows in lockstep with the spine, then settles softer than
-       peak so the recess hints at depth without dominating. Narrow
-       width (14px) + low settle opacity (0.4) keeps it as a soft slit,
-       not a dark vertical band. */
-    @keyframes reading-entry-void {
-      0%   { opacity: 0;    transform: translateX(-50%) scaleY(0);    }
-      30%  { opacity: 0.5;                                             }
-      100% { opacity: 0.4;  transform: translateX(-50%) scaleY(1);    }
-    }
-    /* Bloom hits its brightness peak alongside the portal flare (~35%)
-       then expands and softens, supporting the spine without competing. */
-    @keyframes reading-entry-bloom {
-      0%   { opacity: 0;    transform: translate(50%, -50%) scale(0);    }
-      35%  { opacity: 0.95;                                              }
-      100% { opacity: 0.6;  transform: translate(50%, -50%) scale(1.5);  }
-    }
-
-    /* Reduced motion: no rotating doors, no scale-pulses. The spine
-       and bloom fade in softly so the user still gets confirmation
-       that the launch was acknowledged, but nothing flashes. */
+    /* Reduced motion: skip both the confirmation halo and the focus
+       recede. JS short-circuits with location.assign before any state
+       flip too, so these rules are belt-and-braces for any code path
+       that sets the state without the JS guard. */
     @media (prefers-reduced-motion: reduce) {
-      .reading-entry-opening,
-      .reading-entry-opening::before,
-      .reading-entry-bloom,
-      .reading-entry-cover,
-      .reading-entry-spine {
-        animation: none !important;
-        transition: opacity 200ms linear;
-      }
-      /* Void requires the cover rotation to make sense; without rotation
-         there is no gap to fill, so keep it hidden under reduced motion. */
       .library-galaxy[data-reading-entry-state="opening"]
-        .galaxy-card[data-pos="center"]
-        .reading-entry-opening::before {
-        opacity: 0;
-        transform: translateX(-50%) scaleY(0);
+        .galaxy-card[data-pos="center"] :global(.lc-orbit-artifact-face-front) {
+        filter: none;
+        transition: none;
       }
-      .library-galaxy[data-reading-entry-state="opening"]
-        .galaxy-card[data-pos="center"]
-        .reading-entry-spine {
-        opacity: 0.7;
-        transform: translateX(-50%) scaleY(1);
-      }
-      .library-galaxy[data-reading-entry-state="opening"]
-        .galaxy-card[data-pos="center"]
-        .reading-entry-bloom {
-        opacity: 0.55;
-        transform: translate(50%, -50%) scale(1);
-      }
-      .library-galaxy[data-reading-entry-state="opening"]
-        .galaxy-card[data-pos="center"]
-        .reading-entry-cover {
-        opacity: 0;  /* covers don't appear at all under reduced motion */
-      }
-      /* No camera push under reduced motion — keep the centered card
-         exactly where it rests. The spine/bloom soft-fade alone
-         confirms the launch. */
-      .library-galaxy[data-reading-entry-state="opening"]
-        .galaxy-card[data-pos="center"] {
-        transform: translate(-50%, -50%) scale(1.5);
-      }
-      .library-galaxy[data-reading-entry-state="opening"]
+      .library-galaxy[data-galaxy-focused]
         .galaxy-card:not([data-pos="center"]) {
         transition: none;
-      }
-      .library-root:has(.library-galaxy[data-reading-entry-state="opening"])
-        .knowledge-scene-background img {
-        transition: none;
+        scale: 1;
+        filter: none;
+        opacity: 1;
       }
     }
 
@@ -3797,10 +3476,40 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
    * decouples cleanup from the centering API in universe-layout.ts.
    */
   function initReadingEntryLaunch(stage: HTMLElement) {
+    // Single source of truth lives in CSS: `:root { --reading-entry-total }`.
+    // We read it at click time so a tuning change to the CSS variable
+    // immediately retunes the JS navigation timing — no constant to
+    // keep in sync. Fallback is 200ms (the simplified confirmation
+    // window) in case the property is missing or unparseable.
+    function readDurationMs(): number {
+      const raw = getComputedStyle(document.documentElement)
+        .getPropertyValue('--reading-entry-total')
+        .trim();
+      if (raw.endsWith('ms')) {
+        const n = parseFloat(raw);
+        return Number.isFinite(n) && n > 0 ? n : 200;
+      }
+      if (raw.endsWith('s')) {
+        const n = parseFloat(raw);
+        return Number.isFinite(n) && n > 0 ? n * 1000 : 200;
+      }
+      const n = parseFloat(raw);
+      return Number.isFinite(n) && n > 0 ? n : 200;
+    }
+
     function clearLaunchState(): void {
       delete stage.dataset.readingEntryState;
       delete stage.dataset.readingEntryHref;
       delete stage.dataset.readingEntrySlug;
+      const pendingTimer = stage.dataset.readingEntryTimer;
+      if (pendingTimer) {
+        window.clearTimeout(Number(pendingTimer));
+        delete stage.dataset.readingEntryTimer;
+      }
+    }
+
+    function prefersReducedMotion(): boolean {
+      return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     }
 
     function isPlainActivation(e: MouseEvent): boolean {
@@ -3854,10 +3563,37 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       }
 
       e.preventDefault();
+
+      // Reduced motion: skip the confirmation entirely and navigate
+      // immediately. We don't set the opening state at all so the
+      // halo + pill fade never engage — the user gets a plain
+      // navigation, which is what the OS-level preference asks for.
+      if (prefersReducedMotion()) {
+        console.log('[reading-entry] reduced motion — navigating immediately', { slug, href });
+        window.location.assign(href);
+        return;
+      }
+
+      // Stage-level state drives the pill fade-out and the subtle
+      // halo on the selected card. Navigation fires when the timer
+      // lands — see below.
       stage.dataset.readingEntryState = 'opening';
       stage.dataset.readingEntryHref = href;
       stage.dataset.readingEntrySlug = slug;
       console.log('[reading-entry] launch started', { slug, href });
+
+      // Navigate after the confirmation window. Duration is read
+      // from the CSS var so a tuning change in one place retunes
+      // both the visual timing and the navigation moment. Store the
+      // timer id on the stage so the MutationObserver-driven
+      // clearLaunchState() can cancel it if centering changes mid-
+      // animation (e.g. user taps backdrop / centers a different card).
+      const durationMs = readDurationMs();
+      const timerId = window.setTimeout(() => {
+        delete stage.dataset.readingEntryTimer;
+        window.location.assign(href);
+      }, durationMs);
+      stage.dataset.readingEntryTimer = String(timerId);
     });
 
     // Reset launch state on any centering change. We intentionally
