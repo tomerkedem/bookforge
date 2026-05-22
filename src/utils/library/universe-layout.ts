@@ -220,6 +220,14 @@ export function initStageLayout(stage: HTMLElement): void {
     // plain left-clicks (and only those) to animate before navigating.
     if (target.closest('[data-reading-entry]')) return;
 
+    // Center-card secondary link ("מה יש בספר?" → /books/{slug}).
+    // Same rationale as the reading-entry guard above: the link lives
+    // inside the centered card, so the card-click branch below would
+    // close the spotlight and swallow the navigation. Letting the
+    // native <a href> take over keeps modifier-click and right-click
+    // behavior intact.
+    if (target.closest('[data-cc-secondary-link]')) return;
+
     // Close button.
     if (target.closest('[data-galaxy-cta-close]')) {
       e.preventDefault();

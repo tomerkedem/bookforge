@@ -429,6 +429,130 @@
 
 
 /* ───────────────────────────────────────────────────────────────────────────
+   LIGHT MODE — /library showcase ("Knowledge Observatory")
+
+   The `.library-dark-showcase` class re-declares every galaxy token with
+   DARK values on the /library page wrapper, so the generic
+   `:root:not(.dark)` light block above never reaches that subtree — which
+   is why light mode looked like "dark UI on a light background". This
+   block restores a real light theme for the showcase subtree, and ONLY
+   when <html> has no `.dark` class.
+
+   Specificity: `:root:not(.dark) .library-dark-showcase` = (0,3,0), which
+   beats the plain `.library-dark-showcase` blocks = (0,1,0). So these
+   values win by specificity regardless of source order, and dark mode
+   (html.dark) never matches the selector — the dark showcase is byte-for-
+   byte untouched.
+
+   Palette intent: warm-ivory observatory daylight — bright, premium,
+   scientific, calm. Tuned against knowledge-observatory-day-bg.png.
+   Components consume semantic tokens (Dependency Inversion), so this one
+   block re-themes the header, panels, controls and glows coherently.
+   ─────────────────────────────────────────────────────────────────────────── */
+:root:not(.dark) .library-dark-showcase {
+
+  /* ── Backgrounds — warm ivory with a soft cosmic tint ─────────────────────── */
+  --yuval-galaxy-bg-deep:            #e7e3d8;
+  --yuval-galaxy-bg-navy:            #ede9de;
+  --yuval-galaxy-bg-navy-soft:       #f3efe6;
+  --yuval-galaxy-bg:                 #f6f3ec;
+  --yuval-galaxy-bg-soft:            #efece3;
+
+  /* Page-level glow layers — barely-there warm bloom. The day asset
+     already carries the scene's light; these only blend its edges into
+     the surrounding ivory field instead of splashing neon over it. */
+  --yuval-galaxy-bg-radial-primary:  radial-gradient(
+                                       ellipse 45% 40% at 50% 42%,
+                                       rgba(214, 188, 130, 0.12) 0%,
+                                       rgba(214, 188, 130, 0.00) 75%
+                                     );
+  --yuval-galaxy-bg-radial-secondary: radial-gradient(
+                                       ellipse 120% 32% at 50% 100%,
+                                       rgba(120, 130, 160, 0.06) 0%,
+                                       rgba(120, 130, 160, 0.00) 82%
+                                     );
+  --yuval-galaxy-bg-vignette:        radial-gradient(
+                                       ellipse 115% 115% at 50% 50%,
+                                       rgba(120, 130, 160, 0.00) 55%,
+                                       rgba(120, 130, 160, 0.10) 100%
+                                     );
+
+  /* ── Surfaces — translucent warm-white "pale glass" ───────────────────────── */
+  --yuval-galaxy-surface:            rgba(255, 253, 249, 0.82);
+  --yuval-galaxy-surface-elevated:   rgba(255, 254, 251, 0.94);
+  --yuval-galaxy-surface-muted:      rgba(244, 242, 235, 0.78);
+
+  /* ── Borders — subtle blue-gray hairlines ─────────────────────────────────── */
+  --yuval-galaxy-border:             rgba(34, 52, 92, 0.14);
+  --yuval-galaxy-border-strong:      rgba(34, 52, 92, 0.24);
+  --yuval-galaxy-border-glow:        rgba(14, 116, 144, 0.30);
+
+  /* ── Text — dark navy, slate hierarchy (strong readability on ivory) ──────── */
+  --yuval-galaxy-text:               #16223c;
+  --yuval-galaxy-text-muted:         #46556f;
+  --yuval-galaxy-text-soft:          #6a778d;
+  --yuval-galaxy-text-inverse:       #ffffff;
+
+  /* ── Accents — darkened for contrast on ivory, glow softened ──────────────── */
+  --yuval-galaxy-accent:             #0e7490;
+  --yuval-galaxy-accent-secondary:   #6d3bd4;
+  --yuval-galaxy-accent-cyan:        #0e7490;
+  --yuval-galaxy-accent-purple:      #6d3bd4;
+  --yuval-galaxy-accent-blue:        #2563eb;
+  --yuval-galaxy-accent-gold:        #9a6c08;
+  --yuval-galaxy-accent-green:       #047857;
+  --yuval-galaxy-accent-danger:      #dc2626;
+
+  /* ── Glows — soft daylight shadows, no neon bloom ─────────────────────────── */
+  --yuval-galaxy-glow-primary:       0 0 16px 0 rgba(14, 116, 144, 0.14);
+  --yuval-galaxy-glow-secondary:     0 0 14px 0 rgba(109, 59, 212, 0.12);
+  --yuval-galaxy-glow-soft:          0 0 10px 0 rgba(34, 52, 92, 0.06);
+  --yuval-galaxy-glow-card:          0 1px 2px 0 rgba(15, 23, 42, 0.05),
+                                     0 10px 28px -10px rgba(30, 45, 80, 0.18);
+  --yuval-galaxy-glow-core:          0 0 36px 0 rgba(214, 188, 130, 0.22),
+                                     0 0 14px 0 rgba(14, 116, 144, 0.10);
+  --yuval-galaxy-glow-danger:        0 0 14px 0 rgba(220, 38, 38, 0.18);
+
+  /* ── Card chrome tokens (orbit decking, capsule deck, etc.) ───────────────── */
+  --yuval-galaxy-card-surface:       rgba(255, 254, 251, 0.86);
+  --yuval-galaxy-card-surface-hover: rgba(255, 255, 255, 0.96);
+  --yuval-galaxy-card-border:        rgba(34, 52, 92, 0.12);
+  --yuval-galaxy-card-shadow:        0 8px 24px 0 rgba(30, 45, 80, 0.12);
+
+  /* Lighter backdrop-filter blur — heavy frosting muddies the bright
+     scene; pale glass at a modest radius reads cleaner in daylight and
+     keeps mobile compositing cheap. */
+  --yuval-galaxy-card-blur:          8px;
+
+  /* ── Title gradient — refined navy → antique gold ─────────────────────────── */
+  --yuval-galaxy-title-gradient:     linear-gradient(
+                                       120deg,
+                                       #16223c 0%,
+                                       #16223c 58%,
+                                       #9a6c08 100%
+                                     );
+
+  /* ── Status / type accents — darkened variants for ivory panels ───────────── */
+  --yuval-galaxy-status-new:         #0e7490;
+  --yuval-galaxy-status-processing:  #b45309;
+  --yuval-galaxy-status-ready:       #047857;
+  --yuval-galaxy-status-failed:      #dc2626;
+  --yuval-galaxy-status-archived:    #64748b;
+
+  --yuval-galaxy-type-book:          #b45309;
+  --yuval-galaxy-type-course:        #0e7490;
+  --yuval-galaxy-type-course_lesson: #0369a1;
+  --yuval-galaxy-type-article:       #6d3bd4;
+  --yuval-galaxy-type-series:        #9a6c08;
+  --yuval-galaxy-type-lesson_summary:#047857;
+  --yuval-galaxy-type-slides:        #c2410c;
+  --yuval-galaxy-type-lab:           #e11d48;
+  --yuval-galaxy-type-transcript:    #2563eb;
+  --yuval-galaxy-type-document:      #475569;
+}
+
+
+/* ───────────────────────────────────────────────────────────────────────────
    REDUCED MOTION — token-level overrides
 
    The global rule in theme.css already neutralises CSS transitions and

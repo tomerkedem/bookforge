@@ -309,4 +309,36 @@ const historyLabel     = t('library.action.history',     language);
      scaled below via `clamp()` so the rail shrinks gradually on
      narrow screens but never collapses. The legacy mobile-only
      LibraryQuickActions panel is no longer used as a fallback. */
+
+  /* ── Light mode — warm pale-glass rail ───────────────────────────
+     The panel above is authored with a hardcoded deep-navy gradient,
+     a blue atmospheric halo and light-on-dark labels. In light mode
+     (<html> without `.dark`) repaint it as translucent warm white
+     with a soft blue-gray border and a calm shadow — no neon. Dark
+     mode never matches this selector, so it stays untouched. */
+  :global(html:not(.dark)) .floating-sidebar {
+    background:
+      radial-gradient(
+        ellipse 80% 40% at 50% 0%,
+        rgba(255, 255, 255, 0.65) 0%,
+        transparent 62%),
+      linear-gradient(
+        180deg,
+        rgba(255, 253, 249, 0.92) 0%,
+        rgba(248, 249, 252, 0.88) 50%,
+        rgba(255, 253, 249, 0.92) 100%);
+    border-color: rgba(34, 52, 92, 0.16);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.75),
+      0 1px 2px rgba(15, 23, 42, 0.05),
+      0 12px 30px -10px rgba(30, 45, 80, 0.18);
+  }
+  /* Bookmark / history labels — navy slate instead of pale blue-white. */
+  :global(html:not(.dark)) .floating-sidebar__label {
+    color: #46556f;
+  }
+  /* AI item keeps its lead role with a deeper, daylight-readable cyan. */
+  :global(html:not(.dark)) .floating-sidebar__item--ai {
+    color: #0e7490;
+  }
 </style>

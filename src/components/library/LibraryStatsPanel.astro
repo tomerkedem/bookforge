@@ -7,22 +7,27 @@ import { getLanguageDirection } from '../../utils/language';
 interface Props {
   stats: LibraryStats;
   language: Language;
+  /**
+   * Accepted for call-site compatibility only. The panel is now a
+   * compact "library snapshot" and no longer renders a per-course
+   * lessons breakdown, so this prop is intentionally unused.
+   */
   courseProgress?: LibraryCourseProgress[];
 }
 
-const { stats, language, courseProgress = [] } = Astro.props;
+const { stats, language } = Astro.props;
 const direction = getLanguageDirection(language);
 
+/* Compact snapshot — only the three top-level content types. Articles
+   and the per-course lesson rows were dropped so the panel reads as a
+   lightweight snapshot that frames the carousel, not a stats dashboard. */
 const typeOrder: Array<{ type: LibraryItemType; labelKey: string }> = [
-  { type: 'book',    labelKey: 'library.stats.label.books' },
-  { type: 'course',  labelKey: 'library.stats.label.courses' },
-  { type: 'series',  labelKey: 'library.stats.label.series' },
-  { type: 'article', labelKey: 'library.stats.label.articles' },
+  { type: 'book',   labelKey: 'library.stats.label.books' },
+  { type: 'course', labelKey: 'library.stats.label.courses' },
+  { type: 'series', labelKey: 'library.stats.label.series' },
 ];
 
 const visibleTypes = typeOrder.filter(({ type }) => (stats.byType[type] ?? 0) > 0);
-const visibleCourses = courseProgress.filter((course) => course.total > 0);
-const showCourseGroup = visibleCourses.length > 0;
 ---
 
 <article
@@ -40,9 +45,9 @@ const showCourseGroup = visibleCourses.length > 0;
     <h3 class="lsp__title">{t('library.stats.yourLibrary', language)}</h3>
   </header>
 
-  <div class="lsp__hero">
-    <span class="lsp__hero-number">{stats.readable}</span>
-    <span class="lsp__hero-subtitle">{t('library.stats.itemsInLibrary', language)}</span>
+  <div class="lsp__total">
+    <span class="lsp__total-number">{stats.readable}</span>
+    <span class="lsp__total-label">{t('library.stats.itemsInLibrary', language)}</span>
   </div>
 
   {visibleTypes.length > 0 && (
@@ -56,26 +61,6 @@ const showCourseGroup = visibleCourses.length > 0;
       ))}
     </ul>
   )}
-
-  {showCourseGroup && visibleCourses.map((course) => {
-    const courseName =
-      course.titles[language] ??
-      course.titles.en ??
-      course.titles.he ??
-      course.slug;
-    return (
-      <div class="lsp__course-group">
-        <h4 class="lsp__group-title">
-          {t('library.stats.courseSummariesTitle', language, { courseName })}
-        </h4>
-        <div class="lsp__row">
-          <span class="lsp__row-dot" data-type="course_lesson" aria-hidden="true"></span>
-          <span class="lsp__row-label">{t('library.stats.label.lessons', language)}</span>
-          <span class="lsp__row-value">{course.available} / {course.total}</span>
-        </div>
-      </div>
-    );
-  })}
 
   <a class="lsp__cta" href="/library">
     <span class="lsp__cta-icon" aria-hidden="true">
@@ -94,29 +79,28 @@ const showCourseGroup = visibleCourses.length > 0;
   /* Mobile + tablet (≤1023px): hidden — the stats surface on mobile
      lives inside the phone flow (LibraryHero / mobile stats list),
      not as a fixed floating panel that would overlap the content.
-     1023px matches library.astro's own mobile/tablet reset breakpoint
+     1023px matches index.astro's own mobile/tablet reset breakpoint
      so the entire mobile composition flips in lockstep. */
   @media (max-width: 1023px) {
     .library-stats-panel { display: none !important; }
   }
 
   .library-stats-panel {
-    /* Fixed positioning — pinned to the inline-start edge of the
-       viewport, stacked below ContinueLearningCard with a 20px gap.
-       Card-1 height feeds in via --continue-learning-card-height
-       (defined in LibraryLayout). */
+    /* Fixed positioning — pinned to the inline-END edge of the
+       viewport (left in RTL Hebrew, right in LTR), opposite the
+       ContinueLearningCard. The two panels now frame the carousel
+       symmetrically instead of stacking on one side. Anchored at
+       the same `top` as ContinueLearningCard. */
     position: fixed;
-    top: calc(
-      var(--library-header-offset, 72px)
-      + 20px
-      + var(--continue-learning-card-height, 360px)
-      + var(--floating-card-gap)
-    );
-    inset-inline-start: 1px;
-    inset-inline-end: auto;
+    top: calc(var(--library-header-offset, 72px) + 20px);
+    inset-inline-start: auto;
+    /* Comfortable gap from the viewport edge — kept identical to
+       ContinueLearningCard's `inset-inline-start` so the two panels
+       frame the carousel symmetrically and neither glues to the edge. */
+    inset-inline-end: clamp(16px, 1.8vw, 32px);
     z-index: 30;
-    /* Layered surface adopted from FloatingSidebar / ContinueLearningCard
-       so all three premium panels share the same material family:
+    /* Layered surface adopted from ContinueLearningCard / FloatingSidebar
+       so all premium panels share the same material family:
          1. Soft radial highlight at top, fading to transparent at 60%.
          2. Linear navy with very low contrast top/middle/bottom. */
     background:
@@ -131,7 +115,7 @@ const showCourseGroup = visibleCourses.length > 0;
         #08091a 100%);
     border: 1px solid rgba(120, 140, 200, 0.18);
     border-radius: var(--yuval-galaxy-panel-radius, 20px);
-    /* 4-layer depth + glow stack (matches FloatingSidebar / ContinueLearningCard):
+    /* 4-layer depth + glow stack (matches ContinueLearningCard):
          - inset hairline (the "inside cyan line")
          - inset soft glow toward center
          - outer atmospheric halo
@@ -144,24 +128,26 @@ const showCourseGroup = visibleCourses.length > 0;
     backdrop-filter: blur(var(--yuval-galaxy-card-blur, 20px));
     -webkit-backdrop-filter: blur(var(--yuval-galaxy-card-blur, 20px));
     isolation: isolate;
-    padding: 20px;
+    /* Compact snapshot — tighter padding + gap than the old dashboard
+       card so it never competes with the carousel. */
+    padding: 16px;
     width: var(--floating-card-width);
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 14px;
   }
 
   .lsp__header {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     color: var(--yuval-galaxy-accent-purple);
   }
 
   .lsp__header-icon {
     display: inline-flex;
-    width: 24px;
-    height: 24px;
+    width: 18px;
+    height: 18px;
   }
   .lsp__header-icon svg {
     width: 100%;
@@ -169,35 +155,38 @@ const showCourseGroup = visibleCourses.length > 0;
   }
 
   .lsp__title {
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 500;
     color: var(--yuval-galaxy-text);
     margin: 0;
   }
 
-  .lsp__hero {
+  /* Compact total — baseline-aligned number + label on one line,
+     wrapping gracefully on the narrowest panel width. Replaces the
+     old 48px hero block so the panel stays a snapshot, not a hero. */
+  .lsp__total {
     display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 2px 8px;
   }
 
-  .lsp__hero-number {
-    font-size: 48px;
+  .lsp__total-number {
+    font-size: 30px;
     font-weight: 600;
     color: var(--yuval-galaxy-text);
     line-height: 1;
   }
 
-  .lsp__hero-subtitle {
-    font-size: 13px;
+  .lsp__total-label {
+    font-size: 12px;
     color: var(--yuval-galaxy-text-muted);
   }
 
   .lsp__breakdown {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
     margin: 0;
     padding: 0;
     list-style: none;
@@ -206,23 +195,22 @@ const showCourseGroup = visibleCourses.length > 0;
   .lsp__row {
     display: flex;
     align-items: center;
-    gap: 10px;
-    font-size: 14px;
+    gap: 8px;
+    font-size: 13px;
   }
 
+  /* Small accent dot — restrained to the three snapshot types only. */
   .lsp__row-dot {
-    width: 8px;
-    height: 8px;
+    width: 7px;
+    height: 7px;
     border-radius: 50%;
     background: var(--yuval-galaxy-accent);
     flex-shrink: 0;
   }
 
-  .lsp__row-dot[data-type="book"]          { background: var(--yuval-galaxy-type-book,          var(--yuval-galaxy-accent-purple)); }
-  .lsp__row-dot[data-type="course"]        { background: var(--yuval-galaxy-type-course,        var(--yuval-galaxy-accent-cyan));   }
-  .lsp__row-dot[data-type="course_lesson"] { background: var(--yuval-galaxy-type-course_lesson, var(--yuval-galaxy-accent-blue));   }
-  .lsp__row-dot[data-type="series"]        { background: var(--yuval-galaxy-type-series,        var(--yuval-galaxy-accent-gold));   }
-  .lsp__row-dot[data-type="article"]       { background: var(--yuval-galaxy-type-article,       var(--yuval-galaxy-accent));        }
+  .lsp__row-dot[data-type="book"]   { background: var(--yuval-galaxy-type-book,   var(--yuval-galaxy-accent-purple)); }
+  .lsp__row-dot[data-type="course"] { background: var(--yuval-galaxy-type-course, var(--yuval-galaxy-accent-cyan));   }
+  .lsp__row-dot[data-type="series"] { background: var(--yuval-galaxy-type-series, var(--yuval-galaxy-accent-gold));   }
 
   .lsp__row-label {
     flex: 1;
@@ -234,35 +222,19 @@ const showCourseGroup = visibleCourses.length > 0;
     font-weight: 500;
   }
 
-  .lsp__course-group {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    padding-top: 12px;
-    border-top: 1px solid var(--yuval-galaxy-border);
-  }
-
-  .lsp__group-title {
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--yuval-galaxy-text-muted);
-    margin: 0;
-    text-align: center;
-  }
-
   .lsp__cta {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
-    padding: 12px 16px;
+    padding: 10px 14px;
     background: var(--yuval-galaxy-surface-elevated);
     border: 1px solid rgba(120, 140, 200, 0.12);
     box-shadow: inset 0 0 0 1px rgba(140, 190, 255, 0.06);
     border-radius: 12px;
     color: var(--yuval-galaxy-text);
     text-decoration: none;
-    font-size: 14px;
+    font-size: 13px;
     transition: opacity 200ms ease-out;
   }
 
@@ -272,16 +244,38 @@ const showCourseGroup = visibleCourses.length > 0;
 
   .lsp__cta-icon {
     display: inline-flex;
-    width: 18px;
-    height: 18px;
+    width: 16px;
+    height: 16px;
   }
   .lsp__cta-icon svg {
     width: 100%;
     height: 100%;
   }
 
-  /* Panel stays visible at every viewport — width scales via
-     `--floating-card-width` (clamped in LibraryLayout). Replaces
-     the previous mobile hide rule per the user's preference for
-     graceful scaling instead of disappearing controls. */
+  /* ── Light mode — warm pale-glass snapshot ───────────────────────
+     Repaints the hardcoded deep-navy surface, blue halo and inner
+     hairlines as translucent warm white with a soft blue-gray border
+     and a calm shadow. Token-driven text/accents are already handled
+     by galaxy.css. Scoped to `html:not(.dark)`; dark mode untouched. */
+  :global(html:not(.dark)) .library-stats-panel {
+    background:
+      radial-gradient(
+        ellipse 80% 40% at 50% 0%,
+        rgba(255, 255, 255, 0.65) 0%,
+        transparent 62%),
+      linear-gradient(
+        180deg,
+        rgba(255, 253, 249, 0.92) 0%,
+        rgba(248, 249, 252, 0.88) 50%,
+        rgba(255, 253, 249, 0.92) 100%);
+    border-color: rgba(34, 52, 92, 0.16);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.75),
+      0 1px 2px rgba(15, 23, 42, 0.05),
+      0 12px 30px -10px rgba(30, 45, 80, 0.18);
+  }
+  :global(html:not(.dark)) .lsp__cta {
+    border-color: rgba(34, 52, 92, 0.14);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.60);
+  }
 </style>

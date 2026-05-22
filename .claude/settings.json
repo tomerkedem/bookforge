@@ -14,7 +14,8 @@
       "PowerShell(npm root -g)"
     ],
     "additionalDirectories": [
-      "D:\\2025 Stu\\AI Engineer\\AllBooks2026\\Claude Code - Book\\bookforge"
+      "D:\\2025 Stu\\AI Engineer\\AllBooks2026\\Claude Code - Book\\bookforge",
+      "c:\\D\\Books\\bookforge\\public\\assets\\library"
     ]
   }
 }

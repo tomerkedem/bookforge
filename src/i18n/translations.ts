@@ -555,6 +555,18 @@ export const translations: Translations = {
   'library.readingEntry.title':     { he: 'כניסה לקריאה',          en: 'Enter reading',                  es: 'Entrar a la lectura' },
   'library.readingEntry.subtitle':  { he: 'לחץ כדי לפתוח את מרחב הספר', en: 'Click to open the book space',   es: 'Haz clic para abrir el espacio del libro' },
   'library.readingEntry.ariaLabel': { he: 'כניסה לקריאה',          en: 'Enter reading',                  es: 'Entrar a la lectura' },
+  // Dynamic label swap for the existing pill when stored reading
+  // progress for the focused book points at a specific chapter.
+  // Falls back to `library.readingEntry.title` ("כניסה לקריאה")
+  // when no progress is available — see hydration in index.astro.
+  'library.readingEntry.continueChapter': { he: 'המשך · פרק {{n}}',     en: 'Continue · Chapter {{n}}',       es: 'Continuar · Capítulo {{n}}' },
+
+  // ── library.centerCard.* — quiet secondary link + metadata row that
+  //    sit BELOW the existing reading-entry pill on the focused card.
+  //    The primary glowing pill itself is unchanged.
+  'library.centerCard.bookSummaryLink': { he: 'מה יש בספר?',          en: 'What is in this book?',          es: '¿Qué hay en este libro?' },
+  'library.centerCard.metaMinutes':     { he: '{{n}} דק׳ קריאה',     en: '{{n}} min read',                 es: '{{n}} min de lectura' },
+  'library.centerCard.metaProgress':    { he: '{{n}}% הושלם',         en: '{{n}}% completed',               es: '{{n}}% completado' },
   'library.galaxy.nextBooks':       { he: 'ספרים הבאים',      en: 'Next books',          es: 'Siguientes libros' },
   'library.galaxy.prevBooks':       { he: 'ספרים קודמים',     en: 'Previous books',      es: 'Libros anteriores' },
   'library.galaxy.nextLessons':     { he: 'שיעורים הבאים',    en: 'Next lessons',        es: 'Siguientes lecciones' },

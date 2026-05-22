@@ -132,10 +132,16 @@ const hydratorPayload = JSON.stringify({
       <span class="continue-learning-card__percent" data-clc-percent>{safeProgress}%</span>
     </div>
 
+    {/* `dir="auto"` lets the browser auto-detect each line's direction
+        from its first strong character: a Latin book title ("AI
+        Developer Fitness") resolves LTR → `text-align: start` aligns it
+        left even on this RTL card, while a Hebrew title stays RTL. The
+        attribute re-evaluates whenever the hydrator swaps `textContent`,
+        so it covers both the SSR placeholder and the real book. */}
     <div class="continue-learning-card__info">
-      <p class="continue-learning-card__course-title" data-clc-title>{courseTitle}</p>
-      <p class="continue-learning-card__meta" data-clc-meta1>{metaLine1}</p>
-      {metaLine2 && <p class="continue-learning-card__meta" data-clc-meta2>{metaLine2}</p>}
+      <p class="continue-learning-card__course-title" data-clc-title dir="auto">{courseTitle}</p>
+      <p class="continue-learning-card__meta" data-clc-meta1 dir="auto">{metaLine1}</p>
+      {metaLine2 && <p class="continue-learning-card__meta" data-clc-meta2 dir="auto">{metaLine2}</p>}
       {hasLessonAvailability && (
         <p class="continue-learning-card__meta continue-learning-card__lessons">
           {t('library.continueReading.lessonsAvailable', language, {
@@ -302,7 +308,10 @@ const hydratorPayload = JSON.stringify({
        Header. Stays visible during scroll. */
     position: fixed;
     top: calc(var(--library-header-offset, 72px) + 20px);
-    inset-inline-start: 1px;
+    /* Comfortable gap from the viewport edge — kept identical to
+       LibraryStatsPanel's `inset-inline-end` so the two panels frame
+       the carousel symmetrically and neither glues to the edge. */
+    inset-inline-start: clamp(16px, 1.8vw, 32px);
     inset-inline-end: auto;
     z-index: 30;
     width: var(--floating-card-width);
@@ -468,4 +477,32 @@ const hydratorPayload = JSON.stringify({
      `--floating-card-width` and height via
      `--continue-learning-card-height` (both clamped in
      LibraryLayout). Replaces the previous mobile hide rule. */
+
+  /* ── Light mode — warm pale-glass card ───────────────────────────
+     Same warm-white treatment as the sibling premium panels. The
+     inner body + CTA drop their bluish hairlines for soft neutrals.
+     Token-driven text/accents come from galaxy.css. Dark mode never
+     matches `html:not(.dark)`, so it stays untouched. */
+  :global(html:not(.dark)) .continue-learning-card {
+    background:
+      radial-gradient(
+        ellipse 80% 40% at 50% 0%,
+        rgba(255, 255, 255, 0.65) 0%,
+        transparent 62%),
+      linear-gradient(
+        180deg,
+        rgba(255, 253, 249, 0.92) 0%,
+        rgba(248, 249, 252, 0.88) 50%,
+        rgba(255, 253, 249, 0.92) 100%);
+    border-color: rgba(34, 52, 92, 0.16);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.75),
+      0 1px 2px rgba(15, 23, 42, 0.05),
+      0 12px 30px -10px rgba(30, 45, 80, 0.18);
+  }
+  :global(html:not(.dark)) .continue-learning-card__body,
+  :global(html:not(.dark)) .continue-learning-card__cta {
+    border-color: rgba(34, 52, 92, 0.14);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.60);
+  }
 </style>

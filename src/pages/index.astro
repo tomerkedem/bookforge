@@ -7,17 +7,21 @@
  *     1. Compact hero (LibraryHero)
  *     2. Mobile discovery carousel (MobileGalaxyCarousel)
  *     3. Quick actions (LibraryQuickActions)
- *   ContinueLearningCard, LibraryStatsPanel and FloatingSidebar are
- *   all hidden on mobile from inside their own component CSS, so they
- *   do not participate in the mobile flow.
+ *   ContinueLearningCard and LibraryStatsPanel are hidden on mobile
+ *   from inside their own component CSS, so they do not participate in
+ *   the mobile flow. (The FloatingSidebar tools rail was removed from
+ *   the v1 carousel screen.)
  *
  *   DESKTOP (≥1024px) — single immersive dashboard viewport.
  *     ┌──────────┬──────────────────────────────┬──────────┐
- *     │ Continue │  Hero (floats over galaxy)   │          │
- *     │ Knowledge│  Galaxy stage (core + cards) │   Rail   │
- *     │ Stats    │  — large negative space      │  (pill)  │
+ *     │ Continue │  Hero (floats over galaxy)   │ Library  │
+ *     │ Learning │  Galaxy stage (core + cards) │ snapshot │
+ *     │  card    │  — large negative space      │          │
  *     │          │    below the core            │          │
  *     └──────────┴──────────────────────────────┴──────────┘
+ *   The two fixed support panels frame the carousel from opposite
+ *   edges — ContinueLearningCard on the inline-start side, the
+ *   compact LibraryStatsPanel snapshot on the inline-end side.
  *
  *   Composition fits inside ~100dvh after the global header — no long
  *   stacked page on desktop.
@@ -34,7 +38,9 @@ import LibraryStatsPanel from '../components/library/LibraryStatsPanel.astro';
 import ContinueLearningCard from '../components/library/ContinueLearningCard.astro';
 import LibraryCard from '../components/library/LibraryCard.astro';
 import LibraryQuickActions from '../components/library/LibraryQuickActions.astro';
-import FloatingSidebar from '../components/library/FloatingSidebar.astro';
+// FloatingSidebar (desktop left tools rail) is intentionally not rendered
+// in the v1 carousel screen. The component file is kept for a later
+// re-introduction — re-add the import + <FloatingSidebar/> block below.
 
 import type { Language } from '../types/index';
 import type { LibraryItem } from '../types/library';
@@ -46,6 +52,7 @@ import {
   getContinueReadingItem,
 } from '../utils/library-catalog';
 import { getCourseProgressList } from '../utils/library-adapter';
+import { discoverAllBooks } from '../utils/book-discovery';
 import { isReadableLibraryItem, isSafeLibraryHref } from '../utils/library-display';
 import { getEvenOrbitAngle } from '../utils/library/universe-angle-utils';
 import {
@@ -78,6 +85,36 @@ const courseProgress = getCourseProgressList();
 // clickable-looking suggestion.
 const readableItems = items.filter(isReadableLibraryItem);
 const continueItem = getContinueReadingItem(readableItems);
+
+// ── Reading-page hrefs for the center-card primary button ────────────────
+// LibraryItem.href points at the book/lesson SUMMARY page
+// (`/books/{slug}`), which is the right destination for the
+// "מה יש בספר?" secondary link. The center-card PRIMARY button needs
+// the canonical reading URL instead — `/read/{slug}/{firstChapterId}` —
+// so that "Continue · Chapter N" actually opens the reader.
+//
+// We reuse the existing build-time book discovery (no new route, no
+// LibraryItem shape change) and produce a per-slug lookup of the
+// first chapter id. The hydrator below upgrades this href in-place
+// to the latest-progressed chapter when localStorage has progress
+// for the slug. Lessons with non-numeric chapter ids (e.g. 'intro' /
+// 'summary') get their first chapter id verbatim — the hydrator's
+// numeric loop simply doesn't fire and the SSR href stays correct.
+const firstChapterIdBySlug = new Map<string, string>();
+for (const b of discoverAllBooks()) {
+  if (Array.isArray(b.chapters) && b.chapters.length > 0) {
+    firstChapterIdBySlug.set(b.slug, String(b.chapters[0].id));
+  }
+}
+
+/** `/read/{slug}/{firstChapterId}` for books + lessons; falls back to
+ *  `item.href` (the summary page) when no chapter data is available,
+ *  so the button always has a real destination. */
+const resolveReadingHref = (it: LibraryItem): string => {
+  if (it.type !== 'book' && it.type !== 'course_lesson') return it.href;
+  const firstCh = firstChapterIdBySlug.get(it.slug);
+  return firstCh ? `/read/${it.slug}/${firstCh}` : it.href;
+};
 
 // ── Galaxy orbit — every item visible at once ────────────────────────────
 // Every readable item sits on its own point along an elliptical orbit
@@ -262,8 +299,20 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
         edges (improving contrast for the floating cards + side
         panels) while keeping the central glow undisturbed. */}
     <div class="knowledge-scene-background" aria-hidden="true">
+      {/* Night scene — dark-mode background. Kept FIRST in DOM order so
+          universe-core-effects.ts (`querySelector('.knowledge-scene-background img')`)
+          still resolves to this asset and the lightning math is unchanged. */}
       <img
+        class="knowledge-scene-img knowledge-scene-img--night"
         src="/assets/library/galaxy-stage-core-medium.png"
+        alt=""
+        decoding="async"
+      />
+      {/* Day scene — "Knowledge Observatory" light-mode background.
+          Hidden unless <html> has no `.dark` class (light theme). */}
+      <img
+        class="knowledge-scene-img knowledge-scene-img--day"
+        src="/assets/library/knowledge-observatory-day-bg.png"
         alt=""
         decoding="async"
       />
@@ -333,6 +382,54 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
                 above), so the orbit stage holds only the floating
                 cards + backdrop. */}
 
+            {/* Knowledge Observatory — light-mode-only decorative rings.
+                A passive SVG layer (concentric observatory ELLIPSES,
+                tick marks and node dots) that sits BEHIND every orbit
+                card and shares the orbit's coordinate space, so its
+                center lands exactly on the carousel orbit center at
+                every breakpoint. The rings are horizontal ellipses
+                (ry = 0.52 x rx) so they read as orbital tracks seen in
+                a more cinematic, low-angle perspective — echoing the
+                carousel's elliptical orbit
+                rather than a flat centered-circle diagram.
+                pointer-events:none — it never affects card hit-testing,
+                focus or routing. Hidden in dark mode (CSS display:none),
+                so the dark showcase is byte-for-byte unchanged. Styling
+                lives in `.galaxy-observatory` / `.obs-*` rules below. */}
+            <div class="galaxy-observatory" aria-hidden="true">
+              <svg
+                class="obs-svg"
+                viewBox="0 0 600 600"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                focusable="false"
+                aria-hidden="true"
+              >
+                <!-- Solid hairline concentric ellipses (ry = 0.52 x rx) -->
+                <ellipse class="obs-ring" cx="300" cy="300" rx="82" ry="42.64" />
+                <ellipse class="obs-ring" cx="300" cy="300" rx="158" ry="82.16" />
+                <ellipse class="obs-ring obs-ring--outer" cx="300" cy="300" rx="292" ry="151.84" />
+                <!-- Accent dotted ellipse + cardinal node dots (kept on mobile) -->
+                <ellipse class="obs-ring--accent" cx="300" cy="300" rx="234" ry="121.68" />
+                <circle class="obs-dot" cx="300" cy="178.32" r="4" />
+                <circle class="obs-dot" cx="300" cy="421.68" r="4" />
+                <circle class="obs-dot" cx="534" cy="300" r="4" />
+                <circle class="obs-dot" cx="66" cy="300" r="4" />
+                <!-- Fine detail — hidden on mobile to keep rings subtle -->
+                <g class="obs-detail">
+                  <ellipse class="obs-ring--fine" cx="300" cy="300" rx="200" ry="104" />
+                  <line class="obs-cross" x1="300" y1="217.84" x2="300" y2="178.32" />
+                  <line class="obs-cross" x1="300" y1="382.16" x2="300" y2="421.68" />
+                  <line class="obs-cross" x1="458" y1="300" x2="534" y2="300" />
+                  <line class="obs-cross" x1="142" y1="300" x2="66" y2="300" />
+                  <circle class="obs-dot--minor" cx="411.7" cy="241.9" r="2.6" />
+                  <circle class="obs-dot--minor" cx="188.3" cy="241.9" r="2.6" />
+                  <circle class="obs-dot--minor" cx="411.7" cy="358.1" r="2.6" />
+                  <circle class="obs-dot--minor" cx="188.3" cy="358.1" r="2.6" />
+                </g>
+              </svg>
+            </div>
+
             {/* Backdrop — appears only when a card is focused into the
                 center. Click anywhere on it closes the focus state. */}
             <div class="galaxy-backdrop" data-galaxy-backdrop aria-hidden="true"></div>
@@ -371,19 +468,74 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
                 {isSafeLibraryHref(item.href) && (
                   <a
                     class="reading-entry-overlay"
-                    href={item.href}
+                    href={resolveReadingHref(item)}
                     data-reading-entry
-                    data-reading-entry-href={item.href}
+                    data-reading-entry-href={resolveReadingHref(item)}
                     data-reading-entry-slug={item.slug}
                     aria-label={t('library.readingEntry.ariaLabel', language)}
                   >
                     <span class="reading-entry-asset" aria-hidden="true"></span>
                     <span class="reading-entry-text">
-                      <span class="reading-entry-title">
+                      {/* `data-cc-primary-label` is the swap slot for the
+                          hydration script in `initCenterCardExtras`. SSR
+                          ships the original "כניסה לקריאה" text so the
+                          first paint never flashes empty; the script
+                          replaces it with "המשך · פרק N" when stored
+                          progress identifies a current chapter. */}
+                      <span
+                        class="reading-entry-title"
+                        data-cc-primary-label
+                        data-continue-template={t('library.readingEntry.continueChapter', language, { n: '__N__' })}
+                      >
                         {t('library.readingEntry.title', language)}
                       </span>
                     </span>
                   </a>
+                )}
+                {/* Quiet secondary text link + thin metadata row that sit
+                    UNDER the existing glowing pill. They share the pill's
+                    visibility lifecycle (`data-pos="center"`), so they only
+                    appear for the focused card and never compete with the
+                    rest of the orbit. Layout/animation lives in CSS — see
+                    `.center-card-extras` rules in both the mobile and
+                    desktop @media blocks. SSR ships static spans with the
+                    safe baseline values (chapters, minutes); the
+                    progress percent + current-chapter swap are filled in
+                    by `initCenterCardExtras` from localStorage. */}
+                {isSafeLibraryHref(item.href) && (
+                  <div class="center-card-extras" aria-hidden="false">
+                    {item.type === 'book' && (
+                      <a
+                        class="cc-secondary-link"
+                        href={item.href}
+                        data-cc-secondary-link
+                      >
+                        {t('library.centerCard.bookSummaryLink', language)}
+                      </a>
+                    )}
+                    <p class="cc-meta" data-cc-meta>
+                      {typeof item.chapterCount === 'number' && item.chapterCount > 0 && (
+                        <span class="cc-meta-item" data-cc-meta-chapters>
+                          {t('library.galaxy.chaptersCount', language, { n: item.chapterCount })}
+                        </span>
+                      )}
+                      {typeof item.readingMinutes === 'number' && item.readingMinutes > 0 && (
+                        <span class="cc-meta-item" data-cc-meta-minutes>
+                          {t('library.centerCard.metaMinutes', language, { n: item.readingMinutes })}
+                        </span>
+                      )}
+                      {/* Progress span is SSR-hidden; the hydrator unhides
+                          and fills it only when localStorage has any
+                          recorded percentage for this slug. Prevents a
+                          "0% completed" flash on a brand-new book. */}
+                      <span
+                        class="cc-meta-item"
+                        data-cc-meta-progress
+                        data-progress-template={t('library.centerCard.metaProgress', language, { n: '__N__' })}
+                        hidden
+                      ></span>
+                    </p>
+                  </div>
                 )}
                 {/* `.galaxy-cta` slot is now only rendered for series
                     capsules — the open-orb (`.galaxy-cta-open`) was
@@ -454,10 +606,10 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       </main>
 
       {/* ── Mobile-only quick-actions panel ──
-            Desktop is owned by <FloatingSidebar> below, which lives
-            outside the grid as `position: fixed`. On mobile this aside
-            stays as `display: contents` and contributes its child as a
-            flex item of `.library-body` at order 6. */}
+            Desktop has no quick-actions surface in v1 (the FloatingSidebar
+            tools rail was removed). On mobile this aside stays as
+            `display: contents` and contributes its child as a flex item
+            of `.library-body` at order 6. */}
       <aside class="lb-area-right">
         <div class="lb-area-quick lb-area-quick-mobile">
           <LibraryQuickActions language={language} />
@@ -466,13 +618,17 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
 
     </div>
 
-    {/* ── Desktop fixed support panels (≥769px) ──
+    {/* ── Desktop fixed support panels (≥1024px) ──
           Both panels are `position: fixed` from inside their own
-          component CSS, anchored to the inline-start edge of the
-          viewport (right in RTL, left in LTR). Stacked: ContinueLearningCard
-          above, LibraryStatsPanel below it. Hidden at ≤768px from inside
-          each component. Live outside `.library-body` so they never
-          claim a column or contribute to the grid. */}
+          component CSS and FRAME the carousel from opposite edges:
+            - ContinueLearningCard → inline-start edge
+              (visual-right in RTL Hebrew, visual-left in LTR).
+            - LibraryStatsPanel → inline-end edge
+              (visual-left in RTL Hebrew, visual-right in LTR).
+          Both anchor at the same `top` (header offset + 20px). Hidden
+          at ≤1023px from inside each component. Live outside
+          `.library-body` so they never claim a column or contribute
+          to the grid. */}
     <ContinueLearningCard
       language={language}
       courseTitle={courseTitleForCard}
@@ -501,16 +657,15 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
     />
     <LibraryStatsPanel stats={stats} language={language} courseProgress={courseProgress} />
 
-    {/* ── Desktop floating rail (≥769px) ──
-          Pinned to the inline-end edge via `position: fixed` from the
-          component itself; sits outside the grid so it never claims a
-          column. Hidden at ≤768px — mobile is served by the aside above. */}
-    <FloatingSidebar
-      language={language}
-      aiAssistantHref="#ai-assistant"
-      bookmarksHref="#bookmarks"
-      historyHref="#history"
-    />
+    {/* ── Desktop floating tools rail — removed in v1 ──
+          The left vertical tools rail (<FloatingSidebar>: AI assistant,
+          bookmarks, history) is intentionally not rendered on the v1
+          carousel screen. It lived outside the grid as `position: fixed`,
+          so removing it changes no grid column and no carousel logic.
+          To bring it back, restore the import above and re-add:
+            <FloatingSidebar language={language}
+              aiAssistantHref="#ai-assistant"
+              bookmarksHref="#bookmarks" historyHref="#history" /> */}
 
     {/* ── Series details drawer ──
           Same-page modal/drawer that opens when the focused series
@@ -703,10 +858,47 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
     inset: 0;
     width: 100%;
     height: 100%;
-    object-fit: cover;
-    object-position: center center;
+    object-fit: cover;          /* equivalent of background-size: cover   */
+    object-position: center center; /* equivalent of background-position: center */
     user-select: none;
     -webkit-user-drag: none;
+  }
+  /* ── Theme-aware scene swap ──────────────────────────────────────
+     Both scene images are stacked (each `position:absolute; inset:0`
+     via the rule above); opacity decides which one paints. The night
+     galaxy is the default, so dark mode and the no-class fallback both
+     render the original scene — dark mode is byte-for-byte unchanged.
+     Light mode (<html> without `.dark`) cross-fades to the bright
+     "Knowledge Observatory" day scene. */
+  .knowledge-scene-img {
+    transition: opacity var(--yuval-galaxy-motion-slow, 520ms)
+                var(--yuval-galaxy-ease-soft, ease);
+  }
+  .knowledge-scene-img--day {
+    opacity: 0;
+  }
+  :global(html:not(.dark)) .knowledge-scene-img--night {
+    opacity: 0;
+  }
+  /* Observatory test — the CSS/SVG `.galaxy-observatory` layer is now
+     the light-mode background. The day-scene image is intentionally
+     held at opacity:0 in light mode so it never paints its own baked-in
+     rings behind the orbit, which would duplicate the SVG rings. The
+     <img> stays in the DOM and the PNG stays in public/assets/library —
+     flip this single value back to `opacity: 1` to restore the
+     photographic day background. Dark mode is untouched: it keeps the
+     night image via the rules above. */
+  :global(html:not(.dark)) .knowledge-scene-img--day {
+    opacity: 0;
+  }
+  /* Light mode — anchor the day scene's TOP edge to the header's
+     bottom so the "Knowledge Observatory" image starts cleanly below
+     the header instead of tucking up behind it. Moves the whole fixed
+     layer (day image + readability veil) down as one unit. The night
+     image keeps `opacity:0` here, so dark mode's `top: calc(4rem -
+     130px)` anchor stays byte-for-byte untouched. */
+  :global(html:not(.dark)) .knowledge-scene-background {
+    top: var(--library-header-offset, 72px);
   }
   /* Soft radial vignette — keeps the central glow untouched and
      darkens only the edges so floating cards + side panels read
@@ -720,6 +912,88 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       transparent 35%,
       rgba(0, 0, 0, 0.45) 80%,
       rgba(0, 0, 0, 0.65) 100%);
+  }
+  /* Light-mode overlay — the dark vignette above would muddy the bright
+     day scene, so in light mode it becomes a soft warm-ivory veil:
+     fully clear through the center (the luminous core and the focused
+     book card stay dominant) and lifting gently toward the edges so the
+     floating cards never compete with the image's rings and labels.
+     Kept subtle so the scene never washes out the cards or text. */
+  :global(html:not(.dark)) .knowledge-scene-overlay {
+    background: radial-gradient(
+      ellipse at center,
+      rgba(255, 253, 247, 0) 0%,
+      rgba(255, 253, 247, 0) 46%,
+      rgba(255, 253, 247, 0.20) 80%,
+      rgba(255, 253, 247, 0.34) 100%);
+  }
+
+  /* ════════════════════════════════════════════════════════════════
+     LIGHT-MODE TUNING — page-level surfaces the galaxy tokens cannot
+     reach: hardcoded dark page fills and a few light-on-dark text
+     colors. All rules are gated on `html:not(.dark)`; dark mode never
+     matches them, so the dark showcase stays byte-for-byte unchanged.
+     (Coherent panel/header/glow theming is handled by the token block
+     in galaxy.css scoped to `:root:not(.dark) .library-dark-showcase`.)
+     ════════════════════════════════════════════════════════════════ */
+
+  /* Page base — the fixed day-scene image covers the viewport, but the
+     html/body and root fills sit behind it. Swap the deep navy for a
+     warm ivory so any sliver that shows reads as daylight, not a seam. */
+  :global(html:not(.dark):has(.library-dark-showcase)),
+  :global(html:not(.dark) body:has(.library-dark-showcase)) {
+    background-color: #f1eee6;
+  }
+  :global(html:not(.dark)) .library-root {
+    background-color: #f4f1ea;
+    /* Light mode adds breathing room below the (now light-glass)
+       header so the hero "ברוך הבא" eyebrow + "מרחב הידע" title never
+       read as clipped or squeezed against the header line. Specificity
+       (0,2,1) outranks the plain `.library-root` padding shorthand in
+       the responsive @media blocks, so this wins at every breakpoint.
+       Dark mode keeps the locked tight 0.25rem top padding. */
+    padding-top: 1.1rem;
+  }
+
+  /* Starfield — navy dots on a bright sky read as dust, and the day
+     asset already carries its own constellation of nodes. Fade the
+     CSS starfield right back so it stays a whisper, never clutter. */
+  :global(html:not(.dark)) .library-starfield {
+    opacity: 0.10;
+  }
+
+  /* Center-card secondary link + metadata — authored in light-on-dark
+     colors that vanish on the ivory scene. Repaint them in navy/slate
+     so they stay readable directly beneath the focused book card. */
+  :global(html:not(.dark)) .cc-secondary-link {
+    color: #46556f;
+    text-decoration-color: rgba(34, 52, 92, 0.32);
+  }
+  :global(html:not(.dark)) .cc-secondary-link:hover,
+  :global(html:not(.dark)) .cc-secondary-link:focus-visible {
+    color: #16223c;
+    text-decoration-color: rgba(34, 52, 92, 0.70);
+  }
+  :global(html:not(.dark)) .cc-secondary-link:focus-visible {
+    box-shadow: 0 0 0 2px rgba(34, 52, 92, 0.40);
+  }
+  :global(html:not(.dark)) .cc-meta {
+    color: rgba(34, 52, 92, 0.60);
+  }
+
+  /* Reading button (focused-card entry overlay) — the focus ring was a
+     blue+violet neon double-glow. In light mode soften it to a calm
+     navy hairline + a gentle drop shadow: same shape, same identity,
+     no neon. */
+  :global(html:not(.dark)) .reading-entry-overlay:focus-visible .reading-entry-asset {
+    box-shadow:
+      0 0 0 2px rgba(34, 52, 92, 0.38),
+      0 6px 18px rgba(30, 45, 80, 0.20);
+  }
+  /* Card-selection confirmation halo — soften the cyan flash to a
+     muted slate so the click feedback never sparks neon on daylight. */
+  :global(html:not(.dark)) .library-root {
+    --reading-entry-halo-color: rgba(70, 105, 150, 0.40);
   }
 
   /* Lightning overlay — SVG injected by `universe-core-effects.ts`.
@@ -744,6 +1018,57 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
     overflow: visible;
     z-index: 25;
     mix-blend-mode: screen;
+  }
+
+  /* ── Light-mode lightning → subtle scientific connection line ──────
+     The card→core bolt is built by universe-core-effects.ts as a
+     triple-stroke jagged path (halo + mid + white-hot core) plus
+     spark/flash circles, glowing through SVG blur filters and
+     composited with `mix-blend-mode: screen`. That recipe is tuned
+     for the dark cosmic stage; on the bright Knowledge Observatory it
+     reads as loud, neon and game-like.
+
+     This block re-skins ONLY light mode into a calm connection line.
+     It is pure CSS over the JS-built nodes — the script is untouched:
+     - every rule is gated on `html:not(.dark)`, so dark mode is
+       byte-for-byte unchanged;
+     - `stroke-width` / `filter` / the core's `stroke` are SVG
+       presentation attributes → overridden by plain CSS;
+     - `style.stroke` on the halo/mid layers is inline → needs
+       `!important`; element `opacity` is deliberately left alone so
+       the JS fade-out keeps working — the whole overlay is dimmed at
+       the `<svg>` level instead, which the per-element fade scales.
+     The effect stays hover-triggered and transient exactly as before
+     — this changes how it looks, never when it fires.
+
+     GOTCHA — each selector below is wrapped WHOLE in `:global(...)`.
+     universe-core-effects.ts builds the bolt with `createElementNS`,
+     so the <svg>, <path> and <circle> carry NO Astro scope hash. A
+     normally-scoped rule (even one only prefixed with `:global(html
+     ...)`) makes Astro append `[data-astro-cid-*]` to `.library-galaxy
+     / svg / path / circle` — which then matches NOTHING. Wrapping the
+     entire selector in `:global()` keeps it unscoped so it actually
+     reaches the runtime-built nodes. */
+  :global(html:not(.dark) .library-galaxy svg[data-core-lightning]) {
+    /* Significant overall opacity cut. `screen` blend would make a
+       mid-tone line vanish on a light surface, so it composites
+       normally here. */
+    opacity: 0.42;
+    mix-blend-mode: normal;
+  }
+  /* Strokes — soft blue-gray instead of electric neon; thin, uniform,
+     SVG glow filters removed, so it reads as a drawn connection line
+     rather than a bolt. Blue-gray harmonises with the navy observatory
+     ellipses instead of competing with them. */
+  :global(html:not(.dark) .library-galaxy svg[data-core-lightning] path) {
+    stroke: #7b8aa3 !important;
+    stroke-width: 1.1;
+    filter: none;
+  }
+  /* Spark + impact-flash circles are the most game-like part — drop
+     them entirely in light mode so only the calm line remains. */
+  :global(html:not(.dark) .library-galaxy svg[data-core-lightning] circle) {
+    display: none;
   }
 
   /* Ambient backdrop — sits ABOVE the scene background, BELOW the UI.
@@ -786,6 +1111,178 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
   .library-root > :not(.library-ambient):not(.knowledge-scene-background) {
     position: relative;
     z-index: 1;
+  }
+
+  /* ── Knowledge Observatory — light-mode-only decorative rings ──────
+     Passive SVG layer: concentric "observatory" ellipses + tick marks
+     (ry = 0.52 x rx, so they read as orbital tracks in a low-angle
+     perspective and echo the carousel's elliptical orbit), centered on the carousel
+     orbit center. It lives INSIDE
+     `.library-galaxy`, so `top/left: 50%` + `translate(-50%, -50%)`
+     resolves against the very same box the orbit cards center on
+     (`.galaxy-card { top: 50%; left: 50% }`). The ring center therefore
+     tracks the carousel center automatically at every breakpoint —
+     desktop (relative stage + vertical offset) and mobile (fixed,
+     viewport-centered stage) alike. No coordinate math is duplicated.
+
+     Layering — z-index 0 within `.library-galaxy`:
+       observatory (0) < orbit cards (2) < focus backdrop (15)
+       < lightning (25) < focused card (30).
+     The rings always sit behind the cards and the cards stay visually
+     dominant. `pointer-events: none` keeps every click, hover, focus
+     and route landing on the cards — never the rings — so the carousel
+     logic is untouched.
+
+     Light-mode only: `display: none` by default, flipped to `block`
+     solely when <html> has no `.dark` class. Dark mode renders nothing,
+     so the dark showcase is byte-for-byte unchanged. */
+  .galaxy-observatory {
+    --obs-size: clamp(460px, 56vw, 700px);
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: var(--obs-size);
+    height: var(--obs-size);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 0;
+    display: none;
+    opacity: 0.85;
+    transition: opacity var(--yuval-galaxy-motion-normal, 280ms)
+                var(--yuval-galaxy-ease-soft, ease);
+  }
+  :global(html:not(.dark)) .galaxy-observatory {
+    display: block;
+  }
+  .obs-svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+    overflow: visible;
+  }
+  /* Solid hairline rings — crisp at any scale via non-scaling-stroke. */
+  .obs-ring {
+    fill: none;
+    stroke: rgba(34, 52, 92, 0.16);
+    stroke-width: 1.5px;
+    vector-effect: non-scaling-stroke;
+  }
+  .obs-ring--outer { stroke: rgba(34, 52, 92, 0.09); }
+  /* Accent + fine rings are dotted (round-capped dashes); their stroke
+     is allowed to scale so the dots read proportionally with the ring. */
+  .obs-ring--accent {
+    fill: none;
+    stroke: rgba(14, 116, 144, 0.30);
+    stroke-width: 2.4px;
+    stroke-linecap: round;
+    stroke-dasharray: 0.5 17;
+  }
+  .obs-ring--fine {
+    fill: none;
+    stroke: rgba(34, 52, 92, 0.22);
+    stroke-width: 1.9px;
+    stroke-linecap: round;
+    stroke-dasharray: 0.5 13;
+  }
+  .obs-cross {
+    stroke: rgba(34, 52, 92, 0.20);
+    stroke-width: 1.5px;
+    stroke-linecap: round;
+    vector-effect: non-scaling-stroke;
+  }
+  .obs-dot        { fill: rgba(14, 116, 144, 0.42); }
+  .obs-dot--minor { fill: rgba(34, 52, 92, 0.30); }
+  /* When a card is focused the rings fade back so they never clutter
+     the area behind the enlarged center card. `data-galaxy-focused` is
+     the existing flag set by universe-layout.ts — no JS is touched. */
+  .library-galaxy[data-galaxy-focused] .galaxy-observatory {
+    opacity: 0.42;
+  }
+
+  /* ── Light-mode carousel polish — card depth + motion ─────────────
+     A focused polish pass for the orbit carousel in light mode only.
+     Every rule here is scoped under `html:not(.dark)`, so the dark
+     showcase is byte-for-byte unchanged. Three things are tuned:
+
+       1. Card depth — light-mode book covers were reading as "pasted
+          onto" the ivory background. A soft blue-gray drop-shadow plus
+          a faint cyan edge light grounds each card in the space. The
+          shadow follows the PNG alpha silhouette because the filter
+          sits on the un-masked `.galaxy-card` wrapper, not a box.
+       2. Position depth — the resting orbit reads as more spatial:
+          the slot scale + opacity ramps are widened so front/near
+          stations sit forward and far stations recede, without
+          hiding content.
+       3. Motion — the rotation transition swaps the mechanical
+          Material curve for a smoother, gently inertial premium curve.
+
+     The base-card drop-shadow is constant (not position-dependent) so
+     the filtered layer rasterizes once and merely translates during a
+     drag; depth separation is carried by the scale/opacity ramp. */
+  :global(html:not(.dark)) .galaxy-card {
+    /* Light mode lifts the depth opacity floor — far cards stay a
+       touch more present against the bright ivory field than in dark
+       mode (0.62 vs 0.55). Scale + z-index depth come from the
+       per-breakpoint base rule and are shared with dark mode. */
+    --slot-opacity: calc(0.62 + 0.38 * var(--orbit-depth, 0.5));
+    /* Soft blue-gray shadow (contact + ambient) + barely-there cyan
+       edge light. Constant, so the filtered layer rasterizes once;
+       the depth opacity ramp above fades the shadow on far cards for
+       free (a lower element opacity dims its own drop-shadow). No
+       heavy blur — the cards stay crisp. */
+    filter:
+      drop-shadow(0 5px 12px rgba(34, 52, 92, 0.15))
+      drop-shadow(0 1px 3px rgba(34, 52, 92, 0.12))
+      drop-shadow(0 0 2px rgba(14, 116, 144, 0.14));
+  }
+  /* Focused (centered) card stays dominant — a slightly deeper soft
+     shadow and a touch more cyan edge glow. Values are intentionally
+     moderate: the centered card is transform-scaled, which enlarges
+     the rendered shadow along with it. */
+  :global(html:not(.dark)) .galaxy-card[data-pos="center"] {
+    filter:
+      drop-shadow(0 6px 16px rgba(34, 52, 92, 0.18))
+      drop-shadow(0 1px 4px rgba(34, 52, 92, 0.13))
+      drop-shadow(0 0 2px rgba(14, 116, 144, 0.20));
+  }
+
+  /* ── Light-mode navigation controls — glass rotate pill ───────────
+     The bottom rotate arrows read as soft glass controls in daylight:
+     translucent warm-white fill, hairline border, soft shadow and a
+     dark-navy icon. Scoped to light mode; the dark control styling in
+     the media-query blocks below is untouched. */
+  :global(html:not(.dark)) .galaxy-orbit-controls {
+    background: rgba(255, 253, 249, 0.62);
+    border-color: rgba(34, 52, 92, 0.14);
+    box-shadow: 0 4px 16px -6px rgba(30, 45, 80, 0.22);
+  }
+  :global(html:not(.dark)) .galaxy-orbit-btn {
+    color: var(--yuval-galaxy-text);
+    background: rgba(255, 255, 255, 0.70);
+    border-color: rgba(34, 52, 92, 0.12);
+    box-shadow: 0 1px 3px rgba(30, 45, 80, 0.12);
+  }
+  :global(html:not(.dark)) .galaxy-orbit-btn:hover,
+  :global(html:not(.dark)) .galaxy-orbit-btn:focus-visible {
+    color: var(--yuval-galaxy-text);
+    background: rgba(255, 255, 255, 0.92);
+    border-color: rgba(34, 52, 92, 0.24);
+    box-shadow: 0 2px 8px -2px rgba(30, 45, 80, 0.20);
+  }
+
+  /* ── Day-mode chrome cleanup — kill dark-mode leftovers ───────────
+     A few pieces of chrome were styled with hard black drop shadows
+     that belong to the dark showcase and read as "stuck-on" panels in
+     the bright observatory. Re-cast their shadows as the same soft
+     blue-gray used by the cards and the rotate pill. Light mode only;
+     every other surface keeps its theme-aware tokens. */
+  :global(html:not(.dark)) .galaxy-other-knowledge {
+    box-shadow: 0 8px 22px -10px rgba(30, 45, 80, 0.22);
+  }
+  :global(html:not(.dark)) .series-details-drawer {
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--yuval-galaxy-accent-purple, #a78bfa) 20%, transparent) inset,
+      -24px 0 60px -10px rgba(30, 45, 80, 0.22);
   }
 
   /* ── Mobile baseline: linear stack, ordered to the spec.
@@ -990,6 +1487,24 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       direction: ltr;
     }
 
+    /* ── Observatory — phone tuning ───────────────────────────────────
+       Smaller footprint, dimmer strokes, and the fine-detail group +
+       the faint outer ring dropped entirely. Keeps the rings a subtle
+       whisper behind the orbit and clear of the focused card and the
+       bottom rotate controls (CLAUDE.md: "reduce observatory detail,
+       keep rings subtle" on mobile). */
+    .galaxy-observatory {
+      --obs-size: clamp(250px, 74vw, 380px);
+      opacity: 0.5;
+    }
+    .obs-ring--outer,
+    .obs-detail {
+      display: none;
+    }
+    .library-galaxy[data-galaxy-focused] .galaxy-observatory {
+      opacity: 0.26;
+    }
+
     .galaxy-card {
       position: absolute;
       flex: initial;
@@ -1017,8 +1532,11 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       --orbit-ry: clamp(70px, 13vh, 105px);
       --orbit-active-angle: calc(var(--orbit-angle, 0deg) + var(--orbit-rotation, 0deg));
       --orbit-depth: calc((sin(var(--orbit-active-angle, 0deg)) + 1) / 2);
-      --slot-scale: calc(0.88 + 0.12 * var(--orbit-depth));
-      --slot-opacity: calc(0.86 + 0.14 * var(--orbit-depth));
+      /* Gentler depth ramp than desktop — phone cards are already
+         small, so far stations only step down to 0.80 scale / 0.62
+         opacity. Keeps satellites readable, not overcrowded. */
+      --slot-scale: calc(0.80 + 0.20 * var(--orbit-depth));
+      --slot-opacity: calc(0.62 + 0.38 * var(--orbit-depth));
       --tilt: calc(cos(var(--orbit-active-angle, 0deg)) * 4deg * var(--galaxy-dir, 1) * -1);
       transform:
         translate(-50%, -50%)
@@ -1030,10 +1548,24 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
         scale(var(--slot-scale));
       opacity: var(--slot-opacity);
       transition:
-        transform 0.55s cubic-bezier(0.4, 0, 0.2, 1),
-        opacity 0.3s ease;
-      z-index: 2;
+        transform var(--orbit-motion-duration, 600ms)
+                  var(--orbit-motion-ease, cubic-bezier(0.22, 0.61, 0.36, 1)),
+        opacity var(--orbit-motion-duration, 600ms)
+                var(--orbit-motion-ease, cubic-bezier(0.22, 0.61, 0.36, 1));
+      /* Depth-sorted stacking, same as desktop: 2 (back) .. 10 (front). */
+      z-index: calc(2 + var(--orbit-depth) * 8);
       direction: var(--page-direction, ltr);
+    }
+
+    /* Light-mode phone tuning — a lighter card shadow than desktop:
+       smaller blur, no cyan edge, to keep compositing cheap and the
+       bright scene uncluttered. Overrides the non-media light-mode
+       `.galaxy-card` filter above (same specificity, declared later
+       and inside a matching media query). */
+    :global(html:not(.dark)) .galaxy-card {
+      filter:
+        drop-shadow(0 3px 8px rgba(34, 52, 92, 0.16))
+        drop-shadow(0 1px 2px rgba(34, 52, 92, 0.12));
     }
 
     /* Series capsule a touch wider than a book card, same ratio as desktop.
@@ -1362,6 +1894,102 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
     .reading-entry-overlay:active .reading-entry-asset {
       transform: scale(0.985);
     }
+
+    /* ── Center-card extras (mobile) ────────────────────────────────
+       A quiet secondary link + a thin metadata row that live UNDER
+       the glowing reading-entry pill. They share the pill's
+       visibility lifecycle (`data-pos="center"`) so they only show
+       up for the focused card.
+
+       Positioning math: the pill itself is anchored at
+       `top: calc(100% - 32px)` and visually inflates by the same
+       counter-scale this block uses (`2.34 * card-base-width / 70vw`).
+       Its visual height after counter-scale is roughly 80px, putting
+       its visual bottom at around `100% + 48px` of the unscaled card.
+       We anchor the extras at `100% + 56px` so the secondary link
+       sits ~8px under the pill's visible bottom — close enough to
+       read as one compact action block, far enough to stay legible.
+       transform-origin is `top center` so the counter-scale doesn't
+       drift the group sideways.
+
+       Inner `gap: 4px` controls the secondary-link → metadata row
+       distance, matching the user's compact-stack spec (4-6px). */
+    .center-card-extras {
+      position: absolute;
+      left: 50%;
+      top: calc(100% + 56px);
+      width: 130%;
+      transform:
+        translate(-50%, 0)
+        scale(calc(2.34 * var(--card-base-width) / 70vw));
+      transform-origin: top center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      pointer-events: none;
+      opacity: 0;
+      visibility: hidden;
+      z-index: 29;
+      transition:
+        opacity 240ms cubic-bezier(0.4, 0, 0.2, 1),
+        visibility 0s linear 240ms;
+    }
+    .galaxy-card[data-pos="center"] .center-card-extras {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+      transition:
+        opacity 240ms cubic-bezier(0.4, 0, 0.2, 1),
+        visibility 0s linear 0s;
+    }
+    .cc-secondary-link {
+      font-size: 9px;
+      font-weight: 500;
+      line-height: 1.2;
+      color: rgba(225, 234, 255, 0.78);
+      text-decoration: underline;
+      text-decoration-color: rgba(180, 200, 255, 0.28);
+      text-underline-offset: 3px;
+      text-decoration-thickness: 1px;
+      padding: 2px 6px;
+      border-radius: 6px;
+      background: transparent;
+      pointer-events: auto;
+      transition: color 0.18s ease, text-decoration-color 0.18s ease;
+    }
+    .cc-secondary-link:hover,
+    .cc-secondary-link:focus-visible {
+      color: rgba(255, 255, 255, 0.96);
+      text-decoration-color: rgba(180, 210, 255, 0.85);
+      outline: none;
+    }
+    .cc-meta {
+      margin: 0;
+      padding: 0;
+      font-size: 7px;
+      line-height: 1.25;
+      color: rgba(210, 220, 240, 0.55);
+      letter-spacing: 0.01em;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      gap: 0 6px;
+      white-space: normal;
+    }
+    .cc-meta-item {
+      display: inline-flex;
+      white-space: nowrap;
+    }
+    /* Middot separators rendered via ::before so we don't need a
+       middot in the localized string. Skipped on the first visible
+       chip via :first-child / `[hidden]` siblings. */
+    .cc-meta-item + .cc-meta-item::before {
+      content: "·";
+      margin-inline-end: 6px;
+      opacity: 0.7;
+    }
   }
 
   /* Small-screen baseline for the orbit scene's vertical offset. The
@@ -1370,7 +1998,22 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
      (32 → 56 → 72) is complete at every breakpoint. The transform is
      applied on `.library-galaxy` inside the 1024+ query, so a parent
      transform never affects mobile layout. */
-  .library-galaxy { --orbit-vertical-offset: 32px; }
+  .library-galaxy {
+    --orbit-vertical-offset: 32px;
+    /* Carousel rotation motion — a smoother, slightly inertial premium
+       curve so stations glide through the knowledge space instead of
+       snapping between positions. Consumed by the orbit-card transform
+       + opacity transition in both light and dark mode. */
+    --orbit-motion-duration: 600ms;
+    --orbit-motion-ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  }
+  /* Reduced motion: collapse the rotation duration so depth changes
+     apply instantly. The global theme.css rule already neutralises the
+     transition property; this keeps the token itself consistent for
+     anything that reads it inside a calc(). */
+  @media (prefers-reduced-motion: reduce) {
+    .library-galaxy { --orbit-motion-duration: 1ms; }
+  }
 
   /* ── Tablet (≥640px): same mobile flow, more inline padding ──
         Top padding kept tight so the hero text remains close to the
@@ -1502,9 +2145,10 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
 
     /* The two support panels (ContinueLearningCard + LibraryStatsPanel)
        are anchored individually via `position: fixed` from inside
-       their own component CSS (inset-inline-start: 20px,
-       top: header-offset + 20px, stacked via --continue-learning-card-height).
-       No wrapper needed here. */
+       their own component CSS — ContinueLearningCard on the
+       inline-start edge, LibraryStatsPanel on the inline-end edge,
+       both at top: header-offset + 20px. They frame the carousel
+       from opposite sides. No wrapper needed here. */
 
     /* ── Center stage: hero + galaxy ──────────────────────────────── */
     .lb-area-stage {
@@ -1636,8 +2280,13 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
          to 1 (bottom, nearest). sin(angle) is -1 at the top and +1 at
          the bottom; remap to [0, 1]. */
       --orbit-depth: calc((sin(var(--orbit-active-angle, 0deg)) + 1) / 2);
-      --slot-scale: calc(0.9 + 0.12 * var(--orbit-depth));
-      --slot-opacity: calc(0.86 + 0.14 * var(--orbit-depth));
+      /* Spatial depth ramp — front/near stations sit forward (scale
+         1.0, full opacity, highest z-index), far/back stations recede
+         (scale 0.68, 0.55 opacity, lowest z-index). Reads as a real
+         perspective orbit, not a flat ring. Light mode lifts the
+         opacity floor via the override block higher up. */
+      --slot-scale: calc(0.68 + 0.32 * var(--orbit-depth));
+      --slot-opacity: calc(0.55 + 0.45 * var(--orbit-depth));
       /* Subtle perpendicular tilt: cards on the inline-start arc
          (cos < 0 in default LTR, after dir flip) lean inward. */
       --tilt: calc(cos(var(--orbit-active-angle, 0deg)) * 4deg * var(--galaxy-dir, 1) * -1);
@@ -1651,9 +2300,14 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
         scale(var(--slot-scale));
       opacity: var(--slot-opacity);
       transition:
-        transform 0.55s cubic-bezier(0.4, 0, 0.2, 1),
-        opacity 0.3s ease;
-      z-index: 2;
+        transform var(--orbit-motion-duration, 600ms)
+                  var(--orbit-motion-ease, cubic-bezier(0.22, 0.61, 0.36, 1)),
+        opacity var(--orbit-motion-duration, 600ms)
+                var(--orbit-motion-ease, cubic-bezier(0.22, 0.61, 0.36, 1));
+      /* Depth-sorted stacking: nearer cards layer above farther ones so
+         overlaps read correctly. calc() resolves to a rounded integer,
+         2 (back) .. 10 (front). Hover / linked-glow / focus sit above. */
+      z-index: calc(2 + var(--orbit-depth) * 8);
       will-change: transform, opacity;
     }
 
@@ -1685,7 +2339,8 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
        during the pulse so highlighted cards float above neighbours.
        */
     .galaxy-card.is-linked-glow {
-      z-index: 5;
+      /* Above every depth-sorted resting card (max z 10). */
+      z-index: 11;
     }
     :global(.galaxy-card.is-linked-glow .lc-orbit-artifact-face-front) {
       animation: yuval-linked-glow 1.5s ease-in-out infinite;
@@ -1879,7 +2534,9 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
         translate(var(--series-row-x), 0)
         scale(1.12);
       opacity: 1;
-      z-index: 5;
+      /* Series carousel members ride above the depth-sorted orbit
+         (max z 10) so the collapsed "other knowledge" never overlaps. */
+      z-index: 12;
       cursor: pointer;
     }
 
@@ -2255,7 +2912,9 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
         rotate(calc(var(--tilt) * 0.5))
         scale(calc(var(--slot-scale) * 1.04));
       opacity: 1;
-      z-index: 3;
+      /* Lift above every depth-sorted resting card (max z 10) so a
+         hovered card always comes forward, even from the back. */
+      z-index: 11;
     }
     .galaxy-card:focus-visible {
       outline: none;
@@ -2645,6 +3304,116 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       .reading-entry-asset {
         transition: none;
       }
+    }
+
+    /* ── Center-card extras (desktop ≥1024px) ───────────────────────
+       Quiet secondary text link + thin metadata row living UNDER the
+       existing glowing pill. They are NOT a panel — no border, no
+       background — just text that fades in alongside the pill when
+       its card is centered. The pill itself is untouched.
+
+       Anchoring: the pill is `top: calc(100% - 34px)` with height
+       108px, so its visible bottom edge is at `100% + 74px` from
+       the card's top. The desktop centered card scales 1.5×, which
+       inflates this group too — we deliberately do NOT counter-scale,
+       since at 1.5× the text reads at a comfortable size and matches
+       the pill's own scaling rhythm. With `100% + 78px` (was 80px)
+       the secondary link visually sits ~6px below the pill's bottom
+       before the 1.5× card scale — i.e. ~9px once scaled — which
+       falls inside the user's 8-10px target for the button → link
+       gap. Inner `gap: 5px` controls the secondary-link → metadata
+       row distance (≈8px after scale), matching the 4-6px / 6-9px
+       targets respectively. */
+    .center-card-extras {
+      position: absolute;
+      left: 50%;
+      top: calc(100% + 78px);
+      width: 80%;
+      transform: translate(-50%, 0);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      pointer-events: none;
+      opacity: 0;
+      visibility: hidden;
+      z-index: 29;
+      transition:
+        opacity 260ms cubic-bezier(0.4, 0, 0.2, 1) 40ms,
+        visibility 0s linear 260ms;
+    }
+    .galaxy-card[data-pos="center"] .center-card-extras {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+      transition:
+        opacity 260ms cubic-bezier(0.4, 0, 0.2, 1) 80ms,
+        visibility 0s linear 0s;
+    }
+    .cc-secondary-link {
+      font-size: 11px;
+      font-weight: 500;
+      line-height: 1.2;
+      color: rgba(225, 234, 255, 0.78);
+      text-decoration: underline;
+      text-decoration-color: rgba(180, 200, 255, 0.30);
+      text-underline-offset: 3px;
+      text-decoration-thickness: 1px;
+      padding: 2px 8px;
+      border-radius: 6px;
+      background: transparent;
+      pointer-events: auto;
+      transition: color 0.18s ease, text-decoration-color 0.18s ease;
+      font-family:
+        'Heebo', 'Inter', system-ui, -apple-system,
+        'Segoe UI', 'Noto Sans Hebrew', sans-serif;
+    }
+    .cc-secondary-link:hover,
+    .cc-secondary-link:focus-visible {
+      color: rgba(255, 255, 255, 0.96);
+      text-decoration-color: rgba(180, 210, 255, 0.85);
+      outline: none;
+    }
+    .cc-secondary-link:focus-visible {
+      box-shadow: 0 0 0 2px rgba(150, 200, 255, 0.45);
+    }
+    .cc-meta {
+      margin: 0;
+      padding: 0;
+      font-size: 9px;
+      line-height: 1.25;
+      color: rgba(210, 220, 240, 0.55);
+      letter-spacing: 0.02em;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      gap: 0 8px;
+      white-space: normal;
+      font-family:
+        'Heebo', 'Inter', system-ui, -apple-system,
+        'Segoe UI', 'Noto Sans Hebrew', sans-serif;
+    }
+    .cc-meta-item {
+      display: inline-flex;
+      white-space: nowrap;
+    }
+    .cc-meta-item + .cc-meta-item::before {
+      content: "·";
+      margin-inline-end: 8px;
+      opacity: 0.7;
+    }
+
+    /* Match the pill's launch fade — when the user activates the
+       primary action and the stage flips into the opening state,
+       quietly fade the extras out too so they don't linger after
+       the pill is gone. Opacity-only keeps the secondary link in
+       the a11y tree until navigation fires. */
+    .library-galaxy[data-reading-entry-state="opening"]
+      .galaxy-card[data-pos="center"]
+      .center-card-extras {
+      opacity: 0;
+      transition: opacity 100ms ease-out;
     }
 
     /* ── Reading-entry confirmation ─────────────────────────────────
@@ -3622,6 +4391,105 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
     });
   }
 
+  /**
+   * Center-card extras hydrator.
+   *
+   * Walks every orbit card, reads its per-chapter reading-progress
+   * entries from localStorage (same key scheme used by
+   * `hydrateOrbitProgress` in universe-layout.ts:
+   *   `yuval_reading_progress_{slug}_ch{N}` with a `.percentage` field)
+   * and patches two pieces of the centered-card SSR markup:
+   *
+   *   1. The primary pill's label span (`[data-cc-primary-label]`)
+   *      gets swapped from the SSR default "כניסה לקריאה" to
+   *      "המשך · פרק N" — using the localized template carried on
+   *      `data-continue-template` — when stored progress identifies a
+   *      "current chapter". Current chapter = highest chapter index
+   *      with any percentage > 0, capped at chapterCount. When every
+   *      chapter is already 100%, we fall back to chapterCount itself
+   *      so the label still reads "המשך · פרק <last>" instead of
+   *      reverting to the start-of-book copy.
+   *
+   *   2. The metadata row's progress span (`[data-cc-meta-progress]`)
+   *      becomes visible and renders "<avg>% הושלם" — using the
+   *      template on `data-progress-template` — when avg > 0. Brand-
+   *      new books with no progress keep the span hidden, so the row
+   *      never reads "0% הושלם" on a first visit.
+   *
+   * Read-only against localStorage; never writes. Safe to run before
+   * or after `hydrateOrbitProgress` (independent data fields).
+   */
+  function hydrateCenterCardExtras(): void {
+    const cards = document.querySelectorAll<HTMLElement>('[data-galaxy-card]');
+    cards.forEach((card) => {
+      const slug = card.dataset.slug;
+      if (!slug) return;
+
+      // chapterCount comes from the orbit-progress bar emitted by
+      // LibraryCard. Re-reading it here keeps the hydrator decoupled
+      // from the SSR data shape — if the bar is absent (lesson card,
+      // article, future content type without chapters) we simply skip.
+      const progressBar = card.querySelector<HTMLElement>('[data-orbit-progress]');
+      const total = Number(progressBar?.dataset.chapterCount || '0');
+      if (!total || total <= 0) return;
+
+      let sum = 0;
+      let entries = 0;
+      let highestWithProgress = 0;
+      for (let i = 1; i <= total; i++) {
+        const raw = localStorage.getItem(`yuval_reading_progress_${slug}_ch${i}`);
+        if (!raw) continue;
+        try {
+          const parsed = JSON.parse(raw);
+          if (typeof parsed.percentage === 'number') {
+            const pct = parsed.percentage;
+            sum += pct;
+            entries += 1;
+            if (pct > 0) highestWithProgress = i;
+          }
+        } catch {
+          // Corrupt entry → skip silently, matches hydrateOrbitProgress.
+        }
+      }
+
+      // Patch primary label + href when we have a current-chapter signal.
+      // `highestWithProgress === 0` means every entry was 0% (or
+      // unparseable) — treat as "no current chapter" and leave the
+      // SSR "כניסה לקריאה" copy + `/read/{slug}/{firstChapterId}` href
+      // in place. When a current chapter is found, we ALSO rewrite the
+      // pill's `href` and `data-reading-entry-href` so the primary
+      // action lands on the user's actual reading position — the SSR
+      // first-chapter URL would otherwise reset them every visit.
+      if (highestWithProgress > 0) {
+        const labelEl = card.querySelector<HTMLElement>('[data-cc-primary-label]');
+        const template = labelEl?.dataset.continueTemplate;
+        if (labelEl && template) {
+          labelEl.textContent = template.replace('__N__', String(highestWithProgress));
+        }
+        const pill = card.querySelector<HTMLAnchorElement>('a.reading-entry-overlay[data-reading-entry]');
+        if (pill) {
+          const continueHref = `/read/${slug}/${highestWithProgress}`;
+          pill.setAttribute('href', continueHref);
+          pill.setAttribute('data-reading-entry-href', continueHref);
+        }
+      }
+
+      // Patch progress chip when avg > 0. Sum/total (not sum/entries)
+      // mirrors hydrateOrbitProgress so a 50%-read single chapter in
+      // a 10-chapter book reads as 5%, not 50% — consistent with the
+      // existing progress bar's interpretation.
+      const avg = Math.round(sum / total);
+      if (avg > 0) {
+        const progEl = card.querySelector<HTMLElement>('[data-cc-meta-progress]');
+        const tmpl = progEl?.dataset.progressTemplate;
+        if (progEl && tmpl) {
+          progEl.textContent = tmpl.replace('__N__', String(avg));
+          progEl.hidden = false;
+        }
+      }
+    });
+  }
+
   function initOrbit() {
     document
       .querySelectorAll<HTMLElement>('[data-galaxy-stage]')
@@ -3671,7 +4539,13 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
 
     // Defer one frame so the layout pass settles before we paint the
     // progress fills — avoids a brief 0% → real% flash on slow boots.
-    requestAnimationFrame(hydrateOrbitProgress);
+    // Same frame batch: patch the centered-card secondary link + meta
+    // row from localStorage. Both read the same per-chapter entries,
+    // so coalescing them keeps the localStorage hit count flat.
+    requestAnimationFrame(() => {
+      hydrateOrbitProgress();
+      hydrateCenterCardExtras();
+    });
   }
 
   document.addEventListener('astro:page-load', initOrbit);

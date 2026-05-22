@@ -1555,6 +1555,17 @@ const extraTopics = topics.length - topicChips.length;
     -webkit-backdrop-filter: blur(6px);
     box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.5);
   }
+  /* Day-mode lesson badge — the dark-mode recipe (a pale tinted chip +
+     a hard black drop shadow) washed the white lesson numeral out and
+     read as a dark-mode leftover on the bright ivory observatory. In
+     light mode the chip becomes a solid accent fill so the white
+     number stays crisp, with a soft blue-gray shadow that matches the
+     orbit cards and rotate pill. Scoped to light mode; dark unchanged. */
+  :global(html:not(.dark)) .lc-orbit-corner-badge > span {
+    background-color: var(--card-accent);
+    border-color: color-mix(in srgb, var(--card-accent) 65%, #ffffff);
+    box-shadow: 0 2px 6px -2px rgba(30, 45, 80, 0.28);
+  }
 
   .lc-header {
     display: flex;

@@ -12,6 +12,7 @@ import { resolve } from 'path';
 import { marked } from '../../../utils/markdown';
 import { discoverAllBooks } from '../../../utils/book-discovery';
 import { extractSectionPreviews } from '../../../utils/sidebar/preview-extractor';
+import { getKnowledgeCardAssets } from '../../../utils/library/knowledge-cards';
 
 type LocalizedMap = Record<string, string | undefined>;
 
@@ -168,7 +169,16 @@ const language = resolveContextLanguage(SOURCE_LANGUAGE, langs) as Language;
       if (typeof a === 'string') return a;
       return a[language] ?? a[SOURCE_LANGUAGE] ?? Object.values(a).find(Boolean) ?? '';
     })()}
-    coverImage={bookData.coverImage || ''}
+    coverImage={(() => {
+      // Prefer the same `front-mobile.png` (with `front.png` as
+      // fallback) that the library carousel uses — it's the real
+      // book artwork on disk under `src/assets/knowledge-cards/<slug>/`,
+      // whereas `bookData.coverImage` from book-discovery looks for
+      // `public/<slug>/assets/cover.png` and silently falls back to
+      // `/covers/placeholder.svg` when that file isn't there.
+      const kc = getKnowledgeCardAssets(book);
+      return kc?.frontMobile || kc?.front || bookData.coverImage || '';
+    })()}
     chapterCount={chapters.length}
   />
   {/* Unified top strip: sticky band between the sidebars that merges what

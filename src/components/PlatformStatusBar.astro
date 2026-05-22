@@ -44,7 +44,18 @@ const { bookTitle = '', bookAuthor = '', coverImage = '', chapterCount } = Astro
           data-cover-alt={bookTitle}
           aria-label={bookTitle ? `הצג עטיפה: ${bookTitle}` : 'הצג עטיפה'}
         >
-          <img class="psb-cover" src={coverImage} alt="" loading="lazy" />
+          {/* Compact book glyph instead of a 26×38 squeeze of the
+              full cover art. The trigger keeps `data-cover-src` so the
+              lightbox script below still opens the real `front.png`
+              (or `front-mobile.png`) at full size on click. */}
+          <span class="psb-cover" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 4.5A1.5 1.5 0 0 1 5.5 3H18a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5.5A1.5 1.5 0 0 1 4 19.5v-15Z" />
+              <path d="M8 7h7" />
+              <path d="M8 11h7" />
+              <path d="M8 15h5" />
+            </svg>
+          </span>
         </button>
       )}
       <div class="psb-context-text">
@@ -390,42 +401,65 @@ const { bookTitle = '', bookAuthor = '', coverImage = '', chapterCount } = Astro
     outline-offset: 2px;
   }
 
-  /* Cover thumbnail — small portrait rectangle echoing a real book
-     spine + cover. Subtle gold rim ties it to the rest of the chrome
-     vocabulary; thin shadow gives it depth so it reads as an object,
-     not a flat sticker. */
+  /* Cover trigger — small chrome button hosting a book glyph. Replaces
+     the old 26×38 cover thumbnail: cramming the full cover art into
+     38px tall reduced the title to unreadable noise. The icon stays
+     crisp at any DPI, while the button's data-cover-src still opens
+     the real cover in the lightbox on click — so the user gets a
+     clean affordance and access to the actual artwork.
+
+     Sized to match the visual rhythm of the title/author column
+     beside it (≈32px tall), with the subtle gold rim that ties it to
+     the rest of the reading-mode chrome. */
   .psb-cover {
-    display: block;
-    width: 26px;
-    height: 38px;
-    object-fit: cover;
-    border-radius: 3px;
-    border: 1px solid rgba(184, 146, 63, 0.25);
+    display: inline-grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: 1px solid rgba(184, 146, 63, 0.30);
+    background: rgba(247, 240, 222, 0.65);
+    color: rgba(120, 100, 60, 0.85);
     box-shadow:
-      0 1px 3px rgba(0, 0, 0, 0.20),
-      inset 0 1px 0 rgba(255, 255, 255, 0.05);
-    transition: box-shadow 200ms ease;
+      0 1px 2px rgba(0, 0, 0, 0.06),
+      inset 0 1px 0 rgba(255, 255, 255, 0.50);
+    transition:
+      background-color 180ms ease,
+      border-color 180ms ease,
+      color 180ms ease,
+      box-shadow 200ms ease;
+  }
+  .psb-cover svg {
+    display: block;
   }
 
   .psb-cover-trigger:hover .psb-cover {
+    background: rgba(247, 240, 222, 0.92);
+    border-color: rgba(212, 175, 55, 0.55);
+    color: rgba(120, 100, 60, 1);
     box-shadow:
-      0 4px 12px rgba(0, 0, 0, 0.25),
-      0 0 0 1px rgba(212, 175, 55, 0.35),
-      inset 0 1px 0 rgba(255, 255, 255, 0.06);
+      0 2px 6px rgba(0, 0, 0, 0.10),
+      0 0 0 1px rgba(212, 175, 55, 0.20),
+      inset 0 1px 0 rgba(255, 255, 255, 0.55);
   }
 
   :global(.dark) .psb-cover {
-    border-color: rgba(184, 146, 63, 0.30);
+    background: rgba(40, 36, 28, 0.65);
+    border-color: rgba(184, 146, 63, 0.35);
+    color: rgba(212, 196, 168, 0.85);
     box-shadow:
-      0 1px 3px rgba(0, 0, 0, 0.45),
-      inset 0 1px 0 rgba(255, 255, 255, 0.06);
+      0 1px 2px rgba(0, 0, 0, 0.30),
+      inset 0 1px 0 rgba(255, 255, 255, 0.04);
   }
 
   :global(.dark) .psb-cover-trigger:hover .psb-cover {
+    background: rgba(50, 44, 34, 0.85);
+    border-color: rgba(212, 175, 55, 0.55);
+    color: rgba(232, 216, 184, 1);
     box-shadow:
-      0 4px 14px rgba(0, 0, 0, 0.55),
-      0 0 0 1px rgba(212, 175, 55, 0.40),
-      inset 0 1px 0 rgba(255, 255, 255, 0.07);
+      0 2px 6px rgba(0, 0, 0, 0.45),
+      0 0 0 1px rgba(212, 175, 55, 0.30),
+      inset 0 1px 0 rgba(255, 255, 255, 0.06);
   }
 
   /* Text column: title + author stacked, with min-width: 0 so
