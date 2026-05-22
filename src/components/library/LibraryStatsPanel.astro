@@ -4,7 +4,7 @@
  * ────────────────────────────────────────────────────────────────────────────
  * Replaces the old flat "library snapshot" card with a living knowledge
  * core: a luminous center that carries the total item count, orbited by
- * three category nodes (Books / Courses / Series).
+ * three category nodes (Books / Courses / Articles).
  *
  * Built from semantic HTML + CSS only — no image, no Canvas. Dark and
  * light themes are driven entirely by component-scoped `--kc-*` CSS
@@ -14,9 +14,12 @@
  * The component keeps its filename/Props for call-site compatibility
  * (index.astro passes `stats`, `language`, `courseProgress`).
  *
- * Interaction (v1): clicking a node only DISPATCHES a custom event
- * (`knowledge-core:select`, detail.type = books|courses|series|all).
- * It is intentionally NOT wired to the carousel yet.
+ * Interaction: each clickable node carries a `data-library-filter`
+ * attribute (all | books | courses | articles). This widget exists only
+ * on the carousel page, so it ships NO script of its own — the orbit
+ * module (universe-layout.ts) owns a single delegated click listener
+ * for `[data-library-filter]` and focuses the matching orbit station
+ * directly. No CustomEvent, no event bus.
  */
 import type { LibraryStats, LibraryCourseProgress, LibraryItemType } from '../../types/library';
 import type { Language } from '../../types/index';
@@ -43,15 +46,15 @@ const total = stats.readable;
 
 /* The three fixed category nodes that orbit the core. Always rendered
    (even at count 0) so the constellation shape stays stable. `type` is
-   the event payload value; `itemType` keys into LibraryStats.byType. */
+   the data-library-filter value; `itemType` keys into LibraryStats.byType. */
 const nodes: Array<{
-  type: 'books' | 'courses' | 'series';
+  type: 'books' | 'courses' | 'articles';
   itemType: LibraryItemType;
   labelKey: string;
 }> = [
-  { type: 'books',   itemType: 'book',   labelKey: 'library.stats.label.books' },
-  { type: 'courses', itemType: 'course', labelKey: 'library.stats.label.courses' },
-  { type: 'series',  itemType: 'series', labelKey: 'library.stats.label.series' },
+  { type: 'books',    itemType: 'book',    labelKey: 'library.stats.label.books' },
+  { type: 'courses',  itemType: 'course',  labelKey: 'library.stats.label.courses' },
+  { type: 'articles', itemType: 'article', labelKey: 'library.stats.label.articles' },
 ];
 
 const nodeData = nodes.map((n) => ({
@@ -93,8 +96,7 @@ const PARTICLES = [0, 1, 2, 3, 4, 5];
     <button
       type="button"
       class="kc__core"
-      data-kc-node="all"
-      data-kc-count={total}
+      data-library-filter="all"
       aria-label={`${t('library.core.all', language)}: ${total}`}
     >
       <span class="kc__core-count">{total}</span>
@@ -108,8 +110,7 @@ const PARTICLES = [0, 1, 2, 3, 4, 5];
       <button
         type="button"
         class="kc__node"
-        data-kc-node={n.type}
-        data-kc-count={n.count}
+        data-library-filter={n.type}
         aria-label={`${n.label}: ${n.count}`}
       >
         <span class="kc__node-icon" aria-hidden="true">
@@ -126,10 +127,11 @@ const PARTICLES = [0, 1, 2, 3, 4, 5];
               <path d="M21.5 9v5.4"></path>
             </svg>
           )}
-          {n.type === 'series' && (
+          {n.type === 'articles' && (
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="3" y="3" width="13" height="13" rx="2"></rect>
-              <path d="M8 21h11a2 2 0 0 0 2-2V8"></path>
+              <path d="M14.5 2v17.5a2.5 2.5 0 0 1-5 0V2"></path>
+              <path d="M8.5 2h7"></path>
+              <path d="M9.5 14h5"></path>
             </svg>
           )}
         </span>
@@ -138,16 +140,6 @@ const PARTICLES = [0, 1, 2, 3, 4, 5];
       </button>
     ))}
   </div>
-
-  <a class="kc__cta" href="/library">
-    <span class="kc__cta-label">{t('library.core.cta', language)}</span>
-    <span class="kc__cta-icon" aria-hidden="true">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M5 12h14"></path>
-        <path d="m13 5 7 7-7 7"></path>
-      </svg>
-    </span>
-  </a>
 </article>
 
 <style>
@@ -203,10 +195,6 @@ const PARTICLES = [0, 1, 2, 3, 4, 5];
       inset 0 0 0 1px rgba(140, 190, 255, 0.06),
       0 6px 16px rgba(2, 4, 14, 0.40);
 
-    /* CTA */
-    --kc-cta-face: var(--yuval-galaxy-surface-elevated, rgba(28, 34, 64, 0.82));
-    --kc-cta-border: rgba(120, 140, 200, 0.18);
-
     --kc-focus: var(--yuval-galaxy-accent-cyan, #22d3ee);
     --kc-radius: var(--yuval-galaxy-panel-radius, 20px);
   }
@@ -258,16 +246,16 @@ const PARTICLES = [0, 1, 2, 3, 4, 5];
       inset 0 1px 0 rgba(255, 255, 255, 0.80),
       0 6px 16px -6px rgba(30, 45, 80, 0.18);
 
-    --kc-cta-face: rgba(255, 254, 251, 0.94);
-    --kc-cta-border: rgba(34, 52, 92, 0.14);
-
     --kc-focus: #0e7490;
   }
 
-  /* Per-node accent — galaxy type tokens already adapt to dark/light. */
-  .kc__node[data-kc-node="books"]   { --kc-accent: var(--yuval-galaxy-type-book,   #f6c560); }
-  .kc__node[data-kc-node="courses"] { --kc-accent: var(--yuval-galaxy-type-course, #22d3ee); }
-  .kc__node[data-kc-node="series"]  { --kc-accent: var(--yuval-galaxy-type-series, #f0abfc); }
+  /* Per-node accent — galaxy type tokens already adapt to dark/light.
+     The Articles node intentionally keeps the previous Series node's
+     accent token so replacing the node does not shift the widget's
+     purple colour balance in either theme. */
+  .kc__node[data-library-filter="books"]    { --kc-accent: var(--yuval-galaxy-type-book,   #f6c560); }
+  .kc__node[data-library-filter="courses"]  { --kc-accent: var(--yuval-galaxy-type-course, #22d3ee); }
+  .kc__node[data-library-filter="articles"] { --kc-accent: var(--yuval-galaxy-type-series, #f0abfc); }
 
   /* ═══════════════════════════════════════════════════════════════════
      PANEL CHROME — fixed support panel framing the carousel.
@@ -291,7 +279,11 @@ const PARTICLES = [0, 1, 2, 3, 4, 5];
     padding: 16px;
     display: flex;
     flex-direction: column;
-    gap: 13px;
+    /* Wider column rhythm — the bottom CTA was removed, so this gap
+       redistributes the freed vertical space as breathing room above
+       and below the core stage and the category-node row. Element
+       sizes are untouched; only the air between sections grows. */
+    gap: 20px;
 
     background: var(--kc-surface);
     border: 1px solid var(--kc-border);
@@ -535,46 +527,9 @@ const PARTICLES = [0, 1, 2, 3, 4, 5];
     text-overflow: ellipsis;
   }
 
-  /* ═══════════════════════════════════════════════════════════════════
-     CTA
-     ═══════════════════════════════════════════════════════════════════ */
-  .kc__cta {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    padding: 10px 14px;
-    border-radius: 12px;
-    background: var(--kc-cta-face);
-    border: 1px solid var(--kc-cta-border);
-    color: var(--kc-text);
-    text-decoration: none;
-    font-size: 13px;
-    font-weight: 500;
-    transition:
-      transform 200ms var(--yuval-galaxy-ease-out, cubic-bezier(0.22, 1, 0.36, 1)),
-      box-shadow 200ms ease-out;
-  }
-
-  .kc__cta:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 0 20px -6px var(--kc-focus);
-  }
-
-  .kc__cta-icon {
-    display: inline-flex;
-    width: 15px;
-    height: 15px;
-    flex-shrink: 0;
-  }
-  .kc__cta-icon svg { width: 100%; height: 100%; }
-  /* Arrow points along the reading direction. */
-  .knowledge-core[dir="rtl"] .kc__cta-icon { transform: scaleX(-1); }
-
   /* ── Keyboard focus ─────────────────────────────────────────────────── */
   .kc__core:focus-visible,
-  .kc__node:focus-visible,
-  .kc__cta:focus-visible {
+  .kc__node:focus-visible {
     outline: 2px solid var(--kc-focus);
     outline-offset: 3px;
   }
@@ -600,7 +555,6 @@ const PARTICLES = [0, 1, 2, 3, 4, 5];
     }
     .kc__core,
     .kc__node,
-    .kc__cta,
     .kc__node-icon {
       transition: none !important;
     }
@@ -612,39 +566,3 @@ const PARTICLES = [0, 1, 2, 3, 4, 5];
     .kc__node { padding: 8px 2px; }
   }
 </style>
-
-<script>
-  /**
-   * Knowledge Core — event dispatching (v1).
-   * On click, a node dispatches `knowledge-core:select` (bubbling) with
-   * detail = { type: 'books'|'courses'|'series'|'all', count }.
-   * Not wired to the carousel yet — a later listener will consume this.
-   */
-  function initKnowledgeCore() {
-    document.querySelectorAll<HTMLElement>('.knowledge-core').forEach((widget) => {
-      if (widget.dataset.kcInit === 'true') return;
-      widget.dataset.kcInit = 'true';
-
-      widget.querySelectorAll<HTMLButtonElement>('[data-kc-node]').forEach((btn) => {
-        btn.addEventListener('click', () => {
-          const type = btn.getAttribute('data-kc-node');
-          if (!type) return;
-          const rawCount = btn.getAttribute('data-kc-count');
-          widget.dispatchEvent(
-            new CustomEvent('knowledge-core:select', {
-              bubbles: true,
-              detail: {
-                type,
-                count: rawCount === null ? null : Number(rawCount),
-              },
-            }),
-          );
-        });
-      });
-    });
-  }
-
-  initKnowledgeCore();
-  // Re-run after Astro view transitions, if enabled.
-  document.addEventListener('astro:page-load', initKnowledgeCore);
-</script>

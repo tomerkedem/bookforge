@@ -336,6 +336,74 @@ export function initStageLayout(stage: HTMLElement): void {
     rotateOrbit(e.key === 'ArrowLeft' ? -1 : 1);
   });
 
+  // ── Knowledge Core bridge ─────────────────────────────────────────
+  // The Knowledge Core widget (LibraryStatsPanel.astro) lives ONLY on
+  // this carousel page, so it needs no global event — its clickable
+  // nodes simply carry a `data-library-filter` attribute. This single
+  // delegated click listener is the direct DOM bridge: it reads that
+  // attribute and calls the orbit's focus logic right here, with no
+  // CustomEvent, no event bus and no shared state.
+  //
+  //   data-library-filter "all"      → closeCenter() — drop the
+  //                                    spotlight so every station shows.
+  //   data-library-filter "books"    → focus first book station
+  //                                    (data-kind="book").
+  //   data-library-filter "courses"  → focus first course station
+  //                                    (data-kind="course" — set by
+  //                                    orbitKindOf in index.astro).
+  //   data-library-filter "articles" → focus first article station
+  //                                    (data-kind="article"); a no-op
+  //                                    until article content enters the
+  //                                    pipeline and gets orbit stations.
+  //
+  // The orbit has no category-filter mode to reuse, so "focus" is the
+  // whole bridge: openCenter() already lifts ANY card to the centre via
+  // data-pos="center" regardless of orbit angle. Identical on desktop
+  // and mobile — no breakpoint branch.
+  //
+  // Document-level delegation: the widget is a position:fixed panel
+  // rendered outside the stage subtree, so its clicks are caught here,
+  // not by the stage-scoped handler. Same safe-leak pattern as the
+  // rotate / keyboard listeners above — after a view transition the
+  // captured `stage` is disconnected and isStageOnScreen() makes this
+  // handler a no-op.
+  const LIBRARY_FILTER_TO_KIND: Record<string, 'book' | 'course' | 'article'> = {
+    books:    'book',
+    courses:  'course',
+    articles: 'article',
+  };
+
+  document.addEventListener('click', (e) => {
+    const target = e.target as Element | null;
+    if (!target) return;
+    const trigger = target.closest<HTMLElement>('[data-library-filter]');
+    if (!trigger) return;
+    if (!isStageOnScreen()) return;
+
+    const filter = trigger.dataset.libraryFilter;
+    if (!filter) return;
+
+    // "all" — clear the spotlight, every station visible.
+    if (filter === 'all') {
+      closeCenter();
+      return;
+    }
+
+    const kind = LIBRARY_FILTER_TO_KIND[filter];
+    if (!kind) return;
+
+    // First station of that kind. `:not([data-series-member])` mirrors
+    // getStep() so a hidden series member is never spotlighted (a no-op
+    // today — series grouping is disabled — but it keeps the bridge
+    // correct if capsule injection is ever re-enabled).
+    const card = stage.querySelector<HTMLElement>(
+      `[data-galaxy-card][data-kind="${kind}"]:not([data-series-member])`,
+    );
+    // No station of that kind on the orbit → leave the current view
+    // untouched rather than destroying an unrelated spotlight.
+    if (card) openCenter(card);
+  });
+
   // ── Mobile auto-focus ─────────────────────────────────────────────
   // On phones the orbit cards are clamped to 96-140px wide, which
   // makes the title/cover text hard to read at rest. To solve the

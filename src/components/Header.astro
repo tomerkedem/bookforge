@@ -1419,19 +1419,44 @@ const searchAriaLabel = t('header.searchAriaLabel', language);
      Reading mode keeps its own parchment overrides — unaffected. */
   :global(html:not(.dark):has(.library-dark-showcase)) .yuval-header {
     /* Soft warm glass — translucent so the observatory reads faintly
-       through it; the backdrop blur makes it sit ON the scene. */
+       through it. NOTE: the backdrop blur is deliberately NOT applied
+       on .yuval-header itself. backdrop-filter (like filter / transform
+       / perspective) turns the element into the containing block for
+       EVERY position:fixed descendant. The language-selector overlay
+       (.lgs-overlay) is a fixed, full-viewport modal rendered INSIDE
+       this header; with the blur here it collapsed to the ~72px header
+       box, so the cinematic 3D globe got pinned to the top of the
+       screen and its backdrop only dimmed the header — the light-mode
+       "globe not centered" bug. The blur now lives on the ::before
+       layer below, which has no element children and traps nothing. */
     background:
       linear-gradient(
         180deg,
         rgba(255, 254, 250, 0.86) 0%,
         rgba(249, 247, 240, 0.74) 100%
       );
-    -webkit-backdrop-filter: blur(14px) saturate(1.08);
-    backdrop-filter: blur(14px) saturate(1.08);
     /* One subtle hairline at the bottom is the only separator — no
        heavy shadow, no hard near-black edge. */
     border-bottom: 1px solid rgba(34, 52, 92, 0.12);
     box-shadow: 0 1px 12px -8px rgba(30, 45, 80, 0.18);
+  }
+
+  /* Frosted-glass blur — carried by a pseudo-element so .yuval-header
+     itself never becomes a containing block for the fixed overlay
+     (see the note above). Fills the header box and blurs the Knowledge
+     Observatory scrolling behind it. z-index:-1 keeps it behind the
+     header content (logo / search / controls) — the header's
+     `isolation: isolate` clamps that negative layer inside the header;
+     pointer-events:none keeps every click on the real controls.
+     /library carries no base .yuval-header::before, so this owns it. */
+  :global(html:not(.dark):has(.library-dark-showcase)) .yuval-header::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    -webkit-backdrop-filter: blur(14px) saturate(1.08);
+    backdrop-filter: blur(14px) saturate(1.08);
+    pointer-events: none;
   }
 
   /* Silence every cosmic pseudo-layer in light mode: the top-edge

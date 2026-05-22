@@ -215,12 +215,21 @@ for (const it of readableItems) {
 type OrbitItem = {
   item: typeof readableItems[number];
   angle: number;
-  kind: 'book' | 'lesson' | 'series';
+  kind: 'book' | 'lesson' | 'course';
 };
+// `data-kind` is the orbit-render category, deliberately decoupled from
+// LibraryItem.type. Only three kinds reach the orbit today: real books
+// (`book`), course lessons (`course_lesson` → `lesson`), and the single
+// `ai-engineering-series` overlay item. That overlay is typed `series`
+// in the catalog, but on the orbit it IS the AI Engineering Course card
+// — its real `course`-type sibling has no readable route yet — so it
+// surfaces as a `course` station. A course is a top-level content type;
+// rendering it as `data-kind="course"` lets the Knowledge Core "Courses"
+// filter focus it directly.
 const orbitKindOf = (it: typeof readableItems[number]): OrbitItem['kind'] =>
   it.type === 'book' ? 'book'
   : it.type === 'course_lesson' ? 'lesson'
-  : 'series';
+  : 'course';
 const orbitItems: OrbitItem[] = orbitItemsSource.map((item, i) => ({
   item,
   angle: getEvenOrbitAngle(i, orbitItemsSource.length),
@@ -543,7 +552,7 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
                     close button was retired in favour of backdrop-tap
                     and Esc-key closing. Books / lessons / articles
                     therefore emit no `.galaxy-cta` markup at all. */}
-                {kind === 'series' && (
+                {kind === 'course' && (
                   <div class="galaxy-cta">
                     <div class="galaxy-cta-series-actions" data-series-action-panel>
                       <button
@@ -749,14 +758,14 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
           data-galaxy-rotate
           data-direction="prev"
           aria-label={t('library.galaxy.rotatePrev', language)}
-        ><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+        ><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
         <button
           type="button"
           class="galaxy-orbit-btn"
           data-galaxy-rotate
           data-direction="next"
           aria-label={t('library.galaxy.rotateNext', language)}
-        ><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+        ><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
       </div>
     )}
 
@@ -1579,12 +1588,12 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       --series-color-resolved: var(--series-color, var(--yuval-galaxy-accent-gold, #c9a96e));
     }
 
-    /* Per-kind accent tint — books gold, lessons cyan, series violet.
+    /* Per-kind accent tint — books gold, lessons cyan, course violet.
        Sets a CSS variable that the inner LibraryCard reads for its
        accent strip; same contract as desktop. */
     .galaxy-card[data-kind="book"]   { --card-accent-slot: var(--yuval-galaxy-accent-gold); }
     .galaxy-card[data-kind="lesson"] { --card-accent-slot: var(--yuval-galaxy-accent-cyan); }
-    .galaxy-card[data-kind="series"] { --card-accent-slot: var(--yuval-galaxy-accent-purple); }
+    .galaxy-card[data-kind="course"] { --card-accent-slot: var(--yuval-galaxy-accent-purple); }
 
     /* Drag-to-rotate: kill the transform transition while a drag is
        in flight so the carousel tracks the cursor in real time. */
@@ -1635,8 +1644,10 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       direction: ltr;
     }
     .galaxy-orbit-btn {
-      width: 44px;
-      height: 44px;
+      /* Compact rotate control — 28px circle, a quiet secondary
+         control kept well below the orbit cards in visual weight. */
+      width: 28px;
+      height: 28px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -2315,15 +2326,15 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
     }
 
     /* Type tint — books pick the gold accent rotation, lessons the
-       cyan one, series the violet one. Keeps the groups visually
-       distinct on the orbit without needing column-based layout.
-       Series capsules sit at the top of the orbit and pick up the
-       purple accent already defined in the cosmic palette so they
-       read as part of the family without competing with the
-       gold/cyan pairing of books and lessons. */
+       cyan one, the course station the violet one. Keeps the groups
+       visually distinct on the orbit without needing column-based
+       layout. The course card picks up the purple accent already
+       defined in the cosmic palette so it reads as part of the family
+       without competing with the gold/cyan pairing of books and
+       lessons. */
     .galaxy-card[data-kind="book"]   { --card-accent-slot: var(--yuval-galaxy-accent-gold); }
     .galaxy-card[data-kind="lesson"] { --card-accent-slot: var(--yuval-galaxy-accent-cyan); }
-    .galaxy-card[data-kind="series"] { --card-accent-slot: var(--yuval-galaxy-accent-purple); }
+    .galaxy-card[data-kind="course"] { --card-accent-slot: var(--yuval-galaxy-accent-purple); }
 
     /* Linked-glow halo ─────────────────────────────────────────────
        The artifact PNG (the visible book-card art) has transparent
@@ -3566,8 +3577,10 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       direction: ltr;
     }
     .galaxy-orbit-btn {
-      width: 44px;
-      height: 44px;
+      /* Compact rotate control — 28px circle, a quiet secondary
+         control kept well below the orbit cards in visual weight. */
+      width: 28px;
+      height: 28px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -3625,8 +3638,8 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
         already gates visibility on `[data-pos="center"]`, so these
         buttons inherit the same focus-only reveal as the close button
         without any extra logic.
-        Only series cards (`data-kind="series"`) ever render the
-        wrapper, so non-series cards remain unchanged. */
+        Only the course card (`data-kind="course"`) ever renders the
+        wrapper, so other cards remain unchanged. */
   .galaxy-cta-series-actions {
     display: flex;
     flex-direction: column;
@@ -4149,7 +4162,7 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
     stage.querySelectorAll<HTMLElement>('.galaxy-card[data-slug]').forEach((card) => {
       const slug = card.dataset.slug;
       if (!slug) return;
-      if (card.dataset.kind === 'series') {
+      if (card.dataset.kind === 'course') {
         const name = seriesNameBySlug.get(slug);
         if (name) card.dataset.seriesName = name;
       } else {
@@ -4162,8 +4175,8 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
     });
 
     // Debug — surfaces how many cards are eligible for linking.
-    const capsulesNamed = stage.querySelectorAll('.galaxy-card[data-kind="series"][data-series-name]').length;
-    const booksNamed = stage.querySelectorAll('.galaxy-card[data-series-name]:not([data-kind="series"])').length;
+    const capsulesNamed = stage.querySelectorAll('.galaxy-card[data-kind="course"][data-series-name]').length;
+    const booksNamed = stage.querySelectorAll('.galaxy-card[data-series-name]:not([data-kind="course"])').length;
     console.log(
       '[linked-glow] hydrated — capsules with name: %d, books/lessons with seriesName: %d',
       capsulesNamed,
@@ -4178,7 +4191,7 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
     //                       glow even without the admin form filled)
     // Cards without either attribute on the capsule are skipped.
     const seriesCards = stage.querySelectorAll<HTMLElement>(
-      '.galaxy-card[data-kind="series"]',
+      '.galaxy-card[data-kind="course"]',
     );
     seriesCards.forEach((card) => {
       const seriesName = card.dataset.seriesName;

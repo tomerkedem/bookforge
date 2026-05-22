@@ -3,7 +3,7 @@
  *
  *   ┌────────────────────────────────────────────────────────────────┐
  *   │ Responsibility (this module)                                   │
- *   │   • Recognise when a `[data-kind="series"]` orbit card has     │
+ *   │   • Recognise when the `[data-kind="course"]` orbit card has   │
  *   │     been focused into the centre via the existing layout       │
  *   │     module (`data-pos="center"`). The focus mechanism itself   │
  *   │     is owned by `universe-layout.ts`; we react to its output.  │
@@ -270,8 +270,11 @@ export function initSeriesActions(
   });
 
   function getFocusedSeriesCard(): HTMLElement | null {
+    // The action panel rides on the course station card — orbitKindOf
+    // in index.astro surfaces the `ai-engineering-series` overlay item
+    // as `data-kind="course"`.
     return stage.querySelector<HTMLElement>(
-      '.galaxy-card[data-pos="center"][data-kind="series"]',
+      '.galaxy-card[data-pos="center"][data-kind="course"]',
     );
   }
 
@@ -374,62 +377,82 @@ export function initSeriesActions(
     if (lbl) lbl.textContent = labelText;
   }
 
-  function toggleChildren(card: HTMLElement): void {
-    const slug = card.dataset.slug;
-    if (!slug) return;
+  // ── Course filter ────────────────────────────────────────────────────
+  // "Show series books" collapses the orbit down to just the focused
+  // course's content. Membership is read straight off the
+  // `data-series-id` already rendered on every station — the course
+  // capsule and each of its lessons share one id — so it works with
+  // zero admin metadata, unlike the legacy name-keyed series mode.
+  //
+  // It reuses the existing series-mode CSS contract, so there is no new
+  // visual system: the lessons become `.is-active-series-member` (the
+  // horizontal carousel), the course capsule `.is-active-series-capsule`
+  // (hidden — it is replaced by its books), every other station
+  // `.is-muted` (faded out), and `data-stage-mode="series"` on the stage
+  // drives it all. The filter is dismissed by clicking anywhere else
+  // (see the document listeners below) — no "Other Knowledge" exit pill.
 
-    // If the orbit is already in series-mode for this same series, treat
-    // the click as "hide" and exit. Use seriesMode.active() so we don't
-    // need a parallel state variable for whether the orbit is filtered.
-    const series = findSeriesBySlug(slug);
-    const seriesName = series?.name;
-    if (seriesName && seriesMode.active() === seriesName) {
-      seriesMode.exit();
-      setToggleButtonState(card, false);
-      return;
-    }
+  function applyCourseFilter(card: HTMLElement): void {
+    if (stage.dataset.stageMode === 'series') return;
+    const seriesId = card.dataset.seriesId;
+    if (!seriesId) return;
 
-    // Cleanup any stale fan from a prior interaction (the fan is no
-    // longer the primary UI for this button — kept as a safety net for
-    // series with no orbit station — but we still want it out of the
-    // way before entering orbit series-mode).
-    if (activeChildrenSlug) hideChildrenFan();
+    // Lessons of this course = every OTHER station sharing its series id.
+    const lessons = Array.from(
+      stage.querySelectorAll<HTMLElement>(
+        `.galaxy-card[data-galaxy-card][data-series-id="${cssEscape(seriesId)}"]`,
+      ),
+    ).filter((el) => el !== card);
+    if (lessons.length === 0) return; // no course content to surface
 
-    if (!seriesName) {
-      // No metadata = no orbit members to surface. Fall back to the
-      // empty-state fan so the user sees an explicit "no items" hint
-      // instead of nothing happening.
-      // eslint-disable-next-line no-console
-      console.log(
-        `[series-actions] no SeriesMetadata for focused slug="${slug}"; `
-        + 'showing empty fan so the user gets a clear "no items" hint',
-      );
-      fan.innerHTML = '';
-      fan.dataset.seriesSlug = slug;
-      const empty = document.createElement('p');
-      empty.className = 'series-children-empty';
-      empty.textContent = labels.childrenEmpty;
-      fan.appendChild(empty);
-      fan.hidden = false;
-      stage.dataset.seriesChildrenOpen = 'true';
-      activeChildrenSlug = slug;
-      setToggleButtonState(card, true);
-      return;
-    }
-
-    // Filter the orbit itself: clear the focused state so the layout's
-    // CTA panel disappears (otherwise the now-hidden capsule would still
-    // be the focus target and the action buttons would float over an
-    // invisible card), then enter series mode so the orbit transforms
-    // into a horizontal carousel of just this series's members + the
-    // synthesized "Other Knowledge" exit pill.
+    // Drop the centre spotlight so the filtered carousel reads cleanly
+    // (the layout module's card-click handler may already have done so;
+    // the guard keeps this idempotent).
     if (card.dataset.pos === 'center') {
       delete card.dataset.pos;
       delete stage.dataset.galaxyFocused;
     }
-    seriesMode.enter(seriesName);
+
+    lessons.forEach((el, i) => {
+      el.classList.add('is-active-series-member');
+      el.style.setProperty('--series-active-index', String(i));
+      el.style.setProperty('--series-active-total', String(lessons.length));
+    });
+    card.classList.add('is-active-series-capsule');
+    stage
+      .querySelectorAll<HTMLElement>('.galaxy-card[data-galaxy-card]')
+      .forEach((c) => {
+        if (c === card || c.classList.contains('is-active-series-member')) return;
+        c.classList.add('is-muted');
+      });
+    stage.dataset.stageMode = 'series';
     setToggleButtonState(card, true);
-    triggerSeriesGlow(seriesName);
+  }
+
+  function clearCourseFilter(): void {
+    if (stage.dataset.stageMode !== 'series') return;
+    stage.querySelectorAll<HTMLElement>('.galaxy-card').forEach((c) => {
+      c.classList.remove(
+        'is-active-series-member',
+        'is-active-series-capsule',
+        'is-muted',
+      );
+      c.style.removeProperty('--series-active-index');
+      c.style.removeProperty('--series-active-total');
+    });
+    delete stage.dataset.stageMode;
+    delete stage.dataset.activeSeries;
+    // Reset every toggle button back to its "show" state.
+    stage
+      .querySelectorAll<HTMLElement>('[data-series-action="toggle-items"]')
+      .forEach((btn) => {
+        btn.setAttribute('aria-pressed', 'false');
+        btn.setAttribute('aria-label', labels.showItems);
+        const lbl = btn.querySelector<HTMLElement>(
+          '[data-series-action-label="toggle-items"]',
+        );
+        if (lbl) lbl.textContent = labels.showItems;
+      });
   }
 
   function openDetails(card: HTMLElement): void {
@@ -533,13 +556,13 @@ export function initSeriesActions(
       const action = btn.dataset.seriesAction;
       const card = btn.closest<HTMLElement>('.galaxy-card[data-galaxy-card]');
       if (!card) return;
-      // Defensive: the buttons are only rendered for kind="series" cards,
-      // but this check guards against a stray dispatch.
-      if (card.dataset.kind !== 'series') return;
+      // Defensive: the buttons are only rendered for the kind="course"
+      // station, but this check guards against a stray dispatch.
+      if (card.dataset.kind !== 'course') return;
       e.preventDefault();
       e.stopImmediatePropagation();
       if (action === 'toggle-items') {
-        toggleChildren(card);
+        applyCourseFilter(card);
         return;
       }
       if (action === 'details') {
@@ -549,6 +572,20 @@ export function initSeriesActions(
     },
     true, // capture so we beat the layout module's card-click handler
   );
+
+  // ── Course-filter dismissal ──────────────────────────────────────────
+  // A click anywhere on the page collapses the course filter back to the
+  // full orbit. The activating "Show series books" click never reaches
+  // here — the stage click handler above calls stopImmediatePropagation()
+  // on series-action buttons — so this only fires for genuine "elsewhere"
+  // clicks. clearCourseFilter() is a cheap no-op when no filter is active.
+  // Clicking a visible lesson card collapses the filter too AND lets the
+  // layout module focus that lesson, so the user lands on it in the
+  // restored orbit. Esc mirrors the dismissal for keyboard users.
+  document.addEventListener('click', () => clearCourseFilter());
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') clearCourseFilter();
+  });
 
   // ── Drawer dismissal ─────────────────────────────────────────────────
   if (drawerEls) {
