@@ -1,4 +1,23 @@
 ---
+/**
+ * Knowledge Core — live library widget
+ * ────────────────────────────────────────────────────────────────────────────
+ * Replaces the old flat "library snapshot" card with a living knowledge
+ * core: a luminous center that carries the total item count, orbited by
+ * three category nodes (Books / Courses / Series).
+ *
+ * Built from semantic HTML + CSS only — no image, no Canvas. Dark and
+ * light themes are driven entirely by component-scoped `--kc-*` CSS
+ * variables (one markup tree, two value sets), so the cosmic dark look
+ * and the airy glass light look never duplicate any DOM.
+ *
+ * The component keeps its filename/Props for call-site compatibility
+ * (index.astro passes `stats`, `language`, `courseProgress`).
+ *
+ * Interaction (v1): clicking a node only DISPATCHES a custom event
+ * (`knowledge-core:select`, detail.type = books|courses|series|all).
+ * It is intentionally NOT wired to the carousel yet.
+ */
 import type { LibraryStats, LibraryCourseProgress, LibraryItemType } from '../../types/library';
 import type { Language } from '../../types/index';
 import { t } from '../../i18n';
@@ -8,9 +27,9 @@ interface Props {
   stats: LibraryStats;
   language: Language;
   /**
-   * Accepted for call-site compatibility only. The panel is now a
-   * compact "library snapshot" and no longer renders a per-course
-   * lessons breakdown, so this prop is intentionally unused.
+   * Accepted for call-site compatibility only. The Knowledge Core
+   * surfaces top-level type counts, not a per-course lessons
+   * breakdown, so this prop is intentionally unused.
    */
   courseProgress?: LibraryCourseProgress[];
 }
@@ -18,264 +37,614 @@ interface Props {
 const { stats, language } = Astro.props;
 const direction = getLanguageDirection(language);
 
-/* Compact snapshot — only the three top-level content types. Articles
-   and the per-course lesson rows were dropped so the panel reads as a
-   lightweight snapshot that frames the carousel, not a stats dashboard. */
-const typeOrder: Array<{ type: LibraryItemType; labelKey: string }> = [
-  { type: 'book',   labelKey: 'library.stats.label.books' },
-  { type: 'course', labelKey: 'library.stats.label.courses' },
-  { type: 'series', labelKey: 'library.stats.label.series' },
+/* Center figure — the count of items the user can actually open
+   (see LibraryStats.readable). */
+const total = stats.readable;
+
+/* The three fixed category nodes that orbit the core. Always rendered
+   (even at count 0) so the constellation shape stays stable. `type` is
+   the event payload value; `itemType` keys into LibraryStats.byType. */
+const nodes: Array<{
+  type: 'books' | 'courses' | 'series';
+  itemType: LibraryItemType;
+  labelKey: string;
+}> = [
+  { type: 'books',   itemType: 'book',   labelKey: 'library.stats.label.books' },
+  { type: 'courses', itemType: 'course', labelKey: 'library.stats.label.courses' },
+  { type: 'series',  itemType: 'series', labelKey: 'library.stats.label.series' },
 ];
 
-const visibleTypes = typeOrder.filter(({ type }) => (stats.byType[type] ?? 0) > 0);
+const nodeData = nodes.map((n) => ({
+  ...n,
+  label: t(n.labelKey, language),
+  count: stats.byType[n.itemType] ?? 0,
+}));
+
+/* Decorative drifting particles — count only; positions/timing live in CSS. */
+const PARTICLES = [0, 1, 2, 3, 4, 5];
 ---
 
 <article
-  class="library-stats-panel"
+  class="knowledge-core"
   dir={direction}
-  aria-label={t('library.a11y.libraryStatsPanel', language)}
+  aria-label={t('library.core.title', language)}
 >
-  <header class="lsp__header">
-    <span class="lsp__header-icon" aria-hidden="true">
+  <header class="kc__header">
+    <span class="kc__header-icon" aria-hidden="true">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M21 12A9 9 0 1 1 12 3v9z"></path>
-        <path d="M21 12A9 9 0 0 0 12 3v9z"></path>
+        <circle cx="12" cy="12" r="2.6"></circle>
+        <ellipse cx="12" cy="12" rx="10" ry="4.3"></ellipse>
+        <ellipse cx="12" cy="12" rx="10" ry="4.3" transform="rotate(60 12 12)"></ellipse>
       </svg>
     </span>
-    <h3 class="lsp__title">{t('library.stats.yourLibrary', language)}</h3>
+    <h3 class="kc__title">{t('library.core.title', language)}</h3>
   </header>
 
-  <div class="lsp__total">
-    <span class="lsp__total-number">{stats.readable}</span>
-    <span class="lsp__total-label">{t('library.stats.itemsInLibrary', language)}</span>
+  {/* ── Core stage: particles + orbit ring + luminous core ───────────── */}
+  <div class="kc__stage">
+    <div class="kc__particles" aria-hidden="true">
+      {PARTICLES.map((i) => (
+        <span class={`kc__particle kc__particle--${i + 1}`}></span>
+      ))}
+    </div>
+
+    <span class="kc__ring" aria-hidden="true"></span>
+
+    <button
+      type="button"
+      class="kc__core"
+      data-kc-node="all"
+      data-kc-count={total}
+      aria-label={`${t('library.core.all', language)}: ${total}`}
+    >
+      <span class="kc__core-count">{total}</span>
+      <span class="kc__core-label">{t('library.core.subtitle', language)}</span>
+    </button>
   </div>
 
-  {visibleTypes.length > 0 && (
-    <ul class="lsp__breakdown" role="list">
-      {visibleTypes.map(({ type, labelKey }) => (
-        <li class="lsp__row">
-          <span class="lsp__row-dot" data-type={type} aria-hidden="true"></span>
-          <span class="lsp__row-label">{t(labelKey, language)}</span>
-          <span class="lsp__row-value">{stats.byType[type]}</span>
-        </li>
-      ))}
-    </ul>
-  )}
+  {/* ── Category nodes orbiting the core ─────────────────────────────── */}
+  <div class="kc__nodes" role="group" aria-label={t('library.core.title', language)}>
+    {nodeData.map((n) => (
+      <button
+        type="button"
+        class="kc__node"
+        data-kc-node={n.type}
+        data-kc-count={n.count}
+        aria-label={`${n.label}: ${n.count}`}
+      >
+        <span class="kc__node-icon" aria-hidden="true">
+          {n.type === 'books' && (
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+            </svg>
+          )}
+          {n.type === 'courses' && (
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21.5 9 12 4 2.5 9 12 14l9.5-5Z"></path>
+              <path d="M6 11v5.4c0 1.4 2.7 2.6 6 2.6s6-1.2 6-2.6V11"></path>
+              <path d="M21.5 9v5.4"></path>
+            </svg>
+          )}
+          {n.type === 'series' && (
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="13" height="13" rx="2"></rect>
+              <path d="M8 21h11a2 2 0 0 0 2-2V8"></path>
+            </svg>
+          )}
+        </span>
+        <span class="kc__node-count">{n.count}</span>
+        <span class="kc__node-label">{n.label}</span>
+      </button>
+    ))}
+  </div>
 
-  <a class="lsp__cta" href="/library">
-    <span class="lsp__cta-icon" aria-hidden="true">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="3" y="3" width="7" height="7" rx="1"></rect>
-        <rect x="14" y="3" width="7" height="7" rx="1"></rect>
-        <rect x="3" y="14" width="7" height="7" rx="1"></rect>
-        <rect x="14" y="14" width="7" height="7" rx="1"></rect>
+  <a class="kc__cta" href="/library">
+    <span class="kc__cta-label">{t('library.core.cta', language)}</span>
+    <span class="kc__cta-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M5 12h14"></path>
+        <path d="m13 5 7 7-7 7"></path>
       </svg>
     </span>
-    <span class="lsp__cta-label">{t('library.stats.viewAll', language)}</span>
   </a>
 </article>
 
 <style>
-  /* Mobile + tablet (≤1023px): hidden — the stats surface on mobile
-     lives inside the phone flow (LibraryHero / mobile stats list),
-     not as a fixed floating panel that would overlap the content.
-     1023px matches index.astro's own mobile/tablet reset breakpoint
-     so the entire mobile composition flips in lockstep. */
-  @media (max-width: 1023px) {
-    .library-stats-panel { display: none !important; }
-  }
-
-  .library-stats-panel {
-    /* Fixed positioning — pinned to the inline-END edge of the
-       viewport (left in RTL Hebrew, right in LTR), opposite the
-       ContinueLearningCard. The two panels now frame the carousel
-       symmetrically instead of stacking on one side. Anchored at
-       the same `top` as ContinueLearningCard. */
-    position: fixed;
-    top: calc(var(--library-header-offset, 72px) + 20px);
-    inset-inline-start: auto;
-    /* Comfortable gap from the viewport edge — kept identical to
-       ContinueLearningCard's `inset-inline-start` so the two panels
-       frame the carousel symmetrically and neither glues to the edge. */
-    inset-inline-end: clamp(16px, 1.8vw, 32px);
-    z-index: 30;
-    /* Layered surface adopted from ContinueLearningCard / FloatingSidebar
-       so all premium panels share the same material family:
-         1. Soft radial highlight at top, fading to transparent at 60%.
-         2. Linear navy with very low contrast top/middle/bottom. */
-    background:
-      radial-gradient(
-        ellipse 80% 40% at 50% 0%,
-        rgba(40, 70, 130, 0.22) 0%,
-        transparent 60%),
-      linear-gradient(
-        180deg,
-        #08091a 0%,
-        #0b0e22 50%,
-        #08091a 100%);
-    border: 1px solid rgba(120, 140, 200, 0.18);
-    border-radius: var(--yuval-galaxy-panel-radius, 20px);
-    /* 4-layer depth + glow stack (matches ContinueLearningCard):
-         - inset hairline (the "inside cyan line")
-         - inset soft glow toward center
-         - outer atmospheric halo
-         - depth shadow underneath */
-    box-shadow:
+  /* ═══════════════════════════════════════════════════════════════════
+     THEME LAYER — dark values are the default; the light block below
+     re-declares only the `--kc-*` tokens. No markup is duplicated.
+     ═══════════════════════════════════════════════════════════════════ */
+  .knowledge-core {
+    /* Surface / chrome */
+    --kc-surface:
+      radial-gradient(ellipse 80% 40% at 50% 0%,
+        rgba(40, 70, 130, 0.22) 0%, transparent 60%),
+      linear-gradient(180deg, #08091a 0%, #0b0e22 50%, #08091a 100%);
+    --kc-border: rgba(120, 140, 200, 0.18);
+    --kc-shadow:
       inset 0 0 0 1px rgba(140, 190, 255, 0.10),
       inset 0 0 28px rgba(60, 110, 200, 0.12),
       0 0 36px rgba(80, 130, 220, 0.22),
       0 12px 32px rgba(2, 4, 14, 0.45);
-    backdrop-filter: blur(var(--yuval-galaxy-card-blur, 20px));
-    -webkit-backdrop-filter: blur(var(--yuval-galaxy-card-blur, 20px));
-    isolation: isolate;
-    /* Compact snapshot — tighter padding + gap than the old dashboard
-       card so it never competes with the carousel. */
-    padding: 16px;
-    width: var(--floating-card-width);
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
+
+    /* Text */
+    --kc-text: var(--yuval-galaxy-text, #eaf0ff);
+    --kc-text-soft: var(--yuval-galaxy-text-soft, #7e8aae);
+    --kc-heading-accent: var(--yuval-galaxy-accent-purple, #a78bfa);
+
+    /* Core — luminous center */
+    --kc-core-face:
+      radial-gradient(circle at 50% 36%,
+        rgba(167, 139, 250, 0.46) 0%,
+        rgba(80, 60, 160, 0.20) 46%,
+        rgba(10, 12, 30, 0.94) 100%);
+    --kc-core-border: rgba(167, 139, 250, 0.42);
+    --kc-core-glow:
+      0 0 26px 5px rgba(124, 58, 237, 0.42),
+      0 0 48px 12px rgba(34, 211, 238, 0.20);
+    --kc-core-inset:
+      inset 0 1px 1px rgba(255, 255, 255, 0.16),
+      inset 0 0 22px rgba(124, 58, 237, 0.26);
+    --kc-core-text: #ffffff;
+    --kc-core-text-soft: rgba(234, 240, 255, 0.74);
+    --kc-core-halo: rgba(124, 58, 237, 0.42);
+
+    /* Orbit ring + particles */
+    --kc-ring: rgba(167, 139, 250, 0.30);
+    --kc-ring-dot: var(--yuval-galaxy-accent-cyan, #22d3ee);
+    --kc-particle: rgba(184, 204, 255, 0.78);
+
+    /* Category nodes */
+    --kc-node-face:
+      linear-gradient(180deg, rgba(28, 34, 64, 0.74) 0%, rgba(15, 19, 38, 0.80) 100%);
+    --kc-node-border: rgba(120, 140, 200, 0.20);
+    --kc-node-shadow:
+      inset 0 0 0 1px rgba(140, 190, 255, 0.06),
+      0 6px 16px rgba(2, 4, 14, 0.40);
+
+    /* CTA */
+    --kc-cta-face: var(--yuval-galaxy-surface-elevated, rgba(28, 34, 64, 0.82));
+    --kc-cta-border: rgba(120, 140, 200, 0.18);
+
+    --kc-focus: var(--yuval-galaxy-accent-cyan, #22d3ee);
+    --kc-radius: var(--yuval-galaxy-panel-radius, 20px);
   }
 
-  .lsp__header {
+  /* ── Light theme — clean, airy, glassy, still futuristic ───────────────
+     Scoped to `html:not(.dark)`; only re-paints `--kc-*` tokens. */
+  :global(html:not(.dark)) .knowledge-core {
+    --kc-surface:
+      radial-gradient(ellipse 80% 40% at 50% 0%,
+        rgba(255, 255, 255, 0.65) 0%, transparent 62%),
+      linear-gradient(180deg,
+        rgba(255, 253, 249, 0.92) 0%,
+        rgba(248, 249, 252, 0.88) 50%,
+        rgba(255, 253, 249, 0.92) 100%);
+    --kc-border: rgba(34, 52, 92, 0.16);
+    --kc-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.75),
+      0 1px 2px rgba(15, 23, 42, 0.05),
+      0 12px 30px -10px rgba(30, 45, 80, 0.18);
+
+    --kc-text: #16223c;
+    --kc-text-soft: #6a778d;
+    --kc-heading-accent: #6d3bd4;
+
+    --kc-core-face:
+      radial-gradient(circle at 50% 34%,
+        rgba(255, 255, 255, 0.96) 0%,
+        rgba(221, 226, 244, 0.82) 48%,
+        rgba(228, 232, 246, 0.66) 100%);
+    --kc-core-border: rgba(109, 59, 212, 0.30);
+    --kc-core-glow:
+      0 0 20px 4px rgba(124, 58, 237, 0.16),
+      0 0 30px 10px rgba(14, 116, 144, 0.12);
+    --kc-core-inset:
+      inset 0 1px 0 rgba(255, 255, 255, 0.92),
+      inset 0 0 18px rgba(124, 58, 237, 0.07);
+    --kc-core-text: #16223c;
+    --kc-core-text-soft: #46556f;
+    --kc-core-halo: rgba(124, 58, 237, 0.16);
+
+    --kc-ring: rgba(109, 59, 212, 0.26);
+    --kc-ring-dot: #0e7490;
+    --kc-particle: rgba(109, 59, 212, 0.42);
+
+    --kc-node-face:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.94) 0%, rgba(246, 247, 251, 0.90) 100%);
+    --kc-node-border: rgba(34, 52, 92, 0.14);
+    --kc-node-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.80),
+      0 6px 16px -6px rgba(30, 45, 80, 0.18);
+
+    --kc-cta-face: rgba(255, 254, 251, 0.94);
+    --kc-cta-border: rgba(34, 52, 92, 0.14);
+
+    --kc-focus: #0e7490;
+  }
+
+  /* Per-node accent — galaxy type tokens already adapt to dark/light. */
+  .kc__node[data-kc-node="books"]   { --kc-accent: var(--yuval-galaxy-type-book,   #f6c560); }
+  .kc__node[data-kc-node="courses"] { --kc-accent: var(--yuval-galaxy-type-course, #22d3ee); }
+  .kc__node[data-kc-node="series"]  { --kc-accent: var(--yuval-galaxy-type-series, #f0abfc); }
+
+  /* ═══════════════════════════════════════════════════════════════════
+     PANEL CHROME — fixed support panel framing the carousel.
+     Hidden ≤1023px: as a `position: fixed` panel it would overlap the
+     phone content flow (matches the locked /library composition). The
+     widget's own layout is still fully fluid (clamp/%-based) so it
+     renders correctly at any width if later placed in the mobile flow.
+     ═══════════════════════════════════════════════════════════════════ */
+  @media (max-width: 1023px) {
+    .knowledge-core { display: none !important; }
+  }
+
+  .knowledge-core {
+    position: fixed;
+    top: calc(var(--library-header-offset, 72px) + 20px);
+    inset-inline-start: auto;
+    inset-inline-end: clamp(16px, 1.8vw, 32px);
+    z-index: 30;
+
+    width: var(--floating-card-width);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 13px;
+
+    background: var(--kc-surface);
+    border: 1px solid var(--kc-border);
+    border-radius: var(--kc-radius);
+    box-shadow: var(--kc-shadow);
+    backdrop-filter: blur(var(--yuval-galaxy-card-blur, 18px));
+    -webkit-backdrop-filter: blur(var(--yuval-galaxy-card-blur, 18px));
+    isolation: isolate;
+    color: var(--kc-text);
+  }
+
+  /* ── Header ─────────────────────────────────────────────────────────── */
+  .kc__header {
     display: flex;
     align-items: center;
     gap: 8px;
-    color: var(--yuval-galaxy-accent-purple);
   }
 
-  .lsp__header-icon {
+  .kc__header-icon {
     display: inline-flex;
     width: 18px;
     height: 18px;
-  }
-  .lsp__header-icon svg {
-    width: 100%;
-    height: 100%;
-  }
-
-  .lsp__title {
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--yuval-galaxy-text);
-    margin: 0;
-  }
-
-  /* Compact total — baseline-aligned number + label on one line,
-     wrapping gracefully on the narrowest panel width. Replaces the
-     old 48px hero block so the panel stays a snapshot, not a hero. */
-  .lsp__total {
-    display: flex;
-    align-items: baseline;
-    flex-wrap: wrap;
-    gap: 2px 8px;
-  }
-
-  .lsp__total-number {
-    font-size: 30px;
-    font-weight: 600;
-    color: var(--yuval-galaxy-text);
-    line-height: 1;
-  }
-
-  .lsp__total-label {
-    font-size: 12px;
-    color: var(--yuval-galaxy-text-muted);
-  }
-
-  .lsp__breakdown {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-
-  .lsp__row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 13px;
-  }
-
-  /* Small accent dot — restrained to the three snapshot types only. */
-  .lsp__row-dot {
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: var(--yuval-galaxy-accent);
+    color: var(--kc-heading-accent);
     flex-shrink: 0;
   }
+  .kc__header-icon svg { width: 100%; height: 100%; }
 
-  .lsp__row-dot[data-type="book"]   { background: var(--yuval-galaxy-type-book,   var(--yuval-galaxy-accent-purple)); }
-  .lsp__row-dot[data-type="course"] { background: var(--yuval-galaxy-type-course, var(--yuval-galaxy-accent-cyan));   }
-  .lsp__row-dot[data-type="series"] { background: var(--yuval-galaxy-type-series, var(--yuval-galaxy-accent-gold));   }
-
-  .lsp__row-label {
-    flex: 1;
-    color: var(--yuval-galaxy-text-soft);
-  }
-
-  .lsp__row-value {
-    color: var(--yuval-galaxy-text);
+  .kc__title {
+    margin: 0;
+    font-size: 14px;
     font-weight: 500;
+    color: var(--kc-text);
   }
 
-  .lsp__cta {
+  /* ═══════════════════════════════════════════════════════════════════
+     CORE STAGE — particles + orbit ring + luminous core
+     ═══════════════════════════════════════════════════════════════════ */
+  .kc__stage {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1.18;
+    display: grid;
+    place-items: center;
+  }
+
+  /* ── Drifting background particles ──────────────────────────────────── */
+  .kc__particles {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  .kc__particle {
+    position: absolute;
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: var(--kc-particle);
+    box-shadow: 0 0 6px 1px var(--kc-particle);
+    opacity: 0.55;
+    animation: kc-drift 20s ease-in-out infinite;
+  }
+
+  .kc__particle--1 { top: 13%; left: 17%; animation-duration: 19s; animation-delay: -2s;  }
+  .kc__particle--2 { top: 21%; left: 81%; animation-duration: 23s; animation-delay: -9s;  }
+  .kc__particle--3 { top: 66%; left: 11%; animation-duration: 21s; animation-delay: -5s;  }
+  .kc__particle--4 { top: 75%; left: 85%; animation-duration: 26s; animation-delay: -14s; }
+  .kc__particle--5 { top: 42%; left:  6%; animation-duration: 18s; animation-delay: -7s;  }
+  .kc__particle--6 { top: 49%; left: 93%; animation-duration: 24s; animation-delay: -11s; }
+
+  /* ── Static orbit ring (decorative path the core sits inside) ───────── */
+  .kc__ring {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: clamp(110px, 84%, 150px);
+    aspect-ratio: 1;
+    border-radius: 50%;
+    border: 1px dashed var(--kc-ring);
+    opacity: 0.75;
+    z-index: 1;
+  }
+  /* Inner hairline ring — adds depth without animation. */
+  .kc__ring::after {
+    content: "";
+    position: absolute;
+    inset: 15%;
+    border-radius: 50%;
+    border: 1px solid var(--kc-ring);
+    opacity: 0.5;
+  }
+  /* A single bright orbit marker pinned to the ring. */
+  .kc__ring::before {
+    content: "";
+    position: absolute;
+    top: -3px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--kc-ring-dot);
+    box-shadow: 0 0 9px 1px var(--kc-ring-dot);
+  }
+
+  /* ── Luminous core (center button, dispatches type "all") ───────────── */
+  .kc__core {
+    position: relative;
+    z-index: 2;
+    isolation: isolate;
+    width: clamp(80px, 56%, 104px);
+    aspect-ratio: 1;
+    border-radius: 50%;
+    margin: 0;
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+
+    font: inherit;
+    color: var(--kc-core-text);
+    background: var(--kc-core-face);
+    border: 1px solid var(--kc-core-border);
+    box-shadow: var(--kc-core-glow), var(--kc-core-inset);
+    cursor: pointer;
+    transition: transform 240ms var(--yuval-galaxy-ease-out, cubic-bezier(0.22, 1, 0.36, 1));
+  }
+
+  /* Soft pulsing halo behind the core face. */
+  .kc__core::before {
+    content: "";
+    position: absolute;
+    inset: -12%;
+    z-index: -1;
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--kc-core-halo) 0%, transparent 70%);
+    animation: kc-pulse 4.6s ease-in-out infinite;
+  }
+
+  .kc__core:hover { transform: scale(1.045); }
+
+  .kc__core-count {
+    font-size: clamp(26px, 7vw, 33px);
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.01em;
+  }
+
+  .kc__core-label {
+    max-width: 86%;
+    font-size: clamp(8.5px, 2vw, 10px);
+    line-height: 1.25;
+    text-align: center;
+    color: var(--kc-core-text-soft);
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════
+     CATEGORY NODES — three buttons orbiting below the core
+     ═══════════════════════════════════════════════════════════════════ */
+  .kc__nodes {
+    display: flex;
+    gap: 6px;
+    width: 100%;
+  }
+
+  .kc__node {
+    position: relative;
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 9px 4px;
+    margin: 0;
+
+    font: inherit;
+    color: var(--kc-text);
+    background: var(--kc-node-face);
+    border: 1px solid var(--kc-node-border);
+    border-radius: 13px;
+    box-shadow: var(--kc-node-shadow);
+    cursor: pointer;
+    transition:
+      transform 200ms var(--yuval-galaxy-ease-out, cubic-bezier(0.22, 1, 0.36, 1)),
+      border-color 200ms ease-out,
+      box-shadow 200ms ease-out;
+  }
+
+  /* Thin connector stub linking each node up toward the core. */
+  .kc__node::before {
+    content: "";
+    position: absolute;
+    top: -9px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 1px;
+    height: 8px;
+    background: linear-gradient(to bottom, transparent, var(--kc-accent));
+    opacity: 0.55;
+  }
+
+  .kc__node:hover {
+    transform: translateY(-3px);
+    border-color: color-mix(in srgb, var(--kc-accent) 55%, transparent);
+    box-shadow:
+      var(--kc-node-shadow),
+      0 0 18px -2px color-mix(in srgb, var(--kc-accent) 55%, transparent);
+  }
+
+  .kc__node-icon {
+    display: inline-flex;
+    width: 18px;
+    height: 18px;
+    color: var(--kc-accent);
+    transition: filter 200ms ease-out;
+  }
+  .kc__node-icon svg { width: 100%; height: 100%; }
+  .kc__node:hover .kc__node-icon {
+    filter: drop-shadow(0 0 5px color-mix(in srgb, var(--kc-accent) 60%, transparent));
+  }
+
+  .kc__node-count {
+    font-size: clamp(14px, 3.4vw, 17px);
+    font-weight: 600;
+    line-height: 1;
+    color: var(--kc-text);
+  }
+
+  .kc__node-label {
+    max-width: 100%;
+    font-size: clamp(9px, 2.3vw, 10.5px);
+    line-height: 1.1;
+    color: var(--kc-text-soft);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════
+     CTA
+     ═══════════════════════════════════════════════════════════════════ */
+  .kc__cta {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
     padding: 10px 14px;
-    background: var(--yuval-galaxy-surface-elevated);
-    border: 1px solid rgba(120, 140, 200, 0.12);
-    box-shadow: inset 0 0 0 1px rgba(140, 190, 255, 0.06);
     border-radius: 12px;
-    color: var(--yuval-galaxy-text);
+    background: var(--kc-cta-face);
+    border: 1px solid var(--kc-cta-border);
+    color: var(--kc-text);
     text-decoration: none;
     font-size: 13px;
-    transition: opacity 200ms ease-out;
+    font-weight: 500;
+    transition:
+      transform 200ms var(--yuval-galaxy-ease-out, cubic-bezier(0.22, 1, 0.36, 1)),
+      box-shadow 200ms ease-out;
   }
 
-  .lsp__cta:hover {
-    opacity: 0.85;
+  .kc__cta:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 20px -6px var(--kc-focus);
   }
 
-  .lsp__cta-icon {
+  .kc__cta-icon {
     display: inline-flex;
-    width: 16px;
-    height: 16px;
+    width: 15px;
+    height: 15px;
+    flex-shrink: 0;
   }
-  .lsp__cta-icon svg {
-    width: 100%;
-    height: 100%;
+  .kc__cta-icon svg { width: 100%; height: 100%; }
+  /* Arrow points along the reading direction. */
+  .knowledge-core[dir="rtl"] .kc__cta-icon { transform: scaleX(-1); }
+
+  /* ── Keyboard focus ─────────────────────────────────────────────────── */
+  .kc__core:focus-visible,
+  .kc__node:focus-visible,
+  .kc__cta:focus-visible {
+    outline: 2px solid var(--kc-focus);
+    outline-offset: 3px;
   }
 
-  /* ── Light mode — warm pale-glass snapshot ───────────────────────
-     Repaints the hardcoded deep-navy surface, blue halo and inner
-     hairlines as translucent warm white with a soft blue-gray border
-     and a calm shadow. Token-driven text/accents are already handled
-     by galaxy.css. Scoped to `html:not(.dark)`; dark mode untouched. */
-  :global(html:not(.dark)) .library-stats-panel {
-    background:
-      radial-gradient(
-        ellipse 80% 40% at 50% 0%,
-        rgba(255, 255, 255, 0.65) 0%,
-        transparent 62%),
-      linear-gradient(
-        180deg,
-        rgba(255, 253, 249, 0.92) 0%,
-        rgba(248, 249, 252, 0.88) 50%,
-        rgba(255, 253, 249, 0.92) 100%);
-    border-color: rgba(34, 52, 92, 0.16);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.75),
-      0 1px 2px rgba(15, 23, 42, 0.05),
-      0 12px 30px -10px rgba(30, 45, 80, 0.18);
+  /* ═══════════════════════════════════════════════════════════════════
+     ANIMATIONS
+     ═══════════════════════════════════════════════════════════════════ */
+  @keyframes kc-pulse {
+    0%, 100% { opacity: 0.55; transform: scale(0.9); }
+    50%      { opacity: 1;    transform: scale(1.08); }
   }
-  :global(html:not(.dark)) .lsp__cta {
-    border-color: rgba(34, 52, 92, 0.14);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.60);
+
+  @keyframes kc-drift {
+    0%, 100% { transform: translate(0, 0);      opacity: 0.2; }
+    50%      { transform: translate(4px, -7px); opacity: 0.7; }
+  }
+
+  /* ── Respect reduced motion — freeze every ambient animation ────────── */
+  @media (prefers-reduced-motion: reduce) {
+    .kc__core::before,
+    .kc__particle {
+      animation: none !important;
+    }
+    .kc__core,
+    .kc__node,
+    .kc__cta,
+    .kc__node-icon {
+      transition: none !important;
+    }
+  }
+
+  /* ── Narrow-width fallback (if ever placed in the mobile flow) ───────── */
+  @media (max-width: 380px) {
+    .kc__nodes { gap: 4px; }
+    .kc__node { padding: 8px 2px; }
   }
 </style>
+
+<script>
+  /**
+   * Knowledge Core — event dispatching (v1).
+   * On click, a node dispatches `knowledge-core:select` (bubbling) with
+   * detail = { type: 'books'|'courses'|'series'|'all', count }.
+   * Not wired to the carousel yet — a later listener will consume this.
+   */
+  function initKnowledgeCore() {
+    document.querySelectorAll<HTMLElement>('.knowledge-core').forEach((widget) => {
+      if (widget.dataset.kcInit === 'true') return;
+      widget.dataset.kcInit = 'true';
+
+      widget.querySelectorAll<HTMLButtonElement>('[data-kc-node]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const type = btn.getAttribute('data-kc-node');
+          if (!type) return;
+          const rawCount = btn.getAttribute('data-kc-count');
+          widget.dispatchEvent(
+            new CustomEvent('knowledge-core:select', {
+              bubbles: true,
+              detail: {
+                type,
+                count: rawCount === null ? null : Number(rawCount),
+              },
+            }),
+          );
+        });
+      });
+    });
+  }
+
+  initKnowledgeCore();
+  // Re-run after Astro view transitions, if enabled.
+  document.addEventListener('astro:page-load', initKnowledgeCore);
+</script>

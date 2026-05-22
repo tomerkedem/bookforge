@@ -965,6 +965,12 @@ export const translations: Translations = {
   'library.stats.courseSummariesTitle': { he: 'סיכומי קורס {{courseName}}', en: 'Course summaries: {{courseName}}', es: 'Resúmenes del curso: {{courseName}}' },
   'library.stats.viewAll':              { he: 'צפה בכל הפריטים', en: 'View all items',       es: 'Ver todos los elementos' },
 
+  // ── library.core.* — Knowledge Core widget (live library core) ─────────────
+  'library.core.title':    { he: 'מרחב הידע שלך',       en: 'Your Knowledge Space',    es: 'Tu espacio de conocimiento' },
+  'library.core.subtitle': { he: 'פריטים מחוברים',      en: 'Connected items',         es: 'Elementos conectados' },
+  'library.core.all':      { he: 'כל הפריטים',          en: 'All items',               es: 'Todos los elementos' },
+  'library.core.cta':      { he: 'כניסה למרחב הספרייה', en: 'Enter the library space', es: 'Entrar al espacio de la biblioteca' },
+
   // ── library.recommendation.* — recommendation strip ────────────────────────
   'library.recommendation.forYou':            { he: 'מומלץ עבורך',                       en: 'Recommended for you',                 es: 'Recomendado para ti' },
   'library.recommendation.basedOnYourLibrary':{ he: 'על בסיס הספרייה שלך',               en: 'Based on your library',                es: 'Basado en tu biblioteca' },

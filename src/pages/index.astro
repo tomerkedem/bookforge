@@ -1531,7 +1531,9 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       --orbit-rx: clamp(110px, 38vw, 220px);
       --orbit-ry: clamp(70px, 13vh, 105px);
       --orbit-active-angle: calc(var(--orbit-angle, 0deg) + var(--orbit-rotation, 0deg));
-      --orbit-depth: calc((sin(var(--orbit-active-angle, 0deg)) + 1) / 2);
+      /* Upper arc = near/front, lower arc = far/back (`1 - sin`), same
+         inverted depth model as desktop. */
+      --orbit-depth: calc((1 - sin(var(--orbit-active-angle, 0deg))) / 2);
       /* Gentler depth ramp than desktop — phone cards are already
          small, so far stations only step down to 0.80 scale / 0.62
          opacity. Keeps satellites readable, not overcrowded. */
@@ -2250,10 +2252,10 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
           from each card's `--orbit-angle` (set inline per card in the
           markup). --galaxy-dir mirrors the X axis so the inline-start
           arc stays visual-left in LTR and visual-right in RTL.
-          Depth is angle-derived: cards at the bottom of the orbit
-          (sin > 0) read as nearer (slightly larger, fully opaque); cards
-          at the top read as farther (smaller, slightly dimmed). All
-          cards are visible at once — no carousel, no queue. */
+          Depth is angle-derived: cards on the upper arc of the orbit
+          (sin < 0) read as nearer (larger, fully opaque); cards on the
+          lower arc read as farther (smaller, dimmed). All cards are
+          visible at once — no carousel, no queue. */
     .galaxy-card {
       position: absolute;
       flex: initial;
@@ -2276,10 +2278,11 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
          change on the stage moves every card around the ellipse in
          lockstep, animated via the existing transform transition. */
       --orbit-active-angle: calc(var(--orbit-angle, 0deg) + var(--orbit-rotation, 0deg));
-      /* Depth from angle: --orbit-depth ranges 0 (top of orbit, farthest)
-         to 1 (bottom, nearest). sin(angle) is -1 at the top and +1 at
-         the bottom; remap to [0, 1]. */
-      --orbit-depth: calc((sin(var(--orbit-active-angle, 0deg)) + 1) / 2);
+      /* Depth from angle: --orbit-depth ranges 0 (lower arc, farthest)
+         to 1 (upper arc, nearest). sin(angle) is -1 at the top of the
+         orbit and +1 at the bottom; `1 - sin` remaps so the UPPER arc
+         reads as the near/front side and the lower arc recedes. */
+      --orbit-depth: calc((1 - sin(var(--orbit-active-angle, 0deg))) / 2);
       /* Spatial depth ramp — front/near stations sit forward (scale
          1.0, full opacity, highest z-index), far/back stations recede
          (scale 0.68, 0.55 opacity, lowest z-index). Reads as a real
