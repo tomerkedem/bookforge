@@ -11,11 +11,13 @@
       "PowerShell(claude --version)",
       "PowerShell(npm list -g @anthropic-ai/claude-code 2>$null)",
       "PowerShell(npm view @anthropic-ai/claude-code version)",
-      "PowerShell(npm root -g)"
+      "PowerShell(npm root -g)",
+      "PowerShell(Copy-Item -Path \"c:\\\\D\\\\Books\\\\bookforge\\\\public\\\\Lesson-5-From-LLM-To-Agent\" -Destination \"c:\\\\D\\\\Books\\\\bookforge\\\\public\\\\Lesson-5-From-LLM-To-Agent\" -Recurse -Force)"
     ],
     "additionalDirectories": [
       "D:\\2025 Stu\\AI Engineer\\AllBooks2026\\Claude Code - Book\\bookforge",
-      "c:\\D\\Books\\bookforge\\public\\assets\\library"
+      "c:\\D\\Books\\bookforge\\public\\assets\\library",
+      "c:\\D\\Books\\bookforge\\public\\Lesson-5-From-LLM-To-Agent"
     ]
   }
 }

@@ -81,6 +81,11 @@ const hydratorPayload = JSON.stringify({
   aria-label={t('library.a11y.continueReadingCard', language)}
   data-continue-learning-card
 >
+  {/* Decorative depth layer — faint data-grid + a soft corner bloom,
+      pure CSS gradients only. Sits behind the content (z-index:-1
+      inside the card's isolated stacking context). */}
+  <div class="continue-learning-card__bg" aria-hidden="true"></div>
+
   <header class="continue-learning-card__header">
     <span class="continue-learning-card__header-icon" aria-hidden="true">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
@@ -94,35 +99,40 @@ const hydratorPayload = JSON.stringify({
     </h3>
   </header>
 
+  {/* Glassy reading capsule — donut + book info live inside one
+      luminous inset surface so the card reads as a "reading capsule",
+      not a flat progress row. */}
   <div class="continue-learning-card__body">
     <div
       class="continue-learning-card__progress"
       role="img"
       aria-label={`${safeProgress}%`}
     >
-      <svg viewBox="0 0 80 80" width="80" height="80">
+      <svg class="continue-learning-card__ring" viewBox="0 0 80 80" width="84" height="84">
         <defs>
+          {/* Stop colours come from CSS so the gradient follows the
+              galaxy accent tokens in both dark and light modes. */}
           <linearGradient id="cl-donut-progress" x1="100%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stop-color="#a78bfa" />
-            <stop offset="100%" stop-color="#7c3aed" />
+            <stop offset="0%" class="continue-learning-card__grad-from" />
+            <stop offset="100%" class="continue-learning-card__grad-to" />
           </linearGradient>
         </defs>
         <circle
+          class="continue-learning-card__ring-track"
           cx="40"
           cy="40"
           r={RADIUS}
           fill="none"
-          stroke="currentColor"
-          stroke-width="6"
-          opacity="0.15"
+          stroke-width="5"
         />
         <circle
+          class="continue-learning-card__ring-arc"
           cx="40"
           cy="40"
           r={RADIUS}
           fill="none"
           stroke="url(#cl-donut-progress)"
-          stroke-width="6"
+          stroke-width="5"
           stroke-linecap="round"
           stroke-dasharray={`${dashLength} ${CIRCUMFERENCE}`}
           transform="rotate(-90 40 40)"
@@ -302,6 +312,110 @@ const hydratorPayload = JSON.stringify({
     .continue-learning-card { display: none !important; }
   }
 
+  /* ═══════════════════════════════════════════════════════════════════
+     THEME LAYER — dark values are the default; the light block re-paints
+     only the `--clc-*` tokens. One markup tree, two value sets — same
+     pattern the Knowledge Core and Knowledge Atlas use.
+     ═══════════════════════════════════════════════════════════════════ */
+  .continue-learning-card {
+    /* Outer panel surface / chrome */
+    --clc-surface:
+      radial-gradient(ellipse 80% 42% at 50% 0%,
+        rgba(40, 70, 130, 0.22) 0%, transparent 60%),
+      linear-gradient(180deg, #08091a 0%, #0b0e22 50%, #08091a 100%);
+    --clc-border: rgba(120, 140, 200, 0.18);
+    --clc-shadow:
+      inset 0 0 0 1px rgba(140, 190, 255, 0.10),
+      inset 0 0 28px rgba(60, 110, 200, 0.12),
+      0 0 36px rgba(80, 130, 220, 0.22),
+      0 12px 32px rgba(2, 4, 14, 0.45);
+
+    /* Decorative texture — data-grid line + soft corner bloom */
+    --clc-grid-line: rgba(150, 175, 235, 0.055);
+    --clc-bloom: rgba(124, 58, 237, 0.16);
+
+    /* Glassy reading capsule (inner body) */
+    --clc-capsule:
+      radial-gradient(ellipse 92% 60% at 50% 0%,
+        rgba(80, 110, 190, 0.16) 0%, transparent 72%),
+      linear-gradient(180deg,
+        rgba(22, 27, 52, 0.62) 0%,
+        rgba(13, 16, 34, 0.78) 100%);
+    --clc-capsule-border: rgba(140, 165, 230, 0.16);
+    --clc-capsule-inset:
+      inset 0 1px 0 rgba(170, 200, 255, 0.10),
+      inset 0 0 22px rgba(60, 110, 200, 0.10);
+
+    /* Progress ring */
+    --clc-ring-track: rgba(150, 170, 230, 0.13);
+    --clc-ring-from: var(--yuval-galaxy-accent-cyan, #22d3ee);
+    --clc-ring-to: var(--yuval-galaxy-accent-purple, #a78bfa);
+    --clc-ring-glow: rgba(124, 58, 237, 0.50);
+    --clc-percent-disc: rgba(124, 58, 237, 0.22);
+
+    /* CTA — refined continuation action (quiet, not dominant) */
+    --clc-cta-bg:
+      linear-gradient(180deg,
+        rgba(34, 41, 78, 0.78) 0%,
+        rgba(19, 23, 46, 0.86) 100%);
+    --clc-cta-border: rgba(140, 170, 240, 0.22);
+    --clc-cta-border-hover: rgba(140, 190, 255, 0.48);
+    --clc-cta-shadow:
+      inset 0 1px 0 rgba(170, 200, 255, 0.08),
+      0 6px 16px rgba(2, 4, 14, 0.38);
+    --clc-cta-glow: 0 0 22px -4px rgba(80, 130, 220, 0.55);
+  }
+
+  /* ── Light mode — warm pale-glass capsule ────────────────────────────
+     Same warm-white treatment as the sibling premium panels. Dark mode
+     never matches `html:not(.dark)`, so it stays byte-for-byte intact. */
+  :global(html:not(.dark)) .continue-learning-card {
+    --clc-surface:
+      radial-gradient(ellipse 80% 42% at 50% 0%,
+        rgba(255, 255, 255, 0.65) 0%, transparent 62%),
+      linear-gradient(180deg,
+        rgba(255, 253, 249, 0.92) 0%,
+        rgba(248, 249, 252, 0.88) 50%,
+        rgba(255, 253, 249, 0.92) 100%);
+    --clc-border: rgba(34, 52, 92, 0.16);
+    --clc-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.75),
+      0 1px 2px rgba(15, 23, 42, 0.05),
+      0 12px 30px -10px rgba(30, 45, 80, 0.18);
+
+    --clc-grid-line: rgba(40, 60, 110, 0.06);
+    --clc-bloom: rgba(124, 58, 237, 0.09);
+
+    --clc-capsule:
+      radial-gradient(ellipse 92% 60% at 50% 0%,
+        rgba(255, 255, 255, 0.72) 0%, transparent 72%),
+      linear-gradient(180deg,
+        rgba(255, 254, 251, 0.92) 0%,
+        rgba(246, 247, 251, 0.86) 100%);
+    --clc-capsule-border: rgba(34, 52, 92, 0.13);
+    --clc-capsule-inset:
+      inset 0 1px 0 rgba(255, 255, 255, 0.80),
+      inset 0 0 18px rgba(120, 140, 200, 0.05);
+
+    --clc-ring-track: rgba(34, 52, 92, 0.12);
+    --clc-ring-glow: rgba(109, 59, 212, 0.26);
+    --clc-percent-disc: rgba(109, 59, 212, 0.10);
+
+    --clc-cta-bg:
+      linear-gradient(180deg,
+        rgba(255, 255, 255, 0.90) 0%,
+        rgba(248, 249, 252, 0.92) 100%);
+    --clc-cta-border: rgba(34, 52, 92, 0.16);
+    --clc-cta-border-hover: rgba(14, 116, 144, 0.50);
+    --clc-cta-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.70),
+      0 1px 2px rgba(15, 23, 42, 0.05);
+    --clc-cta-glow: 0 8px 20px -8px rgba(30, 45, 80, 0.30);
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════
+     OUTER PANEL — fixed support card framing the carousel
+     ═══════════════════════════════════════════════════════════════════ */
   .continue-learning-card {
     /* Fixed positioning — pinned to the inline-start edge of the
        viewport (right in RTL, left in LTR), 20px below the global
@@ -316,32 +430,10 @@ const hydratorPayload = JSON.stringify({
     z-index: 30;
     width: var(--floating-card-width);
     padding: 20px;
-    border: 1px solid rgba(120, 140, 200, 0.18);
+    border: 1px solid var(--clc-border);
     border-radius: var(--yuval-galaxy-panel-radius, 22px);
-    /* Layered surface adopted verbatim from FloatingSidebar so the card
-       reads as part of the same premium material family:
-         1. Soft radial highlight at top, fading to transparent at 60%.
-         2. Linear navy with very low contrast top/middle/bottom. */
-    background:
-      radial-gradient(
-        ellipse 80% 40% at 50% 0%,
-        rgba(40, 70, 130, 0.22) 0%,
-        transparent 60%),
-      linear-gradient(
-        180deg,
-        #08091a 0%,
-        #0b0e22 50%,
-        #08091a 100%);
-    /* 4-layer depth + glow stack from FloatingSidebar:
-         - inset hairline (the "inside cyan line")
-         - inset soft glow toward center
-         - outer atmospheric halo
-         - depth shadow underneath */
-    box-shadow:
-      inset 0 0 0 1px rgba(140, 190, 255, 0.10),
-      inset 0 0 28px rgba(60, 110, 200, 0.12),
-      0 0 36px rgba(80, 130, 220, 0.22),
-      0 12px 32px rgba(2, 4, 14, 0.45);
+    background: var(--clc-surface);
+    box-shadow: var(--clc-shadow);
     backdrop-filter: blur(var(--yuval-galaxy-card-blur, 20px));
     -webkit-backdrop-filter: blur(var(--yuval-galaxy-card-blur, 20px));
     isolation: isolate;
@@ -351,6 +443,43 @@ const hydratorPayload = JSON.stringify({
     gap: 16px;
   }
 
+  /* ── Decorative depth layer — data-grid + corner bloom ──────────────
+     `z-index:-1` keeps it above the card's own background paint but
+     below all in-flow content, inside the card's isolated context. */
+  .continue-learning-card__bg {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    overflow: hidden;
+    pointer-events: none;
+  }
+  /* Faint blueprint grid, masked so it only whispers near the top. */
+  .continue-learning-card__bg::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--clc-grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--clc-grid-line) 1px, transparent 1px);
+    background-size: 24px 24px;
+    -webkit-mask-image: radial-gradient(ellipse 78% 56% at 50% 0%, #000 0%, transparent 80%);
+            mask-image: radial-gradient(ellipse 78% 56% at 50% 0%, #000 0%, transparent 80%);
+  }
+  /* Soft cosmic bloom drifting in from the top inline-end corner. */
+  .continue-learning-card__bg::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+      ellipse 68% 50% at 88% 2%,
+      var(--clc-bloom) 0%,
+      transparent 70%);
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════
+     HEADER — section eyebrow
+     ═══════════════════════════════════════════════════════════════════ */
   .continue-learning-card__header {
     display: flex;
     align-items: center;
@@ -362,6 +491,7 @@ const hydratorPayload = JSON.stringify({
     width: 16px;
     height: 16px;
     color: var(--yuval-galaxy-accent-cyan);
+    filter: drop-shadow(0 0 6px color-mix(in srgb, var(--yuval-galaxy-accent-cyan) 45%, transparent));
   }
   .continue-learning-card__header-icon svg {
     width: 100%;
@@ -370,56 +500,100 @@ const hydratorPayload = JSON.stringify({
 
   .continue-learning-card__title {
     margin: 0;
-    font-size: 0.875rem;
+    font-size: 0.8125rem;
     font-weight: 600;
-    letter-spacing: 0.02em;
+    letter-spacing: 0.04em;
     color: var(--yuval-galaxy-accent-cyan);
   }
 
-  /* Inner inset card around donut + info. Recessed sibling of the outer
-     surface — same border family at lower opacity, half-opacity inset
-     hairline so it reads as nested rather than floating on its own. */
+  /* ═══════════════════════════════════════════════════════════════════
+     READING CAPSULE — glassy inset holding the donut + book info
+     ═══════════════════════════════════════════════════════════════════ */
   .continue-learning-card__body {
+    position: relative;
     display: flex;
     flex-direction: column;
     align-items: stretch;
     gap: 14px;
-    padding: 14px;
-    background-color: var(--yuval-galaxy-surface-elevated);
-    border: 1px solid rgba(120, 140, 200, 0.12);
-    border-radius: 12px;
-    box-shadow: inset 0 0 0 1px rgba(140, 190, 255, 0.06);
+    padding: 16px 14px 15px;
+    background: var(--clc-capsule);
+    border: 1px solid var(--clc-capsule-border);
+    border-radius: 16px;
+    box-shadow: var(--clc-capsule-inset);
+    isolation: isolate;
   }
 
+  /* ── Progress ring ─────────────────────────────────────────────────── */
   .continue-learning-card__progress {
     position: relative;
     flex: 0 0 auto;
     align-self: center;
-    width: 80px;
-    height: 80px;
-    color: var(--yuval-galaxy-accent-purple);
+    width: 84px;
+    height: 84px;
+    isolation: isolate;
   }
+  /* Subtle bloom behind the ring — a quiet halo, never a hard glow. */
+  .continue-learning-card__progress::before {
+    content: "";
+    position: absolute;
+    inset: -8px;
+    z-index: -1;
+    border-radius: 50%;
+    background: radial-gradient(
+      circle at 50% 50%,
+      var(--clc-ring-glow) 0%,
+      transparent 68%);
+    opacity: 0.55;
+  }
+
+  .continue-learning-card__ring {
+    display: block;
+    width: 84px;
+    height: 84px;
+  }
+
+  /* Track + arc share a clean 5px stroke; the arc carries the gradient
+     and a soft drop-shadow so the progress reads as luminous. */
+  .continue-learning-card__ring-track {
+    stroke: var(--clc-ring-track);
+  }
+  .continue-learning-card__ring-arc {
+    filter: drop-shadow(0 0 4px var(--clc-ring-glow));
+  }
+  .continue-learning-card__grad-from { stop-color: var(--clc-ring-from); }
+  .continue-learning-card__grad-to   { stop-color: var(--clc-ring-to); }
+
+  /* Percentage sits on a faint luminous disc — echoes the Knowledge
+     Core's glowing centre and gives the number breathing room. */
   .continue-learning-card__percent {
     position: absolute;
     inset: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1rem;
+    font-size: 1.0625rem;
     font-weight: 700;
+    letter-spacing: -0.01em;
     color: var(--yuval-galaxy-text);
+    text-shadow: 0 0 12px var(--clc-ring-glow);
+    background: radial-gradient(
+      circle 30px at 50% 50%,
+      var(--clc-percent-disc) 0%,
+      transparent 74%);
   }
 
+  /* ── Book info ─────────────────────────────────────────────────────── */
   .continue-learning-card__info {
     min-width: 0;
     width: 100%;
     text-align: start;
   }
   .continue-learning-card__course-title {
-    margin: 0 0 4px;
-    font-size: 0.9375rem;
+    margin: 0 0 5px;
+    font-size: 1.0625rem;
     font-weight: 700;
-    line-height: 1.25;
+    line-height: 1.3;
+    letter-spacing: -0.005em;
     color: var(--yuval-galaxy-text);
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -428,34 +602,58 @@ const hydratorPayload = JSON.stringify({
   }
   .continue-learning-card__meta {
     margin: 0;
-    font-size: 0.75rem;
-    line-height: 1.35;
-    color: var(--yuval-galaxy-text-soft);
+    font-size: 0.8125rem;
+    line-height: 1.45;
+    color: var(--yuval-galaxy-text-muted);
     display: -webkit-box;
     -webkit-line-clamp: 1;
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
+  .continue-learning-card__meta + .continue-learning-card__meta {
+    margin-top: 2px;
+  }
+  /* Lessons-available line — a quiet status note, slightly accented. */
+  .continue-learning-card__lessons {
+    margin-top: 6px;
+    font-weight: 500;
+    color: var(--yuval-galaxy-accent-cyan);
+  }
 
+  /* ═══════════════════════════════════════════════════════════════════
+     CTA — refined continuation action (subtle border + hover glow)
+     ═══════════════════════════════════════════════════════════════════ */
   .continue-learning-card__cta {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: 9px;
     width: 100%;
     padding: 12px 16px;
-    border-radius: 14px;
+    border-radius: 13px;
     text-decoration: none;
     font-size: 0.9375rem;
     font-weight: 600;
     color: var(--yuval-galaxy-text);
-    background-color: var(--yuval-galaxy-surface-elevated);
-    border: 1px solid rgba(120, 140, 200, 0.12);
-    box-shadow: inset 0 0 0 1px rgba(140, 190, 255, 0.06);
-    transition: opacity 150ms ease-out;
+    background: var(--clc-cta-bg);
+    border: 1px solid var(--clc-cta-border);
+    box-shadow: var(--clc-cta-shadow);
+    transition:
+      border-color 200ms var(--yuval-galaxy-ease-out, cubic-bezier(0.22, 1, 0.36, 1)),
+      box-shadow 200ms ease-out,
+      transform 200ms var(--yuval-galaxy-ease-out, cubic-bezier(0.22, 1, 0.36, 1));
   }
   .continue-learning-card__cta:hover {
-    opacity: 0.9;
+    border-color: var(--clc-cta-border-hover);
+    box-shadow: var(--clc-cta-shadow), var(--clc-cta-glow);
+    transform: translateY(-1px);
+  }
+  .continue-learning-card__cta:active {
+    transform: translateY(0);
+  }
+  .continue-learning-card__cta:focus-visible {
+    outline: 2px solid var(--yuval-galaxy-accent-cyan);
+    outline-offset: 2px;
   }
   .continue-learning-card__cta > span:not(.continue-learning-card__cta-icon) {
     min-width: 0;
@@ -465,44 +663,31 @@ const hydratorPayload = JSON.stringify({
   }
   .continue-learning-card__cta-icon {
     display: inline-flex;
-    width: 18px;
-    height: 18px;
+    width: 17px;
+    height: 17px;
+    flex-shrink: 0;
+    color: var(--yuval-galaxy-accent-cyan);
+    transition: filter 200ms ease-out;
   }
   .continue-learning-card__cta-icon svg {
     width: 100%;
     height: 100%;
   }
-
-  /* Card stays visible at every viewport — width scales via
-     `--floating-card-width` and height via
-     `--continue-learning-card-height` (both clamped in
-     LibraryLayout). Replaces the previous mobile hide rule. */
-
-  /* ── Light mode — warm pale-glass card ───────────────────────────
-     Same warm-white treatment as the sibling premium panels. The
-     inner body + CTA drop their bluish hairlines for soft neutrals.
-     Token-driven text/accents come from galaxy.css. Dark mode never
-     matches `html:not(.dark)`, so it stays untouched. */
-  :global(html:not(.dark)) .continue-learning-card {
-    background:
-      radial-gradient(
-        ellipse 80% 40% at 50% 0%,
-        rgba(255, 255, 255, 0.65) 0%,
-        transparent 62%),
-      linear-gradient(
-        180deg,
-        rgba(255, 253, 249, 0.92) 0%,
-        rgba(248, 249, 252, 0.88) 50%,
-        rgba(255, 253, 249, 0.92) 100%);
-    border-color: rgba(34, 52, 92, 0.16);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.75),
-      0 1px 2px rgba(15, 23, 42, 0.05),
-      0 12px 30px -10px rgba(30, 45, 80, 0.18);
+  .continue-learning-card__cta:hover .continue-learning-card__cta-icon {
+    filter: drop-shadow(0 0 6px color-mix(in srgb, var(--yuval-galaxy-accent-cyan) 60%, transparent));
   }
-  :global(html:not(.dark)) .continue-learning-card__body,
-  :global(html:not(.dark)) .continue-learning-card__cta {
-    border-color: rgba(34, 52, 92, 0.14);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.60);
+
+  /* ── Respect reduced motion — drop every transition / hover lift ───── */
+  @media (prefers-reduced-motion: reduce) {
+    .continue-learning-card__cta,
+    .continue-learning-card__cta-icon {
+      transition: none !important;
+    }
+    .continue-learning-card__cta:hover {
+      transform: none;
+    }
   }
+
+  /* Card stays visible at every viewport ≥1024px — width scales via
+     `--floating-card-width` (clamped in LibraryLayout). */
 </style>

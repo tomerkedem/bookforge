@@ -35,6 +35,7 @@
 import LibraryLayout from '../layouts/LibraryLayout.astro';
 import LibraryHero from '../components/library/LibraryHero.astro';
 import LibraryStatsPanel from '../components/library/LibraryStatsPanel.astro';
+import KnowledgeAtlas from '../components/library/KnowledgeAtlas.astro';
 import ContinueLearningCard from '../components/library/ContinueLearningCard.astro';
 import LibraryCard from '../components/library/LibraryCard.astro';
 import LibraryQuickActions from '../components/library/LibraryQuickActions.astro';
@@ -53,7 +54,13 @@ import {
 } from '../utils/library-catalog';
 import { getCourseProgressList } from '../utils/library-adapter';
 import { discoverAllBooks } from '../utils/book-discovery';
-import { isReadableLibraryItem, isSafeLibraryHref } from '../utils/library-display';
+import {
+  isReadableLibraryItem,
+  isSafeLibraryHref,
+  getItemTitle,
+  getItemSummary,
+  getItemTypeLabelKey,
+} from '../utils/library-display';
 import { getEvenOrbitAngle } from '../utils/library/universe-angle-utils';
 import {
   getKnowledgeCardAssets,
@@ -240,6 +247,18 @@ const orbitItems: OrbitItem[] = orbitItemsSource.map((item, i) => ({
 // time from the live card count; CSS just animates --orbit-rotation.
 const showOrbitControls = orbitItems.length > 1;
 
+// ── Knowledge Atlas data ──────────────────────────────────────────────────
+// The "all items" overlay browses the SAME set the orbit renders, so
+// selecting an Atlas item can always focus a real carousel station by
+// slug. Localized here, where the i18n helpers + `language` live.
+const atlasItems = orbitItems.map(({ item, kind }) => ({
+  slug: item.slug,
+  kind,
+  title: getItemTitle(item, language),
+  subtitle: getItemSummary(item, language),
+  typeLabel: t(getItemTypeLabelKey(item.type), language),
+}));
+
 // ── ContinueLearningCard data ─────────────────────────────────────────────
 // Real values are derived from `continueItem` + `courseProgress`. Two modes:
 //   - lesson mode: course title at top, "Lesson N" line, then the lesson
@@ -327,48 +346,6 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       />
       <div class="knowledge-scene-overlay"></div>
     </div>
-
-    {/* TEMP DIAGNOSTIC — logs every change to the scene-background
-        geometry for 5s after load, to pinpoint the refresh "jump".
-        REMOVE once the cause is identified. */}
-    <script is:inline>
-      (function () {
-        var prev = '', t0 = performance.now();
-        function snap() {
-          var el = document.querySelector('.knowledge-scene-background');
-          if (!el) return null;
-          var img = document.querySelector('.knowledge-scene-img--night');
-          var cs = getComputedStyle(el);
-          var r = el.getBoundingClientRect();
-          var ir = img ? img.getBoundingClientRect() : { top: 0, height: 0 };
-          var anc = [], p = el.parentElement;
-          while (p && p.tagName !== 'HTML') {
-            var s = getComputedStyle(p);
-            if (s.transform !== 'none' || s.filter !== 'none' ||
-                s.contain !== 'none' || s.willChange !== 'auto') {
-              anc.push(p.tagName + '.' + (p.className || '').split(' ')[0]);
-            }
-            p = p.parentElement;
-          }
-          return JSON.stringify({
-            html: document.documentElement.className,
-            cssTop: cs.top, cssBottom: cs.bottom, cssTransform: cs.transform,
-            rectTop: Math.round(r.top), rectH: Math.round(r.height),
-            imgTop: Math.round(ir.top), imgH: Math.round(ir.height),
-            natural: img ? (img.naturalWidth + 'x' + img.naturalHeight) : 'n/a',
-            vw: innerWidth, vh: innerHeight, anc: anc.join(',')
-          });
-        }
-        var iv = setInterval(function () {
-          var cur = snap();
-          if (cur && cur !== prev) {
-            console.log('[BGDIAG +' + Math.round(performance.now() - t0) + 'ms] ' + cur);
-            prev = cur;
-          }
-        }, 80);
-        setTimeout(function () { clearInterval(iv); console.log('[BGDIAG] done'); }, 5000);
-      })();
-    </script>
 
     {/* Decorative ambient backdrop — starfield on top of the cosmic
         scene background. Stars stay crisp because they're a CSS
@@ -787,6 +764,15 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       </div>
     </aside>
 
+    {/* ── Knowledge Atlas ──
+          Alternative full-screen "all items" view, opened by the
+          Knowledge Core widget's `data-library-view="all"` action. It is
+          self-contained (own script for open/close/filter/search);
+          selecting an item bridges back to the carousel through
+          universe-layout's `[data-library-focus]` listener. Rendered at
+          page level so it can cover the whole stage. */}
+    <KnowledgeAtlas items={atlasItems} language={language} />
+
     {/* Orbit rotation controls — chevron pair pinned to the bottom of
         the viewport, OUTSIDE the orbit stage so they never overlap the
         focused card. The click handler in universe-layout.ts attaches
@@ -881,22 +867,22 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
     overflow-x: hidden;
   }
 
-  /* ── Cosmic scene background — full-viewport fixed layer ─────────
-     This is the global "knowledge universe" canvas. It is anchored
-     to the viewport (not the page) so it never scrolls out, never
-     leaves visible margins, and is never clipped by sidebars or the
-     stats panel. Every UI layer (hero, orbit, side panels, rail)
-     stacks on top via `position: relative; z-index: 1` (see the
+  /* ── Cosmic scene background — full-page scene layer ────────────
+     This is the global "knowledge universe" canvas. It is sized to
+     `.library-root` and stacks behind every UI layer, which sit on
+     top via `position: relative; z-index: 1` (see the
      `.library-root > :not(...)` rule below). */
   .knowledge-scene-background {
-    /* Anchored 50px ABOVE the header's bottom edge so the cosmic
-       image extends visually higher into the chrome. The header has
-       its own opaque background and sits at z-index above this layer
-       (z-index: 0), so the part of the image that tucks under the
-       header is naturally covered — what you see is the image
-       reaching higher into the screen relative to the previous
-       `top: 4rem` (header-bottom) value. */
-    position: fixed;
+    /* `position: absolute`, NOT `fixed`. As a fixed layer this would
+       re-base to the `<main transition:animate>` ancestor for the
+       ~0.4s the page's View Transition runs on reload, then snap back
+       to the viewport — a visible vertical jump (diagnosed live).
+       Absolute keeps the containing block stable: it resolves to
+       `.library-root`, the always-`position: relative` parent, which
+       no view-transition machinery ever re-bases. `top` still reaches
+       above .library-root's edge so the image tucks under the opaque
+       header, which covers that strip. */
+    position: absolute;
     top: calc(4rem - 130px);
     inset-inline: 0;
     bottom: 0;
@@ -911,6 +897,12 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
     height: 100%;
     object-fit: cover;          /* equivalent of background-size: cover   */
     object-position: center center; /* equivalent of background-position: center */
+    /* Shift the scene 50px DOWN. Applied to the <img>, not the
+       container, so the container box is unchanged: the 50px that
+       overflows its bottom is clipped by the container's
+       `overflow: hidden`, and the 50px gap opened at the top sits
+       behind the opaque header. No container resize, no scrollbar. */
+    transform: translateY(50px);
     user-select: none;
     -webkit-user-drag: none;
   }

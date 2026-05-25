@@ -971,6 +971,15 @@ export const translations: Translations = {
   'library.core.all':      { he: 'כל הפריטים',          en: 'All items',               es: 'Todos los elementos' },
   'library.core.cta':      { he: 'כניסה למרחב הספרייה', en: 'Enter the library space', es: 'Entrar al espacio de la biblioteca' },
 
+  // ── library.atlas.* — Knowledge Atlas overlay (alternative all-items view) ──
+  'library.atlas.eyebrow':           { he: 'אטלס הידע',              en: 'Knowledge Atlas',            es: 'Atlas del conocimiento' },
+  'library.atlas.searchPlaceholder': { he: 'חיפוש במרחב הידע',       en: 'Search the knowledge space',  es: 'Buscar en el espacio de conocimiento' },
+  'library.atlas.searchLabel':       { he: 'חיפוש פריטים',           en: 'Search items',               es: 'Buscar elementos' },
+  'library.atlas.filterAll':         { he: 'הכל',                    en: 'All',                        es: 'Todo' },
+  'library.atlas.filterLabel':       { he: 'סינון לפי סוג',          en: 'Filter by type',             es: 'Filtrar por tipo' },
+  'library.atlas.count':             { he: '{{n}} פריטים',           en: '{{n}} items',                es: '{{n}} elementos' },
+  'library.atlas.empty':             { he: 'לא נמצאו פריטים תואמים',  en: 'No matching items found',     es: 'No se encontraron elementos' },
+
   // ── library.recommendation.* — recommendation strip ────────────────────────
   'library.recommendation.forYou':            { he: 'מומלץ עבורך',                       en: 'Recommended for you',                 es: 'Recomendado para ti' },
   'library.recommendation.basedOnYourLibrary':{ he: 'על בסיס הספרייה שלך',               en: 'Based on your library',                es: 'Basado en tu biblioteca' },

@@ -33,6 +33,8 @@
  *   └────────────────────────────────────────────────────────────────┘
  */
 
+import { cssEscape } from './universe-angle-utils';
+
 /**
  * Initialise click-to-center, drag-to-rotate, chevron rotation and
  * Esc-to-close on a single stage. State lives entirely on data-
@@ -336,37 +338,32 @@ export function initStageLayout(stage: HTMLElement): void {
     rotateOrbit(e.key === 'ArrowLeft' ? -1 : 1);
   });
 
-  // ── Knowledge Core bridge ─────────────────────────────────────────
-  // The Knowledge Core widget (LibraryStatsPanel.astro) lives ONLY on
-  // this carousel page, so it needs no global event — its clickable
-  // nodes simply carry a `data-library-filter` attribute. This single
-  // delegated click listener is the direct DOM bridge: it reads that
-  // attribute and calls the orbit's focus logic right here, with no
-  // CustomEvent, no event bus and no shared state.
+  // ── Knowledge Core + Knowledge Atlas bridge ───────────────────────
+  // Two carousel-page widgets steer the orbit through plain data
+  // attributes — no CustomEvent, no event bus, no shared state. This
+  // one delegated click listener is the whole bridge:
   //
-  //   data-library-filter "all"      → closeCenter() — drop the
-  //                                    spotlight so every station shows.
-  //   data-library-filter "books"    → focus first book station
-  //                                    (data-kind="book").
-  //   data-library-filter "courses"  → focus first course station
-  //                                    (data-kind="course" — set by
-  //                                    orbitKindOf in index.astro).
-  //   data-library-filter "articles" → focus first article station
-  //                                    (data-kind="article"); a no-op
-  //                                    until article content enters the
-  //                                    pipeline and gets orbit stations.
+  //   [data-library-filter]  (Knowledge Core widget nodes)
+  //     "all"      → closeCenter() — drop the spotlight, all visible.
+  //     "books"    → focus first data-kind="book" station.
+  //     "courses"  → focus first data-kind="course" station.
+  //     "articles" → focus first data-kind="article" station (a no-op
+  //                  until article content gets orbit stations).
   //
-  // The orbit has no category-filter mode to reuse, so "focus" is the
-  // whole bridge: openCenter() already lifts ANY card to the centre via
-  // data-pos="center" regardless of orbit angle. Identical on desktop
-  // and mobile — no breakpoint branch.
+  //   [data-library-focus="<slug>"]  (Knowledge Atlas item capsules)
+  //     → focus the EXACT station whose data-slug matches.
   //
-  // Document-level delegation: the widget is a position:fixed panel
-  // rendered outside the stage subtree, so its clicks are caught here,
-  // not by the stage-scoped handler. Same safe-leak pattern as the
-  // rotate / keyboard listeners above — after a view transition the
-  // captured `stage` is disconnected and isStageOnScreen() makes this
-  // handler a no-op.
+  // openCenter() already lifts ANY card to the centre via
+  // data-pos="center" regardless of orbit angle, so "focus" is the
+  // whole bridge. Identical on desktop and mobile — no breakpoint
+  // branch.
+  //
+  // Document-level delegation: both widgets render outside the stage
+  // subtree (the Core is a position:fixed panel, the Atlas a
+  // position:fixed overlay), so their clicks are caught here, not by
+  // the stage-scoped handler. Same safe-leak pattern as the rotate /
+  // keyboard listeners above — after a view transition the captured
+  // `stage` is disconnected and isStageOnScreen() makes this a no-op.
   const LIBRARY_FILTER_TO_KIND: Record<string, 'book' | 'course' | 'article'> = {
     books:    'book',
     courses:  'course',
@@ -376,6 +373,21 @@ export function initStageLayout(stage: HTMLElement): void {
   document.addEventListener('click', (e) => {
     const target = e.target as Element | null;
     if (!target) return;
+
+    // Knowledge Atlas item → focus that exact station by slug.
+    const focusTrigger = target.closest<HTMLElement>('[data-library-focus]');
+    if (focusTrigger) {
+      if (!isStageOnScreen()) return;
+      const slug = focusTrigger.dataset.libraryFocus;
+      if (!slug) return;
+      const station = stage.querySelector<HTMLElement>(
+        `[data-galaxy-card][data-slug="${cssEscape(slug)}"]`,
+      );
+      if (station) openCenter(station);
+      return;
+    }
+
+    // Knowledge Core node → focus the first station of that category.
     const trigger = target.closest<HTMLElement>('[data-library-filter]');
     if (!trigger) return;
     if (!isStageOnScreen()) return;

@@ -1,0 +1,779 @@
+---
+/**
+ * Knowledge Atlas — alternative "all items" overlay for the carousel page.
+ * ────────────────────────────────────────────────────────────────────────────
+ * A premium full-screen overlay that lets the user browse every library
+ * item in a clear, non-carousel layout — a futuristic "knowledge atlas"
+ * rather than a generic modal grid.
+ *
+ * Opened by the Knowledge Core widget's bottom action
+ * (`[data-library-view="all"]` in LibraryStatsPanel.astro). Built from
+ * semantic HTML + CSS only. Dark/light come from the global galaxy
+ * tokens (`--yuval-galaxy-*`); two local `--atlas-*` vars cover the
+ * backdrop + grid line that the tokens don't express.
+ *
+ * Interaction (this component's `<script>`): open / close / filter /
+ * search / focus-trap. Selecting an item closes the overlay; focusing
+ * the matching carousel station is handled by universe-layout.ts, which
+ * owns one delegated `[data-library-focus]` listener (no event bus).
+ */
+import type { Language } from '../../types/index';
+import { t } from '../../i18n';
+import { getLanguageDirection } from '../../utils/language';
+
+/** One browseable item — derived from the orbit set in index.astro. */
+export interface AtlasItem {
+  /** Catalog slug — matches the data-slug on the carousel card. */
+  slug: string;
+  /** Orbit kind: drives the icon, accent and filter group. */
+  kind: 'book' | 'lesson' | 'course';
+  /** Localized title. */
+  title: string;
+  /** Localized summary — may be ''. */
+  subtitle: string;
+  /** Localized content-type badge (`library.itemType.*`). */
+  typeLabel: string;
+}
+
+interface Props {
+  items: AtlasItem[];
+  language: Language;
+}
+
+const { items, language } = Astro.props;
+const direction = getLanguageDirection(language);
+
+/** Orbit kind → filter group. Lessons are course content → "courses".
+   There is no `article` orbit kind yet, so that group is never produced;
+   the "articles" filter chip simply matches nothing until articles land. */
+const groupOf = (kind: AtlasItem['kind']): 'books' | 'courses' =>
+  kind === 'book' ? 'books' : 'courses';
+
+/* Filter chips. `all` first; the rest reuse the existing category labels. */
+const chips: Array<{ id: string; labelKey: string }> = [
+  { id: 'all',      labelKey: 'library.atlas.filterAll' },
+  { id: 'books',    labelKey: 'library.stats.label.books' },
+  { id: 'courses',  labelKey: 'library.stats.label.courses' },
+  { id: 'articles', labelKey: 'library.stats.label.articles' },
+];
+
+const atlasItems = items.map((it) => ({
+  ...it,
+  group: groupOf(it.kind),
+  /* Lowercased haystack for client-side search (title + summary + type). */
+  search: `${it.title} ${it.subtitle} ${it.typeLabel}`.toLowerCase(),
+}));
+---
+
+<div class="atlas" data-knowledge-atlas hidden aria-hidden="true">
+  {/* Backdrop — click to dismiss. */}
+  <div class="atlas__backdrop" data-atlas-backdrop aria-hidden="true"></div>
+
+  <div
+    class="atlas__panel"
+    data-atlas-panel
+    role="dialog"
+    aria-modal="true"
+    aria-label={t('library.core.all', language)}
+    dir={direction}
+    tabindex="-1"
+  >
+    {/* Observatory background — faint data-grid + cosmic glow. */}
+    <div class="atlas__bg" aria-hidden="true"></div>
+
+    {/* ── Top bar ─────────────────────────────────────────────────── */}
+    <header class="atlas__topbar">
+      <div class="atlas__heading">
+        <span class="atlas__eyebrow">{t('library.atlas.eyebrow', language)}</span>
+        <h2 class="atlas__title">{t('library.core.all', language)}</h2>
+        <span
+          class="atlas__count"
+          data-atlas-count
+          data-count-template={t('library.atlas.count', language, { n: '__N__' })}
+        >{t('library.atlas.count', language, { n: items.length })}</span>
+      </div>
+
+      <div class="atlas__search">
+        <span class="atlas__search-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="7"></circle>
+            <path d="m21 21-4.3-4.3"></path>
+          </svg>
+        </span>
+        <input
+          type="search"
+          class="atlas__search-input"
+          data-atlas-search
+          placeholder={t('library.atlas.searchPlaceholder', language)}
+          aria-label={t('library.atlas.searchLabel', language)}
+          autocomplete="off"
+        />
+      </div>
+
+      <button
+        type="button"
+        class="atlas__close"
+        data-atlas-close
+        aria-label={t('common.close', language)}
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M6 6l12 12M18 6L6 18"></path>
+        </svg>
+      </button>
+    </header>
+
+    {/* ── Filter chips ────────────────────────────────────────────── */}
+    <div class="atlas__chips" role="group" aria-label={t('library.atlas.filterLabel', language)}>
+      {chips.map((chip) => (
+        <button
+          type="button"
+          class:list={['atlas__chip', { 'is-active': chip.id === 'all' }]}
+          data-atlas-filter={chip.id}
+          aria-pressed={chip.id === 'all' ? 'true' : 'false'}
+        >
+          {t(chip.labelKey, language)}
+        </button>
+      ))}
+    </div>
+
+    {/* ── Capsule grid ────────────────────────────────────────────── */}
+    <div class="atlas__grid" data-atlas-grid>
+      {atlasItems.map((it, i) => (
+        <button
+          type="button"
+          class="atlas__capsule"
+          data-atlas-item
+          data-atlas-group={it.group}
+          data-atlas-search={it.search}
+          data-library-focus={it.slug}
+          style={`--i:${i}`}
+        >
+          <span class="atlas__capsule-glow" aria-hidden="true"></span>
+          <span class="atlas__capsule-icon" aria-hidden="true">
+            {it.kind === 'book' && (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+              </svg>
+            )}
+            {it.kind === 'course' && (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21.5 9 12 4 2.5 9 12 14l9.5-5Z"></path>
+                <path d="M6 11v5.4c0 1.4 2.7 2.6 6 2.6s6-1.2 6-2.6V11"></path>
+                <path d="M21.5 9v5.4"></path>
+              </svg>
+            )}
+            {it.kind === 'lesson' && (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M7 3h7l5 5v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"></path>
+                <path d="M14 3v5h5"></path>
+                <path d="M9.5 14.5 11 16l3.5-3.5"></path>
+              </svg>
+            )}
+          </span>
+          <span class="atlas__capsule-body">
+            <span class="atlas__capsule-type">{it.typeLabel}</span>
+            <span class="atlas__capsule-title">{it.title}</span>
+            {it.subtitle && (
+              <span class="atlas__capsule-sub">{it.subtitle}</span>
+            )}
+          </span>
+        </button>
+      ))}
+
+      <p class="atlas__empty" data-atlas-empty hidden>
+        {t('library.atlas.empty', language)}
+      </p>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* ═══════════════════════════════════════════════════════════════════
+     THEME — galaxy tokens carry dark/light for text + accents; only the
+     backdrop tint and grid line need explicit per-theme values.
+     ═══════════════════════════════════════════════════════════════════ */
+  .atlas {
+    --atlas-backdrop: rgba(4, 6, 16, 0.74);
+    --atlas-grid-line: rgba(150, 175, 235, 0.07);
+    --atlas-panel-bg:
+      radial-gradient(ellipse 70% 50% at 50% 0%,
+        rgba(40, 70, 130, 0.30) 0%, transparent 62%),
+      linear-gradient(180deg, #090b1c 0%, #0b0e22 55%, #080a18 100%);
+  }
+  :global(html:not(.dark)) .atlas {
+    --atlas-backdrop: rgba(220, 224, 236, 0.62);
+    --atlas-grid-line: rgba(40, 60, 110, 0.07);
+    --atlas-panel-bg:
+      radial-gradient(ellipse 70% 50% at 50% 0%,
+        rgba(255, 255, 255, 0.80) 0%, transparent 64%),
+      linear-gradient(180deg,
+        rgba(255, 253, 249, 0.96) 0%,
+        rgba(247, 248, 252, 0.94) 55%,
+        rgba(255, 253, 249, 0.96) 100%);
+  }
+
+  /* Per-group accent — same hues the carousel + Knowledge Core use. */
+  .atlas__capsule[data-atlas-group="books"]    { --atlas-accent: var(--yuval-galaxy-type-book,   #f6c560); }
+  .atlas__capsule[data-atlas-group="courses"]  { --atlas-accent: var(--yuval-galaxy-type-course, #22d3ee); }
+  .atlas__capsule[data-atlas-group="articles"] { --atlas-accent: var(--yuval-galaxy-type-article,#a78bfa); }
+
+  /* ═══════════════════════════════════════════════════════════════════
+     OVERLAY SHELL
+     ═══════════════════════════════════════════════════════════════════ */
+  .atlas[hidden] { display: none; }
+
+  .atlas {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: clamp(12px, 4vh, 48px);
+    isolation: isolate;
+  }
+
+  .atlas__backdrop {
+    position: absolute;
+    inset: 0;
+    background: var(--atlas-backdrop);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    opacity: 0;
+    transition: opacity 320ms ease;
+  }
+  .atlas[data-atlas-open] .atlas__backdrop { opacity: 1; }
+
+  /* ── Luminous glass panel ──────────────────────────────────────────── */
+  .atlas__panel {
+    position: relative;
+    width: min(1120px, 100%);
+    max-height: min(880px, 100%);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid var(--yuval-galaxy-border-strong, rgba(255, 255, 255, 0.16));
+    border-radius: 24px;
+    background: var(--atlas-panel-bg);
+    box-shadow:
+      inset 0 0 0 1px rgba(140, 190, 255, 0.08),
+      inset 0 0 60px rgba(60, 110, 200, 0.10),
+      0 0 70px rgba(70, 120, 220, 0.22),
+      0 32px 70px rgba(2, 4, 14, 0.55);
+    color: var(--yuval-galaxy-text, #eaf0ff);
+    opacity: 0;
+    transform: translateY(22px) scale(0.97);
+    transition:
+      opacity 380ms ease,
+      transform 420ms var(--yuval-galaxy-ease-out, cubic-bezier(0.22, 1, 0.36, 1));
+  }
+  .atlas[data-atlas-open] .atlas__panel {
+    opacity: 1;
+    transform: none;
+  }
+  .atlas__panel:focus-visible { outline: none; }
+
+  /* ── Observatory background ────────────────────────────────────────── */
+  .atlas__bg {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    overflow: hidden;
+  }
+  /* Faint data-grid, faded toward the edges. */
+  .atlas__bg::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--atlas-grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--atlas-grid-line) 1px, transparent 1px);
+    background-size: 46px 46px;
+    -webkit-mask-image: radial-gradient(ellipse 75% 70% at 50% 24%, #000 0%, transparent 80%);
+    mask-image: radial-gradient(ellipse 75% 70% at 50% 24%, #000 0%, transparent 80%);
+  }
+  /* Cosmic glow — two soft radial blooms in the corners. */
+  .atlas__bg::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 46% 38% at 14% 2%,  rgba(124, 58, 237, 0.20), transparent 70%),
+      radial-gradient(ellipse 46% 40% at 92% 102%, rgba(34, 211, 238, 0.16), transparent 72%);
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════
+     TOP BAR
+     ═══════════════════════════════════════════════════════════════════ */
+  .atlas__topbar {
+    position: relative;
+    z-index: 1;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: clamp(12px, 2vw, 24px);
+    padding: clamp(16px, 2.4vw, 26px) clamp(16px, 2.6vw, 30px) 14px;
+  }
+
+  .atlas__heading {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex-shrink: 0;
+  }
+
+  .atlas__eyebrow {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--yuval-galaxy-accent-purple, #a78bfa);
+  }
+
+  .atlas__title {
+    margin: 0;
+    font-size: clamp(19px, 2.4vw, 26px);
+    font-weight: 600;
+    line-height: 1.15;
+    color: var(--yuval-galaxy-text, #eaf0ff);
+  }
+
+  .atlas__count {
+    font-size: 12px;
+    color: var(--yuval-galaxy-text-soft, #7e8aae);
+  }
+
+  /* Search — grows to fill the bar. */
+  .atlas__search {
+    position: relative;
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+  }
+  .atlas__search-icon {
+    position: absolute;
+    inset-inline-start: 13px;
+    width: 16px;
+    height: 16px;
+    color: var(--yuval-galaxy-text-soft, #7e8aae);
+    pointer-events: none;
+  }
+  .atlas__search-icon svg { width: 100%; height: 100%; }
+
+  .atlas__search-input {
+    width: 100%;
+    appearance: none;
+    -webkit-appearance: none;
+    padding: 11px 14px;
+    padding-inline-start: 38px;
+    font: inherit;
+    font-size: 13px;
+    color: var(--yuval-galaxy-text, #eaf0ff);
+    background: var(--yuval-galaxy-surface-muted, rgba(12, 16, 32, 0.55));
+    border: 1px solid var(--yuval-galaxy-border, rgba(255, 255, 255, 0.08));
+    border-radius: 12px;
+    transition: border-color 200ms ease, box-shadow 200ms ease;
+  }
+  .atlas__search-input::placeholder { color: var(--yuval-galaxy-text-soft, #7e8aae); }
+  .atlas__search-input:focus-visible {
+    outline: none;
+    border-color: var(--yuval-galaxy-accent-cyan, #22d3ee);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--yuval-galaxy-accent-cyan, #22d3ee) 22%, transparent);
+  }
+  .atlas__search-input::-webkit-search-cancel-button { -webkit-appearance: none; appearance: none; }
+
+  /* Close button. */
+  .atlas__close {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    margin: 0;
+    padding: 0;
+    color: var(--yuval-galaxy-text-muted, #aab5d6);
+    background: var(--yuval-galaxy-surface-muted, rgba(12, 16, 32, 0.55));
+    border: 1px solid var(--yuval-galaxy-border, rgba(255, 255, 255, 0.08));
+    border-radius: 11px;
+    cursor: pointer;
+    transition: color 180ms ease, background-color 180ms ease, transform 180ms ease;
+  }
+  .atlas__close svg { width: 17px; height: 17px; }
+  .atlas__close:hover {
+    color: var(--yuval-galaxy-text, #eaf0ff);
+    background: var(--yuval-galaxy-surface-elevated, rgba(28, 34, 64, 0.82));
+    transform: rotate(90deg);
+  }
+  .atlas__close:focus-visible {
+    outline: 2px solid var(--yuval-galaxy-accent-cyan, #22d3ee);
+    outline-offset: 2px;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════
+     FILTER CHIPS
+     ═══════════════════════════════════════════════════════════════════ */
+  .atlas__chips {
+    position: relative;
+    z-index: 1;
+    flex-shrink: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 0 clamp(16px, 2.6vw, 30px) 14px;
+  }
+
+  .atlas__chip {
+    margin: 0;
+    padding: 7px 15px;
+    font: inherit;
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--yuval-galaxy-text-muted, #aab5d6);
+    background: var(--yuval-galaxy-surface-muted, rgba(12, 16, 32, 0.55));
+    border: 1px solid var(--yuval-galaxy-border, rgba(255, 255, 255, 0.08));
+    border-radius: 999px;
+    cursor: pointer;
+    transition: color 180ms ease, background-color 180ms ease, border-color 180ms ease;
+  }
+  .atlas__chip:hover {
+    color: var(--yuval-galaxy-text, #eaf0ff);
+    border-color: var(--yuval-galaxy-border-strong, rgba(255, 255, 255, 0.16));
+  }
+  .atlas__chip.is-active {
+    color: var(--yuval-galaxy-text-inverse, #0a0f24);
+    background: var(--yuval-galaxy-accent-cyan, #22d3ee);
+    border-color: transparent;
+    box-shadow: 0 0 16px -2px color-mix(in srgb, var(--yuval-galaxy-accent-cyan, #22d3ee) 55%, transparent);
+  }
+  .atlas__chip:focus-visible {
+    outline: 2px solid var(--yuval-galaxy-accent-cyan, #22d3ee);
+    outline-offset: 2px;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════
+     CAPSULE GRID
+     ═══════════════════════════════════════════════════════════════════ */
+  .atlas__grid {
+    position: relative;
+    z-index: 1;
+    flex: 1 1 auto;
+    overflow-y: auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 248px), 1fr));
+    gap: 14px;
+    padding: 6px clamp(16px, 2.6vw, 30px) clamp(18px, 2.6vw, 30px);
+    scrollbar-width: thin;
+    scrollbar-color: var(--yuval-galaxy-border-strong, rgba(255, 255, 255, 0.16)) transparent;
+  }
+  .atlas__grid::-webkit-scrollbar { width: 9px; }
+  .atlas__grid::-webkit-scrollbar-thumb {
+    background: var(--yuval-galaxy-border-strong, rgba(255, 255, 255, 0.16));
+    border-radius: 999px;
+    border: 3px solid transparent;
+    background-clip: padding-box;
+  }
+
+  /* ── Knowledge capsule ─────────────────────────────────────────────── */
+  .atlas__capsule {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin: 0;
+    padding: 14px;
+    text-align: start;
+    font: inherit;
+    color: var(--yuval-galaxy-text, #eaf0ff);
+    background: var(--yuval-galaxy-card-surface, rgba(20, 25, 50, 0.62));
+    border: 1px solid var(--yuval-galaxy-card-border, rgba(255, 255, 255, 0.10));
+    border-radius: 16px;
+    cursor: pointer;
+    isolation: isolate;
+    transition:
+      transform 220ms var(--yuval-galaxy-ease-out, cubic-bezier(0.22, 1, 0.36, 1)),
+      border-color 220ms ease,
+      box-shadow 220ms ease;
+  }
+
+  /* Accent glow — soft halo that intensifies on hover. */
+  .atlas__capsule-glow {
+    position: absolute;
+    inset: -1px;
+    z-index: -1;
+    border-radius: inherit;
+    background: radial-gradient(
+      ellipse 60% 80% at var(--atlas-glow-x, 18%) 0%,
+      color-mix(in srgb, var(--atlas-accent) 22%, transparent) 0%,
+      transparent 70%);
+    opacity: 0.5;
+    transition: opacity 220ms ease;
+  }
+
+  .atlas__capsule:hover,
+  .atlas__capsule:focus-visible {
+    transform: translateY(-4px);
+    border-color: color-mix(in srgb, var(--atlas-accent) 55%, transparent);
+    box-shadow:
+      0 14px 30px -12px rgba(2, 4, 14, 0.6),
+      0 0 26px -4px color-mix(in srgb, var(--atlas-accent) 50%, transparent);
+    outline: none;
+  }
+  .atlas__capsule:hover .atlas__capsule-glow,
+  .atlas__capsule:focus-visible .atlas__capsule-glow { opacity: 1; }
+  .atlas__capsule:focus-visible {
+    outline: 2px solid var(--atlas-accent);
+    outline-offset: 2px;
+  }
+
+  /* Accent glyph tile. */
+  .atlas__capsule-icon {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 13px;
+    color: var(--atlas-accent);
+    background: color-mix(in srgb, var(--atlas-accent) 14%, transparent);
+    border: 1px solid color-mix(in srgb, var(--atlas-accent) 30%, transparent);
+    box-shadow: inset 0 0 14px -4px color-mix(in srgb, var(--atlas-accent) 45%, transparent);
+  }
+  .atlas__capsule-icon svg { width: 21px; height: 21px; }
+
+  .atlas__capsule-body {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+  }
+
+  .atlas__capsule-type {
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--atlas-accent);
+  }
+
+  .atlas__capsule-title {
+    font-size: 14.5px;
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--yuval-galaxy-text, #eaf0ff);
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+  }
+
+  .atlas__capsule-sub {
+    font-size: 12px;
+    line-height: 1.4;
+    color: var(--yuval-galaxy-text-muted, #aab5d6);
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+  }
+
+  .atlas__capsule[hidden] { display: none; }
+
+  /* Empty state — spans the whole grid. */
+  .atlas__empty {
+    grid-column: 1 / -1;
+    margin: 0;
+    padding: 48px 16px;
+    text-align: center;
+    font-size: 13px;
+    color: var(--yuval-galaxy-text-soft, #7e8aae);
+  }
+  .atlas__empty[hidden] { display: none; }
+
+  /* ═══════════════════════════════════════════════════════════════════
+     MOTION — smooth entrance, gentle stagger
+     ═══════════════════════════════════════════════════════════════════ */
+  @keyframes atlas-capsule-in {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .atlas[data-atlas-open] .atlas__capsule {
+    animation: atlas-capsule-in 420ms var(--yuval-galaxy-ease-out, cubic-bezier(0.22, 1, 0.36, 1)) both;
+    animation-delay: calc(var(--i, 0) * 26ms + 130ms);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .atlas__backdrop,
+    .atlas__panel { transition: none !important; }
+    .atlas[data-atlas-open] .atlas__capsule { animation: none !important; }
+    .atlas__capsule,
+    .atlas__close,
+    .atlas__chip { transition: none !important; }
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════
+     RESPONSIVE — the top bar wraps on narrow viewports
+     ═══════════════════════════════════════════════════════════════════ */
+  @media (max-width: 640px) {
+    .atlas__topbar { flex-wrap: wrap; }
+    .atlas__heading { flex: 1 1 auto; }
+    .atlas__search { order: 3; flex-basis: 100%; }
+  }
+</style>
+
+<script>
+  /**
+   * Knowledge Atlas — open / close / filter / search / focus-trap.
+   * Selecting a capsule only closes the overlay here; focusing the
+   * matching carousel station is owned by universe-layout.ts via its
+   * delegated `[data-library-focus]` listener.
+   */
+  function initKnowledgeAtlas(): void {
+    const atlasEl = document.querySelector<HTMLElement>('[data-knowledge-atlas]');
+    if (!atlasEl || atlasEl.dataset.atlasReady === 'true') return;
+    atlasEl.dataset.atlasReady = 'true';
+    // Non-nullable alias — TypeScript does not carry the null-narrowing
+    // into the nested closures (open / close / listeners) below.
+    const atlas: HTMLElement = atlasEl;
+
+    const panelEl = atlas.querySelector<HTMLElement>('[data-atlas-panel]');
+    if (!panelEl) return;
+    // Non-nullable alias — TypeScript does not carry the null-narrowing
+    // into the nested open/close/trapFocus closures below.
+    const panel: HTMLElement = panelEl;
+    const searchInput = atlas.querySelector<HTMLInputElement>('[data-atlas-search]');
+    const countEl = atlas.querySelector<HTMLElement>('[data-atlas-count]');
+    const emptyEl = atlas.querySelector<HTMLElement>('[data-atlas-empty]');
+    const closeBtn = atlas.querySelector<HTMLButtonElement>('[data-atlas-close]');
+    const chips = Array.from(atlas.querySelectorAll<HTMLButtonElement>('[data-atlas-filter]'));
+    const capsules = Array.from(atlas.querySelectorAll<HTMLElement>('[data-atlas-item]'));
+    const countTemplate = countEl?.dataset.countTemplate ?? '__N__';
+
+    let activeFilter = 'all';
+    let lastTrigger: HTMLElement | null = null;
+
+    /* Recompute capsule visibility from the active filter + search query. */
+    function refresh(): void {
+      const query = (searchInput?.value ?? '').trim().toLowerCase();
+      let visible = 0;
+      capsules.forEach((cap) => {
+        const matchesFilter =
+          activeFilter === 'all' || cap.dataset.atlasGroup === activeFilter;
+        const matchesSearch =
+          query === '' || (cap.dataset.atlasSearch ?? '').includes(query);
+        const show = matchesFilter && matchesSearch;
+        cap.hidden = !show;
+        if (show) visible += 1;
+      });
+      if (countEl) countEl.textContent = countTemplate.replace('__N__', String(visible));
+      if (emptyEl) emptyEl.hidden = visible > 0;
+    }
+
+    function setFilter(id: string): void {
+      activeFilter = id;
+      chips.forEach((chip) => {
+        const on = chip.dataset.atlasFilter === id;
+        chip.setAttribute('aria-pressed', on ? 'true' : 'false');
+        chip.classList.toggle('is-active', on);
+      });
+      refresh();
+    }
+
+    function open(trigger: HTMLElement | null): void {
+      if (atlas.dataset.atlasOpen === 'true') return;
+      lastTrigger = trigger;
+      atlas.hidden = false;
+      atlas.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+      // Double rAF so the entrance transition runs from the hidden state.
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => { atlas.dataset.atlasOpen = 'true'; });
+      });
+      window.setTimeout(() => {
+        (searchInput ?? closeBtn ?? panel)?.focus();
+      }, 80);
+    }
+
+    function close(): void {
+      if (atlas.dataset.atlasOpen !== 'true') return;
+      delete atlas.dataset.atlasOpen;
+      atlas.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+      let done = false;
+      const finish = (): void => {
+        if (done) return;
+        done = true;
+        atlas.hidden = true;
+      };
+      panel.addEventListener('transitionend', finish, { once: true });
+      window.setTimeout(finish, 520);
+      lastTrigger?.focus();
+      lastTrigger = null;
+    }
+
+    /* Keep Tab focus inside the dialog while it is open. */
+    function trapFocus(e: KeyboardEvent): void {
+      const focusables = Array.from(
+        panel.querySelectorAll<HTMLElement>(
+          'button, input, [href], [tabindex]:not([tabindex="-1"])',
+        ),
+      ).filter((el) => !el.hidden && el.offsetParent !== null);
+      if (focusables.length === 0) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+
+    // ── Open: the Knowledge Core "view all items" action ──
+    document.addEventListener('click', (e) => {
+      if (!atlas.isConnected) return;
+      const trigger = (e.target as Element | null)
+        ?.closest<HTMLElement>('[data-library-view="all"]');
+      if (trigger) open(trigger);
+    });
+
+    // ── Close: backdrop, close button, Escape ──
+    atlas.querySelector<HTMLElement>('[data-atlas-backdrop]')
+      ?.addEventListener('click', () => close());
+    closeBtn?.addEventListener('click', () => close());
+    document.addEventListener('keydown', (e) => {
+      if (!atlas.isConnected || atlas.dataset.atlasOpen !== 'true') return;
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        close();
+      } else if (e.key === 'Tab') {
+        trapFocus(e);
+      }
+    });
+
+    // ── Filter chips ──
+    chips.forEach((chip) => {
+      chip.addEventListener('click', () => setFilter(chip.dataset.atlasFilter ?? 'all'));
+    });
+
+    // ── Search ──
+    searchInput?.addEventListener('input', refresh);
+
+    // ── Item selection — close the overlay (carousel focus is handled
+    //    by universe-layout.ts reacting to the same `[data-library-focus]`
+    //    click). ──
+    capsules.forEach((cap) => {
+      cap.addEventListener('click', () => close());
+    });
+
+    refresh();
+  }
+
+  initKnowledgeAtlas();
+  document.addEventListener('astro:page-load', initKnowledgeAtlas);
+</script>

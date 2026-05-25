@@ -355,6 +355,13 @@ const searchAriaLabel = t('header.searchAriaLabel', language);
      Reading mode flattens this back to the cream shell via the
      `:global(body.reading-mode) .yuval-header` overrides further down. */
   .yuval-header {
+    /* Knowledge-grid tint — the same blue data-grid language as the
+       Knowledge Atlas (`--atlas-grid-line`), tuned brighter so it
+       actually reads over the header's busy cosmic gradient. One
+       variable feeds the grid pseudo-element below; the light-showcase
+       block overrides it with a blue-gray value so dark + light share
+       a single grid rule. */
+    --header-grid-line: rgba(158, 188, 252, 0.10);
     /* Default sticky pin to the viewport top — content flows under
        it on scroll. The Astro-scoped class outranks the Tailwind
        `sticky top-0` utility, so this declaration restores the
@@ -432,6 +439,11 @@ const searchAriaLabel = t('header.searchAriaLabel', language);
       linear-gradient(180deg, #020610 0%, #00050F 55%, #00010d 100%),
       #00010d;
     box-shadow:
+      /* Bottom edge — a faint blue hairline plus a soft glow bloom
+         that bleeds onto the page below. Quiet, but actually visible:
+         it lifts the seam without turning into a hard divider. */
+      0 1px 0 rgba(140, 178, 255, 0.18),
+      0 9px 26px -10px rgba(92, 146, 255, 0.50),
       0 1px 0 rgba(255, 255, 255, 0.03) inset,
       0 -1px 0 rgba(0, 0, 0, 0.30) inset;
   }
@@ -491,6 +503,38 @@ const searchAriaLabel = t('header.searchAriaLabel', language);
     background-repeat: no-repeat;
     opacity: 0.85;
     z-index: 0;
+  }
+
+  /* ── Knowledge grid — quiet data-grid texture ─────────────────────
+     A whisper of the Knowledge Atlas's data-grid (`.atlas__bg`),
+     dialled far softer so the header reads as a calm continuation of
+     the same visual language — never competing with the carousel, the
+     Knowledge Core or the Atlas itself. Pure CSS gradients, no images.
+     It lives on `.header-inner::after` because `.yuval-header::before`
+     is already claimed (light-showcase blur + reading-mode hairline)
+     and `.yuval-header::after` carries the top-edge specular line.
+     `z-index: -1` keeps it under the brand, nav and star specks; the
+     radial mask fades it out toward every edge so it never reads as a
+     hard panel texture — just a faint structural lift behind the
+     center of the bar. */
+  .yuval-header > .header-inner::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-image:
+      linear-gradient(var(--header-grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--header-grid-line) 1px, transparent 1px);
+    /* 40px cells — small enough that ~2 rows read inside the short
+       header bar, so it registers as a grid, not a stray line pair. */
+    background-size: 40px 40px;
+    /* Inline-only fade — the grid stays full strength top-to-bottom
+       (that vertical presence is what makes it visible) and only
+       softens at the two inline ends so it never crowds the brand or
+       the controls. */
+    -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 13%, #000 87%, transparent 100%);
+    mask-image: linear-gradient(90deg, transparent 0%, #000 13%, #000 87%, transparent 100%);
   }
 
   :global(.dark) .yuval-header {
@@ -1418,6 +1462,10 @@ const searchAriaLabel = t('header.searchAriaLabel', language);
        that class, so every other route's header is untouched.
      Reading mode keeps its own parchment overrides — unaffected. */
   :global(html:not(.dark):has(.library-dark-showcase)) .yuval-header {
+    /* Blue-gray knowledge grid for the light glass surface — same
+       hue family as the Atlas light grid (`--atlas-grid-line`),
+       strong enough to register over the warm glass. */
+    --header-grid-line: rgba(44, 64, 116, 0.09);
     /* Soft warm glass — translucent so the observatory reads faintly
        through it. NOTE: the backdrop blur is deliberately NOT applied
        on .yuval-header itself. backdrop-filter (like filter / transform
@@ -1435,10 +1483,10 @@ const searchAriaLabel = t('header.searchAriaLabel', language);
         rgba(255, 254, 250, 0.86) 0%,
         rgba(249, 247, 240, 0.74) 100%
       );
-    /* One subtle hairline at the bottom is the only separator — no
-       heavy shadow, no hard near-black edge. */
-    border-bottom: 1px solid rgba(34, 52, 92, 0.12);
-    box-shadow: 0 1px 12px -8px rgba(30, 45, 80, 0.18);
+    /* A subtle hairline plus a soft blue glow at the bottom — visible
+       enough to register, still no heavy shadow or hard edge. */
+    border-bottom: 1px solid rgba(34, 52, 92, 0.16);
+    box-shadow: 0 5px 18px -8px rgba(40, 70, 145, 0.28);
   }
 
   /* Frosted-glass blur — carried by a pseudo-element so .yuval-header
@@ -2237,7 +2285,8 @@ const searchAriaLabel = t('header.searchAriaLabel', language);
      to make /library blend into its cosmic background; here we
      reinstate it as a soft sepia hairline so the parchment header
      still reads as separated from the chapter strip below. */
-  :global(body.reading-mode) .yuval-header::after { display: none; }
+  :global(body.reading-mode) .yuval-header::after,
+  :global(body.reading-mode) .yuval-header > .header-inner::after { display: none; }
   :global(body.reading-mode) .yuval-header::before {
     content: '';
     position: absolute;
