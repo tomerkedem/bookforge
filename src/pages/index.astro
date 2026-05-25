@@ -500,70 +500,67 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
                     data-reading-entry
                     data-reading-entry-href={resolveReadingHref(item)}
                     data-reading-entry-slug={item.slug}
-                    aria-label={t('library.readingEntry.ariaLabel', language)}
+                    data-aria-template={t('library.readingEntry.continueChapterAria', language, { n: '__N__' })}
+                    aria-label={
+                      typeof item.chapterCount === 'number' && item.chapterCount > 0
+                        ? t('library.readingEntry.continueChapterAria', language, { n: 1 })
+                        : t('library.readingEntry.ariaLabel', language)
+                    }
                   >
+                    {/* The reading-entry-card1.png artifact is the visual
+                        base of the panel — painted via `background-image`
+                        on this layer so the icon at the top center stays
+                        baked into the asset. Live i18n text (title +
+                        subtitle + meta row) is rendered as real HTML over
+                        the image so it stays crisp, translatable and
+                        accessible. Everything that used to live in the
+                        sibling `.center-card-extras` wrapper now sits
+                        inside this overlay so the CTA + facts read as
+                        one premium glass panel. */}
                     <span class="reading-entry-asset" aria-hidden="true"></span>
-                    <span class="reading-entry-text">
-                      {/* `data-cc-primary-label` is the swap slot for the
-                          hydration script in `initCenterCardExtras`. SSR
-                          ships the original "כניסה לקריאה" text so the
-                          first paint never flashes empty; the script
-                          replaces it with "המשך · פרק N" when stored
-                          progress identifies a current chapter. */}
+                    <div class="reading-entry-text">
                       <span
                         class="reading-entry-title"
                         data-cc-primary-label
-                        data-continue-template={t('library.readingEntry.continueChapter', language, { n: '__N__' })}
+                        data-continue-template={t('library.readingEntry.continueReadingShort', language)}
                       >
-                        {t('library.readingEntry.title', language)}
+                        {t('library.readingEntry.continueReadingShort', language)}
                       </span>
-                    </span>
-                  </a>
-                )}
-                {/* Quiet secondary text link + thin metadata row that sit
-                    UNDER the existing glowing pill. They share the pill's
-                    visibility lifecycle (`data-pos="center"`), so they only
-                    appear for the focused card and never compete with the
-                    rest of the orbit. Layout/animation lives in CSS — see
-                    `.center-card-extras` rules in both the mobile and
-                    desktop @media blocks. SSR ships static spans with the
-                    safe baseline values (chapters, minutes); the
-                    progress percent + current-chapter swap are filled in
-                    by `initCenterCardExtras` from localStorage. */}
-                {isSafeLibraryHref(item.href) && (
-                  <div class="center-card-extras" aria-hidden="false">
-                    {item.type === 'book' && (
-                      <a
-                        class="cc-secondary-link"
-                        href={item.href}
-                        data-cc-secondary-link
-                      >
-                        {t('library.centerCard.bookSummaryLink', language)}
-                      </a>
-                    )}
-                    <p class="cc-meta" data-cc-meta>
                       {typeof item.chapterCount === 'number' && item.chapterCount > 0 && (
-                        <span class="cc-meta-item" data-cc-meta-chapters>
-                          {t('library.galaxy.chaptersCount', language, { n: item.chapterCount })}
+                        <span
+                          class="reading-entry-subtitle"
+                          data-cc-chapter-label
+                          data-chapter-template={t('library.readingEntry.chapterN', language, { n: '__N__' })}
+                        >
+                          {t('library.readingEntry.chapterN', language, { n: 1 })}
                         </span>
                       )}
-                      {typeof item.readingMinutes === 'number' && item.readingMinutes > 0 && (
-                        <span class="cc-meta-item" data-cc-meta-minutes>
-                          {t('library.centerCard.metaMinutes', language, { n: item.readingMinutes })}
+                      <div class="cc-meta" data-cc-meta>
+                        {typeof item.chapterCount === 'number' && item.chapterCount > 0 && (
+                          <span class="cc-meta-item" data-cc-meta-chapters>
+                            {t('library.galaxy.chaptersCount', language, { n: item.chapterCount })}
+                          </span>
+                        )}
+                        {typeof item.readingMinutes === 'number' && item.readingMinutes > 0 && (
+                          <span class="cc-meta-item" data-cc-meta-minutes>
+                            {t('library.centerCard.metaMinutes', language, { n: item.readingMinutes })}
+                          </span>
+                        )}
+                        {/* Progress chip ALWAYS renders so the meta row
+                            stays symmetric — a brand-new book reads
+                            "0% הושלם" instead of dropping the chip.
+                            The hydrator overwrites the value once
+                            localStorage has any real percentage. */}
+                        <span
+                          class="cc-meta-item"
+                          data-cc-meta-progress
+                          data-progress-template={t('library.centerCard.metaProgress', language, { n: '__N__' })}
+                        >
+                          {t('library.centerCard.metaProgress', language, { n: 0 })}
                         </span>
-                      )}
-                      {/* Progress span is SSR-hidden; the hydrator unhides
-                          and fills it only when localStorage has any
-                          recorded percentage for this slug. Prevents a
-                          "0% completed" flash on a brand-new book. */}
-                      <span
-                        class="cc-meta-item"
-                        data-cc-meta-progress
-                        data-progress-template={t('library.centerCard.metaProgress', language, { n: '__N__' })}
-                        hidden
-                      ></span>
-                    </p>
-                  </div>
+                      </div>
+                    </div>
+                  </a>
                 )}
                 {/* `.galaxy-cta` slot is now only rendered for series
                     capsules — the open-orb (`.galaxy-cta-open`) was
@@ -835,11 +832,18 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
 
   .library-root {
     position: relative;
-    /* 100dvh tracks the dynamic viewport so iOS Safari's collapsing
-       URL bar does not leave a strip of empty cosmic backdrop below
-       the content on mobile. Falls back to 100vh in older browsers. */
-    min-height: 100vh;
-    min-height: 100dvh;
+    /* Hard viewport lock — the dashboard is sized to EXACTLY the area
+       below the global header (`--library-dashboard-min-height` is
+       defined by LibraryLayout as calc(100dvh - 72px)). Using `height`
+       (not min-height) means library-root can never grow past the
+       viewport, no matter how tall its inner content gets, so the page
+       cannot scroll under any condition — even when the html/body
+       `:has()` lock fails (older browsers, View Transition wrappers
+       on iOS Safari). The calc() fallback covers the rare case where
+       the layout var doesn't load. 100dvh inside the calc still tracks
+       the dynamic viewport so the iOS URL-bar collapse doesn't leave a
+       cosmic-bg strip uncovered. */
+    height: var(--library-dashboard-min-height, calc(100dvh - 72px));
     width: 100%;
     /* Whole-screen unified backdrop. Mobile uses the two main layers;
        desktop adds side accents + vignette so the entire dashboard
@@ -864,7 +868,13 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
     padding: 0.25rem 1rem 4rem;
     box-sizing: border-box;
     isolation: isolate;
-    overflow-x: hidden;
+    /* `overflow: hidden` on BOTH axes — was `overflow-x: hidden` only,
+       which let tall inner content (e.g. mobile flex column at the
+       sticky-header offset) scroll vertically inside the root even
+       when html/body had `overflow: hidden`. With the `height` cap
+       above + this overflow lock, nothing can produce a scroll bar or
+       a touch-scroll on any breakpoint. */
+    overflow: hidden;
   }
 
   /* ── Cosmic scene background — full-page scene layer ────────────
@@ -923,25 +933,41 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
   :global(html:not(.dark)) .knowledge-scene-img--night {
     opacity: 0;
   }
-  /* Observatory test — the CSS/SVG `.galaxy-observatory` layer is now
-     the light-mode background. The day-scene image is intentionally
-     held at opacity:0 in light mode so it never paints its own baked-in
-     rings behind the orbit, which would duplicate the SVG rings. The
-     <img> stays in the DOM and the PNG stays in public/assets/library —
-     flip this single value back to `opacity: 1` to restore the
-     photographic day background. Dark mode is untouched: it keeps the
-     night image via the rules above. */
+  /* Light-mode background — the photographic "Knowledge Observatory"
+     PNG is the active day-mode scene. The SVG `.galaxy-observatory`
+     ring layer is hidden below in light mode so its rings do not
+     duplicate the rings baked into the PNG. Dark mode is untouched:
+     it keeps the night image via the rules above. */
   :global(html:not(.dark)) .knowledge-scene-img--day {
-    opacity: 0;
+    opacity: 1;
   }
-  /* Light mode — anchor the day scene's TOP edge to the header's
-     bottom so the "Knowledge Observatory" image starts cleanly below
-     the header instead of tucking up behind it. Moves the whole fixed
-     layer (day image + readability veil) down as one unit. The night
-     image keeps `opacity:0` here, so dark mode's `top: calc(4rem -
-     130px)` anchor stays byte-for-byte untouched. */
+  /* Light mode — anchor the day scene container to the TOP of
+     `.library-root` (which sits right below the global header) and let
+     it run to the bottom. Combined with the day-image overrides below
+     (`transform: none` + `object-fit: fill`), the PNG is stretched to
+     fit the entire visible page area cleanly — no header gap, no
+     translate seam. The night image keeps `opacity: 0` here, so dark
+     mode's `top: calc(4rem - 130px)` anchor stays byte-for-byte
+     untouched. */
   :global(html:not(.dark)) .knowledge-scene-background {
-    top: var(--library-header-offset, 72px);
+    top: 0;
+  }
+  /* Day image only — stretch the whole PNG to the container's exact
+     box. Dark mode's night image keeps the original
+     `object-fit: cover` + `translateY(50px)` recipe (defined on the
+     shared `.knowledge-scene-background img` rule above), so dark mode
+     is byte-for-byte unchanged.
+       - `transform: none` cancels the 50px downward shift that the
+         shared rule applies, removing the strip-of-page-bg seam at
+         the container top.
+       - `object-fit: fill` stretches the image to fill the container
+         exactly. The PNG is landscape so on widescreen desktops this
+         is near-imperceptible; portrait phones will see some vertical
+         stretch, which the user explicitly accepted ("stretch if
+         needed"). */
+  :global(html:not(.dark)) .knowledge-scene-img--day {
+    transform: none;
+    object-fit: fill;
   }
   /* Soft radial vignette — keeps the central glow untouched and
      darkens only the edges so floating cards + side panels read
@@ -980,15 +1006,40 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
      in galaxy.css scoped to `:root:not(.dark) .library-dark-showcase`.)
      ════════════════════════════════════════════════════════════════ */
 
-  /* Page base — the fixed day-scene image covers the viewport, but the
-     html/body and root fills sit behind it. Swap the deep navy for a
-     warm ivory so any sliver that shows reads as daylight, not a seam. */
+  /* Page base — color-matched to the Knowledge Observatory PNG so the
+     page feels carved from the same scene. Palette stops sampled
+     directly from the image:
+       #ece5d4  outer rim / corners of the PNG
+       #efe9d8  general field tone
+       #f6f0e2  warm bright center where the book glows
+     The IMG layer is shifted by `transform: translateY(50px)`, which
+     uncovers a 50px strip at the top of `.knowledge-scene-background`
+     and reveals `.library-root` underneath. Painting the root in the
+     PNG's exact edge tone makes that strip vanish into the image —
+     no visible seam where one ends and the other begins.
+
+     The body/html bg uses the same edge color so iOS rubber-band, the
+     URL-bar morph, and any layout sliver around the image all read as
+     daylight paper instead of a cooler ivory mismatch.
+
+     `.library-root` adds a soft warm radial that echoes the PNG's
+     center-glow → edge-fade structure, anchored at 50% 40% (where the
+     glowing book sits in the image). Subtle enough not to compete with
+     the PNG painted on top, but keeps the leaked root bg coherent with
+     the scene at the top-strip seam and around any layout sliver. */
   :global(html:not(.dark):has(.library-dark-showcase)),
   :global(html:not(.dark) body:has(.library-dark-showcase)) {
-    background-color: #f1eee6;
+    background-color: #ece5d4;
   }
   :global(html:not(.dark)) .library-root {
-    background-color: #f4f1ea;
+    background-color: #ece5d4;
+    background-image:
+      radial-gradient(
+        ellipse 70% 55% at 50% 40%,
+        rgba(246, 240, 226, 0.85) 0%,
+        rgba(239, 233, 216, 0.55) 45%,
+        rgba(236, 229, 212, 0) 80%
+      );
     /* Light mode adds breathing room below the (now light-glass)
        header so the hero "ברוך הבא" eyebrow + "מרחב הידע" title never
        read as clipped or squeezed against the header line. Specificity
@@ -1020,14 +1071,16 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
   :global(html:not(.dark)) .cc-secondary-link:focus-visible {
     box-shadow: 0 0 0 2px rgba(34, 52, 92, 0.40);
   }
-  :global(html:not(.dark)) .cc-meta {
-    color: rgba(34, 52, 92, 0.60);
-  }
+  /* The chips now live INSIDE the dark image panel, so they read the
+     same in both themes — no light-mode chip override needed. The
+     standalone extras wrapper, section label and secondary link are
+     all display:none in the new image-panel design, so their
+     light-mode rules above are dead but kept for back-compat in case
+     a future theme un-hides them.
 
-  /* Reading button (focused-card entry overlay) — the focus ring was a
-     blue+violet neon double-glow. In light mode soften it to a calm
-     navy hairline + a gentle drop shadow: same shape, same identity,
-     no neon. */
+     Reading-entry image-based CTA focus ring — the dark neon double
+     glow is too loud on the bright day scene. Soften to a calm navy
+     hairline that traces the image's actual rounded-rect shape. */
   :global(html:not(.dark)) .reading-entry-overlay:focus-visible .reading-entry-asset {
     box-shadow:
       0 0 0 2px rgba(34, 52, 92, 0.38),
@@ -1195,7 +1248,12 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
                 var(--yuval-galaxy-ease-soft, ease);
   }
   :global(html:not(.dark)) .galaxy-observatory {
-    display: block;
+    /* Hidden in light mode — the photographic day-scene PNG
+       (`knowledge-observatory-day-bg.png`) carries its own observatory
+       rings, so this SVG layer would duplicate them. Kept in the DOM
+       so dark mode (which never matches `:not(.dark)`) is unaffected
+       and the markup-driven aria layer stays stable. */
+    display: none;
   }
   .obs-svg {
     width: 100%;
@@ -1833,34 +1891,25 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       width: 12px;
       height: 12px;
     }
-    /* Reading-entry panel below the focused card. On mobile Tomer
-       asked for a wider + shorter pill (the desktop 66%×108px shape
-       was too tall for a phone), then +25% on both axes so the CTA
-       reads clearly under the scaled-up centered card. */
+    /* Image-based reading-entry panel — mobile equivalent of the
+       desktop CTA. The visual base IS `reading-entry-card1.png`. The
+       title, subtitle and meta row all live INSIDE the panel.
+       FULL counter-scale (cbw/70vw) neutralises the focused card's
+       70vw/cbw scale so spec px values map 1:1 to visible pixels. */
     .reading-entry-overlay {
       position: absolute;
       left: 50%;
-      /* Pill anchors to the visible bottom edge of the cover, not the
-         .galaxy-card element's bottom — the card carries ~28px of
-         transparent padding below the cover (see LibraryCard
-         `.lc-orbit` padding-bottom + artifact margin), so top:100%
-         lands 28px under the visible art. Multiplied by the centered
-         card's 3.042× scale that's an ~85px visual gap. The negative
-         offset closes that gap so the pill sits flush against the
-         cover. */
-      top: calc(100% - 32px);
-      width: 120%;
-      height: 80px;
-      /* Counter-scale to preserve the pill's previous visual size
-         (≈ scale 2.34) while the centered card scale is now derived
-         from 70vw. The math: pill_scale = 2.34 / card_scale, where
-         card_scale = 70vw / var(--card-base-width). Substituting and
-         simplifying gives `2.34 * var(--card-base-width) / 70vw`.
-         transform-origin anchors the shrink to the pill's top-center
-         so it doesn't drift up. */
+      /* 14px visible gap below the cover. With FULL counter-scale the
+         spec value applies 1:1. */
+      top: calc(100% - 14px);
+      width: 92vw;
+      max-width: 390px;
+      height: 190px;
+      border-radius: 22px;
+      box-sizing: border-box;
       transform:
         translate(-50%, 0)
-        scale(calc(2.34 * var(--card-base-width) / 70vw));
+        scale(calc(var(--card-base-width) / 70vw));
       transform-origin: top center;
       display: block;
       margin: 0;
@@ -1876,8 +1925,9 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       pointer-events: none;
       z-index: 30;
       transition:
+        transform 180ms ease,
+        filter 180ms ease,
         opacity 240ms cubic-bezier(0.4, 0, 0.2, 1),
-        transform 240ms cubic-bezier(0.4, 0, 0.2, 1),
         visibility 0s linear 240ms;
     }
     .galaxy-card[data-pos="center"] .reading-entry-overlay {
@@ -1885,8 +1935,9 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       visibility: visible;
       pointer-events: auto;
       transition:
+        transform 180ms ease,
+        filter 180ms ease,
         opacity 240ms cubic-bezier(0.4, 0, 0.2, 1),
-        transform 240ms cubic-bezier(0.4, 0, 0.2, 1),
         visibility 0s linear 0s;
     }
     .reading-entry-overlay:focus-visible {
@@ -1895,8 +1946,8 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
     .reading-entry-asset {
       position: absolute;
       inset: 0;
-      border-radius: 24px;
-      background-image: url('/assets/ui/reading-entry/reading-entry-card.png');
+      border-radius: 22px;
+      background-image: url('/assets/ui/reading-entry/reading-entry-card1.png');
       background-size: 100% 100%;
       background-repeat: no-repeat;
       background-position: center;
@@ -1909,12 +1960,14 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
     .reading-entry-text {
       position: absolute;
       left: 50%;
-      top: calc(60% + 2px);
-      width: 92%;
+      top: 60%;
+      width: 94%;
       transform: translate(-50%, -50%);
       display: flex;
       flex-direction: column;
       align-items: center;
+      justify-content: center;
+      gap: 8px;
       text-align: center;
       pointer-events: none;
       font-family:
@@ -1922,120 +1975,97 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
         'Segoe UI', 'Noto Sans Hebrew', sans-serif;
     }
     .reading-entry-title {
-      /* Mobile-only smaller text. The centered card scales 2.34×, so
-         even 7px renders at ~16px effective — readable but no longer
-         overpowering the pill. */
-      font-size: 7px;
+      font-size: 25px;
       font-weight: 700;
-      line-height: 1.1;
-      white-space: nowrap;
-      color: rgba(248, 252, 255, 0.98);
+      line-height: 1.05;
+      color: rgba(255, 255, 255, 0.96);
       text-shadow:
-        0 0 10px rgba(90, 160, 255, 0.35),
-        0 2px 4px rgba(0, 0, 0, 0.65);
+        0 0 10px rgba(120, 180, 255, 0.30),
+        0 2px 4px rgba(0, 0, 0, 0.55);
+      margin: 0;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
-    .reading-entry-overlay:hover .reading-entry-asset,
-    .reading-entry-overlay:focus-visible .reading-entry-asset {
-      filter: brightness(1.06) saturate(1.05);
-    }
-    .reading-entry-overlay:active .reading-entry-asset {
-      transform: scale(0.985);
-    }
-
-    /* ── Center-card extras (mobile) ────────────────────────────────
-       A quiet secondary link + a thin metadata row that live UNDER
-       the glowing reading-entry pill. They share the pill's
-       visibility lifecycle (`data-pos="center"`) so they only show
-       up for the focused card.
-
-       Positioning math: the pill itself is anchored at
-       `top: calc(100% - 32px)` and visually inflates by the same
-       counter-scale this block uses (`2.34 * card-base-width / 70vw`).
-       Its visual height after counter-scale is roughly 80px, putting
-       its visual bottom at around `100% + 48px` of the unscaled card.
-       We anchor the extras at `100% + 56px` so the secondary link
-       sits ~8px under the pill's visible bottom — close enough to
-       read as one compact action block, far enough to stay legible.
-       transform-origin is `top center` so the counter-scale doesn't
-       drift the group sideways.
-
-       Inner `gap: 4px` controls the secondary-link → metadata row
-       distance, matching the user's compact-stack spec (4-6px). */
-    .center-card-extras {
-      position: absolute;
-      left: 50%;
-      top: calc(100% + 56px);
-      width: 130%;
-      transform:
-        translate(-50%, 0)
-        scale(calc(2.34 * var(--card-base-width) / 70vw));
-      transform-origin: top center;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 4px;
-      pointer-events: none;
-      opacity: 0;
-      visibility: hidden;
-      z-index: 29;
-      transition:
-        opacity 240ms cubic-bezier(0.4, 0, 0.2, 1),
-        visibility 0s linear 240ms;
-    }
-    .galaxy-card[data-pos="center"] .center-card-extras {
-      opacity: 1;
-      visibility: visible;
-      pointer-events: auto;
-      transition:
-        opacity 240ms cubic-bezier(0.4, 0, 0.2, 1),
-        visibility 0s linear 0s;
-    }
-    .cc-secondary-link {
-      font-size: 9px;
+    .reading-entry-subtitle {
+      font-size: 14px;
       font-weight: 500;
       line-height: 1.2;
-      color: rgba(225, 234, 255, 0.78);
-      text-decoration: underline;
-      text-decoration-color: rgba(180, 200, 255, 0.28);
-      text-underline-offset: 3px;
-      text-decoration-thickness: 1px;
-      padding: 2px 6px;
-      border-radius: 6px;
-      background: transparent;
-      pointer-events: auto;
-      transition: color 0.18s ease, text-decoration-color 0.18s ease;
+      color: rgba(255, 255, 255, 0.72);
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+      margin: 0;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
-    .cc-secondary-link:hover,
-    .cc-secondary-link:focus-visible {
-      color: rgba(255, 255, 255, 0.96);
-      text-decoration-color: rgba(180, 210, 255, 0.85);
-      outline: none;
+    /* Very small phones (≤360px): tighten panel + text so nothing
+       clips in the in-panel layout. */
+    @media (max-width: 360px) {
+      .reading-entry-overlay {
+        width: 94vw;
+        height: 178px;
+      }
+      .reading-entry-title    { font-size: 23px; }
+      .reading-entry-subtitle { font-size: 13px; }
     }
+    /* Hover is desktop-only per the spec — mobile keeps just the
+       press-in scale + brightness so taps still feel responsive. */
+    .reading-entry-overlay:active {
+      transform:
+        translate(-50%, 0)
+        scale(calc((var(--card-base-width) / 70vw) * 0.985));
+      filter: brightness(1.04);
+    }
+
+    /* Standalone extras wrapper, secondary link and section label are
+       retired in this design — the meta row now lives INSIDE the
+       reading-entry panel itself. They are kept in the DOM only for
+       a11y back-compat. */
+    .center-card-extras,
+    .cc-secondary-link,
+    .cc-meta-label {
+      display: none;
+    }
+    /* In-panel lesson meta row — bottom child of `.reading-entry-text`
+       on mobile too. Inherits the panel's counter-scale + centered
+       axis; chips are tightened to fit the narrower phone width. */
     .cc-meta {
       margin: 0;
       padding: 0;
-      font-size: 7px;
-      line-height: 1.25;
-      color: rgba(210, 220, 240, 0.55);
-      letter-spacing: 0.01em;
       display: flex;
+      flex-direction: row;
       flex-wrap: wrap;
       justify-content: center;
       align-items: center;
-      gap: 0 6px;
-      white-space: normal;
+      gap: 6px;
+      font-family:
+        'Heebo', 'Inter', system-ui, -apple-system,
+        'Segoe UI', 'Noto Sans Hebrew', sans-serif;
     }
     .cc-meta-item {
       display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 26px;
+      padding: 0 10px;
+      border-radius: 999px;
+      box-sizing: border-box;
+      font-size: 12px;
+      font-weight: 500;
+      line-height: 1;
+      color: rgba(235, 242, 255, 0.92);
       white-space: nowrap;
+      background: rgba(8, 18, 40, 0.55);
+      border: 1px solid rgba(130, 180, 240, 0.28);
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
     }
-    /* Middot separators rendered via ::before so we don't need a
-       middot in the localized string. Skipped on the first visible
-       chip via :first-child / `[hidden]` siblings. */
+    /* Disable the legacy middot separator. */
     .cc-meta-item + .cc-meta-item::before {
-      content: "·";
-      margin-inline-end: 6px;
-      opacity: 0.7;
+      content: none;
     }
   }
 
@@ -3238,13 +3268,34 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
        when `data-reading-entry-state="opening"` is set on the stage.
        Opacity-only fade keeps the link in the accessibility tree
        until the launch is committed. */
+    /* Image-based reading-entry panel. The visual base IS the
+       `reading-entry-card1.png` asset — it carries the icon (top
+       center), the glass background, the border and the glow.
+       Title, subtitle AND the lesson meta row all live INSIDE this
+       single panel (not in a separate section below) so the CTA and
+       its facts read as one premium glass surface.
+
+       Width math: `calc(85% * 1.5)` resolves to 127.5% of the parent
+       box. Combined with the parent's 1.5× scale and this element's
+       1/1.5 counter-scale, the visible CTA renders at exactly 85% of
+       the visible card width. */
     .reading-entry-overlay {
       position: absolute;
       left: 50%;
-      top: calc(100% - 34px);
-      width: 66%;
-      height: 108px;
-      transform: translate(-50%, 0);
+      /* 18px visible gap below the cover's visible bottom. Cover
+         visible bottom sits ~42px above the card's flow-box bottom
+         (lc-orbit ~28px padding × 1.5 parent scale). For an 18px
+         visible gap, the CTA's visible top should land 24px below
+         the flow-box bottom; in box space that's 24/1.5 = 16px. */
+      top: calc(100% - 16px);
+      width: calc(85% * 1.5);
+      max-width: 620px;
+      min-width: 420px;
+      height: 220px;
+      border-radius: 28px;
+      box-sizing: border-box;
+      transform: translate(-50%, 0) scale(calc(1 / 1.5));
+      transform-origin: top center;
       display: block;
       margin: 0;
       padding: 0;
@@ -3257,18 +3308,11 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       opacity: 0;
       visibility: hidden;
       pointer-events: none;
-      /* Sits over the card art and the LibraryCard caption. Centered
-         card already creates a stacking context at z-index 30, so this
-         z-index is intra-card only. The viewport-level portal overlay
-         used for the launch animation lives at the page root (z-index
-         9999), independent of this stacking context. */
       z-index: 30;
-      /* Direction is inherited from the page (rtl for Hebrew, ltr for
-         English) so RTL/LTR fall out automatically — no per-language
-         override here. */
       transition:
+        transform 180ms ease,
+        filter 180ms ease,
         opacity 240ms cubic-bezier(0.4, 0, 0.2, 1),
-        transform 240ms cubic-bezier(0.4, 0, 0.2, 1),
         visibility 0s linear 240ms;
     }
     .galaxy-card[data-pos="center"] .reading-entry-overlay {
@@ -3276,8 +3320,9 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       visibility: visible;
       pointer-events: auto;
       transition:
+        transform 180ms ease,
+        filter 180ms ease,
         opacity 240ms cubic-bezier(0.4, 0, 0.2, 1),
-        transform 240ms cubic-bezier(0.4, 0, 0.2, 1),
         visibility 0s linear 0s;
     }
     .reading-entry-overlay:focus-visible {
@@ -3289,14 +3334,12 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
         0 0 22px rgba(112, 87, 255, 0.45);
     }
 
-    /* Decorative PNG asset — the visual card. No baked text. Sized to
-       fully cover the overlay and carry its border-radius so the
-       focus ring traces the panel's actual shape. */
+    /* The PNG IS the panel — painted edge-to-edge over the <a>. */
     .reading-entry-asset {
       position: absolute;
       inset: 0;
-      border-radius: 24px;
-      background-image: url('/assets/ui/reading-entry/reading-entry-card.png');
+      border-radius: 28px;
+      background-image: url('/assets/ui/reading-entry/reading-entry-card1.png');
       background-size: 100% 100%;
       background-repeat: no-repeat;
       background-position: center;
@@ -3307,20 +3350,22 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
         filter 220ms ease;
     }
 
-    /* Live i18n text rendered over the lower text area of the asset.
-       Single title line — sits below the asset's built-in icon and
-       above the card's author area. The i18n subtitle key still
-       exists in translations.ts for future reuse, but no element
-       renders it in this overlay. */
+    /* Live i18n stack — title, subtitle, then the lesson meta row.
+       Positioned ABSOLUTELY over the lower portion of the asset so
+       the icon baked into the PNG stays clear at the top center. The
+       wrapper itself is a flex column so all three rows share one
+       centered axis. */
     .reading-entry-text {
       position: absolute;
       left: 50%;
-      top: calc(60% + 2px);
+      top: 60%;
       width: 92%;
       transform: translate(-50%, -50%);
       display: flex;
       flex-direction: column;
       align-items: center;
+      justify-content: center;
+      gap: 10px;
       text-align: center;
       pointer-events: none;
       font-family:
@@ -3328,23 +3373,47 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
         'Segoe UI', 'Noto Sans Hebrew', sans-serif;
     }
     .reading-entry-title {
-      font-size: 12px;
+      font-size: 32px;
       font-weight: 700;
-      line-height: 1.1;
+      line-height: 1.05;
+      letter-spacing: 0;
       white-space: nowrap;
-      color: rgba(248, 252, 255, 0.98);
+      color: rgba(255, 255, 255, 0.96);
       text-shadow:
-        0 0 10px rgba(90, 160, 255, 0.35),
-        0 2px 4px rgba(0, 0, 0, 0.65);
+        0 0 12px rgba(120, 180, 255, 0.30),
+        0 2px 6px rgba(0, 0, 0, 0.55);
+      margin: 0;
+    }
+    .reading-entry-subtitle {
+      font-size: 18px;
+      font-weight: 500;
+      line-height: 1.2;
+      color: rgba(255, 255, 255, 0.72);
+      white-space: nowrap;
+      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
+      margin: 0;
     }
 
-    /* Hover / focus — gentle lift on the asset, no jump. */
-    .reading-entry-overlay:hover .reading-entry-asset,
-    .reading-entry-overlay:focus-visible .reading-entry-asset {
-      filter: brightness(1.06) saturate(1.05);
+    /* Hover / active — translate + brightness lift on the asset and a
+       tiny press-in scale. The translate is added to the existing
+       counter-scale matrix so the panel doesn't snap. */
+    .reading-entry-overlay:hover {
+      transform:
+        translate(-50%, -2px)
+        scale(calc(1 / 1.5));
+      filter: brightness(1.08);
+    }
+    .reading-entry-overlay:hover .reading-entry-asset {
+      filter: brightness(1.04) saturate(1.05);
+    }
+    .reading-entry-overlay:active {
+      transform:
+        translate(-50%, 0)
+        scale(calc((1 / 1.5) * 0.985));
+      filter: none;
     }
     .reading-entry-overlay:active .reading-entry-asset {
-      transform: scale(0.985);
+      filter: none;
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -3352,104 +3421,63 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       .reading-entry-asset {
         transition: none;
       }
+      .reading-entry-overlay:hover {
+        transform: translate(-50%, 0) scale(calc(1 / 1.5));
+        filter: none;
+      }
     }
 
-    /* ── Center-card extras (desktop ≥1024px) ───────────────────────
-       Quiet secondary text link + thin metadata row living UNDER the
-       existing glowing pill. They are NOT a panel — no border, no
-       background — just text that fades in alongside the pill when
-       its card is centered. The pill itself is untouched.
+    /* The standalone `.center-card-extras` wrapper was retired — the
+       meta row now lives INSIDE the reading-entry panel itself. The
+       wrapper, secondary link and section label are still defined in
+       the DOM/CSS only as dead cohabitants of the panel block; both
+       are pinned to display:none below so they never paint. */
+    .center-card-extras,
+    .cc-secondary-link,
+    .cc-meta-label {
+      display: none;
+    }
 
-       Anchoring: the pill is `top: calc(100% - 34px)` with height
-       108px, so its visible bottom edge is at `100% + 74px` from
-       the card's top. The desktop centered card scales 1.5×, which
-       inflates this group too — we deliberately do NOT counter-scale,
-       since at 1.5× the text reads at a comfortable size and matches
-       the pill's own scaling rhythm. With `100% + 78px` (was 80px)
-       the secondary link visually sits ~6px below the pill's bottom
-       before the 1.5× card scale — i.e. ~9px once scaled — which
-       falls inside the user's 8-10px target for the button → link
-       gap. Inner `gap: 5px` controls the secondary-link → metadata
-       row distance (≈8px after scale), matching the 4-6px / 6-9px
-       targets respectively. */
-    .center-card-extras {
-      position: absolute;
-      left: 50%;
-      top: calc(100% + 78px);
-      width: 80%;
-      transform: translate(-50%, 0);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 5px;
-      pointer-events: none;
-      opacity: 0;
-      visibility: hidden;
-      z-index: 29;
-      transition:
-        opacity 260ms cubic-bezier(0.4, 0, 0.2, 1) 40ms,
-        visibility 0s linear 260ms;
-    }
-    .galaxy-card[data-pos="center"] .center-card-extras {
-      opacity: 1;
-      visibility: visible;
-      pointer-events: auto;
-      transition:
-        opacity 260ms cubic-bezier(0.4, 0, 0.2, 1) 80ms,
-        visibility 0s linear 0s;
-    }
-    .cc-secondary-link {
-      font-size: 11px;
-      font-weight: 500;
-      line-height: 1.2;
-      color: rgba(225, 234, 255, 0.78);
-      text-decoration: underline;
-      text-decoration-color: rgba(180, 200, 255, 0.30);
-      text-underline-offset: 3px;
-      text-decoration-thickness: 1px;
-      padding: 2px 8px;
-      border-radius: 6px;
-      background: transparent;
-      pointer-events: auto;
-      transition: color 0.18s ease, text-decoration-color 0.18s ease;
-      font-family:
-        'Heebo', 'Inter', system-ui, -apple-system,
-        'Segoe UI', 'Noto Sans Hebrew', sans-serif;
-    }
-    .cc-secondary-link:hover,
-    .cc-secondary-link:focus-visible {
-      color: rgba(255, 255, 255, 0.96);
-      text-decoration-color: rgba(180, 210, 255, 0.85);
-      outline: none;
-    }
-    .cc-secondary-link:focus-visible {
-      box-shadow: 0 0 0 2px rgba(150, 200, 255, 0.45);
-    }
+    /* In-panel lesson meta row — sits as the bottom child of
+       `.reading-entry-text`, so it inherits the panel's centered axis
+       and the same counter-scale (no extra positioning needed). Chips
+       stay lightweight so they read as scannable facts under the CTA
+       headline, not as competing controls. */
     .cc-meta {
       margin: 0;
       padding: 0;
-      font-size: 9px;
-      line-height: 1.25;
-      color: rgba(210, 220, 240, 0.55);
-      letter-spacing: 0.02em;
       display: flex;
-      flex-wrap: wrap;
+      flex-direction: row;
       justify-content: center;
       align-items: center;
-      gap: 0 8px;
-      white-space: normal;
+      flex-wrap: wrap;
+      gap: 8px;
       font-family:
         'Heebo', 'Inter', system-ui, -apple-system,
         'Segoe UI', 'Noto Sans Hebrew', sans-serif;
     }
     .cc-meta-item {
       display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 30px;
+      padding: 0 12px;
+      border-radius: 999px;
+      box-sizing: border-box;
+      font-size: 13px;
+      font-weight: 500;
+      line-height: 1;
+      color: rgba(235, 242, 255, 0.92);
       white-space: nowrap;
+      background: rgba(8, 18, 40, 0.55);
+      border: 1px solid rgba(130, 180, 240, 0.28);
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
     }
+    /* The legacy middot separator is incompatible with the chip layout. */
     .cc-meta-item + .cc-meta-item::before {
-      content: "·";
-      margin-inline-end: 8px;
-      opacity: 0.7;
+      content: none;
     }
 
     /* Match the pill's launch fade — when the user activates the
@@ -4461,10 +4489,11 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
    *      reverting to the start-of-book copy.
    *
    *   2. The metadata row's progress span (`[data-cc-meta-progress]`)
-   *      becomes visible and renders "<avg>% הושלם" — using the
-   *      template on `data-progress-template` — when avg > 0. Brand-
-   *      new books with no progress keep the span hidden, so the row
-   *      never reads "0% הושלם" on a first visit.
+   *      is ALWAYS rendered (SSR ships "0% הושלם") so the chip row
+   *      stays symmetric. The hydrator overwrites the value with the
+   *      real average whenever localStorage has progress entries —
+   *      including a real 0 — so it reflects actual state instead of
+   *      a stale SSR default.
    *
    * Read-only against localStorage; never writes. Safe to run before
    * or after `hydrateOrbitProgress` (independent data fields).
@@ -4521,21 +4550,38 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
           const continueHref = `/read/${slug}/${highestWithProgress}`;
           pill.setAttribute('href', continueHref);
           pill.setAttribute('data-reading-entry-href', continueHref);
+          // aria-label kept in sync with the visible chapter so screen
+          // readers announce "המשך קריאה בפרק N" alongside the live
+          // subtitle below.
+          const ariaTmpl = pill.dataset.ariaTemplate;
+          if (ariaTmpl) {
+            pill.setAttribute('aria-label', ariaTmpl.replace('__N__', String(highestWithProgress)));
+          }
         }
       }
 
-      // Patch progress chip when avg > 0. Sum/total (not sum/entries)
-      // mirrors hydrateOrbitProgress so a 50%-read single chapter in
-      // a 10-chapter book reads as 5%, not 50% — consistent with the
-      // existing progress bar's interpretation.
-      const avg = Math.round(sum / total);
-      if (avg > 0) {
-        const progEl = card.querySelector<HTMLElement>('[data-cc-meta-progress]');
-        const tmpl = progEl?.dataset.progressTemplate;
-        if (progEl && tmpl) {
-          progEl.textContent = tmpl.replace('__N__', String(avg));
-          progEl.hidden = false;
-        }
+      // Chapter subtitle below the main CTA label ("פרק N"). SSR ships
+      // "פרק 1"; when stored progress identifies a higher chapter, swap
+      // it in. Independent of the primary label patch above so that a
+      // brand-new book still reads "פרק 1" instead of going blank.
+      const chapterEl = card.querySelector<HTMLElement>('[data-cc-chapter-label]');
+      const chapterTmpl = chapterEl?.dataset.chapterTemplate;
+      if (chapterEl && chapterTmpl && highestWithProgress > 0) {
+        chapterEl.textContent = chapterTmpl.replace('__N__', String(highestWithProgress));
+      }
+
+      // Patch progress chip. Sum/total (not sum/entries) mirrors
+      // hydrateOrbitProgress so a 50%-read single chapter in a 10-
+      // chapter book reads as 5%, not 50% — consistent with the
+      // existing progress bar's interpretation. We rewrite the chip
+      // even when entries === 0 / avg === 0, so a brand-new book
+      // continues to read "0% הושלם" instead of producing a stale
+      // value if SSR ever changes its default.
+      const avg = entries > 0 ? Math.round(sum / total) : 0;
+      const progEl = card.querySelector<HTMLElement>('[data-cc-meta-progress]');
+      const tmpl = progEl?.dataset.progressTemplate;
+      if (progEl && tmpl) {
+        progEl.textContent = tmpl.replace('__N__', String(avg));
       }
     });
   }

@@ -8,7 +8,9 @@
       "PowerShell(npx astro check --minimumSeverity error 2>&1)",
       "PowerShell(npm install three)",
       "PowerShell(npm install --save-dev \"@types/three\")",
-      "PowerShell(Copy-Item -LiteralPath \"src\\\\pages\\\\library.astro\" -Destination \"src\\\\pages\\\\index.astro\" -Force; \\(Get-Item \"src\\\\pages\\\\index.astro\"\\).Length)"
+      "PowerShell(Copy-Item -LiteralPath \"src\\\\pages\\\\library.astro\" -Destination \"src\\\\pages\\\\index.astro\" -Force; \\(Get-Item \"src\\\\pages\\\\index.astro\"\\).Length)",
+      "PowerShell($c = Get-Content -Raw 'c:\\\\D\\\\Books\\\\bookforge\\\\src\\\\pages\\\\index.astro'; $open=\\([regex]::Matches\\($c,'\\\\{'\\)\\).Count; $close=\\([regex]::Matches\\($c,'\\\\}'\\)\\).Count; \"braces: $open / $close \\(delta $\\($open-$close\\)\\); lines: $\\(\\(\\($c -split \"`n\"\\).Count\\)\\)\")",
+      "PowerShell($c = Get-Content -Raw 'c:\\\\D\\\\Books\\\\bookforge\\\\src\\\\pages\\\\index.astro'; $open=\\([regex]::Matches\\($c,'\\\\{'\\)\\).Count; $close=\\([regex]::Matches\\($c,'\\\\}'\\)\\).Count; \"braces: $open / $close \\(delta $\\($open-$close\\)\\)\")"
     ]
   }
 }

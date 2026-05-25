@@ -555,11 +555,20 @@ export const translations: Translations = {
   'library.readingEntry.title':     { he: 'כניסה לקריאה',          en: 'Enter reading',                  es: 'Entrar a la lectura' },
   'library.readingEntry.subtitle':  { he: 'לחץ כדי לפתוח את מרחב הספר', en: 'Click to open the book space',   es: 'Haz clic para abrir el espacio del libro' },
   'library.readingEntry.ariaLabel': { he: 'כניסה לקריאה',          en: 'Enter reading',                  es: 'Entrar a la lectura' },
+  // Chapter-aware aria-label used by the image-based CTA panel below the
+  // focused card. Renders as "המשך קריאה בפרק 21" / "Continue reading at
+  // chapter 21" once the hydration script knows which chapter is current.
+  'library.readingEntry.continueChapterAria': { he: 'המשך קריאה בפרק {{n}}', en: 'Continue reading at chapter {{n}}', es: 'Continuar leyendo en el capítulo {{n}}' },
   // Dynamic label swap for the existing pill when stored reading
   // progress for the focused book points at a specific chapter.
   // Falls back to `library.readingEntry.title` ("כניסה לקריאה")
   // when no progress is available — see hydration in index.astro.
   'library.readingEntry.continueChapter': { he: 'המשך · פרק {{n}}',     en: 'Continue · Chapter {{n}}',       es: 'Continuar · Capítulo {{n}}' },
+  // Two-line CTA: a constant primary label + a separate "Chapter N"
+  // subtitle. Used by the redesigned premium glass action panel below
+  // the focused card.
+  'library.readingEntry.continueReadingShort': { he: 'המשך קריאה', en: 'Continue reading', es: 'Continuar leyendo' },
+  'library.readingEntry.chapterN':              { he: 'פרק {{n}}', en: 'Chapter {{n}}',    es: 'Capítulo {{n}}' },
 
   // ── library.centerCard.* — quiet secondary link + metadata row that
   //    sit BELOW the existing reading-entry pill on the focused card.
@@ -567,6 +576,9 @@ export const translations: Translations = {
   'library.centerCard.bookSummaryLink': { he: 'מה יש בספר?',          en: 'What is in this book?',          es: '¿Qué hay en este libro?' },
   'library.centerCard.metaMinutes':     { he: '{{n}} דק׳ קריאה',     en: '{{n}} min read',                 es: '{{n}} min de lectura' },
   'library.centerCard.metaProgress':    { he: '{{n}}% הושלם',         en: '{{n}}% completed',               es: '{{n}}% completado' },
+  // Section label that sits above the three glass meta capsules in the
+  // redesigned action area below the focused card.
+  'library.centerCard.metaSectionLabel': { he: 'מה כולל השיעור?', en: "What's in this lesson?", es: '¿Qué incluye esta lección?' },
   'library.galaxy.nextBooks':       { he: 'ספרים הבאים',      en: 'Next books',          es: 'Siguientes libros' },
   'library.galaxy.prevBooks':       { he: 'ספרים קודמים',     en: 'Previous books',      es: 'Libros anteriores' },
   'library.galaxy.nextLessons':     { he: 'שיעורים הבאים',    en: 'Next lessons',        es: 'Siguientes lecciones' },

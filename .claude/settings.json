@@ -12,7 +12,10 @@
       "PowerShell(npm list -g @anthropic-ai/claude-code 2>$null)",
       "PowerShell(npm view @anthropic-ai/claude-code version)",
       "PowerShell(npm root -g)",
-      "PowerShell(Copy-Item -Path \"c:\\\\D\\\\Books\\\\bookforge\\\\public\\\\Lesson-5-From-LLM-To-Agent\" -Destination \"c:\\\\D\\\\Books\\\\bookforge\\\\public\\\\Lesson-5-From-LLM-To-Agent\" -Recurse -Force)"
+      "PowerShell(Copy-Item -Path \"c:\\\\D\\\\Books\\\\bookforge\\\\public\\\\Lesson-5-From-LLM-To-Agent\" -Destination \"c:\\\\D\\\\Books\\\\bookforge\\\\public\\\\Lesson-5-From-LLM-To-Agent\" -Recurse -Force)",
+      "PowerShell($c = Get-Content -Raw 'c:\\\\D\\\\Books\\\\bookforge\\\\src\\\\pages\\\\index.astro'; $open=\\([regex]::Matches\\($c,'\\\\{'\\)\\).Count; $close=\\([regex]::Matches\\($c,'\\\\}'\\)\\).Count; \"braces: $open / $close \\(delta $\\($open-$close\\)\\); lines: $\\(\\(\\($c -split \"`n\"\\).Count\\)\\)\")",
+      "PowerShell(& \"C:\\\\Program Files\\\\nodejs\\\\npx.cmd\" astro check --root 'c:\\\\D\\\\Books\\\\bookforge' 2>&1)",
+      "PowerShell(Add-Type -AssemblyName System.Drawing; $img = [System.Drawing.Image]::FromFile\\('c:\\\\D\\\\Books\\\\bookforge\\\\public\\\\assets\\\\ui\\\\reading-entry\\\\reading-entry-card1.png'\\); \"$\\($img.Width\\)x$\\($img.Height\\) ratio=$\\([math]::Round\\($img.Width/$img.Height,3\\)\\)\"; $img.Dispose\\(\\))"
     ],
     "additionalDirectories": [
       "D:\\2025 Stu\\AI Engineer\\AllBooks2026\\Claude Code - Book\\bookforge",
