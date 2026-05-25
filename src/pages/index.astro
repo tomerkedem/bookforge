@@ -4909,34 +4909,10 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       opacity: 1;
     }
 
-    /* ── Card response — gravitational pull toward the core ─────
-       Uses the standalone `scale` + `filter` + `opacity` properties so
-       the existing `transform` on `.galaxy-card` (orbit positioning
-       via cos/sin) stays untouched. */
-    .galaxy-card[data-core-search-match="yes"] {
-      scale: 1.08;
-      opacity: 1;
-      filter: brightness(1.08) saturate(1.1)
-        drop-shadow(0 0 18px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 55%, transparent));
-      transition:
-        scale 320ms cubic-bezier(0.34, 1.4, 0.64, 1),
-        opacity 240ms ease,
-        filter 240ms ease;
-      z-index: 5;
-    }
-    .galaxy-card[data-core-search-match="no"] {
-      scale: 0.9;
-      opacity: 0.32;
-      filter: brightness(0.65) saturate(0.7) blur(0.5px);
-      transition:
-        scale 320ms cubic-bezier(0.4, 0, 0.2, 1),
-        opacity 240ms ease,
-        filter 240ms ease;
-    }
-    /* While the panel is open with an empty query, no per-card match
-       marker exists — the entire orbit sits in its calm resting state
-       behind the glass panel. A very gentle global dim keeps the panel
-       readable without obscuring the cards. */
+    /* While the mobile panel is open with an empty query, no per-card
+       match marker exists — gentle global dim draws attention to the
+       glass panel without obscuring the cards. Desktop has no panel,
+       so this state-driven dim is mobile-only by design. */
     .library-galaxy[data-core-search-state="open"]
       .galaxy-card:not([data-core-search-match]),
     .library-galaxy[data-core-search-state="no-matches"]
@@ -4945,19 +4921,51 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       transition: opacity 240ms ease;
     }
 
-    /* Reduced motion — drop scale and blur; opacity + border emphasis
-       carry the meaning. Pulse on the trigger also stops. */
+    /* Reduced motion — drop the trigger pulse and the panel spring.
+       The per-card scale/blur reset lives in the global reduced-motion
+       block below so it applies on desktop too. */
     @media (prefers-reduced-motion: reduce) {
       .core-search-trigger { animation: none; }
       .core-search-panel { transition: opacity 200ms ease, visibility 0s linear 200ms; transform: translate(-50%, -50%); }
-      .galaxy-card[data-core-search-match="yes"],
-      .galaxy-card[data-core-search-match="no"] {
-        scale: 1;
-        filter: none;
-        transition: opacity 200ms ease;
-      }
-      .galaxy-card[data-core-search-match="no"] { opacity: 0.3; }
     }
+  }
+
+  /* ── Card response — applies at EVERY breakpoint ─────────────────
+     Lifted out of the mobile @media block so the desktop header
+     search (#yuval-header-search) drives the same gravitational
+     filter response on the orbit as the mobile Core Search panel.
+     Uses the standalone `scale` + `filter` + `opacity` properties so
+     the existing `transform` on `.galaxy-card` (orbit positioning
+     via cos/sin) stays untouched. */
+  .galaxy-card[data-core-search-match="yes"] {
+    scale: 1.08;
+    opacity: 1;
+    filter: brightness(1.08) saturate(1.1)
+      drop-shadow(0 0 18px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 55%, transparent));
+    transition:
+      scale 320ms cubic-bezier(0.34, 1.4, 0.64, 1),
+      opacity 240ms ease,
+      filter 240ms ease;
+    z-index: 5;
+  }
+  .galaxy-card[data-core-search-match="no"] {
+    scale: 0.9;
+    opacity: 0.32;
+    filter: brightness(0.65) saturate(0.7) blur(0.5px);
+    transition:
+      scale 320ms cubic-bezier(0.4, 0, 0.2, 1),
+      opacity 240ms ease,
+      filter 240ms ease;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .galaxy-card[data-core-search-match="yes"],
+    .galaxy-card[data-core-search-match="no"] {
+      scale: 1;
+      filter: none;
+      transition: opacity 200ms ease;
+    }
+    .galaxy-card[data-core-search-match="no"] { opacity: 0.3; }
   }
 </style>
 

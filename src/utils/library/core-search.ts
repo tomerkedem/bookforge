@@ -3,8 +3,13 @@
  *
  *   ┌────────────────────────────────────────────────────────────────┐
  *   │ Responsibility (this module)                                   │
- *   │   • Wire the trigger button (`[data-core-search-trigger]`) so  │
- *   │     a tap opens the glass input panel anchored over the core.  │
+ *   │   • Mobile (≤1023px): wire the trigger button                  │
+ *   │     (`[data-core-search-trigger]`) so a tap opens the glass    │
+ *   │     input panel anchored over the core.                        │
+ *   │   • Desktop (≥1024px): wire the existing header search input   │
+ *   │     (`#yuval-header-search`) to the same query pipeline. The   │
+ *   │     header input already lives in the global header — we add   │
+ *   │     no new chrome on desktop, just behaviour.                  │
  *   │   • Build a search index over the live orbit (`.galaxy-card`): │
  *   │     title, subtitle, type label, lesson badge, series name,    │
  *   │     and slug. No separate data source — we read what SSR       │
@@ -12,17 +17,16 @@
  *   │     a search target.                                           │
  *   │   • While typing, tag each card with                           │
  *   │       data-core-search-match="yes" | "no"                      │
- *   │     and reflect the open/closed/empty/no-matches state on the  │
- *   │     stage via                                                  │
+ *   │     and (mobile only) reflect the panel state on the stage via │
  *   │       data-core-search-state="closed" | "open" | "no-matches"  │
  *   │     CSS owns every visual response (scale, glow, opacity).     │
  *   │   • Show a one-shot hint ("Tap the Core to search") on the     │
- *   │     first visit; persistence via localStorage.                 │
+ *   │     first mobile visit; persistence via localStorage.          │
  *   │   • Honour prefers-reduced-motion (no scale changes, opacity   │
  *   │     and border emphasis only — driven from the CSS side).     │
  *   │                                                                │
- *   │ Out of scope: desktop search, voice input, result lists. The   │
- *   │ orbit IS the result surface, per spec.                         │
+ *   │ Out of scope: voice input, result lists. The orbit IS the      │
+ *   │ result surface, per spec.                                      │
  *   └────────────────────────────────────────────────────────────────┘
  */
 import { applyTranslations } from '../../i18n';
@@ -125,6 +129,11 @@ export function initCoreSearch(stage: HTMLElement): void {
   const clearBtn = document.querySelector<HTMLButtonElement>('[data-core-search-clear]');
   const closeBtn = document.querySelector<HTMLButtonElement>('[data-core-search-close]');
   const hint = document.querySelector<HTMLElement>('[data-core-search-hint]');
+  // The desktop header search input — already rendered by Header.astro
+  // when LibraryLayout sets `showSearch={true}`. We bind to it without
+  // adding any new chrome, so the existing header search box becomes
+  // the desktop equivalent of the mobile Core Search.
+  const headerInput = document.getElementById('yuval-header-search') as HTMLInputElement | null;
 
   if (!trigger || !panel || !input || !clearBtn || !closeBtn) {
     // SSR didn't ship the markup (e.g. the file rendered without the
@@ -262,6 +271,32 @@ export function initCoreSearch(stage: HTMLElement): void {
   });
   panel.addEventListener('pointerup',     () => { swipe = null; });
   panel.addEventListener('pointercancel', () => { swipe = null; });
+
+  // ── Desktop header input ─────────────────────────────────────────
+  // Same pipeline as the mobile panel: every keystroke runs applyQuery
+  // against the live orbit and stamps `data-core-search-match` on each
+  // station. We deliberately do NOT touch `data-core-search-state` —
+  // that attribute drives the mobile panel/trigger visibility and has
+  // no role on desktop. Esc empties the input (matching macOS/iOS
+  // search-field convention) and restores the orbit.
+  if (headerInput) {
+    const onHeaderInput = (): void => {
+      refreshIndexIfStale();
+      applyQuery(index, headerInput.value);
+    };
+    headerInput.addEventListener('input', onHeaderInput);
+    headerInput.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape') return;
+      if (!headerInput.value) return;
+      e.preventDefault();
+      headerInput.value = '';
+      applyQuery(index, '');
+    });
+    // Native <input type="search"> "X" clear button fires `search` (no
+    // `input` event in some browsers when value is reset by the
+    // built-in chrome). Cover both to be safe.
+    headerInput.addEventListener('search', onHeaderInput);
+  }
 
   // i18n is applied once on init (the labels also carry data-i18n* so
   // future language switches will retranslate them via applyTranslations
