@@ -1018,6 +1018,17 @@ export const translations: Translations = {
   'library.search.tryAnother':    { he: 'נסה חיפוש אחר',               en: 'Try another search',          es: 'Prueba otra búsqueda' },
   'library.search.clear':         { he: 'נקה חיפוש',                   en: 'Clear search',                es: 'Limpiar búsqueda' },
 
+  // ── library.coreSearch.* — mobile Core Search Mode ─────────────────────────
+  // Tap-the-core search affordance: a small luminous trigger anchored at
+  // the visual centre of the galaxy expands into a glass input. Typing
+  // pulls matching orbit cards inward and fades non-matches outward.
+  'library.coreSearch.hint':           { he: 'הקש על הליבה כדי לחפש',      en: 'Tap the Core to search',      es: 'Toca el núcleo para buscar' },
+  'library.coreSearch.placeholder':    { he: 'חפש במרחב הידע',              en: 'Search the knowledge space',  es: 'Buscar en el espacio de conocimiento' },
+  'library.coreSearch.openAria':       { he: 'פתח חיפוש דרך הליבה',         en: 'Open core search',            es: 'Abrir búsqueda del núcleo' },
+  'library.coreSearch.closeAria':      { he: 'סגור חיפוש',                  en: 'Close search',                es: 'Cerrar búsqueda' },
+  'library.coreSearch.clearAria':      { he: 'נקה טקסט חיפוש',              en: 'Clear search text',           es: 'Limpiar texto de búsqueda' },
+  'library.coreSearch.noMatches':      { he: 'אין פריטים תואמים',           en: 'No matching items',           es: 'No hay elementos coincidentes' },
+
   // ── library.empty.* — empty states per content kind ────────────────────────
   'library.empty.items':       { he: 'עדיין אין פריטים. תכנים שעוברים עיבוד ב-BookForge יופיעו כאן ברגע שיהיו מוכנים.', en: 'No items yet. Content processed by BookForge will appear here once it is ready.',                  es: 'Aún no hay elementos. Los contenidos procesados por BookForge aparecerán aquí en cuanto estén listos.' },
   'library.empty.articles':    { he: 'עדיין אין מאמרים',                                              en: 'No articles yet',                                                              es: 'Aún no hay artículos' },

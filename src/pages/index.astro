@@ -521,6 +521,106 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
                 center. Click anywhere on it closes the focus state. */}
             <div class="galaxy-backdrop" data-galaxy-backdrop aria-hidden="true"></div>
 
+            {/* ── Core Search Mode (mobile-only) ──────────────────────
+                Tap-the-core search affordance. SSR ships the chrome
+                unconditionally; CSS hides every node on desktop
+                (≥1024px) so the existing dashboard composition is
+                untouched. The runtime module
+                (`src/utils/library/core-search.ts`) wires tap,
+                input, clear, close, Esc, and swipe-down close — and
+                tags matching orbit cards via
+                `data-core-search-match="yes"|"no"` so the orbit
+                itself becomes the result surface.
+
+                Trigger: an honest <button> so keyboard focus +
+                screen-reader semantics work without ARIA gymnastics.
+                The hint capsule appears once on first visit; the
+                panel expands from the trigger's centre when open. */}
+            <button
+              type="button"
+              class="core-search-trigger"
+              data-core-search-trigger
+              aria-expanded="false"
+              aria-controls="core-search-panel"
+              data-i18n-aria-label="library.coreSearch.openAria"
+              aria-label={t('library.coreSearch.openAria', language)}
+            >
+              <span class="core-search-trigger-glow" aria-hidden="true"></span>
+              <span class="core-search-trigger-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="11" cy="11" r="7"></circle>
+                  <path d="m20 20-3.5-3.5"></path>
+                </svg>
+              </span>
+            </button>
+
+            <div
+              class="core-search-hint"
+              data-core-search-hint
+              data-core-search-hint-state="hidden"
+              aria-hidden="true"
+            >
+              <span data-i18n="library.coreSearch.hint">{t('library.coreSearch.hint', language)}</span>
+            </div>
+
+            <div
+              id="core-search-panel"
+              class="core-search-panel"
+              data-core-search-panel
+              role="search"
+              aria-label={t('library.coreSearch.openAria', language)}
+            >
+              <span class="core-search-panel-glow" aria-hidden="true"></span>
+              <span class="core-search-panel-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="11" cy="11" r="7"></circle>
+                  <path d="m20 20-3.5-3.5"></path>
+                </svg>
+              </span>
+              <input
+                type="search"
+                class="core-search-input"
+                data-core-search-input
+                autocomplete="off"
+                autocapitalize="off"
+                spellcheck="false"
+                enterkeyhint="search"
+                data-i18n-placeholder="library.coreSearch.placeholder"
+                placeholder={t('library.coreSearch.placeholder', language)}
+                data-i18n-aria-label="library.coreSearch.placeholder"
+                aria-label={t('library.coreSearch.placeholder', language)}
+              />
+              <button
+                type="button"
+                class="core-search-clear"
+                data-core-search-clear
+                hidden
+                data-i18n-aria-label="library.coreSearch.clearAria"
+                aria-label={t('library.coreSearch.clearAria', language)}
+              >
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M6 6l12 12M18 6L6 18"></path>
+                </svg>
+              </button>
+              <button
+                type="button"
+                class="core-search-close"
+                data-core-search-close
+                data-i18n-aria-label="library.coreSearch.closeAria"
+                aria-label={t('library.coreSearch.closeAria', language)}
+              >
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M6 6l12 12M18 6L6 18"></path>
+                </svg>
+              </button>
+              <p
+                class="core-search-no-matches"
+                data-i18n="library.coreSearch.noMatches"
+                aria-live="polite"
+              >{t('library.coreSearch.noMatches', language)}</p>
+            </div>
+
+
             {/* Orbit cards — every readable item gets one station on
                 the elliptical orbit around the central core. Position
                 is set per-card via inline `--orbit-angle`; CSS handles
@@ -4480,6 +4580,385 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
         scale(var(--slot-scale));
     }
   }
+
+  /* ════════════════════════════════════════════════════════════════
+     Core Search Mode — mobile-only "tap the core" search affordance
+     ──────────────────────────────────────────────────────────────
+     Three SSR-rendered surfaces inside `.library-galaxy`:
+       1. `.core-search-trigger`   — small luminous button anchored at
+                                     the visual centre. Tap opens.
+       2. `.core-search-hint`      — one-shot tooltip above the trigger
+                                     ("Tap the Core to search").
+       3. `.core-search-panel`     — glass input that expands from the
+                                     trigger's centre when open.
+
+     State machine lives on the stage element:
+       data-core-search-state="closed"     → trigger only
+                                "open"      → panel + dimmed orbit
+                                "no-matches"→ panel + dim-everything
+
+     Cards reflect their match status via
+       data-core-search-match="yes"|"no"
+     CSS owns the entire visual response — JS only stamps attributes.
+
+     Everything in this section is gated on @media (max-width: 1023px)
+     so desktop never sees these nodes. Reduced motion users get an
+     opacity/border-only emphasis (no scale changes).
+     ════════════════════════════════════════════════════════════════ */
+
+  .core-search-trigger,
+  .core-search-hint,
+  .core-search-panel {
+    display: none;
+  }
+
+  @media (max-width: 1023px) {
+    /* ── Trigger button ────────────────────────────────────────── */
+    .core-search-trigger {
+      position: absolute;
+      top: 18%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 52px;
+      height: 52px;
+      padding: 0;
+      border-radius: 50%;
+      border: 1px solid
+        color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 60%, transparent);
+      background:
+        radial-gradient(
+          circle at 50% 35%,
+          color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 28%, transparent) 0%,
+          color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 8%, transparent) 55%,
+          transparent 100%),
+        color-mix(in srgb, var(--yuval-galaxy-bg, #00010d) 55%, transparent);
+      color: var(--yuval-galaxy-accent, #5eead4);
+      cursor: pointer;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      box-shadow:
+        0 0 0 1px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 22%, transparent) inset,
+        0 0 14px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 40%, transparent),
+        0 0 30px -4px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 50%, transparent);
+      /* Trigger sits above orbit cards (z:2) AND above the focused
+         card (z:30) so a tap always reaches it. The expanded panel
+         below uses the same stacking context. */
+      z-index: 40;
+      animation: core-search-trigger-pulse 3.4s ease-in-out infinite;
+      transition:
+        transform 220ms cubic-bezier(0.4, 0, 0.2, 1),
+        box-shadow 220ms cubic-bezier(0.4, 0, 0.2, 1),
+        opacity 200ms ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .core-search-trigger-glow {
+      position: absolute;
+      inset: -8px;
+      border-radius: 50%;
+      background: radial-gradient(
+        circle,
+        color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 30%, transparent) 0%,
+        transparent 70%);
+      opacity: 0.7;
+      pointer-events: none;
+      filter: blur(6px);
+    }
+    .core-search-trigger-icon {
+      position: relative;
+      width: 20px;
+      height: 20px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      filter: drop-shadow(
+        0 0 6px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 70%, transparent));
+    }
+    .core-search-trigger-icon svg {
+      width: 100%;
+      height: 100%;
+    }
+    .core-search-trigger:hover,
+    .core-search-trigger:focus-visible {
+      transform: translate(-50%, -50%) translateY(-1px);
+      box-shadow:
+        0 0 0 1px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 35%, transparent) inset,
+        0 0 22px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 60%, transparent),
+        0 0 44px -4px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 65%, transparent);
+      outline: none;
+    }
+    .core-search-trigger:active {
+      transform: translate(-50%, -50%) scale(0.96);
+    }
+
+    @keyframes core-search-trigger-pulse {
+      0%, 100% {
+        box-shadow:
+          0 0 0 1px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 22%, transparent) inset,
+          0 0 14px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 40%, transparent),
+          0 0 30px -4px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 50%, transparent);
+      }
+      50% {
+        box-shadow:
+          0 0 0 1px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 30%, transparent) inset,
+          0 0 20px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 55%, transparent),
+          0 0 40px -4px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 65%, transparent);
+      }
+    }
+
+    /* ── First-visit hint ──────────────────────────────────────── */
+    .core-search-hint {
+      position: absolute;
+      top: calc(18% - 52px);
+      left: 50%;
+      transform: translate(-50%, -50%);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.375rem 0.75rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      letter-spacing: 0.01em;
+      color: var(--yuval-galaxy-text, #ececea);
+      background: color-mix(in srgb, var(--yuval-galaxy-bg, #00010d) 82%, transparent);
+      border: 1px solid
+        color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 32%, transparent);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      box-shadow:
+        0 0 12px -2px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 35%, transparent);
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
+      z-index: 41;
+      transition: opacity 240ms ease, transform 240ms ease;
+    }
+    .core-search-hint[data-core-search-hint-state="visible"] {
+      opacity: 1;
+      transform: translate(-50%, -50%) translateY(-2px);
+    }
+
+    /* ── Expanded glass panel ──────────────────────────────────── */
+    .core-search-panel {
+      position: absolute;
+      top: 18%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.6);
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 0.5rem;
+      width: min(86vw, 420px);
+      padding: 0.625rem 0.875rem;
+      border-radius: 999px;
+      border: 1px solid
+        color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 45%, transparent);
+      background:
+        radial-gradient(
+          ellipse at 50% 50%,
+          color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 14%, transparent) 0%,
+          color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 4%, transparent) 60%,
+          transparent 100%),
+        color-mix(in srgb, var(--yuval-galaxy-bg, #00010d) 78%, transparent);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      box-shadow:
+        0 0 0 1px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 22%, transparent) inset,
+        0 0 26px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 35%, transparent),
+        0 0 60px -8px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 45%, transparent);
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      z-index: 45;
+      transition:
+        opacity 260ms cubic-bezier(0.4, 0, 0.2, 1),
+        transform 320ms cubic-bezier(0.34, 1.4, 0.64, 1),
+        visibility 0s linear 260ms;
+    }
+    .core-search-panel-glow {
+      position: absolute;
+      inset: -14px;
+      border-radius: 999px;
+      background: radial-gradient(
+        ellipse at 50% 50%,
+        color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 18%, transparent) 0%,
+        transparent 70%);
+      pointer-events: none;
+      filter: blur(10px);
+      opacity: 0.85;
+    }
+    .core-search-panel-icon {
+      position: relative;
+      flex: 0 0 auto;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 20px;
+      height: 20px;
+      color: var(--yuval-galaxy-accent, #5eead4);
+      filter: drop-shadow(
+        0 0 6px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 60%, transparent));
+    }
+    .core-search-panel-icon svg {
+      width: 100%;
+      height: 100%;
+    }
+    .core-search-input {
+      position: relative;
+      flex: 1 1 auto;
+      min-width: 0;
+      padding: 0.25rem 0;
+      font: inherit;
+      font-size: 0.9375rem;
+      font-weight: 500;
+      color: var(--yuval-galaxy-text, #ececea);
+      background: transparent;
+      border: 0;
+      outline: none;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+    .core-search-input::placeholder {
+      color: color-mix(in srgb, var(--yuval-galaxy-text, #ececea) 50%, transparent);
+    }
+    /* Strip the default WebKit search-field clear "X" — we render our own. */
+    .core-search-input::-webkit-search-cancel-button,
+    .core-search-input::-webkit-search-decoration {
+      -webkit-appearance: none;
+      appearance: none;
+    }
+    .core-search-clear,
+    .core-search-close {
+      position: relative;
+      flex: 0 0 auto;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      padding: 0;
+      border-radius: 50%;
+      border: 1px solid
+        color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 30%, transparent);
+      background: color-mix(in srgb, var(--yuval-galaxy-bg, #00010d) 50%, transparent);
+      color: var(--yuval-galaxy-text-soft, #b9c0d9);
+      cursor: pointer;
+      transition:
+        color 160ms ease,
+        background-color 160ms ease,
+        border-color 160ms ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .core-search-clear:hover,
+    .core-search-clear:focus-visible,
+    .core-search-close:hover,
+    .core-search-close:focus-visible {
+      color: var(--yuval-galaxy-text, #ececea);
+      background: color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 18%, transparent);
+      border-color: color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 55%, transparent);
+      outline: none;
+    }
+    .core-search-clear[hidden] {
+      display: none;
+    }
+    .core-search-no-matches {
+      position: absolute;
+      top: calc(100% + 0.625rem);
+      left: 50%;
+      transform: translate(-50%, 0);
+      margin: 0;
+      padding: 0.375rem 0.75rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--yuval-galaxy-text-soft, #b9c0d9);
+      background: color-mix(in srgb, var(--yuval-galaxy-bg, #00010d) 78%, transparent);
+      border: 1px solid
+        color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 24%, transparent);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 220ms ease;
+    }
+
+    /* ── State: open ───────────────────────────────────────────── */
+    .library-galaxy[data-core-search-state="open"] .core-search-trigger,
+    .library-galaxy[data-core-search-state="no-matches"] .core-search-trigger {
+      opacity: 0;
+      pointer-events: none;
+      visibility: hidden;
+      transition: opacity 200ms ease, visibility 0s linear 200ms;
+    }
+    .library-galaxy[data-core-search-state="open"] .core-search-panel,
+    .library-galaxy[data-core-search-state="no-matches"] .core-search-panel {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+      transform: translate(-50%, -50%) scale(1);
+      transition:
+        opacity 260ms cubic-bezier(0.4, 0, 0.2, 1),
+        transform 320ms cubic-bezier(0.34, 1.4, 0.64, 1),
+        visibility 0s linear 0s;
+    }
+    .library-galaxy[data-core-search-state="no-matches"] .core-search-no-matches {
+      opacity: 1;
+    }
+
+    /* ── Card response — gravitational pull toward the core ─────
+       Uses the standalone `scale` + `filter` + `opacity` properties so
+       the existing `transform` on `.galaxy-card` (orbit positioning
+       via cos/sin) stays untouched. */
+    .galaxy-card[data-core-search-match="yes"] {
+      scale: 1.08;
+      opacity: 1;
+      filter: brightness(1.08) saturate(1.1)
+        drop-shadow(0 0 18px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 55%, transparent));
+      transition:
+        scale 320ms cubic-bezier(0.34, 1.4, 0.64, 1),
+        opacity 240ms ease,
+        filter 240ms ease;
+      z-index: 5;
+    }
+    .galaxy-card[data-core-search-match="no"] {
+      scale: 0.9;
+      opacity: 0.32;
+      filter: brightness(0.65) saturate(0.7) blur(0.5px);
+      transition:
+        scale 320ms cubic-bezier(0.4, 0, 0.2, 1),
+        opacity 240ms ease,
+        filter 240ms ease;
+    }
+    /* While the panel is open with an empty query, no per-card match
+       marker exists — the entire orbit sits in its calm resting state
+       behind the glass panel. A very gentle global dim keeps the panel
+       readable without obscuring the cards. */
+    .library-galaxy[data-core-search-state="open"]
+      .galaxy-card:not([data-core-search-match]),
+    .library-galaxy[data-core-search-state="no-matches"]
+      .galaxy-card:not([data-core-search-match]) {
+      opacity: 0.55;
+      transition: opacity 240ms ease;
+    }
+
+    /* Reduced motion — drop scale and blur; opacity + border emphasis
+       carry the meaning. Pulse on the trigger also stops. */
+    @media (prefers-reduced-motion: reduce) {
+      .core-search-trigger { animation: none; }
+      .core-search-panel { transition: opacity 200ms ease, visibility 0s linear 200ms; transform: translate(-50%, -50%); }
+      .galaxy-card[data-core-search-match="yes"],
+      .galaxy-card[data-core-search-match="no"] {
+        scale: 1;
+        filter: none;
+        transition: opacity 200ms ease;
+      }
+      .galaxy-card[data-core-search-match="no"] { opacity: 0.3; }
+    }
+  }
 </style>
 
 <script>
@@ -4510,6 +4989,7 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
   } from '../utils/library/universe-layout';
   import { initSeriesActions } from '../utils/library/universe-series-actions';
   import { initCoreEffects } from '../utils/library/universe-core-effects';
+  import { initCoreSearch } from '../utils/library/core-search';
   // Knowledge motion field — boots the day-mode-only canvas particle
   // layer + binds the theme observer. The module owns its full
   // lifecycle (initial load, astro:page-load on view-transitions,
@@ -5028,6 +5508,12 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
         // animation are deliberately NOT triggered yet; phase 3 will
         // hook onto the state transition.
         initReadingEntryLaunch(stage);
+        // Core Search Mode (mobile-only). Registers tap/input/clear/
+        // close/Esc/swipe-down handlers against the SSR-shipped chrome
+        // (`[data-core-search-*]`). On desktop the chrome is hidden by
+        // CSS so this is a no-op visually; the runtime guard inside
+        // the module also bails on `(min-width: 1024px)`.
+        initCoreSearch(stage);
         stage.dataset.galaxyInit = 'true';
       });
 
