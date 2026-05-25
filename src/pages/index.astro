@@ -354,6 +354,35 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       <div class="library-starfield"></div>
     </div>
 
+    {/* ── Knowledge Motion Layer — day-mode-only living field ──
+        Sits ABOVE the static knowledge-observatory PNG and BELOW every
+        UI surface (z-index: 0; the .library-root > :not(...) rule
+        below excludes this class so it never gets bumped to z:1).
+        Four cooperating layers, each picking the cheapest primitive
+        for its motion:
+          1. canvas       — floating knowledge particles + thin
+                            connection hairlines, driven by
+                            `src/utils/library/knowledge-motion.ts`.
+          2. glow         — soft warm-amber radial that breathes near
+                            the centre, where the book glow in the PNG
+                            sits. Pure CSS keyframes.
+          3. paths × 3    — slow diagonal light sweeps at different
+                            angles + durations. Pure CSS keyframes,
+                            transform-only.
+          4. (root)       — `display: none` in dark mode so the entire
+                            sub-tree is byte-for-byte invisible there.
+        `pointer-events: none` keeps every click reaching the orbit
+        cards and the side panels underneath. */}
+    <div class="knowledge-motion-layer" aria-hidden="true">
+      <canvas class="knowledge-motion-canvas" data-knowledge-motion-canvas></canvas>
+      <div class="knowledge-motion-glow"></div>
+      <div class="knowledge-motion-paths">
+        <div class="knowledge-motion-path"></div>
+        <div class="knowledge-motion-path knowledge-motion-path--2"></div>
+        <div class="knowledge-motion-path knowledge-motion-path--3"></div>
+      </div>
+    </div>
+
     <div class="library-body">
 
       {/* ── Center stage: hero floats over galaxy ── */}
@@ -456,6 +485,36 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
                   <circle class="obs-dot--minor" cx="188.3" cy="358.1" r="2.6" />
                 </g>
               </svg>
+            </div>
+
+            {/* ── AI Core — day-mode-only central anchor ──
+                Pure CSS visual primitive. Lives INSIDE `.library-galaxy`
+                so its `top: 50% / left: 50%` resolves against the same
+                box the orbit cards center on, keeping the core glued to
+                the visual centre of the carousel at every breakpoint.
+
+                Layering (inside .library-galaxy):
+                  observatory (z:0) <
+                  ai-core      (z:1) <
+                  orbit cards  (z:2) <
+                  backdrop     (z:15) <
+                  lightning    (z:25) <
+                  focused card (z:30)
+
+                Stays behind every interactive element. `pointer-events:
+                none` keeps the click-to-center handler reaching the
+                orbit cards above. Hidden in dark mode (the night PNG
+                already has its own glowing core). */}
+            <div class="library-ai-core" aria-hidden="true">
+              <div class="library-ai-core__pulse"></div>
+              <div class="library-ai-core__pulse library-ai-core__pulse--2"></div>
+              <div class="library-ai-core__ring library-ai-core__ring--1"></div>
+              <div class="library-ai-core__ring library-ai-core__ring--2"></div>
+              <div class="library-ai-core__ring library-ai-core__ring--3"></div>
+              <div class="library-ai-core__sphere">
+                <div class="library-ai-core__network"></div>
+                <div class="library-ai-core__nucleus"></div>
+              </div>
             </div>
 
             {/* Backdrop — appears only when a card is focused into the
@@ -997,6 +1056,136 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       rgba(255, 253, 247, 0.34) 100%);
   }
 
+  /* ── Knowledge Motion Layer — day-mode-only living field ───────────
+     Hidden by default → invisible in dark mode (no class match below).
+     The CSS-driven sub-layers (`.knowledge-motion-glow` and the three
+     `.knowledge-motion-path`s) animate via keyframes when the layer is
+     visible. The `<canvas>` only runs the RAF loop when the JS module
+     (`src/utils/library/knowledge-motion.ts`) successfully boots; in
+     dark mode the script bails out without touching anything.
+
+     z-index: 0 + `pointer-events: none` keeps the layer between the
+     static background (`.knowledge-scene-background`, z: 0, earlier in
+     DOM order so beneath this) and the page chrome (z: 1 via the
+     `.library-root > :not(...)` rule above), without ever blocking
+     hit-testing on the orbit cards or side panels.
+
+     `overflow: hidden` clips the flowing-path gradients (200% sized so
+     they have room to drift) before they can extend beyond the page
+     bounds. */
+  .knowledge-motion-layer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: 0;
+    display: none;
+  }
+  :global(html:not(.dark)) .knowledge-motion-layer {
+    display: block;
+  }
+
+  .knowledge-motion-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  /* Soft breathing glow centred over the PNG's luminous book.
+     `mix-blend-mode: screen` lifts the underlying cream without
+     posterising it. `will-change` hints the compositor to keep the
+     element on its own layer so the opacity+scale keyframe never
+     triggers a paint of the page bg underneath. */
+  .knowledge-motion-glow {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+      ellipse 42% 32% at 50% 42%,
+      rgba(255, 220, 160, 0.22) 0%,
+      rgba(255, 220, 160, 0.10) 35%,
+      rgba(255, 220, 160, 0) 65%
+    );
+    mix-blend-mode: screen;
+    animation: knowledge-motion-breathe 7.5s ease-in-out infinite;
+    will-change: opacity, transform;
+  }
+  @keyframes knowledge-motion-breathe {
+    0%, 100% { opacity: 0.55; transform: scale(1); }
+    50%      { opacity: 0.90; transform: scale(1.04); }
+  }
+
+  /* Three slow diagonal light sweeps, each oversized to 200% and
+     translated across the page over 20–34s. Pure transform animation
+     so the compositor can run it off the main thread. */
+  .knowledge-motion-paths {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+  }
+  .knowledge-motion-path {
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+      75deg,
+      transparent 35%,
+      rgba(255, 240, 200, 0.07) 50%,
+      transparent 65%
+    );
+    animation: knowledge-motion-flow 22s linear infinite;
+    will-change: transform;
+  }
+  .knowledge-motion-path--2 {
+    background: linear-gradient(
+      105deg,
+      transparent 35%,
+      rgba(230, 215, 175, 0.05) 50%,
+      transparent 65%
+    );
+    animation-duration: 28s;
+    animation-delay: -8s;
+  }
+  .knowledge-motion-path--3 {
+    background: linear-gradient(
+      60deg,
+      transparent 40%,
+      rgba(255, 230, 180, 0.05) 50%,
+      transparent 60%
+    );
+    animation-duration: 34s;
+    animation-delay: -16s;
+  }
+  @keyframes knowledge-motion-flow {
+    0%   { transform: translate(-50%, -50%); }
+    100% { transform: translate(50%, 50%); }
+  }
+
+  /* Reduced motion — the whole sub-tree is removed from layout so:
+       - no CSS keyframes execute,
+       - the canvas isn't painted on (the JS gate also bails),
+       - no compositor layer is created.
+     Day-mode users with the preference set get a perfectly still PNG.
+     `!important` survives the `:global(html:not(.dark))` display:block
+     override above. */
+  @media (prefers-reduced-motion: reduce) {
+    .knowledge-motion-layer { display: none !important; }
+  }
+
+  /* Mobile / touch — keep the CSS layers but slow them slightly so
+     the motion is even calmer on a smaller field. The JS already
+     drops particle count to 24 and skips mouse parallax on
+     (hover: none) / (pointer: coarse). */
+  @media (max-width: 1023px) {
+    .knowledge-motion-glow      { animation-duration: 9s; opacity: 0.75; }
+    .knowledge-motion-path      { animation-duration: 28s; }
+    .knowledge-motion-path--2   { animation-duration: 34s; }
+    .knowledge-motion-path--3   { animation-duration: 40s; }
+  }
+
   /* ════════════════════════════════════════════════════════════════
      LIGHT-MODE TUNING — page-level surfaces the galaxy tokens cannot
      reach: hardcoded dark page fills and a few light-on-dark text
@@ -1204,7 +1393,7 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       radial-gradient(1.5px 1.5px at 58% 92%, var(--yuval-galaxy-accent-purple) 50%, transparent 100%);
     opacity: 0.40;
   }
-  .library-root > :not(.library-ambient):not(.knowledge-scene-background) {
+  .library-root > :not(.library-ambient):not(.knowledge-scene-background):not(.knowledge-motion-layer) {
     position: relative;
     z-index: 1;
   }
@@ -1298,6 +1487,203 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
      the existing flag set by universe-layout.ts — no JS is touched. */
   .library-galaxy[data-galaxy-focused] .galaxy-observatory {
     opacity: 0.42;
+  }
+
+  /* ── AI Core — day-mode-only central anchor ───────────────────────
+     Pure-CSS futuristic core that gives the day field a luminous
+     centre when no card is focused. Layered, smallest to largest
+     visually:
+       __nucleus  — bright white-cyan singularity at the dead centre.
+       __sphere   — glassmorphic oval holding the nucleus + network.
+       __network  — six neural-node dots (warm-white + soft cyan/gold).
+       __ring × 3 — concentric elliptical orbits, slow rotation,
+                    different tilts + speeds for parallax.
+       __pulse × 2 — expanding hairline rings echoing outward.
+
+     Sizes use clamp() so desktop ≈ 320–460px wide × 180–280px tall
+     and mobile ≈ 220–300px × 140–200px without a media-query break.
+     `pointer-events: none` cascades from the wrapper, so the
+     click-to-center handler on the orbit cards above (z:2) is never
+     blocked. Hidden in dark mode because the night PNG already
+     carries its own bright core; a duplicate would clutter. */
+  .library-ai-core {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: clamp(320px, 32vw, 460px);
+    height: clamp(180px, 18vw, 280px);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 1;
+    display: none;
+  }
+  :global(html:not(.dark)) .library-ai-core {
+    display: block;
+  }
+
+  /* When a card is focused, fade the core to a whisper so the focused
+     reading-entry overlay + center-card extras own the visual stage.
+     Same `data-galaxy-focused` hook the observatory rule above uses
+     — no JS change. */
+  .library-galaxy[data-galaxy-focused] .library-ai-core {
+    opacity: 0.30;
+    transition: opacity 320ms ease;
+  }
+
+  /* Expanding hairline pulses. Two staggered copies so the field
+     never has a "dead" moment between cycles. */
+  .library-ai-core__pulse {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 1px solid rgba(120, 200, 240, 0.35);
+    animation: ai-core-pulse 6s ease-out infinite;
+    will-change: transform, opacity;
+  }
+  .library-ai-core__pulse--2 {
+    animation-delay: -3s;
+    border-color: rgba(255, 230, 180, 0.20);
+  }
+  @keyframes ai-core-pulse {
+    0%   { transform: scale(0.65); opacity: 0; }
+    18%  { opacity: 0.55; }
+    100% { transform: scale(1.5);  opacity: 0; }
+  }
+
+  /* Elliptical orbit rings — slow spin, opposite directions for two
+     of them so the eye reads depth instead of a single sweep. Their
+     tilt/size mix echoes the observatory rings baked into the PNG. */
+  .library-ai-core__ring {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    border: 1px solid rgba(150, 210, 240, 0.30);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    will-change: transform;
+  }
+  .library-ai-core__ring--1 {
+    width: 62%;
+    height: 86%;
+    animation: ai-core-spin 60s linear infinite;
+  }
+  .library-ai-core__ring--2 {
+    width: 84%;
+    height: 64%;
+    border-color: rgba(255, 220, 160, 0.22);
+    animation: ai-core-spin 84s linear infinite reverse;
+  }
+  .library-ai-core__ring--3 {
+    width: 100%;
+    height: 50%;
+    border-color: rgba(180, 220, 255, 0.18);
+    animation: ai-core-spin 108s linear infinite;
+  }
+  @keyframes ai-core-spin {
+    from { transform: translate(-50%, -50%) rotate(0deg); }
+    to   { transform: translate(-50%, -50%) rotate(360deg); }
+  }
+
+  /* Glass sphere — translucent oval, holds the neural network and
+     nucleus. The inset box-shadow plus a soft outer glow give it the
+     glassmorphic edge highlight without a `backdrop-filter` (which
+     repaints expensively on scroll-adjacent layers). */
+  .library-ai-core__sphere {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 52%;
+    height: 72%;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    background: radial-gradient(
+      ellipse at 50% 40%,
+      rgba(220, 240, 255, 0.32) 0%,
+      rgba(150, 200, 240, 0.18) 40%,
+      rgba(120, 170, 220, 0.08) 70%,
+      transparent 100%
+    );
+    box-shadow:
+      inset 0 0 28px rgba(180, 220, 255, 0.30),
+      0 0 36px rgba(140, 190, 240, 0.22);
+  }
+
+  /* Neural network — six radial-gradient dots painted into a single
+     background layer (one paint, no extra DOM nodes). Subtle opacity
+     shimmer so the network feels "thinking" without flashing. */
+  .library-ai-core__network {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background-image:
+      radial-gradient(circle 1.6px at 30% 35%, rgba(255, 255, 255, 0.65), transparent 60%),
+      radial-gradient(circle 1.6px at 60% 25%, rgba(180, 220, 255, 0.55), transparent 60%),
+      radial-gradient(circle 1.6px at 75% 60%, rgba(255, 220, 160, 0.55), transparent 60%),
+      radial-gradient(circle 1.6px at 25% 70%, rgba(200, 235, 255, 0.60), transparent 60%),
+      radial-gradient(circle 1.6px at 55% 82%, rgba(180, 220, 255, 0.45), transparent 60%),
+      radial-gradient(circle 1.6px at 70% 45%, rgba(255, 250, 230, 0.50), transparent 60%);
+    animation: ai-core-shimmer 5s ease-in-out infinite;
+    will-change: opacity;
+  }
+  @keyframes ai-core-shimmer {
+    0%, 100% { opacity: 0.70; }
+    50%      { opacity: 1.00; }
+  }
+
+  /* Nucleus — the bright singularity. Radial-gradient core with a
+     small outer box-shadow for the bloom. Breathing animation uses
+     a combined translate+scale transform so the centered position is
+     preserved (the wrapper's `translate(-50%, -50%)` stays in the
+     keyframes, otherwise the nucleus would jump on scale). */
+  .library-ai-core__nucleus {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 26%;
+    height: 38%;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    background: radial-gradient(
+      ellipse at center,
+      rgba(255, 255, 255, 0.95) 0%,
+      rgba(220, 240, 255, 0.80) 15%,
+      rgba(150, 210, 240, 0.50) 40%,
+      rgba(100, 170, 220, 0.20) 70%,
+      transparent 100%
+    );
+    box-shadow:
+      0 0 18px rgba(180, 220, 255, 0.55),
+      0 0 36px rgba(140, 190, 240, 0.30);
+    animation: ai-core-breathe 5.5s ease-in-out infinite;
+    will-change: transform, opacity;
+  }
+  @keyframes ai-core-breathe {
+    0%, 100% { transform: translate(-50%, -50%) scale(1);    opacity: 0.85; }
+    50%      { transform: translate(-50%, -50%) scale(1.08); opacity: 1.00; }
+  }
+
+  /* Mobile tuning — smaller footprint, slightly dimmer so it never
+     competes with the cards on a phone-sized stage. Animations keep
+     running, just visually subtler. */
+  @media (max-width: 1023px) {
+    .library-ai-core {
+      width: clamp(220px, 60vw, 300px);
+      height: clamp(140px, 38vw, 200px);
+      opacity: 0.80;
+    }
+  }
+
+  /* Reduced motion — freeze every animation but keep the static
+     composition fully visible. Users still see the central anchor,
+     just without the breath/spin/pulse motion. `!important` survives
+     the per-element `animation:` rules above. */
+  @media (prefers-reduced-motion: reduce) {
+    .library-ai-core__pulse,
+    .library-ai-core__ring,
+    .library-ai-core__network,
+    .library-ai-core__nucleus {
+      animation: none !important;
+    }
   }
 
   /* ── Light-mode carousel polish — card depth + motion ─────────────
@@ -4124,11 +4510,23 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
   } from '../utils/library/universe-layout';
   import { initSeriesActions } from '../utils/library/universe-series-actions';
   import { initCoreEffects } from '../utils/library/universe-core-effects';
+  // Knowledge motion field — boots the day-mode-only canvas particle
+  // layer + binds the theme observer. The module owns its full
+  // lifecycle (initial load, astro:page-load on view-transitions,
+  // astro:before-swap teardown, reduced-motion + dark-mode bail-outs),
+  // so we only need to call it once after the imports below.
+  import { initKnowledgeMotion } from '../utils/library/knowledge-motion';
   // Side-effecting module: registers a DOMContentLoaded handler that
   // reads `yuval_series_metadata` from localStorage and reconciles
   // admin-edited series records against the SSR-rendered orbit.
   // No exports — the import is purely for its side effect.
   import '../scripts/library/admin-series-hydrator';
+
+  // All imports above; first executable line. The knowledge motion
+  // module internally listens to `astro:page-load` /
+  // `astro:before-swap`, so this single call is enough for the
+  // entire navigation lifecycle.
+  initKnowledgeMotion();
 
   /**
    * Re-bind the orbit on every page-load — including the one that
