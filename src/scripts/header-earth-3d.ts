@@ -234,6 +234,16 @@ export function createHeaderEarth(
     // brief unloaded window (typically just a frame or two since
     // the WebP is usually in the HTTP cache from a prior page).
     fallbackSolidColor: 0x1a2540,
+    // Tiny-size sea-readability lift — stronger than the overlay
+    // (0.55 vs 0.30). Same rationale as the toneMappingExposure and
+    // ambientIntensity bumps above: at ~34-50 px the NASA Blue
+    // Marble's deep oceans collapse into one dark mass that swallows
+    // the small disc, and the seas / inland lakes need the extra
+    // brightness to read as water rather than shadow. The shader
+    // patch only touches blue-dominant (ocean) pixels — continents
+    // and ice are left untouched — so this stays a readability lift,
+    // not a recolor. Live-tunable in dev via the console hook below.
+    oceanLift: 0.55,
   });
   const { scene, camera, renderer, canvas, earth, atmosphere } = core;
 
@@ -335,6 +345,19 @@ export function createHeaderEarth(
       if (core.isDisposed()) return;
       renderer.render(scene, camera);
     });
+  }
+
+  // Dev-only console tuning aid for the header globe's ocean-lift
+  // strength. Run `__headerEarthOceanLift(0.6)` (0 = off); it sets
+  // the uniform AND schedules a repaint — the header renders
+  // on-demand, so a uniform change alone would not show until the
+  // next interaction. Stripped from production builds.
+  if (import.meta.env.DEV) {
+    (window as unknown as { __headerEarthOceanLift?: (v: number) => void })
+      .__headerEarthOceanLift = (v: number) => {
+        core.setOceanLift(v);
+        requestRender();
+      };
   }
 
   // ── Real Earth day texture (reveal-on-load) ──────────────────────

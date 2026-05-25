@@ -33,7 +33,9 @@
  *   • Sun world position    (-1.2, 1.3, 3.2)
  *   • Renderer              sRGB output, Linear tone-map, exposure 1.12
  *   • Material              MeshPhongMaterial, specular #1c2a3a,
- *                           shininess 22, no specularMap
+ *                           shininess 22, no specularMap; optional
+ *                           shader-injected ocean lift (oceanLift,
+ *                           default 0 = contract-exact)
  *   • Lights                Ambient #fff3dc 0.55,
  *                           DirectionalLight white 1.55 at sun,
  *                           HemisphereLight 0x9ab8ff/0x7a5e3a 0.48
@@ -256,6 +258,23 @@ export interface EarthSceneOptions {
    *  it's ~2.7 — still clearly cinematic, not flat. Hard ceiling
    *  at 0.75 — beyond that the terminator starts to wash out. */
   ambientIntensity?: number;
+  /** Selective sea-lightening, 0 = off (default). The NASA Blue
+   *  Marble's deep oceans render as a heavy dark mass — most
+   *  noticeably against the bright light-mode "Knowledge
+   *  Observatory" background. A small positive value gently
+   *  brightens ONLY the sea pixels: a shader patch identifies them
+   *  by the blue channel being the dominant one (true for ocean,
+   *  false for green/brown land and neutral ice), so the continents
+   *  are untouched. The lift is multiplicative, so shallow/deep
+   *  ocean structure is preserved. Both Earths opt in: the overlay
+   *  uses a subtle value (≈ 0.3); the header miniature uses a
+   *  STRONGER value as a tiny-size readability lift — at ~34-50 px
+   *  the dark oceans collapse into a single mass that swallows the
+   *  small disc, the same reason exposure and ambient are bumped
+   *  for the miniature. Default 0 (for any caller that does not
+   *  pass it) keeps the material byte-for-byte the locked visual
+   *  contract. */
+  oceanLift?: number;
 }
 
 export interface DayTextureCallbacks {
@@ -299,6 +318,11 @@ export interface EarthSceneHandle {
    *  drawing buffer, update camera aspect/projection. Does NOT
    *  render — the wrapper decides when to paint. */
   sizeFromContainer(): void;
+  /** Live-update the ocean-lift strength (see `oceanLift` in
+   *  EarthSceneOptions). Takes effect on the next rendered frame
+   *  with no shader recompile — handy for dialing the value in
+   *  from the browser console. */
+  setOceanLift(value: number): void;
   /** Whether the real NASA WebP is currently bound. 'real-webp' once
    *  the texture decodes and is attached to the material; 'pending'
    *  during the load window AND after a load failure (no CPU
@@ -357,6 +381,7 @@ export function createEarthScene(
   const atmosphereMaxIntensityLit = options.atmosphereMaxIntensityLit ?? 0.78;
   const toneMappingExposure = options.toneMappingExposure ?? 1.12;
   const ambientIntensity = options.ambientIntensity ?? 0.55;
+  const oceanLift = options.oceanLift ?? 0;
 
   // ── Scene ────────────────────────────────────────────────────────
   const scene = new THREE.Scene();
@@ -419,6 +444,46 @@ export function createEarthScene(
     specular: new THREE.Color(0x1c2a3a),
     shininess: 22,
   });
+
+  // ── Ocean lift (optional shader patch) ───────────────────────────
+  // See `oceanLift` in EarthSceneOptions for the rationale. The
+  // uniform object is created once and re-attached on every shader
+  // recompile (the material recompiles when `map` is bound after the
+  // WebP decodes), so `setOceanLift` always mutates the LIVE uniform.
+  // When oceanLift is 0 the patch is not installed at all — the
+  // material is then stock MeshPhongMaterial, byte-for-byte the
+  // locked visual contract (this is why the header miniature, which
+  // never passes oceanLift, is unaffected).
+  const oceanLiftUniform = { value: Math.max(0, oceanLift) };
+  if (oceanLift > 0) earthMaterial.onBeforeCompile = (shader) => {
+    shader.uniforms.uOceanLift = oceanLiftUniform;
+    shader.fragmentShader = `uniform float uOceanLift;\n${shader.fragmentShader}`
+      .replace(
+        '#include <map_fragment>',
+        `#include <map_fragment>
+      // ── Ocean lift ──────────────────────────────────────────────
+      // Gently lighten ONLY the seas. \`diffuseColor\` here is the
+      // linear-space surface albedo. On the NASA Blue Marble the
+      // ocean is the only large region where blue is the dominant
+      // channel (land is green / brown, ice is neutral), so the sign
+      // of (b - max(r, g)) is a robust sea mask independent of how
+      // dark the texel is. The lift is multiplicative so shallow /
+      // deep ocean structure survives, plus a whisper of cyan; the
+      // albedo is clamped to [0,1] so it stays physical. When
+      // uOceanLift is 0 this whole branch is skipped.
+      if (uOceanLift > 0.0) {
+        vec3 lgsOceanSrc = diffuseColor.rgb;
+        float lgsSeaMask = smoothstep(
+          0.0, 0.012, lgsOceanSrc.b - max(lgsOceanSrc.r, lgsOceanSrc.g));
+        vec3 lgsOceanLifted =
+          lgsOceanSrc * (1.0 + uOceanLift * 0.85)
+          + vec3(0.0, 0.015, 0.03) * uOceanLift;
+        diffuseColor.rgb = clamp(
+          mix(lgsOceanSrc, lgsOceanLifted, lgsSeaMask), 0.0, 1.0);
+      }`,
+      );
+  };
+
   const earthGeometry = new THREE.SphereGeometry(1, earthSegments, earthSegments);
   const earth = new THREE.Mesh(earthGeometry, earthMaterial);
   scene.add(earth);
@@ -486,6 +551,12 @@ export function createEarthScene(
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
+  }
+
+  function setOceanLift(value: number): void {
+    // Uniform value only — no recompile, no `needsUpdate`. The next
+    // rendered frame picks it up.
+    oceanLiftUniform.value = Math.max(0, value);
   }
 
   function loadDayTexture(callbacks: DayTextureCallbacks = {}): void {
@@ -560,6 +631,7 @@ export function createEarthScene(
     maxAniso,
     loadDayTexture,
     sizeFromContainer,
+    setOceanLift,
     getTextureSource: () => textureSource,
     getUpgradedDayTexture: () => upgradedDayTex,
     markDisposed,

@@ -328,6 +328,48 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       <div class="knowledge-scene-overlay"></div>
     </div>
 
+    {/* TEMP DIAGNOSTIC — logs every change to the scene-background
+        geometry for 5s after load, to pinpoint the refresh "jump".
+        REMOVE once the cause is identified. */}
+    <script is:inline>
+      (function () {
+        var prev = '', t0 = performance.now();
+        function snap() {
+          var el = document.querySelector('.knowledge-scene-background');
+          if (!el) return null;
+          var img = document.querySelector('.knowledge-scene-img--night');
+          var cs = getComputedStyle(el);
+          var r = el.getBoundingClientRect();
+          var ir = img ? img.getBoundingClientRect() : { top: 0, height: 0 };
+          var anc = [], p = el.parentElement;
+          while (p && p.tagName !== 'HTML') {
+            var s = getComputedStyle(p);
+            if (s.transform !== 'none' || s.filter !== 'none' ||
+                s.contain !== 'none' || s.willChange !== 'auto') {
+              anc.push(p.tagName + '.' + (p.className || '').split(' ')[0]);
+            }
+            p = p.parentElement;
+          }
+          return JSON.stringify({
+            html: document.documentElement.className,
+            cssTop: cs.top, cssBottom: cs.bottom, cssTransform: cs.transform,
+            rectTop: Math.round(r.top), rectH: Math.round(r.height),
+            imgTop: Math.round(ir.top), imgH: Math.round(ir.height),
+            natural: img ? (img.naturalWidth + 'x' + img.naturalHeight) : 'n/a',
+            vw: innerWidth, vh: innerHeight, anc: anc.join(',')
+          });
+        }
+        var iv = setInterval(function () {
+          var cur = snap();
+          if (cur && cur !== prev) {
+            console.log('[BGDIAG +' + Math.round(performance.now() - t0) + 'ms] ' + cur);
+            prev = cur;
+          }
+        }, 80);
+        setTimeout(function () { clearInterval(iv); console.log('[BGDIAG] done'); }, 5000);
+      })();
+    </script>
+
     {/* Decorative ambient backdrop — starfield on top of the cosmic
         scene background. Stars stay crisp because they're a CSS
         gradient pattern that doesn't scale with the bg image. */}

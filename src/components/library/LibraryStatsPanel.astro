@@ -15,11 +15,14 @@
  * (index.astro passes `stats`, `language`, `courseProgress`).
  *
  * Interaction: each clickable node carries a `data-library-filter`
- * attribute (all | books | courses | articles). This widget exists only
- * on the carousel page, so it ships NO script of its own — the orbit
- * module (universe-layout.ts) owns a single delegated click listener
- * for `[data-library-filter]` and focuses the matching orbit station
- * directly. No CustomEvent, no event bus.
+ * attribute (all | books | courses | articles); the orbit module
+ * (universe-layout.ts) owns one delegated `[data-library-filter]`
+ * listener that focuses the matching carousel station. The bottom
+ * action is different: it carries `data-library-view="all"` and is
+ * meant to open an alternative grid/list "all items" view — NOT to
+ * focus the carousel. That overlay is not built yet; this widget ships
+ * the action's markup + styling only. The widget itself carries no
+ * script — no CustomEvent, no event bus.
  */
 import type { LibraryStats, LibraryCourseProgress, LibraryItemType } from '../../types/library';
 import type { Language } from '../../types/index';
@@ -140,6 +143,24 @@ const PARTICLES = [0, 1, 2, 3, 4, 5];
       </button>
     ))}
   </div>
+
+  {/* ── Bottom action: open the alternative "all items" view ───────────
+      NOT a navigation CTA — the user is already on the carousel page.
+      Carries `data-library-view="all"`, deliberately distinct from the
+      core's `data-library-filter="all"` (which focuses the carousel).
+      This opens a clearer non-carousel grid/list view; that overlay is
+      not wired up yet — markup + styling only for now. */}
+  <button type="button" class="kc__view-all" data-library-view="all">
+    <span class="kc__view-all-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="7.5" height="7.5" rx="1.5"></rect>
+        <rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"></rect>
+        <rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"></rect>
+        <rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5"></rect>
+      </svg>
+    </span>
+    <span class="kc__view-all-label">{t('library.stats.viewAll', language)}</span>
+  </button>
 </article>
 
 <style>
@@ -195,6 +216,10 @@ const PARTICLES = [0, 1, 2, 3, 4, 5];
       inset 0 0 0 1px rgba(140, 190, 255, 0.06),
       0 6px 16px rgba(2, 4, 14, 0.40);
 
+    /* Bottom "view all items" action — subtle ghost button. */
+    --kc-view-all-hover-bg: rgba(140, 190, 255, 0.06);
+    --kc-view-all-hover-border: rgba(120, 140, 200, 0.16);
+
     --kc-focus: var(--yuval-galaxy-accent-cyan, #22d3ee);
     --kc-radius: var(--yuval-galaxy-panel-radius, 20px);
   }
@@ -246,6 +271,9 @@ const PARTICLES = [0, 1, 2, 3, 4, 5];
       inset 0 1px 0 rgba(255, 255, 255, 0.80),
       0 6px 16px -6px rgba(30, 45, 80, 0.18);
 
+    --kc-view-all-hover-bg: rgba(34, 52, 92, 0.05);
+    --kc-view-all-hover-border: rgba(34, 52, 92, 0.12);
+
     --kc-focus: #0e7490;
   }
 
@@ -279,10 +307,8 @@ const PARTICLES = [0, 1, 2, 3, 4, 5];
     padding: 16px;
     display: flex;
     flex-direction: column;
-    /* Wider column rhythm — the bottom CTA was removed, so this gap
-       redistributes the freed vertical space as breathing room above
-       and below the core stage and the category-node row. Element
-       sizes are untouched; only the air between sections grows. */
+    /* Column rhythm — even breathing room between the header, the core
+       stage, the category-node row and the bottom action. */
     gap: 20px;
 
     background: var(--kc-surface);
@@ -527,9 +553,50 @@ const PARTICLES = [0, 1, 2, 3, 4, 5];
     text-overflow: ellipsis;
   }
 
+  /* ═══════════════════════════════════════════════════════════════════
+     BOTTOM ACTION — subtle "view all items" trigger
+     A quiet ghost button (not a navigation CTA) that will open the
+     alternative grid/list "all items" view. Centered and muted so it
+     stays visually integrated and never competes with the core/nodes.
+     ═══════════════════════════════════════════════════════════════════ */
+  .kc__view-all {
+    align-self: center;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+    padding: 7px 12px;
+    font: inherit;
+    font-size: 12px;
+    color: var(--kc-text-soft);
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 9px;
+    cursor: pointer;
+    transition:
+      color 200ms ease-out,
+      background-color 200ms ease-out,
+      border-color 200ms ease-out;
+  }
+
+  .kc__view-all:hover {
+    color: var(--kc-text);
+    background: var(--kc-view-all-hover-bg);
+    border-color: var(--kc-view-all-hover-border);
+  }
+
+  .kc__view-all-icon {
+    display: inline-flex;
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+  }
+  .kc__view-all-icon svg { width: 100%; height: 100%; }
+
   /* ── Keyboard focus ─────────────────────────────────────────────────── */
   .kc__core:focus-visible,
-  .kc__node:focus-visible {
+  .kc__node:focus-visible,
+  .kc__view-all:focus-visible {
     outline: 2px solid var(--kc-focus);
     outline-offset: 3px;
   }
@@ -555,7 +622,8 @@ const PARTICLES = [0, 1, 2, 3, 4, 5];
     }
     .kc__core,
     .kc__node,
-    .kc__node-icon {
+    .kc__node-icon,
+    .kc__view-all {
       transition: none !important;
     }
   }

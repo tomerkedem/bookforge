@@ -171,6 +171,11 @@ export function createInteractiveEarth(
     atmosphereSegments: 64,
     powerPreference: 'high-performance',
     fallbackSolidColor: 0x1a2540,
+    // Gently lighten the seas so the globe reads less like a heavy
+    // dark mass — most noticeable on the bright light-mode
+    // observatory background. Subtle on purpose; tune ≈ 0.2-0.5.
+    // Live-tunable in dev via the console hook installed below.
+    oceanLift: 0.3,
   });
   const { scene, camera, renderer, canvas, earth, earthMaterial, atmosphere } = core;
 
@@ -181,6 +186,14 @@ export function createInteractiveEarth(
   // shows through — no fake continents, no half-rendered sphere.
   earth.visible = false;
   atmosphere.visible = false;
+
+  // Dev-only console tuning aid for the ocean-lift strength. Run
+  // `__earthOceanLift(0.4)` (any value, 0 = off) and the next frame
+  // reflects it — no rebuild. Stripped from production builds.
+  if (import.meta.env.DEV) {
+    (window as unknown as { __earthOceanLift?: (v: number) => void })
+      .__earthOceanLift = core.setOceanLift;
+  }
 
   // Overlay-specific canvas style. The host wants pointer drag to
   // suppress the browser's default touch-scroll behavior so vertical
