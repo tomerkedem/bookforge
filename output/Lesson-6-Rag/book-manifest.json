@@ -1,0 +1,287 @@
+{
+  "book": {
+    "titles": {
+      "he": "שיעור 6: ‏‏ Rag"
+    },
+    "subtitles": {
+      "he": "AI Engineering"
+    },
+    "descriptions": {
+      "he": "**תקציר:**\n\nשיעור 6 עוסק ב-RAG, אחד הדפוסים המרכזיים ב-AI Engineering, שמאפשר למודל שפה לענות על בסיס מידע פרטי, ארגוני ועדכני שהוא לא הכיר בזמן האימון שלו. נקודת המוצא של השיעור היא שמודל שפה, גם אם הוא חזק מאוד, אינו יודע מעצמו מה כתוב במסמכים פנימיים, נהלים, דוחות, בסיסי ידע או מערכות עסקיות של ארגון. כדי שיוכל לבצע משימות שקשורות לארגון, צריך לספק לו את ההקשר הנכון בזמן השאלה.\n\nRAG פותר את הבעיה באמצעות תהליך שבו המערכת שולפת מידע רלוונטי ממקורות חיצוניים, מכניסה אותו ל Context של המודל, ורק אז מאפשרת למודל לייצר תשובה. כך המודל לא נדרש “לזכור” את כל הידע הארגוני, אלא מקבל בזמן אמת את המידע הדרוש לו.\n\nהשיעור מסביר גם את תפקיד ה-Embedding: המרה של טקסט או מידע אחר לייצוג מספרי, כלומר וקטור, שמייצג את המשמעות הסמנטית שלו. בעזרת וקטורים ניתן לבצע חיפוש סמנטי, שבו המערכת לא מחפשת רק מילים זהות, אלא קטעי מידע בעלי משמעות קרובה לשאלת המשתמש.\n\nמערכת RAG בנויה בדרך כלל משלושה שלבים: Index, שבו מחלקים מסמכים ל-Chunks ושומרים אותם כווקטורים. Retrieve, שבו מחפשים את הקטעים הקרובים ביותר לשאלה. ו-Generate, שבו המודל מייצר תשובה על בסיס המידע שנשלף.\n\nעם זאת, השיעור מדגיש ש-RAG אינו פתרון קסם. הוא לא מחליף SQL, לא מתאים לכל בעיה, ועלול להחזיר מידע חלקי או לא מדויק אם השליפה, החלוקה ל-Chunks או איכות הנתונים אינן טובות. לכן חשוב לשלב אותו עם שיטות משלימות כמו Hybrid Search, Re-ranking, Agentic RAG ו-Context Aware Chunking.\n\nבהמשך השיעור מוצגים גם Vector Databases ואלגוריתמים למציאת שכנים קרובים, כמו Brute Force, IVF, LSH ו-HNSW, שמאפשרים לבצע חיפוש וקטורי יעיל בקנה מידה גדול.\n\nכל קבצי הקוד, מבנה הפרויקט והתרגילים זמינים בגיטהאב שלי:\n\nhttps://github.com/tomerkedem/ai-engineering-course\n\n**מרצה:** ערן סלע\n\n**תאריך:** 19/05/2026"
+    },
+    "chapters": [
+      {
+        "id": "intro",
+        "file_slug": "intro",
+        "type": "intro",
+        "titles": {
+          "he": "פתיחה: למה בכלל צריך RAG"
+        },
+        "sections": 0,
+        "has_images": true,
+        "word_count": 786,
+        "topics": []
+      },
+      {
+        "id": 1,
+        "file_slug": "chapter-01",
+        "type": "content",
+        "titles": {
+          "he": "Context Window: המקום שבו המודל מקבל את חומר העבודה שלו"
+        },
+        "sections": 0,
+        "has_images": true,
+        "word_count": 1597,
+        "topics": []
+      },
+      {
+        "id": 2,
+        "file_slug": "chapter-02",
+        "type": "content",
+        "titles": {
+          "he": "מהו RAG ומה הבעיה שהוא פותר"
+        },
+        "sections": 0,
+        "has_images": false,
+        "word_count": 1278,
+        "topics": []
+      },
+      {
+        "id": 3,
+        "file_slug": "chapter-03",
+        "type": "content",
+        "titles": {
+          "he": "Embedding: איך טקסט הופך לייצוג מספרי של משמעות"
+        },
+        "sections": 0,
+        "has_images": true,
+        "word_count": 1544,
+        "topics": []
+      },
+      {
+        "id": 4,
+        "file_slug": "chapter-04",
+        "type": "content",
+        "titles": {
+          "he": "Similarity: איך המערכת יודעת מה דומה למה"
+        },
+        "sections": 0,
+        "has_images": true,
+        "word_count": 1494,
+        "topics": []
+      },
+      {
+        "id": 5,
+        "file_slug": "chapter-05",
+        "type": "content",
+        "titles": {
+          "he": "שלושת השלבים של RAG: איך המערכת עובדת בפועל"
+        },
+        "sections": 3,
+        "has_images": true,
+        "word_count": 1608,
+        "topics": []
+      },
+      {
+        "id": 6,
+        "file_slug": "chapter-06",
+        "type": "content",
+        "titles": {
+          "he": "Chunks: למה לא מכניסים מסמך שלם כמו שהוא"
+        },
+        "sections": 0,
+        "has_images": true,
+        "word_count": 1500,
+        "topics": []
+      },
+      {
+        "id": 7,
+        "file_slug": "chapter-07",
+        "type": "content",
+        "titles": {
+          "he": "חיפוש סמנטי מול חיפוש מילות מפתח"
+        },
+        "sections": 0,
+        "has_images": true,
+        "word_count": 1566,
+        "topics": []
+      },
+      {
+        "id": 8,
+        "file_slug": "chapter-08",
+        "type": "content",
+        "titles": {
+          "he": "איפה RAG שימושי באמת"
+        },
+        "sections": 0,
+        "has_images": false,
+        "word_count": 1332,
+        "topics": []
+      },
+      {
+        "id": 9,
+        "file_slug": "chapter-09",
+        "type": "content",
+        "titles": {
+          "he": "מגבלות RAG: למה זה לא פתרון קסם"
+        },
+        "sections": 0,
+        "has_images": true,
+        "word_count": 1707,
+        "topics": []
+      },
+      {
+        "id": 10,
+        "file_slug": "chapter-10",
+        "type": "content",
+        "titles": {
+          "he": "איך משפרים RAG: מה עושים כשהשליפה הבסיסית כבר לא מספיקה"
+        },
+        "sections": 5,
+        "has_images": true,
+        "word_count": 1769,
+        "topics": []
+      },
+      {
+        "id": 11,
+        "file_slug": "chapter-11",
+        "type": "content",
+        "titles": {
+          "he": "Vector Databases: איפה שומרים את הווקטורים ואיך מוצאים אותם בזמן סביר"
+        },
+        "sections": 8,
+        "has_images": true,
+        "word_count": 1437,
+        "topics": []
+      },
+      {
+        "id": 12,
+        "file_slug": "chapter-12",
+        "type": "content",
+        "titles": {
+          "he": "Nearest Neighbors: איך מוצאים את הקטעים הקרובים ביותר לשאלה"
+        },
+        "sections": 6,
+        "has_images": true,
+        "word_count": 1265,
+        "topics": []
+      },
+      {
+        "id": 13,
+        "file_slug": "chapter-13",
+        "type": "content",
+        "titles": {
+          "he": "ANN: איך מחפשים מהר מאוד גם כשלא בודקים את הכול"
+        },
+        "sections": 0,
+        "has_images": true,
+        "word_count": 1389,
+        "topics": []
+      },
+      {
+        "id": 14,
+        "file_slug": "chapter-14",
+        "type": "content",
+        "titles": {
+          "he": "האלגוריתמים המרכזיים בעולם ANN: איך מוצאים מהר בלי לעבור על הכול"
+        },
+        "sections": 8,
+        "has_images": false,
+        "word_count": 1556,
+        "topics": []
+      },
+      {
+        "id": 15,
+        "file_slug": "chapter-15",
+        "type": "content",
+        "titles": {
+          "he": "בחירה מעשית בין Brute Force לבין HNSW: דיוק, מהירות וקנה מידה"
+        },
+        "sections": 0,
+        "has_images": true,
+        "word_count": 1596,
+        "topics": []
+      },
+      {
+        "id": 16,
+        "file_slug": "chapter-16",
+        "type": "content",
+        "titles": {
+          "he": "סוגי פתרונות בעולם ה Vector Databases: לא כל פתרון וקטורי בנוי לאותה משימה"
+        },
+        "sections": 10,
+        "has_images": false,
+        "word_count": 1787,
+        "topics": []
+      },
+      {
+        "id": 17,
+        "file_slug": "chapter-17",
+        "type": "content",
+        "titles": {
+          "he": "FAISS: ספריית חיפוש וקטורי חזקה, אבל לא מסד נתונים מלא"
+        },
+        "sections": 0,
+        "has_images": false,
+        "word_count": 1443,
+        "topics": []
+      },
+      {
+        "id": 18,
+        "file_slug": "chapter-18",
+        "type": "content",
+        "titles": {
+          "he": "ChromaDB: מסד וקטורי נוח לאפליקציות RAG"
+        },
+        "sections": 0,
+        "has_images": false,
+        "word_count": 1504,
+        "topics": []
+      },
+      {
+        "id": 19,
+        "file_slug": "chapter-19",
+        "type": "content",
+        "titles": {
+          "he": "החיבור הארכיטקטוני: איך כל חלקי RAG עובדים יחד"
+        },
+        "sections": 0,
+        "has_images": true,
+        "word_count": 1449,
+        "topics": []
+      },
+      {
+        "id": 20,
+        "file_slug": "chapter-20",
+        "type": "content",
+        "titles": {
+          "he": "החלק המעשי: בניית RAG אמיתי עם Python ו FAISS"
+        },
+        "sections": 11,
+        "has_images": true,
+        "word_count": 5149,
+        "topics": []
+      },
+      {
+        "id": 21,
+        "file_slug": "chapter-21",
+        "type": "content",
+        "titles": {
+          "he": "תרגול בית: להפוך את הדוגמה ממערכת לימודית למערכת RAG גמישה יותר"
+        },
+        "sections": 5,
+        "has_images": false,
+        "word_count": 3783,
+        "topics": []
+      }
+    ],
+    "languages": [
+      "he"
+    ],
+    "credits": {
+      "author": {
+        "he": "תומר קדם"
+      }
+    }
+  }
+}
