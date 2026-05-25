@@ -2782,8 +2782,11 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
          per breakpoint; the transform itself stays the same.
          Bumped to 90px (was 36px) so the TOP of the top-of-orbit cards
          always has at least ~20px of breathing room from the hero
-         subtitle on every common 1024px+ viewport. */
-      --orbit-vertical-offset: 90px;
+         subtitle on every common 1024px+ viewport.
+         Reduced from 90→50 (paired with --orbit-ry shrinking by the
+         same ~40px) so the orbit becomes shorter on desktop while the
+         TOP of the carousel stays at the same Y as before. */
+      --orbit-vertical-offset: 50px;
       transform: translateY(var(--orbit-vertical-offset));
     }
     /* The earlier `.library-galaxy::before` underlay halo and
@@ -2832,7 +2835,7 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
          narrow desktop widths and grows on wide ones. Bumped to keep
          pace with the +20% card width. */
       --orbit-rx: clamp(310px, 34vw, 410px);
-      --orbit-ry: clamp(200px, 28vh, 250px);
+      --orbit-ry: clamp(160px, 22vh, 210px);
       /* Effective angle = base angle (set inline per card) + the
          stage-level rotation that the rotate-orbit controls drive.
          All trigonometry below reads from this so a single CSS-var
@@ -2898,9 +2901,11 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
        Three stacked drop-shadows per keyframe — a tight inner ring
        plus two soft outer blooms — produce a luminous halo that
        reads as a deliberate accent rather than a hard outline.
-       The 3-stop cycle (gold → orange → turquoise → gold) repeats
-       twice over the 3-second window. z-index on the wrapper rises
-       during the pulse so highlighted cards float above neighbours.
+       Single-color turquoise pulse: the halo fades between a calm
+       and an intensified state on a 1.5s loop, signalling the
+       linked group without the multi-hue rotation. z-index on the
+       wrapper rises during the pulse so highlighted cards float
+       above neighbours.
        */
     .galaxy-card.is-linked-glow {
       /* Above every depth-sorted resting card (max z 10). */
@@ -2910,36 +2915,24 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       animation: yuval-linked-glow 1.5s ease-in-out infinite;
     }
     @keyframes yuval-linked-glow {
-      0% {
-        filter:
-          drop-shadow(0 0 2px  rgba(255, 215, 0, 1))
-          drop-shadow(0 0 8px  rgba(255, 215, 0, 0.85))
-          drop-shadow(0 0 18px rgba(255, 215, 0, 0.55));
-      }
-      33% {
-        filter:
-          drop-shadow(0 0 2px  rgba(255, 140, 0, 1))
-          drop-shadow(0 0 8px  rgba(255, 140, 0, 0.85))
-          drop-shadow(0 0 18px rgba(255, 140, 0, 0.55));
-      }
-      66% {
+      0%, 100% {
         filter:
           drop-shadow(0 0 2px  rgba(64, 224, 208, 1))
           drop-shadow(0 0 8px  rgba(64, 224, 208, 0.85))
           drop-shadow(0 0 18px rgba(64, 224, 208, 0.55));
       }
-      100% {
+      50% {
         filter:
-          drop-shadow(0 0 2px  rgba(255, 215, 0, 1))
-          drop-shadow(0 0 8px  rgba(255, 215, 0, 0.85))
-          drop-shadow(0 0 18px rgba(255, 215, 0, 0.55));
+          drop-shadow(0 0 3px  rgba(64, 224, 208, 1))
+          drop-shadow(0 0 12px rgba(64, 224, 208, 0.95))
+          drop-shadow(0 0 26px rgba(64, 224, 208, 0.7));
       }
     }
     @media (prefers-reduced-motion: reduce) {
       :global(.galaxy-card.is-linked-glow .lc-orbit-artifact-face-front) {
         animation: none;
         filter:
-          drop-shadow(0 0 2px  rgba(255, 215, 0, 1))
+          drop-shadow(0 0 2px  rgba(64, 224, 208, 1))
           drop-shadow(0 0 12px rgba(64, 224, 208, 0.55));
       }
     }
@@ -4162,16 +4155,19 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
        Wide desktop carries a slightly bigger orbit-ry (up to 250px
        vs the 1024-1279px tier's 230px), so the offset adds another
        +20px on top of the base desktop's new 90px to preserve the
-       minimum ~20px top-card clearance Tomer requested. */
+       minimum ~20px top-card clearance Tomer requested.
+       Reduced from 110→70 (paired with --orbit-ry shrinking by the
+       same ~40px) so the orbit becomes shorter on wide desktops too
+       while the TOP of the carousel stays at the same Y as before. */
     .library-galaxy {
-      --orbit-vertical-offset: 110px;
+      --orbit-vertical-offset: 70px;
     }
     .galaxy-card {
       /* 210px × 1.2 = 252px (Tomer's +20% bump). Orbit radii grown
          proportionally so the wider cards still distribute cleanly. */
       width: 252px;
       --orbit-rx: clamp(350px, 33vw, 480px);
-      --orbit-ry: clamp(220px, 28vh, 275px);
+      --orbit-ry: clamp(180px, 22vh, 235px);
     }
     /* Capsule stays one notch wider than a book card so the proportion
        contrast holds across breakpoints. 232 × 1.2 = 278px. */
