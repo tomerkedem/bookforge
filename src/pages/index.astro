@@ -1839,25 +1839,31 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       gap: 0.5rem;
       padding: 0.3125rem;
       border-radius: 999px;
-      background: color-mix(in srgb, var(--yuval-galaxy-bg, #00010d) 55%, transparent);
-      border: 1px solid color-mix(in srgb, var(--yuval-galaxy-border, #1a1a3a) 75%, transparent);
-      backdrop-filter: blur(6px);
-      -webkit-backdrop-filter: blur(6px);
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.18),
+        0 6px 18px rgba(0, 0, 0, 0.30);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
       z-index: 40;
       direction: ltr;
     }
     .galaxy-orbit-btn {
-      /* Compact rotate control — 28px circle, a quiet secondary
-         control kept well below the orbit cards in visual weight. */
-      width: 28px;
-      height: 28px;
+      /* Compact rotate control — small pearl glass circle with a clear
+         icon, slightly more visible than the previous muted version. */
+      width: 30px;
+      height: 30px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       border-radius: 50%;
-      color: var(--yuval-galaxy-text-soft);
-      background: var(--yuval-galaxy-surface-muted);
-      border: 1px solid var(--yuval-galaxy-border);
+      color: rgba(255, 255, 255, 0.92);
+      background: rgba(255, 255, 255, 0.10);
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.28),
+        0 2px 6px rgba(0, 0, 0, 0.24);
       cursor: pointer;
       padding: 0;
       transition: color 0.15s ease, background-color 0.15s ease,
@@ -1865,9 +1871,9 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
     }
     .galaxy-orbit-btn:hover,
     .galaxy-orbit-btn:focus-visible {
-      color: var(--yuval-galaxy-text);
-      background: var(--yuval-galaxy-card-surface-hover);
-      border-color: var(--yuval-galaxy-border-strong);
+      color: #ffffff;
+      background: rgba(255, 255, 255, 0.18);
+      border-color: rgba(255, 255, 255, 0.36);
       outline: none;
     }
     [dir="rtl"] .galaxy-orbit-btn svg { transform: scaleX(-1); }
@@ -3880,34 +3886,41 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       gap: 0.5rem;
       padding: 0.3125rem;
       border-radius: 999px;
-      background: color-mix(in srgb, var(--yuval-galaxy-bg, #00010d) 55%, transparent);
-      border: 1px solid color-mix(in srgb, var(--yuval-galaxy-border, #1a1a3a) 75%, transparent);
-      backdrop-filter: blur(6px);
-      -webkit-backdrop-filter: blur(6px);
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.18),
+        0 6px 18px rgba(0, 0, 0, 0.30);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
       z-index: 40;
       direction: ltr;
     }
     .galaxy-orbit-btn {
-      /* Compact rotate control — 28px circle, a quiet secondary
-         control kept well below the orbit cards in visual weight. */
-      width: 28px;
-      height: 28px;
+      /* Compact rotate control — small pearl glass circle. Slightly
+         brighter than the previous muted-surface version so the icons
+         read clearly without competing with the book cards. */
+      width: 30px;
+      height: 30px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       border-radius: 50%;
-      color: var(--yuval-galaxy-text-soft);
-      background: var(--yuval-galaxy-surface-muted);
-      border: 1px solid var(--yuval-galaxy-border);
+      color: rgba(255, 255, 255, 0.92);
+      background: rgba(255, 255, 255, 0.10);
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.28),
+        0 2px 6px rgba(0, 0, 0, 0.24);
       cursor: pointer;
       padding: 0;
       transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
     }
     .galaxy-orbit-btn:hover,
     .galaxy-orbit-btn:focus-visible {
-      color: var(--yuval-galaxy-text);
-      background: var(--yuval-galaxy-card-surface-hover);
-      border-color: var(--yuval-galaxy-border-strong);
+      color: #ffffff;
+      background: rgba(255, 255, 255, 0.18);
+      border-color: rgba(255, 255, 255, 0.36);
       transform: translateY(-1px);
       outline: none;
     }

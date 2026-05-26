@@ -215,75 +215,72 @@ const PARTICLES = [0, 1, 2, 3, 4, 5];
      re-declares only the `--kc-*` tokens. No markup is duplicated.
      ═══════════════════════════════════════════════════════════════════ */
   .knowledge-core {
-    /* Surface / chrome — ultra-transparent smart glass. Almost invisible
-       body, thin pearl + cyan rim lines, soft holographic outer glow. */
+    /* Surface / chrome — refined pearl frosted glass. Same visual
+       language as ContinueLearningCard so the two panels feel like a
+       matched pair framing the carousel. */
     --kc-surface:
-      radial-gradient(ellipse 90% 40% at 50% 0%,
-        rgba(140, 200, 255, 0.07) 0%, transparent 65%),
+      radial-gradient(ellipse 100% 50% at 50% 0%,
+        rgba(255, 255, 255, 0.10) 0%, transparent 70%),
       linear-gradient(180deg,
-        rgba(10, 14, 30, 0.18) 0%,
-        rgba(8, 12, 26, 0.12) 50%,
-        rgba(10, 14, 30, 0.18) 100%);
-    --kc-border: rgba(195, 225, 255, 0.22);
+        rgba(255, 255, 255, 0.09) 0%,
+        rgba(240, 248, 255, 0.06) 100%);
+    --kc-border: rgba(255, 255, 255, 0.20);
     --kc-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.30),
-      inset 0 -1px 0 rgba(34, 211, 238, 0.34),
-      inset 1px 0 0 rgba(232, 240, 255, 0.16),
-      inset -1px 0 0 rgba(34, 211, 238, 0.18),
-      inset 0 0 28px rgba(34, 211, 238, 0.05),
-      0 0 22px rgba(34, 211, 238, 0.16),
-      0 0 48px rgba(180, 220, 255, 0.08);
+      inset 0 1px 0 rgba(255, 255, 255, 0.28),
+      inset 0 -1px 0 rgba(255, 255, 255, 0.10),
+      0 0 20px rgba(180, 220, 255, 0.16),
+      0 18px 38px rgba(0, 0, 0, 0.28),
+      0 6px 16px rgba(0, 0, 0, 0.18);
 
-    /* Decorative HUD palette */
-    --kc-hud-line: rgba(150, 220, 255, 0.16);
-    --kc-hud-node: rgba(220, 240, 255, 0.55);
-    --kc-hud-node-glow: rgba(34, 211, 238, 0.55);
-    --kc-hud-ring: rgba(34, 211, 238, 0.30);
-    --kc-hud-graph: rgba(195, 225, 255, 0.32);
-    --kc-hud-graph-axis: rgba(195, 225, 255, 0.16);
+    /* Whisper-faint HUD glass texture */
+    --kc-hud-line: rgba(210, 225, 245, 0.10);
+    --kc-hud-node: rgba(225, 235, 250, 0.36);
+    --kc-hud-node-glow: rgba(180, 210, 240, 0.22);
+    --kc-hud-ring: rgba(200, 220, 240, 0.16);
+    --kc-hud-graph: rgba(210, 225, 245, 0.18);
+    --kc-hud-graph-axis: rgba(210, 225, 245, 0.10);
 
-    /* Floor reflection — soft cyan/pearl glow puddle */
-    --kc-floor: rgba(34, 211, 238, 0.22);
-    --kc-floor-soft: rgba(180, 220, 255, 0.10);
+    /* Floor reflection — gentle pearl/ice-blue puddle */
+    --kc-floor: rgba(180, 220, 255, 0.16);
+    --kc-floor-soft: rgba(255, 255, 255, 0.06);
 
-    /* Text */
+    /* Text — heading accent shifted from purple to soft ice-blue so the
+       panel reads as calm pearl glass, not a colourful UI. */
     --kc-text: var(--yuval-galaxy-text, #eaf0ff);
     --kc-text-soft: var(--yuval-galaxy-text-soft, #7e8aae);
-    --kc-heading-accent: var(--yuval-galaxy-accent-purple, #a78bfa);
+    --kc-heading-accent: #c8dffb;
 
-    /* Core — luminous center */
+    /* Core — luminous center, now pearl + ice-blue instead of purple */
     --kc-core-face:
       radial-gradient(circle at 50% 36%,
-        rgba(167, 139, 250, 0.46) 0%,
-        rgba(80, 60, 160, 0.20) 46%,
-        rgba(10, 12, 30, 0.94) 100%);
-    --kc-core-border: rgba(167, 139, 250, 0.42);
+        rgba(255, 255, 255, 0.55) 0%,
+        rgba(200, 230, 255, 0.22) 48%,
+        rgba(40, 60, 110, 0.55) 100%);
+    --kc-core-border: rgba(255, 255, 255, 0.40);
     --kc-core-glow:
-      0 0 26px 5px rgba(124, 58, 237, 0.42),
-      0 0 48px 12px rgba(34, 211, 238, 0.20);
+      0 0 22px 4px rgba(180, 220, 255, 0.28),
+      0 0 40px 10px rgba(34, 211, 238, 0.14);
     --kc-core-inset:
-      inset 0 1px 1px rgba(255, 255, 255, 0.16),
-      inset 0 0 22px rgba(124, 58, 237, 0.26);
+      inset 0 1px 1px rgba(255, 255, 255, 0.38),
+      inset 0 0 18px rgba(180, 220, 255, 0.16);
     --kc-core-text: #ffffff;
-    --kc-core-text-soft: rgba(234, 240, 255, 0.74);
-    --kc-core-halo: rgba(124, 58, 237, 0.42);
+    --kc-core-text-soft: rgba(234, 240, 255, 0.78);
+    --kc-core-halo: rgba(180, 220, 255, 0.30);
 
-    /* Orbit ring + particles */
-    --kc-ring: rgba(167, 139, 250, 0.30);
+    /* Orbit ring + particles — pearl/ice-blue, no purple */
+    --kc-ring: rgba(220, 232, 252, 0.30);
     --kc-ring-dot: var(--yuval-galaxy-accent-cyan, #22d3ee);
-    --kc-particle: rgba(184, 204, 255, 0.78);
+    --kc-particle: rgba(220, 232, 252, 0.65);
 
-    /* Category nodes — smart-glass capsules, much lower opacity than
-       the original solid faces so they continue the holographic feel. */
+    /* Category nodes — pearl glass capsules, matched to the outer panel */
     --kc-node-face:
       linear-gradient(180deg,
-        rgba(20, 28, 54, 0.34) 0%,
-        rgba(12, 16, 34, 0.42) 100%);
-    --kc-node-border: rgba(195, 225, 255, 0.18);
+        rgba(255, 255, 255, 0.10) 0%,
+        rgba(240, 248, 255, 0.06) 100%);
+    --kc-node-border: rgba(255, 255, 255, 0.18);
     --kc-node-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.14),
-      inset 0 -1px 0 rgba(34, 211, 238, 0.18),
-      0 4px 12px rgba(2, 4, 14, 0.22);
+      inset 0 1px 0 rgba(255, 255, 255, 0.24),
+      0 4px 12px rgba(0, 0, 0, 0.20);
 
     /* Bottom "view all items" action — subtle ghost button. */
     --kc-view-all-hover-bg: rgba(140, 190, 255, 0.06);
@@ -293,61 +290,57 @@ const PARTICLES = [0, 1, 2, 3, 4, 5];
     --kc-radius: var(--yuval-galaxy-panel-radius, 20px);
   }
 
-  /* ── Light theme — pearl smart-glass hologram ─────────────────────────
-     Daylight variant: a near-invisible warm pearl body with thin cyan +
-     pearl rim lines and a calm cool glow. Scoped to `html:not(.dark)`;
-     only re-paints `--kc-*` tokens. */
+  /* ── Light theme — pearl frosted glass ────────────────────────────────
+     Daylight variant: clean pearl body, soft pearl edge, calm cool
+     drop shadow. No strong purple, no saturated blue. */
   :global(html:not(.dark)) .knowledge-core {
     --kc-surface:
-      radial-gradient(ellipse 90% 40% at 50% 0%,
-        rgba(255, 255, 255, 0.30) 0%, transparent 68%),
+      radial-gradient(ellipse 100% 50% at 50% 0%,
+        rgba(255, 255, 255, 0.55) 0%, transparent 72%),
       linear-gradient(180deg,
-        rgba(255, 255, 255, 0.30) 0%,
-        rgba(248, 252, 255, 0.22) 50%,
-        rgba(255, 255, 255, 0.30) 100%);
-    --kc-border: rgba(34, 52, 92, 0.18);
+        rgba(255, 255, 255, 0.42) 0%,
+        rgba(245, 250, 255, 0.36) 100%);
+    --kc-border: rgba(255, 255, 255, 0.65);
     --kc-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.80),
-      inset 0 -1px 0 rgba(14, 116, 144, 0.32),
-      inset 1px 0 0 rgba(255, 255, 255, 0.45),
-      inset -1px 0 0 rgba(14, 116, 144, 0.18),
-      inset 0 0 22px rgba(14, 116, 144, 0.04),
-      0 0 20px rgba(14, 116, 144, 0.12),
-      0 0 42px rgba(180, 220, 255, 0.30);
+      inset 0 1px 0 rgba(255, 255, 255, 0.85),
+      inset 0 -1px 0 rgba(255, 255, 255, 0.45),
+      0 0 18px rgba(150, 195, 235, 0.18),
+      0 14px 32px rgba(30, 45, 80, 0.10),
+      0 4px 12px rgba(30, 45, 80, 0.06);
 
-    --kc-hud-line: rgba(14, 116, 144, 0.20);
-    --kc-hud-node: rgba(14, 116, 144, 0.55);
-    --kc-hud-node-glow: rgba(14, 116, 144, 0.45);
-    --kc-hud-ring: rgba(14, 116, 144, 0.32);
-    --kc-hud-graph: rgba(34, 52, 92, 0.34);
-    --kc-hud-graph-axis: rgba(34, 52, 92, 0.18);
+    --kc-hud-line: rgba(60, 95, 140, 0.10);
+    --kc-hud-node: rgba(60, 95, 140, 0.30);
+    --kc-hud-node-glow: rgba(120, 170, 220, 0.22);
+    --kc-hud-ring: rgba(120, 170, 220, 0.18);
+    --kc-hud-graph: rgba(60, 95, 140, 0.22);
+    --kc-hud-graph-axis: rgba(60, 95, 140, 0.10);
 
-    --kc-floor: rgba(14, 116, 144, 0.18);
-    --kc-floor-soft: rgba(180, 220, 255, 0.22);
+    --kc-floor: rgba(150, 195, 235, 0.20);
+    --kc-floor-soft: rgba(255, 255, 255, 0.30);
 
     --kc-text: #16223c;
     --kc-text-soft: #6a778d;
-    --kc-heading-accent: #6d3bd4;
+    --kc-heading-accent: #0e7490;
 
     --kc-core-face:
       radial-gradient(circle at 50% 34%,
         rgba(255, 255, 255, 0.96) 0%,
-        rgba(221, 226, 244, 0.82) 48%,
-        rgba(228, 232, 246, 0.66) 100%);
-    --kc-core-border: rgba(109, 59, 212, 0.30);
+        rgba(225, 235, 248, 0.82) 48%,
+        rgba(225, 235, 248, 0.66) 100%);
+    --kc-core-border: rgba(14, 116, 144, 0.28);
     --kc-core-glow:
-      0 0 20px 4px rgba(124, 58, 237, 0.16),
-      0 0 30px 10px rgba(14, 116, 144, 0.12);
+      0 0 20px 4px rgba(150, 195, 235, 0.20),
+      0 0 30px 10px rgba(14, 116, 144, 0.10);
     --kc-core-inset:
       inset 0 1px 0 rgba(255, 255, 255, 0.92),
-      inset 0 0 18px rgba(124, 58, 237, 0.07);
+      inset 0 0 18px rgba(150, 195, 235, 0.10);
     --kc-core-text: #16223c;
     --kc-core-text-soft: #46556f;
-    --kc-core-halo: rgba(124, 58, 237, 0.16);
+    --kc-core-halo: rgba(150, 195, 235, 0.18);
 
-    --kc-ring: rgba(109, 59, 212, 0.26);
+    --kc-ring: rgba(14, 116, 144, 0.22);
     --kc-ring-dot: #0e7490;
-    --kc-particle: rgba(109, 59, 212, 0.42);
+    --kc-particle: rgba(60, 95, 140, 0.34);
 
     --kc-node-face:
       linear-gradient(180deg,
@@ -449,7 +442,9 @@ const PARTICLES = [0, 1, 2, 3, 4, 5];
     inset: 0;
     width: 100%;
     height: 100%;
-    opacity: 0.45;
+    /* Whisper-faint glass texture only — reads as subtle depth, never
+       as a graphic element competing with the core or category nodes. */
+    opacity: 0.20;
   }
   .kc__hud-net line {
     stroke: var(--kc-hud-line);
@@ -715,35 +710,47 @@ const PARTICLES = [0, 1, 2, 3, 4, 5];
   }
 
   /* ═══════════════════════════════════════════════════════════════════
-     BOTTOM ACTION — subtle "view all items" trigger
-     A quiet ghost button (not a navigation CTA) that will open the
-     alternative grid/list "all items" view. Centered and muted so it
-     stays visually integrated and never competes with the core/nodes.
+     BOTTOM ACTION — "view all items" pearl-glass button.
+     Reads as a real button (matched to the category-node treatment),
+     not a ghost. Still kept subtle enough not to compete with the core
+     or nodes — narrower padding, slightly softer text colour.
      ═══════════════════════════════════════════════════════════════════ */
   .kc__view-all {
-    align-self: center;
+    align-self: stretch;
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    justify-content: center;
+    gap: 8px;
     margin: 0;
-    padding: 7px 12px;
+    padding: 9px 14px;
     font: inherit;
     font-size: 12px;
-    color: var(--kc-text-soft);
-    background: transparent;
-    border: 1px solid transparent;
-    border-radius: 9px;
+    font-weight: 500;
+    color: var(--kc-text);
+    background: var(--kc-node-face);
+    border: 1px solid var(--kc-node-border);
+    border-radius: 11px;
+    box-shadow: var(--kc-node-shadow);
     cursor: pointer;
     transition:
       color 200ms ease-out,
       background-color 200ms ease-out,
-      border-color 200ms ease-out;
+      border-color 200ms ease-out,
+      box-shadow 200ms ease-out,
+      transform 200ms var(--yuval-galaxy-ease-out, cubic-bezier(0.22, 1, 0.36, 1));
   }
 
   .kc__view-all:hover {
     color: var(--kc-text);
-    background: var(--kc-view-all-hover-bg);
-    border-color: var(--kc-view-all-hover-border);
+    border-color: color-mix(in srgb, var(--kc-focus) 55%, transparent);
+    box-shadow:
+      var(--kc-node-shadow),
+      0 0 16px -2px color-mix(in srgb, var(--kc-focus) 50%, transparent);
+    transform: translateY(-1px);
+  }
+
+  .kc__view-all-label {
+    line-height: 1;
   }
 
   .kc__view-all-icon {
