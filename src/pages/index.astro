@@ -1746,11 +1746,21 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       /* Upper arc = near/front, lower arc = far/back (`1 - sin`), same
          inverted depth model as desktop. */
       --orbit-depth: calc((1 - sin(var(--orbit-active-angle, 0deg))) / 2);
+      /* Side prominence — 0 at top/bottom, 1 at the inline extremes.
+         Same cos² formulation as desktop so cards drifting to the
+         visual edges fade into the cosmic field. */
+      --orbit-side: calc(
+        cos(var(--orbit-active-angle, 0deg)) *
+        cos(var(--orbit-active-angle, 0deg))
+      );
       /* Gentler depth ramp than desktop — phone cards are already
-         small, so far stations only step down to 0.80 scale / 0.62
-         opacity. Keeps satellites readable, not overcrowded. */
-      --slot-scale: calc(0.80 + 0.20 * var(--orbit-depth));
-      --slot-opacity: calc(0.62 + 0.38 * var(--orbit-depth));
+         small, so far stations only step down to ~0.62 scale and
+         ~0.25 opacity at the inline extremes, ~0.32 opacity at the
+         bottom. Side fade still reads on mobile so the orbit
+         continues past the viewport rather than stopping cleanly at
+         the edge cards. */
+      --slot-scale: calc(0.62 + 0.30 * var(--orbit-depth) - 0.18 * var(--orbit-side));
+      --slot-opacity: calc(0.32 + 0.55 * var(--orbit-depth) - 0.30 * var(--orbit-side));
       --tilt: calc(cos(var(--orbit-active-angle, 0deg)) * 4deg * var(--galaxy-dir, 1) * -1);
       transform:
         translate(-50%, -50%)
@@ -2264,12 +2274,15 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
      transform never affects mobile layout. */
   .library-galaxy {
     --orbit-vertical-offset: 32px;
-    /* Carousel rotation motion — a smoother, slightly inertial premium
-       curve so stations glide through the knowledge space instead of
-       snapping between positions. Consumed by the orbit-card transform
-       + opacity transition in both light and dark mode. */
-    --orbit-motion-duration: 600ms;
-    --orbit-motion-ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+    /* Carousel rotation motion — calmer, longer ease so stations glide
+       through the knowledge space rather than snapping between positions.
+       The curve is a smooth ease-out (no bounce, no overshoot) sitting
+       at the slow end of the user-spec range (550-850ms) so movement
+       reads as premium and easy to track without losing orientation.
+       Consumed by the orbit-card transform + opacity transition in
+       both light and dark mode. */
+    --orbit-motion-duration: 720ms;
+    --orbit-motion-ease: cubic-bezier(0.25, 1, 0.32, 1);
   }
   /* Reduced motion: collapse the rotation duration so depth changes
      apply instantly. The global theme.css rule already neutralises the
@@ -2533,9 +2546,12 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       top: 50%;
       left: 50%;
       /* Ellipse radii — clamped so the orbit shrinks gracefully on
-         narrow desktop widths and grows on wide ones. Bumped to keep
-         pace with the +20% card width. */
-      --orbit-rx: clamp(310px, 34vw, 410px);
+         narrow desktop widths and grows on wide ones. Widened (was
+         310/34vw/410) so the carousel spreads out across the
+         viewport: side cards drift toward the screen edges, leaving
+         the central knowledge-core area open and signalling that
+         the orbit continues beyond the visible frame. */
+      --orbit-rx: clamp(360px, 42vw, 540px);
       --orbit-ry: clamp(160px, 22vh, 210px);
       /* Effective angle = base angle (set inline per card) + the
          stage-level rotation that the rotate-orbit controls drive.
@@ -2548,13 +2564,32 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
          orbit and +1 at the bottom; `1 - sin` remaps so the UPPER arc
          reads as the near/front side and the lower arc recedes. */
       --orbit-depth: calc((1 - sin(var(--orbit-active-angle, 0deg))) / 2);
-      /* Spatial depth ramp — front/near stations sit forward (scale
-         1.0, full opacity, highest z-index), far/back stations recede
-         (scale 0.68, 0.55 opacity, lowest z-index). Reads as a real
-         perspective orbit, not a flat ring. Light mode lifts the
-         opacity floor via the override block higher up. */
-      --slot-scale: calc(0.68 + 0.32 * var(--orbit-depth));
-      --slot-opacity: calc(0.55 + 0.45 * var(--orbit-depth));
+      /* Side prominence — 0 at the top/bottom of the orbit (12 / 6
+         o'clock), 1 at the inline extremes (3 / 9 o'clock). Used to
+         subtract a small extra opacity/scale from cards sitting at
+         the visual edges so they read as "continuing beyond the
+         screen" rather than as crowded peers of the near stations.
+         Implemented as cos² (cos × cos) rather than abs(cos) so the
+         math relies only on cos() — same browser support as the
+         existing sin()/cos() orbit transforms — and gives a smoother
+         curve through the side-arc transition. */
+      --orbit-side: calc(
+        cos(var(--orbit-active-angle, 0deg)) *
+        cos(var(--orbit-active-angle, 0deg))
+      );
+      /* Spatial depth ramp — front/near stations sit forward
+         (scale ~0.98, full opacity, highest z-index), far/back
+         stations recede (scale ~0.62, ~0.40 opacity, lowest z-index).
+         Inline-edge stations get an additional reduction (~0.20
+         scale / ~0.40 opacity at the extremes) so the orbit fades
+         out toward the viewport edges as if it continues beyond the
+         screen rather than ending at the visible cards. Light mode
+         lifts the opacity floor via the override block higher up.
+           top    (depth=1, side=0): scale 0.98, opacity 1.00
+           bottom (depth=0, side=0): scale 0.62, opacity 0.40
+           side   (depth=0.5,side=1): scale 0.60, opacity 0.30 */
+      --slot-scale: calc(0.62 + 0.36 * var(--orbit-depth) - 0.20 * var(--orbit-side));
+      --slot-opacity: calc(0.40 + 0.60 * var(--orbit-depth) - 0.40 * var(--orbit-side));
       /* Subtle perpendicular tilt: cards on the inline-start arc
          (cos < 0 in default LTR, after dir flip) lean inward. */
       --tilt: calc(cos(var(--orbit-active-angle, 0deg)) * 4deg * var(--galaxy-dir, 1) * -1);
