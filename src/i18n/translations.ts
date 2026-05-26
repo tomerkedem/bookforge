@@ -199,12 +199,6 @@ export const translations: Translations = {
     en: 'Available languages',
     es: 'Idiomas disponibles',
   },
-  'header.themeTooltip': {
-    he: 'החלף ערכת נושא',
-    en: 'Toggle theme',
-    es: 'Cambiar tema',
-  },
-
   // ── Breadcrumbs ─────────────────────────────────────────────────────────────
   'breadcrumb.books':      { he: 'ספרים',          en: 'Books',            es: 'Libros' },
 
@@ -574,6 +568,11 @@ export const translations: Translations = {
   //    sit BELOW the existing reading-entry pill on the focused card.
   //    The primary glowing pill itself is unchanged.
   'library.centerCard.bookSummaryLink': { he: 'מה יש בספר?',          en: 'What is in this book?',          es: '¿Qué hay en este libro?' },
+  // Secondary glass pill that sits inside the reading-entry panel
+  // below the "המשך קריאה / פרק X" title row. Opens the book summary
+  // page ({item.href}), not the reader.
+  'library.centerCard.bookSummaryPill': { he: 'תקציר הספר',          en: 'Book summary',                   es: 'Resumen del libro' },
+  'library.centerCard.bookSummaryPillAria': { he: 'פתח את תקציר הספר', en: 'Open the book summary',          es: 'Abrir el resumen del libro' },
   'library.centerCard.metaMinutes':     { he: '{{n}} דק׳ קריאה',     en: '{{n}} min read',                 es: '{{n}} min de lectura' },
   'library.centerCard.metaProgress':    { he: '{{n}}% הושלם',         en: '{{n}}% completed',               es: '{{n}}% completado' },
   // Section label that sits above the three glass meta capsules in the

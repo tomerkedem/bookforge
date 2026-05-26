@@ -1,7 +1,7 @@
 /**
  * Premium AI motion background for the library day mode.
  *
- * Sits ABOVE `knowledge-observatory-day-bg.png` and BELOW every UI
+ * Sits ABOVE `ai_researcher_workspace_day_bg.webp` and BELOW every UI
  * surface (cards, hero, side panels). Renders subtle floating
  * "knowledge particles" — warm amber dots — with thin connection lines
  * between near-neighbours. CSS handles the breathing glow and slow

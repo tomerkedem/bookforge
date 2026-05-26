@@ -898,7 +898,13 @@ const activeFocusJson = JSON.stringify(LANGUAGE_FOCUS[activeLanguage] ?? null);
     background:
       linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0) 60%),
       rgba(18, 16, 22, 0.40);
-    color: var(--yuval-text-secondary, #c4b8a8);
+    /* Text color is fixed (not themed) — the overlay backdrop is
+       always a dark cinematic stage regardless of light/dark mode,
+       so we cannot route through var(--yuval-text-*) which resolves
+       to near-black in day mode and renders the labels invisible
+       on the dark overlay. The warm-cream tones below were the old
+       fallback values; promoted to authoritative so day mode works. */
+    color: #c4b8a8;
     font-family: var(--font-heading, inherit);
     font-size: 13px;
     font-weight: 500;
@@ -948,7 +954,7 @@ const activeFocusJson = JSON.stringify(LANGUAGE_FOCUS[activeLanguage] ?? null);
        but stays clearly below the active state's saturation so the
        row never has two "selected-looking" pills at once. */
     border-color: rgba(232, 197, 71, 0.22);
-    color: var(--yuval-text, #f0e6d0);
+    color: #f0e6d0;
     /* Hover combines the arc offset with a 1 px lift so the pill
        still feels like it's reacting to the cursor — but never
        breaks out of its arc position. Layout stays stable: the
@@ -977,7 +983,7 @@ const activeFocusJson = JSON.stringify(LANGUAGE_FOCUS[activeLanguage] ?? null);
       linear-gradient(180deg, rgba(232, 197, 71, 0.11), rgba(232, 197, 71, 0) 65%),
       rgba(18, 16, 22, 0.55);
     border-color: rgba(232, 197, 71, 0.42);
-    color: var(--yuval-text, #f0e6d0);
+    color: #f0e6d0;
     font-weight: 600;
     /* Refined gold halo on the arc orbit. The inner ring (10 px /
        0.20 alpha) keeps the previous tight kiss-of-light; a
@@ -1326,7 +1332,9 @@ const activeFocusJson = JSON.stringify(LANGUAGE_FOCUS[activeLanguage] ?? null);
 
   .lgs-overlay-en {
     font-size: 11px;
-    color: var(--yuval-text-tertiary, #9a8e7c);
+    /* Fixed (non-themed) color — see the .lgs-overlay-option color
+       rule above for why we avoid var(--yuval-text-*) on the overlay. */
+    color: #9a8e7c;
     font-weight: 500;
     letter-spacing: 0.05em;
     text-transform: uppercase;
@@ -1342,7 +1350,7 @@ const activeFocusJson = JSON.stringify(LANGUAGE_FOCUS[activeLanguage] ?? null);
   }
 
   .lgs-overlay-option.is-active .lgs-overlay-en {
-    color: var(--yuval-text-secondary, #c4b8a8);
+    color: #c4b8a8;
   }
 
   .lgs-overlay-check {

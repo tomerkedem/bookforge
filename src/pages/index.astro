@@ -320,9 +320,11 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
   >
 
     {/* Cosmic scene background — full-viewport, behind every UI layer.
-        Night (dark mode) renders the original galaxy PNG. Day (light
-        mode) hides the night image and falls through to the
-        `.library-root` gradient fallback below. */}
+        Night (dark mode) renders the galaxy PNG. Day (light mode)
+        renders the AI Researcher Workspace photographic scene; the
+        <picture> swaps to the phone-cropped variant at <768px. The
+        two images share the same absolute box; opacity rules in the
+        stylesheet decide which one is visible per theme. */}
     <div class="knowledge-scene-background" aria-hidden="true">
       {/* Night scene — dark-mode background. */}
       <img
@@ -331,6 +333,22 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
         alt=""
         decoding="async"
       />
+
+      {/* Day scene — light-mode background. Mobile + desktop variants
+          swapped via <picture media>; visibility toggled by the
+          .knowledge-scene-img--day opacity rule. */}
+      <picture>
+        <source
+          media="(min-width: 768px)"
+          srcset="/assets/library/day/ai_researcher_workspace_day_bg.webp"
+        />
+        <img
+          class="knowledge-scene-img knowledge-scene-img--day"
+          src="/assets/library/day/ai_researcher_workspace_day_bg_mobile.webp"
+          alt=""
+          decoding="async"
+        />
+      </picture>
 
       <div class="knowledge-scene-overlay"></div>
     </div>
@@ -369,6 +387,19 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
         <div class="knowledge-motion-path knowledge-motion-path--2"></div>
         <div class="knowledge-motion-path knowledge-motion-path--3"></div>
       </div>
+      {/* Thin cyan data lines — slow horizontal/vertical drifts hugging the
+          sides + lower band of the viewport. Pure CSS transforms; one node
+          per line so each can have its own duration + delay without
+          re-keyframing. */}
+      <div class="knowledge-motion-data-lines">
+        <div class="knowledge-motion-data-line knowledge-motion-data-line--start"></div>
+        <div class="knowledge-motion-data-line knowledge-motion-data-line--end"></div>
+        <div class="knowledge-motion-data-line knowledge-motion-data-line--floor"></div>
+      </div>
+      {/* CSS-only research particles — a handful of tiny dots painted via
+          radial-gradient layers on a single div, opacity-pulsed by one
+          keyframe. No canvas, no DOM nodes per dot. */}
+      <div class="knowledge-motion-particles"></div>
     </div>
 
     <div class="library-body">
@@ -611,29 +642,33 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
                     handler in `universe-layout.ts` via the
                     `data-reading-entry` attribute. */}
                 {isSafeLibraryHref(item.href) && (
-                  <a
-                    class="reading-entry-overlay"
-                    href={resolveReadingHref(item)}
-                    data-reading-entry
-                    data-reading-entry-href={resolveReadingHref(item)}
-                    data-reading-entry-slug={item.slug}
-                    data-aria-template={t('library.readingEntry.continueChapterAria', language, { n: '__N__' })}
-                    aria-label={
-                      typeof item.chapterCount === 'number' && item.chapterCount > 0
-                        ? t('library.readingEntry.continueChapterAria', language, { n: 1 })
-                        : t('library.readingEntry.ariaLabel', language)
-                    }
-                  >
+                  <div class="reading-entry-overlay">
+                    {/* Main click target. Covers the panel at inset:0 so
+                        clicks anywhere on the glass surface (except the
+                        summary pill) continue reading. Sibling of
+                        `.reading-entry-text` — not an ancestor — so the
+                        in-panel pill can stay an independent <a> without
+                        nesting interactive elements. */}
+                    <a
+                      class="reading-entry-main"
+                      href={resolveReadingHref(item)}
+                      data-reading-entry
+                      data-reading-entry-href={resolveReadingHref(item)}
+                      data-reading-entry-slug={item.slug}
+                      data-aria-template={t('library.readingEntry.continueChapterAria', language, { n: '__N__' })}
+                      aria-label={
+                        typeof item.chapterCount === 'number' && item.chapterCount > 0
+                          ? t('library.readingEntry.continueChapterAria', language, { n: 1 })
+                          : t('library.readingEntry.ariaLabel', language)
+                      }
+                    ></a>
                     {/* The reading-entry-card1.png artifact is the visual
                         base of the panel — painted via `background-image`
                         on this layer so the icon at the top center stays
                         baked into the asset. Live i18n text (title +
-                        subtitle + meta row) is rendered as real HTML over
-                        the image so it stays crisp, translatable and
-                        accessible. Everything that used to live in the
-                        sibling `.center-card-extras` wrapper now sits
-                        inside this overlay so the CTA + facts read as
-                        one premium glass panel. */}
+                        subtitle + summary pill + meta row) is rendered as
+                        real HTML over the image so it stays crisp,
+                        translatable and accessible. */}
                     <span class="reading-entry-asset" aria-hidden="true"></span>
                     <div class="reading-entry-text">
                       <span
@@ -652,6 +687,22 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
                           {t('library.readingEntry.chapterN', language, { n: 1 })}
                         </span>
                       )}
+                      {/* Secondary action — opens the book summary page
+                          ({item.href}), NOT the reader. Subtle glass pill
+                          so it never competes with the main CTA above.
+                          `data-cc-secondary-link` makes universe-layout's
+                          stage click handler bail out without closing the
+                          focused card, preserving native <a> behavior.
+                          Click is `stopPropagation`'d as belt-and-braces
+                          so the launch handler can never observe it. */}
+                      <a
+                        class="reading-entry-summary-pill"
+                        href={item.href}
+                        data-cc-secondary-link
+                        aria-label={t('library.centerCard.bookSummaryPillAria', language)}
+                      >
+                        {t('library.centerCard.bookSummaryPill', language)}
+                      </a>
                       <div class="cc-meta" data-cc-meta>
                         {typeof item.chapterCount === 'number' && item.chapterCount > 0 && (
                           <span class="cc-meta-item" data-cc-meta-chapters>
@@ -677,7 +728,7 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
                         </span>
                       </div>
                     </div>
-                  </a>
+                  </div>
                 )}
                 {/* `.galaxy-cta` slot is now only rendered for series
                     capsules — the open-orb (`.galaxy-cta-open`) was
@@ -1034,16 +1085,61 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
     -webkit-user-drag: none;
   }
   /* ── Theme-aware scene swap ──────────────────────────────────────
-     The night galaxy is the default — dark mode and the no-class
-     fallback both render it. Light mode (<html> without `.dark`)
-     fades the night image out and falls through to `.library-root`'s
-     gradient fallback. */
+     The night galaxy is the default — dark mode renders the night
+     PNG and hides the day photograph. Light mode (<html> without
+     `.dark`) inverts both opacities so the day image fades in and
+     the night image fades out. Both layers share the same absolute
+     box so the swap is a pure cross-fade — no layout shift. */
   .knowledge-scene-img {
     transition: opacity var(--yuval-galaxy-motion-slow, 520ms)
                 var(--yuval-galaxy-ease-soft, ease);
   }
   :global(html:not(.dark)) .knowledge-scene-img--night {
     opacity: 0;
+  }
+  .knowledge-scene-img--day {
+    opacity: 0;
+  }
+  :global(html:not(.dark)) .knowledge-scene-img--day {
+    opacity: 1;
+  }
+  /* Day image — responsive fit strategy.
+     ─ Mobile (<768px): inherits the shared `.knowledge-scene-background
+       img` rule → object-fit: cover with the phone-cropped asset, which
+       is already framed for portrait so cover loses nothing important.
+     ─ Tablet + desktop (≥768px): override the shared rule's
+       `width:100%; height:100%` so the image spans the full container
+       width (= full viewport width) with its native ~16:9 aspect
+       preserved via `height: auto`. The image is anchored to the top
+       of `.knowledge-scene-background` (which itself sits 130px above
+       library-root's top, so the top edge tucks behind the opaque
+       header just like the night image does). On 16:9 displays the
+       image fills both axes exactly. On taller viewports a band of
+       the light-mode `.library-root` ivory gradient shows below the
+       image as a soft sky-toned fallback. On ultra-wide viewports
+       the container's `overflow: hidden` clips a small slice off the
+       bottom — kept minimal by choosing top-anchor + aspect height
+       rather than centring the image vertically.
+     Specificity (0,2,2) outranks the generic `.knowledge-scene-
+     background img` (0,1,1). Night mode is untouched — the selector
+     only matches `--day`. */
+  @media (min-width: 768px) {
+    .knowledge-scene-background img.knowledge-scene-img--day {
+      width: 100%;
+      height: auto;
+      /* Bottom-anchored: image's bottom edge sticks to the bottom of
+         the visible viewport so the workspace details near the floor
+         are always on screen. On 16:9 displays the image fills end-to-
+         end. On taller viewports (16:10, 4:3) a small light gradient
+         band appears between the header and the image's top edge —
+         intentional, reads as ambient sky. On ultra-wide viewports a
+         slice of the image's TOP (ceiling area) is clipped, never the
+         informative bottom half. */
+      inset: auto 0 0 0;
+      object-fit: unset;
+      object-position: unset;
+      transform: none;
+    }
   }
 
   /* Soft radial vignette — keeps the central glow untouched and
@@ -1182,6 +1278,155 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
     100% { transform: translate(50%, 50%); }
   }
 
+  /* ── Thin cyan data lines — sides + lower band ──
+     Three thin vertical/horizontal stripes drifting along the day-mode
+     scene's edges, evoking quiet data flow through the workspace.
+     Width/height are intentionally small (≤ 3px) and opacity stays
+     well under 0.12 so the lines read as a whisper, never a UI rail.
+     Transform-only animation (translateY / translateX); no width,
+     height, top, left changes — composited off the main thread. */
+  .knowledge-motion-data-lines {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+  }
+  .knowledge-motion-data-line {
+    position: absolute;
+    background: linear-gradient(
+      180deg,
+      transparent 0%,
+      rgba(80, 190, 220, 0) 10%,
+      rgba(80, 190, 220, 0.18) 50%,
+      rgba(80, 190, 220, 0) 90%,
+      transparent 100%);
+    will-change: transform, opacity;
+  }
+  /* inline-start edge */
+  .knowledge-motion-data-line--start {
+    inset-inline-start: 6%;
+    top: 0;
+    width: 1px;
+    height: 60%;
+    transform: translateY(-110%);
+    animation: knowledge-motion-data-vertical 38s linear infinite;
+  }
+  /* inline-end edge — opposite-direction drift, longer cycle */
+  .knowledge-motion-data-line--end {
+    inset-inline-end: 8%;
+    top: 0;
+    width: 1px;
+    height: 55%;
+    transform: translateY(110%);
+    animation: knowledge-motion-data-vertical-reverse 52s linear infinite;
+    animation-delay: -14s;
+  }
+  /* Lower band — horizontal traveller along the bottom 18% of the
+     viewport. Gradient orientation rotated to horizontal so the same
+     keyframe primitive works. */
+  .knowledge-motion-data-line--floor {
+    bottom: 12%;
+    inset-inline-start: 0;
+    height: 1px;
+    width: 38%;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(80, 190, 220, 0) 10%,
+      rgba(110, 210, 235, 0.20) 50%,
+      rgba(80, 190, 220, 0) 90%,
+      transparent 100%);
+    transform: translateX(-130%);
+    animation: knowledge-motion-data-horizontal 46s linear infinite;
+    animation-delay: -22s;
+  }
+  @keyframes knowledge-motion-data-vertical {
+    0%   { transform: translateY(-110%); opacity: 0; }
+    8%   { opacity: 0.7; }
+    92%  { opacity: 0.7; }
+    100% { transform: translateY(180%); opacity: 0; }
+  }
+  @keyframes knowledge-motion-data-vertical-reverse {
+    0%   { transform: translateY(180%); opacity: 0; }
+    8%   { opacity: 0.7; }
+    92%  { opacity: 0.7; }
+    100% { transform: translateY(-110%); opacity: 0; }
+  }
+  @keyframes knowledge-motion-data-horizontal {
+    0%   { transform: translateX(-130%); opacity: 0; }
+    8%   { opacity: 0.7; }
+    92%  { opacity: 0.7; }
+    100% { transform: translateX(360%); opacity: 0; }
+  }
+
+  /* ── CSS-only research particles ──
+     A scatter of tiny dots painted as nine radial-gradient stops on a
+     single background-image, opacity-pulsed by one slow keyframe. No
+     per-dot DOM node, no canvas, no scroll cost. Positioned just off
+     the central core so they never read as competing UI. */
+  .knowledge-motion-particles {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+      radial-gradient(1.5px 1.5px at 14% 22%, rgba(110, 210, 235, 0.55) 50%, transparent 100%),
+      radial-gradient(1.5px 1.5px at 86% 18%, rgba(255, 240, 200, 0.50) 50%, transparent 100%),
+      radial-gradient(1px   1px   at 22% 72%, rgba(110, 210, 235, 0.45) 50%, transparent 100%),
+      radial-gradient(1.5px 1.5px at 78% 68%, rgba(255, 230, 180, 0.50) 50%, transparent 100%),
+      radial-gradient(1px   1px   at 48% 12%, rgba(110, 210, 235, 0.40) 50%, transparent 100%),
+      radial-gradient(1.5px 1.5px at 52% 86%, rgba(255, 240, 200, 0.50) 50%, transparent 100%),
+      radial-gradient(1px   1px   at 8%  52%, rgba(110, 210, 235, 0.40) 50%, transparent 100%),
+      radial-gradient(1px   1px   at 92% 48%, rgba(255, 230, 180, 0.42) 50%, transparent 100%),
+      radial-gradient(1.5px 1.5px at 38% 38%, rgba(110, 210, 235, 0.45) 50%, transparent 100%);
+    background-repeat: no-repeat;
+    opacity: 0.0;
+    animation: knowledge-motion-particle-pulse 14s ease-in-out infinite;
+    will-change: opacity;
+  }
+  @keyframes knowledge-motion-particle-pulse {
+    0%, 100% { opacity: 0.0; }
+    35%      { opacity: 0.85; }
+    65%      { opacity: 0.40; }
+  }
+
+  /* ── Subtle shimmer over glass panels (day-mode only) ──
+     A very low-opacity diagonal sweep across each of the two fixed
+     side panels (ContinueLearning + Knowledge Core stats). The pseudo
+     inherits `border-radius` from the panel and stays inside the
+     panel's box, so the shimmer is clipped to the rounded silhouette.
+     `mix-blend-mode: soft-light` keeps text fully readable; on the
+     bright day surface the highlight reads as a slow polish pass.
+     Selectors wrapped in `:global(...)` so Astro doesn't scope-hash
+     the component classes (`.continue-learning-card` /
+     `.knowledge-core` live in their own component .astro files). */
+  :global(html:not(.dark) .continue-learning-card)::after,
+  :global(html:not(.dark) .knowledge-core)::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background: linear-gradient(
+      115deg,
+      transparent 35%,
+      rgba(255, 255, 255, 0.10) 50%,
+      transparent 65%);
+    background-size: 220% 220%;
+    background-repeat: no-repeat;
+    background-position: -60% -60%;
+    mix-blend-mode: soft-light;
+    animation: knowledge-motion-shimmer 32s linear infinite;
+    will-change: background-position;
+  }
+  /* Stagger so the two panels never pulse in lockstep. */
+  :global(html:not(.dark) .knowledge-core)::after {
+    animation-duration: 38s;
+    animation-delay: -12s;
+  }
+  @keyframes knowledge-motion-shimmer {
+    0%   { background-position: -60% -60%; }
+    100% { background-position: 160% 160%; }
+  }
+
   /* Reduced motion — the whole sub-tree is removed from layout so:
        - no CSS keyframes execute,
        - the canvas isn't painted on (the JS gate also bails),
@@ -1191,17 +1436,37 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
      override above. */
   @media (prefers-reduced-motion: reduce) {
     .knowledge-motion-layer { display: none !important; }
+    /* Glass-panel shimmer lives on the panels themselves, not inside
+       the motion layer — so the `display:none` above doesn't reach it.
+       Stop the keyframe explicitly. The pseudo still paints a static
+       low-opacity highlight; setting animation: none freezes it at
+       the start position (off-screen), so the panel reads as fully
+       still. */
+    :global(html:not(.dark) .continue-learning-card)::after,
+    :global(html:not(.dark) .knowledge-core)::after {
+      animation: none !important;
+    }
   }
 
   /* Mobile / touch — keep the CSS layers but slow them slightly so
      the motion is even calmer on a smaller field. The JS already
      drops particle count to 24 and skips mouse parallax on
-     (hover: none) / (pointer: coarse). */
+     (hover: none) / (pointer: coarse). The two fixed glass panels
+     (ContinueLearningCard + LibraryStatsPanel) are `display:none`
+     under 1024px from inside their own component CSS, so their
+     shimmer pseudos never fire on phones — no override needed here. */
   @media (max-width: 1023px) {
     .knowledge-motion-glow      { animation-duration: 9s; opacity: 0.75; }
     .knowledge-motion-path      { animation-duration: 28s; }
     .knowledge-motion-path--2   { animation-duration: 34s; }
     .knowledge-motion-path--3   { animation-duration: 40s; }
+    /* Data lines — slower drift, lower max opacity on small screens. */
+    .knowledge-motion-data-line--start  { animation-duration: 52s; opacity: 0.55; }
+    .knowledge-motion-data-line--end    { animation-duration: 64s; opacity: 0.55; }
+    .knowledge-motion-data-line--floor  { animation-duration: 60s; opacity: 0.55; }
+    /* Particles disabled on mobile — keep the bg clean on small
+       screens where readability + perf matter more than ambience. */
+    .knowledge-motion-particles         { display: none; }
   }
 
   /* ════════════════════════════════════════════════════════════════
@@ -1434,11 +1699,11 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
                 var(--yuval-galaxy-ease-soft, ease);
   }
   :global(html:not(.dark)) .galaxy-observatory {
-    /* Hidden in light mode — the photographic day-scene PNG
-       (`knowledge-observatory-day-bg.png`) carries its own observatory
-       rings, so this SVG layer would duplicate them. Kept in the DOM
-       so dark mode (which never matches `:not(.dark)`) is unaffected
-       and the markup-driven aria layer stays stable. */
+    /* Hidden in light mode — the photographic day scene
+       (`ai_researcher_workspace_day_bg.webp`) carries its own ambient
+       depth, so this SVG ring layer would compete with it. Kept in
+       the DOM so dark mode (which never matches `:not(.dark)`) is
+       unaffected and the markup-driven aria layer stays stable. */
     display: none;
   }
   .obs-svg {
@@ -1741,14 +2006,15 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
 
     .library-galaxy {
       position: fixed;
-      /* Match the visual center of the background galaxy image. The
-         image is fixed top:calc(4rem - 130px) with bottom:0 and
-         object-position:center center → its vertical center sits at
-         (50dvh - 33px). Anchoring the orbit center to the same
-         coordinate guarantees the book icon is always at the carousel
-         center, regardless of header height, hero text length or
-         viewport size. */
-      top: calc(50dvh - 33px);
+      /* Mobile orbit anchored to the boundary between the middle and
+         the bottom third of the viewport (Tomer: "בין שליש תחתון
+         לשליש שני"). Center sits at 2/3 of the viewport (≈66.66dvh)
+         so the orbit body straddles the line — upper stations in the
+         middle third, lower stations in the bottom third. The orbit
+         no longer aligns with the background galaxy image's book icon;
+         that's intentional, the carousel is now a discrete lower-
+         anchored surface rather than a stage centerpiece. */
+      top: calc(200dvh / 3);
       left: 50%;
       transform: translate(-50%, -50%);
       display: block;
@@ -1960,17 +2226,32 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
        mobile the same "tap card → scales up, X close button appears,
        reading-entry panel sits flush below the cover" behavior. */
 
-    /* Focused card flies to viewport center, scaled to render at exactly
-       70% of the viewport width regardless of phone/tablet size. The
-       formula `70vw / var(--card-base-width)` evaluates the resting card
-       width (`clamp(120px, 27.5vw, 175px)` for books/lessons, larger for
-       series) and produces the unitless multiplier that hits the target.
-       The reading-entry pill below counter-scales against this same
-       variable so it keeps its previous visual size (~scale 2.34) on
-       every viewport instead of growing/shrinking with the new card
-       math. */
+    /* Focused card flies UP out of the orbit and lands just below the
+       hero text ("כל הידע שלך…"), per Tomer's request:
+         "הכרטיס יצא ממקומו באנימציה, יופיע על המסך ממש מתחת למילים".
+       Geometry:
+         - Orbit center sits at `calc(200dvh / 3)` ≈ 66.66dvh (see
+           `.library-galaxy` mobile rule above).
+         - The card scales to 70vw wide; a typical 2:3 book cover ends
+           up ≈ 60dvh tall after the scale.
+         - Translating the card up by 18dvh (in viewport units, applied
+           AFTER the scale — leftmost in the transform list means
+           applied LAST in CSS composition order) lands its centre at
+           ≈ 48.66dvh, so the card's top edge sits a hair below the
+           hero subtitle (~22dvh) on common phone heights. The
+           reading-entry overlay child follows because it lives inside
+           the same `.galaxy-card` transform.
+       The existing `transition: transform 600ms …` on `.galaxy-card`
+       drives the animation between orbit position and this new
+       above-orbit resting spot — no JS change required.
+       Counter-scaled descendants (`.reading-entry-overlay`,
+       `.galaxy-cta`) continue to multiply by `cbw / 70vw` to hold
+       their authored size; they're unaffected by the outer
+       translateY since translation is uniform, not magnified by
+       scale. */
     .galaxy-card[data-pos="center"] {
       transform:
+        translateY(-18dvh)
         translate(-50%, -50%)
         scale(calc(70vw / var(--card-base-width)));
       opacity: 1;
@@ -2079,9 +2360,10 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
     }
     /* Image-based reading-entry panel — mobile equivalent of the
        desktop CTA. The visual base IS `reading-entry-card1.png`. The
-       title, subtitle and meta row all live INSIDE the panel.
-       FULL counter-scale (cbw/70vw) neutralises the focused card's
-       70vw/cbw scale so spec px values map 1:1 to visible pixels. */
+       title, subtitle, summary pill and meta row all live INSIDE the
+       panel. FULL counter-scale (cbw/70vw) neutralises the focused
+       card's 70vw/cbw scale so spec px values map 1:1 to visible
+       pixels. */
     .reading-entry-overlay {
       position: absolute;
       left: 50%;
@@ -2090,7 +2372,9 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       top: calc(100% - 14px);
       width: 92vw;
       max-width: 390px;
-      height: 190px;
+      /* Height bumped from 190 → 220 so the new summary pill + meta
+         row fit cleanly without clipping at the bottom. */
+      height: 220px;
       border-radius: 22px;
       box-sizing: border-box;
       transform:
@@ -2103,8 +2387,6 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       border: 0;
       background: transparent;
       color: inherit;
-      cursor: pointer;
-      text-decoration: none;
       -webkit-tap-highlight-color: transparent;
       opacity: 0;
       visibility: hidden;
@@ -2126,7 +2408,19 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
         opacity 240ms cubic-bezier(0.4, 0, 0.2, 1),
         visibility 0s linear 0s;
     }
-    .reading-entry-overlay:focus-visible {
+    .reading-entry-main {
+      position: absolute;
+      inset: 0;
+      display: block;
+      border-radius: 22px;
+      background: transparent;
+      color: inherit;
+      text-decoration: none;
+      cursor: pointer;
+      z-index: 1;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .reading-entry-main:focus-visible {
       outline: none;
     }
     .reading-entry-asset {
@@ -2138,6 +2432,7 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       background-repeat: no-repeat;
       background-position: center;
       pointer-events: none;
+      z-index: 2;
       transition:
         transform 220ms cubic-bezier(0.4, 0, 0.2, 1),
         box-shadow 220ms ease,
@@ -2146,16 +2441,17 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
     .reading-entry-text {
       position: absolute;
       left: 50%;
-      top: 60%;
+      top: 58%;
       width: 94%;
       transform: translate(-50%, -50%);
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 8px;
+      gap: 7px;
       text-align: center;
       pointer-events: none;
+      z-index: 3;
       font-family:
         'Heebo', 'Inter', system-ui, -apple-system,
         'Segoe UI', 'Noto Sans Hebrew', sans-serif;
@@ -2186,19 +2482,59 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       text-overflow: ellipsis;
       white-space: nowrap;
     }
+    /* Mobile summary pill — slightly smaller than desktop so it stays
+       quietly secondary on a phone. `pointer-events: auto` re-opts the
+       pill into hit-testing while the rest of `.reading-entry-text`
+       passes taps through to `.reading-entry-main`. */
+    .reading-entry-summary-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 24px;
+      padding: 0 12px;
+      margin: 1px 0 0;
+      border-radius: 999px;
+      box-sizing: border-box;
+      font-size: 11.5px;
+      font-weight: 500;
+      line-height: 1;
+      letter-spacing: 0.02em;
+      color: rgba(245, 250, 255, 0.92);
+      background: rgba(8, 18, 40, 0.55);
+      border: 1px solid rgba(120, 175, 235, 0.42);
+      text-decoration: none;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      pointer-events: auto;
+      cursor: pointer;
+      transition:
+        background 160ms ease,
+        border-color 160ms ease,
+        transform 160ms ease;
+    }
+    .reading-entry-summary-pill:active {
+      transform: scale(0.97);
+      background: rgba(18, 32, 60, 0.7);
+    }
     /* Very small phones (≤360px): tighten panel + text so nothing
        clips in the in-panel layout. */
     @media (max-width: 360px) {
       .reading-entry-overlay {
         width: 94vw;
-        height: 178px;
+        height: 208px;
       }
       .reading-entry-title    { font-size: 23px; }
       .reading-entry-subtitle { font-size: 13px; }
+      .reading-entry-summary-pill {
+        height: 22px;
+        padding: 0 11px;
+        font-size: 11px;
+      }
     }
     /* Hover is desktop-only per the spec — mobile keeps just the
        press-in scale + brightness so taps still feel responsive. */
-    .reading-entry-overlay:active {
+    .reading-entry-overlay:has(.reading-entry-main:active) {
       transform:
         translate(-50%, 0)
         scale(calc((var(--card-base-width) / 70vw) * 0.985));
@@ -3470,7 +3806,9 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       width: calc(85% * 1.5);
       max-width: 620px;
       min-width: 420px;
-      height: 220px;
+      /* Height bumped from 220 → 240 to give the new summary pill +
+         meta row clear vertical room without clipping. */
+      height: 240px;
       border-radius: 28px;
       box-sizing: border-box;
       transform: translate(-50%, 0) scale(calc(1 / 1.5));
@@ -3481,8 +3819,6 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       border: 0;
       background: transparent;
       color: inherit;
-      cursor: pointer;
-      text-decoration: none;
       -webkit-tap-highlight-color: transparent;
       opacity: 0;
       visibility: hidden;
@@ -3504,16 +3840,35 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
         opacity 240ms cubic-bezier(0.4, 0, 0.2, 1),
         visibility 0s linear 0s;
     }
-    .reading-entry-overlay:focus-visible {
+    /* Main click target — transparent <a> stretched over the panel
+       so any click that isn't on the summary pill continues reading.
+       Sits BELOW the asset visually (z-index handled by stacking
+       order; `.reading-entry-asset` paints on top with pointer-
+       events:none, so the link still receives clicks underneath). */
+    .reading-entry-main {
+      position: absolute;
+      inset: 0;
+      display: block;
+      border-radius: 28px;
+      background: transparent;
+      color: inherit;
+      text-decoration: none;
+      cursor: pointer;
+      z-index: 1;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .reading-entry-main:focus-visible {
       outline: none;
     }
-    .reading-entry-overlay:focus-visible .reading-entry-asset {
+    .reading-entry-main:focus-visible ~ .reading-entry-asset {
       box-shadow:
         0 0 0 2px rgba(150, 200, 255, 0.45),
         0 0 22px rgba(112, 87, 255, 0.45);
     }
 
-    /* The PNG IS the panel — painted edge-to-edge over the <a>. */
+    /* The PNG IS the panel — painted edge-to-edge over the main link.
+       `pointer-events: none` so the transparent `.reading-entry-main`
+       below it still receives every click that isn't on the pill. */
     .reading-entry-asset {
       position: absolute;
       inset: 0;
@@ -3523,30 +3878,33 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       background-repeat: no-repeat;
       background-position: center;
       pointer-events: none;
+      z-index: 2;
       transition:
         transform 220ms cubic-bezier(0.4, 0, 0.2, 1),
         box-shadow 220ms ease,
         filter 220ms ease;
     }
 
-    /* Live i18n stack — title, subtitle, then the lesson meta row.
-       Positioned ABSOLUTELY over the lower portion of the asset so
-       the icon baked into the PNG stays clear at the top center. The
-       wrapper itself is a flex column so all three rows share one
-       centered axis. */
+    /* Live i18n stack — title, subtitle, summary pill, then the meta
+       row. Positioned ABSOLUTELY over the lower portion of the asset
+       so the icon baked into the PNG stays clear at the top center.
+       Container itself is `pointer-events: none` so empty space and
+       text below pass clicks through to `.reading-entry-main`; the
+       pill re-opts in to pointer events below. */
     .reading-entry-text {
       position: absolute;
       left: 50%;
-      top: 60%;
+      top: 58%;
       width: 92%;
       transform: translate(-50%, -50%);
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 10px;
+      gap: 8px;
       text-align: center;
       pointer-events: none;
+      z-index: 3;
       font-family:
         'Heebo', 'Inter', system-ui, -apple-system,
         'Segoe UI', 'Noto Sans Hebrew', sans-serif;
@@ -3573,34 +3931,87 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       margin: 0;
     }
 
+    /* Secondary "Book summary" pill — visually quieter than the title
+       and the meta chips so it reads as an alternate action, never as
+       a competing CTA. Subtle glass: dark translucent fill, thin blue
+       border, white text. `pointer-events: auto` re-opts this single
+       node back into hit-testing, so empty-space clicks still fall
+       through to `.reading-entry-main`. */
+    .reading-entry-summary-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 26px;
+      padding: 0 14px;
+      margin: 2px 0 0;
+      border-radius: 999px;
+      box-sizing: border-box;
+      font-size: 12px;
+      font-weight: 500;
+      line-height: 1;
+      letter-spacing: 0.02em;
+      color: rgba(245, 250, 255, 0.92);
+      background: rgba(8, 18, 40, 0.55);
+      border: 1px solid rgba(120, 175, 235, 0.42);
+      text-decoration: none;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      pointer-events: auto;
+      cursor: pointer;
+      transition:
+        background 160ms ease,
+        border-color 160ms ease,
+        color 160ms ease,
+        transform 160ms ease;
+    }
+    .reading-entry-summary-pill:hover {
+      background: rgba(18, 32, 60, 0.7);
+      border-color: rgba(150, 200, 245, 0.6);
+      color: rgba(255, 255, 255, 1);
+    }
+    .reading-entry-summary-pill:active {
+      transform: scale(0.97);
+    }
+    .reading-entry-summary-pill:focus-visible {
+      outline: none;
+      box-shadow:
+        0 0 0 2px rgba(150, 200, 255, 0.45),
+        0 0 14px rgba(112, 87, 255, 0.35);
+    }
+
     /* Hover / active — translate + brightness lift on the asset and a
-       tiny press-in scale. The translate is added to the existing
-       counter-scale matrix so the panel doesn't snap. */
-    .reading-entry-overlay:hover {
+       tiny press-in scale. Targets the main link so hovering the
+       summary pill (a sibling, not an ancestor) does NOT also trigger
+       the main-CTA lift — that's what keeps the two actions visually
+       distinct. The translate is added to the overlay's existing
+       counter-scale matrix on the parent. */
+    .reading-entry-overlay:has(.reading-entry-main:hover) {
       transform:
         translate(-50%, -2px)
         scale(calc(1 / 1.5));
       filter: brightness(1.08);
     }
-    .reading-entry-overlay:hover .reading-entry-asset {
+    .reading-entry-overlay:has(.reading-entry-main:hover) .reading-entry-asset {
       filter: brightness(1.04) saturate(1.05);
     }
-    .reading-entry-overlay:active {
+    .reading-entry-overlay:has(.reading-entry-main:active) {
       transform:
         translate(-50%, 0)
         scale(calc((1 / 1.5) * 0.985));
       filter: none;
     }
-    .reading-entry-overlay:active .reading-entry-asset {
+    .reading-entry-overlay:has(.reading-entry-main:active) .reading-entry-asset {
       filter: none;
     }
 
     @media (prefers-reduced-motion: reduce) {
       .reading-entry-overlay,
-      .reading-entry-asset {
+      .reading-entry-asset,
+      .reading-entry-summary-pill {
         transition: none;
       }
-      .reading-entry-overlay:hover {
+      .reading-entry-overlay:has(.reading-entry-main:hover) {
         transform: translate(-50%, 0) scale(calc(1 / 1.5));
         filter: none;
       }
@@ -4312,7 +4723,15 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
     /* ── Trigger button ────────────────────────────────────────── */
     .core-search-trigger {
       position: absolute;
-      top: 18%;
+      /* Mobile-only: search trigger sits at the visual centre of the
+         carousel (Tomer: "אייקון החיפוש במרכז הקורוסלה במובייל בלבד").
+         The orbit cards fan around this point on the elliptical orbit
+         (top: 50% of `.library-galaxy`), so the search icon now reads
+         as the luminous core that the orbit revolves around. Hidden
+         automatically when a card is focused (rule below) so it never
+         overlaps the centered card. Desktop is untouched — the whole
+         trigger / hint / panel block is gated to ≤1023px. */
+      top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
       display: inline-flex;
@@ -4584,7 +5003,13 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
 
     /* ── State: open ───────────────────────────────────────────── */
     .library-galaxy[data-core-search-state="open"] .core-search-trigger,
-    .library-galaxy[data-core-search-state="no-matches"] .core-search-trigger {
+    .library-galaxy[data-core-search-state="no-matches"] .core-search-trigger,
+    /* Card focused → hide the trigger so it doesn't sit on top of the
+       centered card. The trigger now lives at the orbit centre (mobile
+       only — see `.core-search-trigger` block above), which is the same
+       point a focused card flies to. Reusing the visibility transition
+       from the open-state rule above so the fade-out matches. */
+    .library-galaxy[data-galaxy-focused] .core-search-trigger {
       opacity: 0;
       pointer-events: none;
       visibility: hidden;
@@ -4952,6 +5377,22 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       return true;
     }
 
+    // Summary pill is a sibling of the main reading-entry <a>, not a
+    // descendant — so DOM-level bubbling never reaches the main link.
+    // We additionally stop the click from bubbling past the pill itself
+    // in BUBBLE phase: the pill receives the click first (native <a>
+    // nav fires), and only then do we halt propagation toward stage /
+    // document / window. This guarantees that no ancestor handler can
+    // ever confuse a pill click for a reading-entry launch. We do NOT
+    // call preventDefault, so native href navigation still runs.
+    stage.querySelectorAll<HTMLAnchorElement>(
+      'a.reading-entry-summary-pill',
+    ).forEach((pill) => {
+      pill.addEventListener('click', (e: MouseEvent) => {
+        e.stopPropagation();
+      });
+    });
+
     stage.addEventListener('click', (e: MouseEvent) => {
       // Drag-suppression from universe-layout.ts's capture-phase
       // handler runs preventDefault but not stopPropagation, so the
@@ -5127,7 +5568,10 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
         if (labelEl && template) {
           labelEl.textContent = template.replace('__N__', String(highestWithProgress));
         }
-        const pill = card.querySelector<HTMLAnchorElement>('a.reading-entry-overlay[data-reading-entry]');
+        // Main reading-entry link lives inside the overlay container
+        // (the outer overlay is a <div> since the addition of the
+        // summary pill). Selector targets the inner <a> directly.
+        const pill = card.querySelector<HTMLAnchorElement>('a.reading-entry-main[data-reading-entry]');
         if (pill) {
           const continueHref = `/read/${slug}/${highestWithProgress}`;
           pill.setAttribute('href', continueHref);
