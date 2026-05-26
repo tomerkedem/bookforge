@@ -611,6 +611,23 @@ const searchAriaLabel = t('header.searchAriaLabel', language);
     :global(main#main-content) {
       padding-top: calc(64px + env(safe-area-inset-top, 0px));
     }
+
+    /* ── /library mobile: suppress the legacy header search ──────
+       The /library page surfaces Core Search Mode (tap-the-core)
+       as the canonical mobile search affordance, so the header
+       search row would be a duplicate. Hidden only on the
+       /library route (scoped via `body:has(.library-dark-showcase)`)
+       and only below the desktop breakpoint where Core Search Mode
+       itself is visible (≤1023px). Desktop and every other route
+       keep the header search exactly as before.
+
+       `display: none` cancels the reveal-on-interaction transitions
+       (max-height/opacity) wholesale, so the body class toggle from
+       the companion script becomes a no-op here — no extra JS
+       cleanup needed. */
+    :global(body:has(.library-dark-showcase)) .header-search {
+      display: none;
+    }
   }
 
   /* ── Card-aware controls anchor ────────────────────────────────

@@ -319,31 +319,19 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
     style={`--page-direction: ${isRtl ? 'rtl' : 'ltr'};`}
   >
 
-    {/* Cosmic scene background — full-viewport, fixed, behind every
-        UI layer. The same galaxy PNG that used to sit centered inside
-        the orbit stage now spans the entire screen so the dashboard
-        feels embedded in an infinite knowledge universe. The radial
-        overlay on top is a soft viewport-vignette that darkens the
-        edges (improving contrast for the floating cards + side
-        panels) while keeping the central glow undisturbed. */}
+    {/* Cosmic scene background — full-viewport, behind every UI layer.
+        Night (dark mode) renders the original galaxy PNG. Day (light
+        mode) hides the night image and falls through to the
+        `.library-root` gradient fallback below. */}
     <div class="knowledge-scene-background" aria-hidden="true">
-      {/* Night scene — dark-mode background. Kept FIRST in DOM order so
-          universe-core-effects.ts (`querySelector('.knowledge-scene-background img')`)
-          still resolves to this asset and the lightning math is unchanged. */}
+      {/* Night scene — dark-mode background. */}
       <img
         class="knowledge-scene-img knowledge-scene-img--night"
         src="/assets/library/galaxy-stage-core-medium.png"
         alt=""
         decoding="async"
       />
-      {/* Day scene — "Knowledge Observatory" light-mode background.
-          Hidden unless <html> has no `.dark` class (light theme). */}
-      <img
-        class="knowledge-scene-img knowledge-scene-img--day"
-        src="/assets/library/knowledge-observatory-day-bg.png"
-        alt=""
-        decoding="async"
-      />
+
       <div class="knowledge-scene-overlay"></div>
     </div>
 
@@ -485,36 +473,6 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
                   <circle class="obs-dot--minor" cx="188.3" cy="358.1" r="2.6" />
                 </g>
               </svg>
-            </div>
-
-            {/* ── AI Core — day-mode-only central anchor ──
-                Pure CSS visual primitive. Lives INSIDE `.library-galaxy`
-                so its `top: 50% / left: 50%` resolves against the same
-                box the orbit cards center on, keeping the core glued to
-                the visual centre of the carousel at every breakpoint.
-
-                Layering (inside .library-galaxy):
-                  observatory (z:0) <
-                  ai-core      (z:1) <
-                  orbit cards  (z:2) <
-                  backdrop     (z:15) <
-                  lightning    (z:25) <
-                  focused card (z:30)
-
-                Stays behind every interactive element. `pointer-events:
-                none` keeps the click-to-center handler reaching the
-                orbit cards above. Hidden in dark mode (the night PNG
-                already has its own glowing core). */}
-            <div class="library-ai-core" aria-hidden="true">
-              <div class="library-ai-core__pulse"></div>
-              <div class="library-ai-core__pulse library-ai-core__pulse--2"></div>
-              <div class="library-ai-core__ring library-ai-core__ring--1"></div>
-              <div class="library-ai-core__ring library-ai-core__ring--2"></div>
-              <div class="library-ai-core__ring library-ai-core__ring--3"></div>
-              <div class="library-ai-core__sphere">
-                <div class="library-ai-core__network"></div>
-                <div class="library-ai-core__nucleus"></div>
-              </div>
             </div>
 
             {/* Backdrop — appears only when a card is focused into the
@@ -1076,58 +1034,18 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
     -webkit-user-drag: none;
   }
   /* ── Theme-aware scene swap ──────────────────────────────────────
-     Both scene images are stacked (each `position:absolute; inset:0`
-     via the rule above); opacity decides which one paints. The night
-     galaxy is the default, so dark mode and the no-class fallback both
-     render the original scene — dark mode is byte-for-byte unchanged.
-     Light mode (<html> without `.dark`) cross-fades to the bright
-     "Knowledge Observatory" day scene. */
+     The night galaxy is the default — dark mode and the no-class
+     fallback both render it. Light mode (<html> without `.dark`)
+     fades the night image out and falls through to `.library-root`'s
+     gradient fallback. */
   .knowledge-scene-img {
     transition: opacity var(--yuval-galaxy-motion-slow, 520ms)
                 var(--yuval-galaxy-ease-soft, ease);
   }
-  .knowledge-scene-img--day {
-    opacity: 0;
-  }
   :global(html:not(.dark)) .knowledge-scene-img--night {
     opacity: 0;
   }
-  /* Light-mode background — the photographic "Knowledge Observatory"
-     PNG is the active day-mode scene. The SVG `.galaxy-observatory`
-     ring layer is hidden below in light mode so its rings do not
-     duplicate the rings baked into the PNG. Dark mode is untouched:
-     it keeps the night image via the rules above. */
-  :global(html:not(.dark)) .knowledge-scene-img--day {
-    opacity: 1;
-  }
-  /* Light mode — anchor the day scene container to the TOP of
-     `.library-root` (which sits right below the global header) and let
-     it run to the bottom. Combined with the day-image overrides below
-     (`transform: none` + `object-fit: fill`), the PNG is stretched to
-     fit the entire visible page area cleanly — no header gap, no
-     translate seam. The night image keeps `opacity: 0` here, so dark
-     mode's `top: calc(4rem - 130px)` anchor stays byte-for-byte
-     untouched. */
-  :global(html:not(.dark)) .knowledge-scene-background {
-    top: 0;
-  }
-  /* Day image only — stretch the whole PNG to the container's exact
-     box. Dark mode's night image keeps the original
-     `object-fit: cover` + `translateY(50px)` recipe (defined on the
-     shared `.knowledge-scene-background img` rule above), so dark mode
-     is byte-for-byte unchanged.
-       - `transform: none` cancels the 50px downward shift that the
-         shared rule applies, removing the strip-of-page-bg seam at
-         the container top.
-       - `object-fit: fill` stretches the image to fill the container
-         exactly. The PNG is landscape so on widescreen desktops this
-         is near-imperceptible; portrait phones will see some vertical
-         stretch, which the user explicitly accepted ("stretch if
-         needed"). */
-  :global(html:not(.dark)) .knowledge-scene-img--day {
-    transform: none;
-    object-fit: fill;
-  }
+
   /* Soft radial vignette — keeps the central glow untouched and
      darkens only the edges so floating cards + side panels read
      cleanly against the bg without losing the cosmic atmosphere. */
@@ -1295,40 +1213,19 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
      in galaxy.css scoped to `:root:not(.dark) .library-dark-showcase`.)
      ════════════════════════════════════════════════════════════════ */
 
-  /* Page base — color-matched to the Knowledge Observatory PNG so the
-     page feels carved from the same scene. Palette stops sampled
-     directly from the image:
-       #ece5d4  outer rim / corners of the PNG
-       #efe9d8  general field tone
-       #f6f0e2  warm bright center where the book glows
-     The IMG layer is shifted by `transform: translateY(50px)`, which
-     uncovers a 50px strip at the top of `.knowledge-scene-background`
-     and reveals `.library-root` underneath. Painting the root in the
-     PNG's exact edge tone makes that strip vanish into the image —
-     no visible seam where one ends and the other begins.
-
-     The body/html bg uses the same edge color so iOS rubber-band, the
-     URL-bar morph, and any layout sliver around the image all read as
-     daylight paper instead of a cooler ivory mismatch.
-
-     `.library-root` adds a soft warm radial that echoes the PNG's
-     center-glow → edge-fade structure, anchored at 50% 40% (where the
-     glowing book sits in the image). Subtle enough not to compete with
-     the PNG painted on top, but keeps the leaked root bg coherent with
-     the scene at the top-strip seam and around any layout sliver. */
+  /* Page base — minimal clean day-mode fallback. With the day scene
+     image system removed, the page reads as a soft warm-blue gradient
+     at the centre fading into a cool near-white field. The body/html
+     bg uses the same near-white edge so iOS rubber-band, the URL-bar
+     morph, and any layout sliver around the root all stay coherent. */
   :global(html:not(.dark):has(.library-dark-showcase)),
   :global(html:not(.dark) body:has(.library-dark-showcase)) {
-    background-color: #ece5d4;
+    background-color: #eef5ff;
   }
   :global(html:not(.dark)) .library-root {
-    background-color: #ece5d4;
-    background-image:
-      radial-gradient(
-        ellipse 70% 55% at 50% 40%,
-        rgba(246, 240, 226, 0.85) 0%,
-        rgba(239, 233, 216, 0.55) 45%,
-        rgba(236, 229, 212, 0) 80%
-      );
+    background:
+      radial-gradient(circle at 50% 38%, rgba(210, 235, 255, 0.55), transparent 42%),
+      linear-gradient(180deg, #ffffff 0%, #f7f9ff 48%, #eef5ff 100%);
     /* Light mode adds breathing room below the (now light-glass)
        header so the hero "ברוך הבא" eyebrow + "מרחב הידע" title never
        read as clipped or squeezed against the header line. Specificity
@@ -1587,203 +1484,6 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
      the existing flag set by universe-layout.ts — no JS is touched. */
   .library-galaxy[data-galaxy-focused] .galaxy-observatory {
     opacity: 0.42;
-  }
-
-  /* ── AI Core — day-mode-only central anchor ───────────────────────
-     Pure-CSS futuristic core that gives the day field a luminous
-     centre when no card is focused. Layered, smallest to largest
-     visually:
-       __nucleus  — bright white-cyan singularity at the dead centre.
-       __sphere   — glassmorphic oval holding the nucleus + network.
-       __network  — six neural-node dots (warm-white + soft cyan/gold).
-       __ring × 3 — concentric elliptical orbits, slow rotation,
-                    different tilts + speeds for parallax.
-       __pulse × 2 — expanding hairline rings echoing outward.
-
-     Sizes use clamp() so desktop ≈ 320–460px wide × 180–280px tall
-     and mobile ≈ 220–300px × 140–200px without a media-query break.
-     `pointer-events: none` cascades from the wrapper, so the
-     click-to-center handler on the orbit cards above (z:2) is never
-     blocked. Hidden in dark mode because the night PNG already
-     carries its own bright core; a duplicate would clutter. */
-  .library-ai-core {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: clamp(320px, 32vw, 460px);
-    height: clamp(180px, 18vw, 280px);
-    transform: translate(-50%, -50%);
-    pointer-events: none;
-    z-index: 1;
-    display: none;
-  }
-  :global(html:not(.dark)) .library-ai-core {
-    display: block;
-  }
-
-  /* When a card is focused, fade the core to a whisper so the focused
-     reading-entry overlay + center-card extras own the visual stage.
-     Same `data-galaxy-focused` hook the observatory rule above uses
-     — no JS change. */
-  .library-galaxy[data-galaxy-focused] .library-ai-core {
-    opacity: 0.30;
-    transition: opacity 320ms ease;
-  }
-
-  /* Expanding hairline pulses. Two staggered copies so the field
-     never has a "dead" moment between cycles. */
-  .library-ai-core__pulse {
-    position: absolute;
-    inset: 0;
-    border-radius: 50%;
-    border: 1px solid rgba(120, 200, 240, 0.35);
-    animation: ai-core-pulse 6s ease-out infinite;
-    will-change: transform, opacity;
-  }
-  .library-ai-core__pulse--2 {
-    animation-delay: -3s;
-    border-color: rgba(255, 230, 180, 0.20);
-  }
-  @keyframes ai-core-pulse {
-    0%   { transform: scale(0.65); opacity: 0; }
-    18%  { opacity: 0.55; }
-    100% { transform: scale(1.5);  opacity: 0; }
-  }
-
-  /* Elliptical orbit rings — slow spin, opposite directions for two
-     of them so the eye reads depth instead of a single sweep. Their
-     tilt/size mix echoes the observatory rings baked into the PNG. */
-  .library-ai-core__ring {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    border: 1px solid rgba(150, 210, 240, 0.30);
-    border-radius: 50%;
-    transform: translate(-50%, -50%);
-    will-change: transform;
-  }
-  .library-ai-core__ring--1 {
-    width: 62%;
-    height: 86%;
-    animation: ai-core-spin 60s linear infinite;
-  }
-  .library-ai-core__ring--2 {
-    width: 84%;
-    height: 64%;
-    border-color: rgba(255, 220, 160, 0.22);
-    animation: ai-core-spin 84s linear infinite reverse;
-  }
-  .library-ai-core__ring--3 {
-    width: 100%;
-    height: 50%;
-    border-color: rgba(180, 220, 255, 0.18);
-    animation: ai-core-spin 108s linear infinite;
-  }
-  @keyframes ai-core-spin {
-    from { transform: translate(-50%, -50%) rotate(0deg); }
-    to   { transform: translate(-50%, -50%) rotate(360deg); }
-  }
-
-  /* Glass sphere — translucent oval, holds the neural network and
-     nucleus. The inset box-shadow plus a soft outer glow give it the
-     glassmorphic edge highlight without a `backdrop-filter` (which
-     repaints expensively on scroll-adjacent layers). */
-  .library-ai-core__sphere {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 52%;
-    height: 72%;
-    transform: translate(-50%, -50%);
-    border-radius: 50%;
-    background: radial-gradient(
-      ellipse at 50% 40%,
-      rgba(220, 240, 255, 0.32) 0%,
-      rgba(150, 200, 240, 0.18) 40%,
-      rgba(120, 170, 220, 0.08) 70%,
-      transparent 100%
-    );
-    box-shadow:
-      inset 0 0 28px rgba(180, 220, 255, 0.30),
-      0 0 36px rgba(140, 190, 240, 0.22);
-  }
-
-  /* Neural network — six radial-gradient dots painted into a single
-     background layer (one paint, no extra DOM nodes). Subtle opacity
-     shimmer so the network feels "thinking" without flashing. */
-  .library-ai-core__network {
-    position: absolute;
-    inset: 0;
-    border-radius: 50%;
-    background-image:
-      radial-gradient(circle 1.6px at 30% 35%, rgba(255, 255, 255, 0.65), transparent 60%),
-      radial-gradient(circle 1.6px at 60% 25%, rgba(180, 220, 255, 0.55), transparent 60%),
-      radial-gradient(circle 1.6px at 75% 60%, rgba(255, 220, 160, 0.55), transparent 60%),
-      radial-gradient(circle 1.6px at 25% 70%, rgba(200, 235, 255, 0.60), transparent 60%),
-      radial-gradient(circle 1.6px at 55% 82%, rgba(180, 220, 255, 0.45), transparent 60%),
-      radial-gradient(circle 1.6px at 70% 45%, rgba(255, 250, 230, 0.50), transparent 60%);
-    animation: ai-core-shimmer 5s ease-in-out infinite;
-    will-change: opacity;
-  }
-  @keyframes ai-core-shimmer {
-    0%, 100% { opacity: 0.70; }
-    50%      { opacity: 1.00; }
-  }
-
-  /* Nucleus — the bright singularity. Radial-gradient core with a
-     small outer box-shadow for the bloom. Breathing animation uses
-     a combined translate+scale transform so the centered position is
-     preserved (the wrapper's `translate(-50%, -50%)` stays in the
-     keyframes, otherwise the nucleus would jump on scale). */
-  .library-ai-core__nucleus {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 26%;
-    height: 38%;
-    transform: translate(-50%, -50%);
-    border-radius: 50%;
-    background: radial-gradient(
-      ellipse at center,
-      rgba(255, 255, 255, 0.95) 0%,
-      rgba(220, 240, 255, 0.80) 15%,
-      rgba(150, 210, 240, 0.50) 40%,
-      rgba(100, 170, 220, 0.20) 70%,
-      transparent 100%
-    );
-    box-shadow:
-      0 0 18px rgba(180, 220, 255, 0.55),
-      0 0 36px rgba(140, 190, 240, 0.30);
-    animation: ai-core-breathe 5.5s ease-in-out infinite;
-    will-change: transform, opacity;
-  }
-  @keyframes ai-core-breathe {
-    0%, 100% { transform: translate(-50%, -50%) scale(1);    opacity: 0.85; }
-    50%      { transform: translate(-50%, -50%) scale(1.08); opacity: 1.00; }
-  }
-
-  /* Mobile tuning — smaller footprint, slightly dimmer so it never
-     competes with the cards on a phone-sized stage. Animations keep
-     running, just visually subtler. */
-  @media (max-width: 1023px) {
-    .library-ai-core {
-      width: clamp(220px, 60vw, 300px);
-      height: clamp(140px, 38vw, 200px);
-      opacity: 0.80;
-    }
-  }
-
-  /* Reduced motion — freeze every animation but keep the static
-     composition fully visible. Users still see the central anchor,
-     just without the breath/spin/pulse motion. `!important` survives
-     the per-element `animation:` rules above. */
-  @media (prefers-reduced-motion: reduce) {
-    .library-ai-core__pulse,
-    .library-ai-core__ring,
-    .library-ai-core__network,
-    .library-ai-core__nucleus {
-      animation: none !important;
-    }
   }
 
   /* ── Light-mode carousel polish — card depth + motion ─────────────
