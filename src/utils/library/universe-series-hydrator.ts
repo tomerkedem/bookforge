@@ -1,42 +1,61 @@
 /**
  * Knowledge Universe — metadata hydrator.
  *
+ * Phase 4 scope reduction (2026-05):
+ *   SSR now owns visibility. The library catalog store
+ *   (`library-catalog-store.ts`) applies file-based ContentMetadata
+ *   and SeriesMetadata overlays AND a series → child cascade BEFORE
+ *   the items are projected back into `LibraryItem[]`, so anything
+ *   declared hidden in `output/_editorial.json` or `catalog.json`
+ *   never renders in the first place. There is no first-paint flash
+ *   for catalog-declared hides.
+ *
+ *   What this hydrator still handles:
+ *     • Phase 2's `isHidden(slug)` filter is now a SAFETY FALLBACK
+ *       for items hidden via DRAFT edits in /admin (localStorage
+ *       only, not yet Exported to `catalog.json`). For everything
+ *       authored in files, the SSR-rendered DOM already excludes
+ *       them so the loop just no-ops.
+ *     • Phase 4's `--orbit-angle` recompute still runs because
+ *       client-side admin draft preview (in
+ *       `withAdminSeriesDraftPreview`) and any future runtime
+ *       additions can change the visible station count after SSR;
+ *       the orbit must stay evenly distributed.
+ *     • The slug snapshot + `seriesAvailable` map are unchanged.
+ *
+ *   What this hydrator no longer NEEDS to do (it just incidentally
+ *   still runs):
+ *     • Visibility filtering of catalog-declared items — they're
+ *       already absent from the DOM at first paint.
+ *
+ *   Phase 5 cleanup hooks: once Admin writes directly to
+ *   `catalog.json`, Phase 2's `isHidden`/`row.remove()` loop
+ *   becomes provably dead code and can be deleted.
+ *
  *   ┌────────────────────────────────────────────────────────────────┐
  *   │ SSR responsibility (library.astro frontmatter)                 │
  *   │   • Render every readable item as its own .galaxy-card station │
  *   │     with [data-galaxy-card], [data-kind], [data-slug] and an   │
  *   │     initial --orbit-angle distributed evenly per kind.         │
- *   │   • Has NO knowledge of editorial metadata (visibility / series).│
+ *   │   • The catalog store already filtered hidden items out, so    │
+ *   │     the SSR DOM is the truth for catalog-declared visibility.  │
  *   └────────────────────────────────────────────────────────────────┘
  *   ┌────────────────────────────────────────────────────────────────┐
  *   │ Hydrator responsibility (this module)                          │
- *   │   • Read editorial metadata from localStorage.                 │
- *   │   • Phase 1 — collect every slug currently on the page (orbit  │
- *   │     + mobile carousel) BEFORE any removal, so series totals    │
- *   │     count hidden members too.                                  │
- *   │   • Phase 2 — visibility filter. `isHidden(slug)` honors BOTH  │
- *   │     ContentMetadata (item-level) AND SeriesMetadata            │
- *   │     (series-level): a series with isVisibleInUniverse=false    │
- *   │     cascades the hide to every member, BEFORE grouping and     │
- *   │     BEFORE angle redistribution.                               │
- *   │   • Phase 3 — series grouping (desktop only): tag every        │
- *   │     surviving member with [data-series-member="<name>"] (CSS   │
- *   │     hides them in universe mode) and inject one capsule node   │
- *   │     per visible series next to the first member, inheriting    │
- *   │     that member's --orbit-angle. Single-item "series" stay as  │
- *   │     normal book cards. Capsule rendering dispatches on         │
- *   │     SeriesMetadata.visualMode (currently only 'capsule').      │
- *   │     The capsule's visible label uses                           │
- *   │     `seriesMeta.displayTitle || seriesName`.                   │
+ *   │   • Phase 1 — slug snapshot.                                   │
+ *   │   • Phase 2 — visibility safety fallback for /admin DRAFTS     │
+ *   │     still in localStorage (not yet exported to catalog.json).  │
+ *   │     `isHidden(slug)` honors BOTH ContentMetadata (item-level)  │
+ *   │     AND SeriesMetadata (series-level) from localStorage; the   │
+ *   │     same call also feeds the series-mode "Other Knowledge"     │
+ *   │     count.                                                      │
+ *   │   • Phase 3 — series grouping (DISABLED, kept defensively).    │
  *   │   • Phase 4 — sort stations per kind by editorial order, then  │
  *   │     recompute --orbit-angle so survivors stay evenly           │
- *   │     distributed on their arcs. Sort rules (see sortStations):  │
- *   │       1. ordered series first (lower order → earlier on arc)   │
- *   │       2. unordered series next, alphabetical by displayTitle   │
- *   │       3. non-series cards last, in natural SSR order           │
- *   │     DOM order is NOT changed — angle alone drives layout.      │
+ *   │     distributed. DOM order is NOT changed — angle alone drives │
+ *   │     layout.                                                    │
  *   │   • Returns the universe state (slugSet, seriesAvailable,      │
- *   │     stage labels, isHidden) for the series-mode module to use. │
+ *   │     stage labels, isHidden) for the series-mode module.        │
  *   │   • DOES NOT register any event handlers — interaction lives   │
  *   │     in `universe-series-mode.ts` and `universe-layout.ts`.     │
  *   └────────────────────────────────────────────────────────────────┘
@@ -131,13 +150,19 @@ export function hydrateUniverse(stage: HTMLElement): UniverseState {
     }
   });
 
-  // ── Phase 2 — visibility filter ───────────────────────────────────
-  // Drop hidden rows from both the desktop orbit and the mobile
-  // carousel. The expanded `isHidden` above also drops every member of
-  // a series whose SeriesMetadata says invisible — that happens BEFORE
-  // grouping (Phase 3) so a hidden series produces zero stations and
-  // zero capsule, and BEFORE angle redistribution (Phase 4) so survivors
-  // fill the freed-up arc evenly.
+  // ── Phase 2 — DRAFT visibility safety fallback ────────────────────
+  // Production visibility is enforced at SSR by the catalog store
+  // (`filterVisibleCatalogItems` in library-catalog-store.ts) — any
+  // item declared hidden in `catalog.json` or `output/_editorial.json`
+  // is already absent from the DOM at first paint. This loop therefore
+  // affects ONLY draft hides that live in `localStorage` and have not
+  // yet been Exported to `catalog.json`.
+  //
+  // For unedited or committed items this loop walks the DOM and does
+  // nothing — the cost is one querySelectorAll on a small node list.
+  // Phase 7 (server-write endpoint) would let drafts go straight into
+  // `catalog.json`; at that point this loop becomes provably dead and
+  // can be deleted.
   document
     .querySelectorAll<HTMLElement>('.galaxy-card[data-slug], .mgc-row[data-slug]')
     .forEach(row => {

@@ -1,36 +1,42 @@
 /**
- * /library — admin-series client hydrator.
+ * /library — admin-series DRAFT preview hydrator.
  *
- * SSR seeds the orbit with `MANUAL_SERIES_ITEMS` (see
- * `src/utils/library-catalog.ts`). On the client we additionally
- * reconcile the rendered orbit against the admin's edits stored in
- * `localStorage` under `yuval_series_metadata`:
+ * ▸ Production source of truth for series cards is
+ *   `src/data/library/catalog.json` (merged at SSR by
+ *   `src/utils/library/library-catalog-store.ts`). The orbit you see
+ *   on `/library` for any committed series is fully resolved before
+ *   the page reaches the client — first-paint truth, no flash.
  *
- *   1. For every admin series record, compute the public slug
+ * ▸ This hydrator is a DRAFT-ONLY preview layer. It exists solely
+ *   so the editor can see their /admin edits before they Export
+ *   `catalog.json` and commit it. It is NOT a production behavior:
+ *   - it runs in the browser only,
+ *   - it reads only from `localStorage` (`yuval_series_metadata`),
+ *   - it never writes,
+ *   - it never creates new orbit stations,
+ *   - it only mirrors draft titles / hides draft-disabled stations
+ *     onto orbit stations the SSR catalog already rendered.
+ *
+ * ▸ Once /admin gets a server-write endpoint (Phase 7), drafts can
+ *   land directly in `catalog.json` and this file becomes deletable.
+ *   Until then, removing it would silently drop the editor's
+ *   in-progress preview the moment they tweak a series.
+ *
+ * Behavior, in order:
+ *   1. For every admin draft series record, compute the public slug
  *      (asset-folder when set, otherwise a kebab-cased `name`).
  *   2. Find the matching SSR-rendered orbit station via
  *      `[data-galaxy-card][data-slug="<slug>"]`.
- *   3. If found AND the admin record is eligible for the orbit
- *      (visible + active + has-artifact): mirror the admin's display
- *      title onto the visible `.lc-title` so an edit in the drawer
- *      shows up immediately on the public page after a reload.
- *   4. If found AND the admin record is NOT eligible (toggled off,
+ *   3. If found AND the draft is eligible: mirror its display title
+ *      and short description onto the rendered card.
+ *   4. If found AND the draft is NOT eligible (toggled off,
  *      status=draft/hidden, asset folder removed): hide the station
- *      so the public universe respects the editorial state without
- *      requiring a server round-trip.
+ *      so the editor sees what publishing would look like.
+ *   5. If unmatched: log a `[no-station]` hint — the editor needs to
+ *      Export → commit catalog.json before that draft can appear on
+ *      the orbit.
  *
- * The hydrator does NOT create new orbit stations on the fly. New
- * series authored in /admin first need a build-time seed (the
- * `MANUAL_SERIES_ITEMS` overlay or, eventually, a real adapter) so
- * the SSR catalog knows about them — otherwise the hydrator would
- * have to clone the full station contract (data attributes, angle,
- * artifact, accent) from scratch, which would diverge from the SSR
- * pipeline. This is intentional: SSR remains the source of truth
- * for orbit composition; admin edits adjust label and visibility.
- *
- * Dev diagnostics print under `[admin-series]` so they can be
- * grepped alongside the existing `[knowledge-cards]` reports in
- * `library.astro`.
+ * Dev diagnostics print under `[admin-series]`.
  */
 
 import { getAllSeriesMetadata } from '../../utils/content-metadata';
@@ -81,15 +87,16 @@ import {
       const eligible = isAdminSeriesEligibleForOrbit(meta, hasOrbitArtifact);
 
       if (!station) {
-        // No SSR seed for this admin series. Surface as a dev hint —
-        // the user (or a follow-up step) will need to add a build-time
-        // entry so the orbit can include it.
+        // No SSR seed for this admin draft. Surface as a dev hint —
+        // the editor needs to Export catalog.json and commit it before
+        // this series can appear on the public orbit.
         unmatched += 1;
         // eslint-disable-next-line no-console
         console.log(
           `[admin-series]   [no-station] slug="${slug}" — `
-          + `admin record exists but no SSR orbit card found; `
-          + `add it to MANUAL_SERIES_ITEMS to surface.`,
+          + `admin draft exists but no SSR orbit card found; `
+          + `Export catalog.json from /admin and commit it to `
+          + `src/data/library/catalog.json to publish this series.`,
         );
         continue;
       }

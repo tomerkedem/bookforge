@@ -78,12 +78,180 @@ export function initStageLayout(stage: HTMLElement): void {
     return 360 / visibleCount;
   }
 
+  // ── Mobile Focus Carousel slot mapping ─────────────────────────────
+  // Mobile (<=1023px) renders a 3-slot focus carousel rather than the
+  // full radial orbit. The slot CSS lives in src/pages/index.astro,
+  // inside `@media (max-width: 1023px)`, and switches on `data-mobile-
+  // slot` per card. This function picks one card as `center` (closest
+  // to angular top after the +20° mobile offset that the CSS also
+  // applies), its clockwise neighbour as `next`, its counter-clockwise
+  // neighbour as `prev`, and leaves every other card as `hidden`. SSR
+  // ships an initial assignment so the first paint already matches
+  // the runtime layout.
+  //
+  // Desktop is unaffected: on widths ≥1024px the function clears every
+  // `data-mobile-slot` attribute, so a resize-up from phone to desktop
+  // does not leave stray slot data behind. The desktop CSS selector
+  // never matches data-mobile-slot, so even if attributes lingered the
+  // desktop orbit math would still win on specificity.
+  const MOBILE_SLOT_BP_PX = 1023;
+  const mqMobileSlot = window.matchMedia(
+    `(max-width: ${MOBILE_SLOT_BP_PX}px)`,
+  );
+
+  function setPositionIndicator(current: number, total: number): void {
+    const currEl = document.querySelector<HTMLElement>(
+      '[data-galaxy-position-current]',
+    );
+    if (currEl && currEl.textContent !== String(current)) {
+      currEl.textContent = String(current);
+    }
+    const totalEl = document.querySelector<HTMLElement>(
+      '[data-galaxy-position-total]',
+    );
+    if (totalEl && totalEl.textContent !== String(total)) {
+      totalEl.textContent = String(total);
+    }
+  }
+
+  function updateMobileSlots(): void {
+    // Read every card up-front so we can wipe slot attrs on a
+    // resize-up to desktop without depending on the visible filter.
+    const allCards = stage.querySelectorAll<HTMLElement>('[data-galaxy-card]');
+
+    if (!mqMobileSlot.matches) {
+      allCards.forEach((c) => { delete c.dataset.mobileSlot; });
+      return;
+    }
+
+    // Visible orbit stations — exclude only series MEMBERS (children
+    // owned by a capsule). Series capsules + Other-Knowledge cards
+    // stay in the rotation because they're real stations. Matches
+    // the same filter `getStep()` uses, so slot indices and rotation
+    // step indices stay in lockstep.
+    const visibleCards = Array.from(
+      stage.querySelectorAll<HTMLElement>(
+        '[data-galaxy-card]:not([data-series-member])',
+      ),
+    );
+
+    if (visibleCards.length === 0) return;
+
+    if (visibleCards.length === 1) {
+      visibleCards[0].dataset.mobileSlot = 'center';
+      setPositionIndicator(1, 1);
+      return;
+    }
+
+    // Effective angle = base angle + cumulative rotation + 20°. The
+    // +20° mirrors the mobile CSS `--orbit-active-angle` offset in
+    // index.astro that aligns one station to exactly 270°.
+    type AngleEntry = { card: HTMLElement; eff: number; distFromTop: number };
+    const angles: AngleEntry[] = visibleCards.map((card) => {
+      const raw = card.style.getPropertyValue('--orbit-angle').trim();
+      const angle = parseFloat(raw) || 0;
+      const eff = (((angle + rotation + 20) % 360) + 360) % 360;
+      let distFromTop = Math.abs(eff - 270);
+      if (distFromTop > 180) distFromTop = 360 - distFromTop;
+      return { card, eff, distFromTop };
+    });
+
+    // Mark all hidden first; the three winners overwrite below.
+    angles.forEach(({ card }) => { card.dataset.mobileSlot = 'hidden'; });
+
+    // Closest to top (270°) wins centre.
+    const sortedByDist = [...angles].sort(
+      (a, b) => a.distFromTop - b.distFromTop,
+    );
+    const center = sortedByDist[0];
+    center.card.dataset.mobileSlot = 'center';
+
+    // Find clockwise (next: positive signed delta from centre) and
+    // counter-clockwise (prev: negative signed delta) neighbours.
+    // Signed delta is wrapped to [-180, 180] so wrap-around past
+    // 360° is handled correctly.
+    let next: AngleEntry | null = null;
+    let prev: AngleEntry | null = null;
+    let nextDelta = 360;
+    let prevDelta = 360;
+
+    for (const cd of angles) {
+      if (cd === center) continue;
+      let delta = cd.eff - center.eff;
+      if (delta > 180) delta -= 360;
+      else if (delta < -180) delta += 360;
+
+      if (delta > 0 && delta < nextDelta) {
+        nextDelta = delta;
+        next = cd;
+      } else if (delta < 0 && -delta < prevDelta) {
+        prevDelta = -delta;
+        prev = cd;
+      }
+    }
+
+    if (next) next.card.dataset.mobileSlot = 'next';
+    if (prev) prev.card.dataset.mobileSlot = 'prev';
+
+    // Position indicator. visibleCards is in DOM/source order, which
+    // equals catalog order from SSR, so the centred card's index there
+    // is its 1-based catalogue position.
+    const idx = visibleCards.indexOf(center.card) + 1;
+    setPositionIndicator(idx, visibleCards.length);
+  }
+
+  // Re-evaluate slots when crossing the breakpoint (mobile ↔ desktop).
+  // Single listener for the lifetime of this stage; safe-leak with the
+  // rest of universe-layout because the stage element is the implicit
+  // root and goes away on full reload.
+  const onMqMobileChange = (): void => updateMobileSlots();
+  if (typeof mqMobileSlot.addEventListener === 'function') {
+    mqMobileSlot.addEventListener('change', onMqMobileChange);
+  } else if (typeof (mqMobileSlot as unknown as {
+    addListener?: (cb: () => void) => void;
+  }).addListener === 'function') {
+    // Safari < 14 fallback.
+    (mqMobileSlot as unknown as {
+      addListener: (cb: () => void) => void;
+    }).addListener(onMqMobileChange);
+  }
+
   function rotateOrbit(direction: number) {
-    rotation += direction * getStep();
+    // `direction` is the SEMANTIC intent the caller passes in:
+    //   +1 → advance to the NEXT catalog item (chevron "next",
+    //        ArrowRight, future swipe-left)
+    //   -1 → go to the PREVIOUS catalog item (chevron "prev",
+    //        ArrowLeft, future swipe-right)
+    //
+    // The orbit math walks clockwise (increasing angle puts cards
+    // further around the ellipse). At rotation=0 + mobile +20° offset,
+    // catalog item 1 sits at effective angle 270° + step (i.e. the
+    // clockwise neighbour of the top station). To rotate that card
+    // UP to the top station we need every card's effective angle to
+    // DECREASE by step — which means `rotation -= step`. So +1 maps
+    // to `rotation -= step` and -1 to `rotation += step`.
+    //
+    // The previous implementation had this sign inverted, which made
+    // "next" surface the counter-clockwise neighbour (catalog N-1)
+    // and the position indicator jump 1 → N → N-1 → … instead of
+    // 1 → 2 → 3 → … This change makes the chevron buttons, the
+    // keyboard arrows, and the future swipe gesture all advance the
+    // catalog as their labels suggest. Drag-to-rotate is UNTOUCHED:
+    // it sets `rotation` directly (rotation = startRotation + dx/…),
+    // never calls this function, so dragging-right still follows the
+    // cursor — which by swipe-carousel convention reads as "go back",
+    // i.e. the same direction as the prev chevron. RTL is handled at
+    // the CSS layer via `--galaxy-dir` flipping the X axis; the
+    // rotation angle itself is direction-agnostic, so the same sign
+    // works in both LTR Hebrew/English and RTL Hebrew.
+    rotation -= direction * getStep();
     stage.style.setProperty('--orbit-rotation', `${rotation}deg`);
     // Rotation moves stations under the focused card; close any focus
     // so the user sees the rotation, not a stale spotlight.
     if (focused) closeCenter();
+    // Reassign mobile slots so the position indicator and 3-slot CSS
+    // track the new rotation. No-op on desktop (matchMedia gate).
+    updateMobileSlots();
   }
 
   // ── Drag-to-rotate ─────────────────────────────────────────────────
@@ -116,6 +284,10 @@ export function initStageLayout(stage: HTMLElement): void {
       const step = getStep();
       rotation = Math.round(rotation / step) * step;
       stage.style.setProperty('--orbit-rotation', `${rotation}deg`);
+      // Drag snapped to a new station — the focus carousel slot
+      // assignments and the position indicator follow rotation, so
+      // refresh them here. No-op on desktop (matchMedia gate).
+      updateMobileSlots();
     }
     // If the drag actually moved, mark the next click as "swallow me"
     // so click-to-center doesn't fire on pointerup. Cleared by the
@@ -416,32 +588,47 @@ export function initStageLayout(stage: HTMLElement): void {
     if (card) openCenter(card);
   });
 
-  // ── Mobile auto-focus ─────────────────────────────────────────────
-  // On phones the orbit cards are clamped to 96-140px wide, which
-  // makes the title/cover text hard to read at rest. To solve the
-  // affordance problem ("user tries to read instead of tapping"), the
-  // first eligible orbit station is auto-focused on page load so the
-  // visitor immediately sees one large, fully readable card scaled
-  // up at the orbit center — with the other cards visibly orbiting
-  // around it as small satellites. Tap any other card (or the
-  // backdrop) to change focus / dismiss.
+  // ── Mobile auto-focus — DISABLED ──────────────────────────────────
+  // Previously, on phones (`(max-width: 1023px)`) the first eligible
+  // orbit station was auto-focused one frame after mount via
+  // `openCenter(first)`, so visitors saw one large readable card
+  // lifted to the centre with the reading-entry overlay already
+  // visible. That solved an affordance problem when the resting
+  // mobile orbit was a tiny radial cluster of cards.
   //
-  // Mobile-only: desktop has enough card real estate that text is
-  // readable at rest, and auto-focusing there would block the
-  // designed "hero cosmic dashboard" composition.
-  const MOBILE_MAX_WIDTH = 1023; // matches @media (max-width: 1023px)
-  if (window.matchMedia(`(max-width: ${MOBILE_MAX_WIDTH}px)`).matches) {
-    // Defer one frame so the orbit hydrator (which can remove series
-    // members from the visible card pool) has finished mutating the
-    // DOM before we pick a card to spotlight.
-    requestAnimationFrame(() => {
-      if (focused) return; // a user interaction already focused something
-      const first = stage.querySelector<HTMLElement>(
-        '[data-galaxy-card]:not([data-series-member]):not([data-role="series"]):not([data-role="other-knowledge"])',
-      );
-      if (first) openCenter(first);
-    });
-  }
+  // With the mobile Focus Carousel CSS in place, the RESTING orbit
+  // already surfaces one dominant centred card flanked by two subtle
+  // side previews with far cards faded out — auto-focus on top of
+  // that would lift the centred card up into the focused-reading
+  // state and hide the carousel composition the user is supposed to
+  // see first. So the auto-focus call is removed.
+  //
+  // Everything else that calls `openCenter()` still works the same:
+  //   • Click / tap on a card                       (this module)
+  //   • Chevron rotation (`[data-galaxy-rotate]`)   (this module)
+  //   • Keyboard ArrowLeft / ArrowRight             (this module)
+  //   • Knowledge Atlas item activation
+  //     (`[data-library-focus="<slug>"]`)           (this module)
+  //   • Knowledge Core category filter
+  //     (`[data-library-filter]`)                   (this module)
+  //
+  // Desktop was never affected — the previous guard was already
+  // gated on `(max-width: 1023px)`, so this removal is mobile-only
+  // by construction.
+
+  // ── Initial mobile slot pass ─────────────────────────────────────
+  // SSR ships an initial slot assignment (idx 0 → center, idx 1 →
+  // next, idx N-1 → prev) so the first paint already shows the
+  // 3-slot carousel. After all other modules have hydrated (series
+  // mode tags capsules with data-role="series", series hydrator may
+  // mark some cards as data-series-member, etc.) we re-run the slot
+  // assignment so it reflects the post-hydration truth. A single
+  // requestAnimationFrame defer matches the existing pattern used by
+  // hydrateOrbitProgress / hydrateCenterCardExtras in index.astro's
+  // bootstrap, ensuring sibling hydrators settle before we read DOM.
+  requestAnimationFrame(() => {
+    updateMobileSlots();
+  });
 }
 
 /**

@@ -66,6 +66,11 @@ const i18nBundle = {
   toastEditorialImportedTpl: t('admin.toast.editorialImported', language),
   toastEditorialImportInvalidTpl: t('admin.toast.editorialImportInvalid', language),
   importConfirmTpl:  t('admin.global.importConfirm', language),
+  // Phase 5 — catalog.json Export/Import (production source of truth).
+  toastCatalogExportedTpl:      t('admin.toast.catalogExported', language),
+  toastCatalogImportedTpl:      t('admin.toast.catalogImported', language),
+  toastCatalogImportInvalidTpl: t('admin.toast.catalogImportInvalid', language),
+  catalogImportConfirmTpl:      t('admin.global.catalogImportConfirm', language),
   modalDeleting:     t('admin.modal.deleting', language),
   modalConfirmText:  t('admin.modal.confirm', language),
   // Per-flow modal copy. The generic `admin.modal.title/warning` keys
@@ -442,6 +447,49 @@ const i18nBundle = {
           <input
             type="file"
             id="import-editorial-input"
+            accept="application/json,.json"
+            hidden
+          />
+        </div>
+
+        {/* ── Phase 5: catalog.json (production source of truth) ──
+            The cards above target output/_editorial.json (per-item
+            overlay). The cards below target src/data/library/catalog.json
+            — the unified editorial source the library renderer consumes
+            via library-catalog-store.ts. Workflow:
+              Edit in /admin → Export catalog.json → commit at
+              src/data/library/catalog.json → next build publishes.
+            The notice card above the buttons reminds the editor of the
+            commit step, since browsers cannot write to the repo on their
+            own. */}
+        <div class="global-card global-card--notice">
+          <div class="global-card-info">
+            <p class="global-card-title">{t('admin.global.catalogNoticeTitle', language)}</p>
+            <p class="global-card-desc">{t('admin.global.catalogNoticeDescription', language)}</p>
+          </div>
+        </div>
+
+        <div class="global-card">
+          <div class="global-card-info">
+            <p class="global-card-title">{t('admin.global.exportCatalogTitle', language)}</p>
+            <p class="global-card-desc">{t('admin.global.exportCatalogDescription', language)}</p>
+          </div>
+          <button class="clean-btn clean-btn--global" id="export-catalog-btn">
+            {t('admin.global.exportCatalogButton', language)}
+          </button>
+        </div>
+
+        <div class="global-card">
+          <div class="global-card-info">
+            <p class="global-card-title">{t('admin.global.importCatalogTitle', language)}</p>
+            <p class="global-card-desc">{t('admin.global.importCatalogDescription', language)}</p>
+          </div>
+          <button class="clean-btn clean-btn--global" id="import-catalog-btn">
+            {t('admin.global.importCatalogButton', language)}
+          </button>
+          <input
+            type="file"
+            id="import-catalog-input"
             accept="application/json,.json"
             hidden
           />
@@ -2378,6 +2426,12 @@ const i18nBundle = {
     SeriesMetadata,
     SeriesStatus,
   } from '../types/content-metadata';
+  // Phase 5 — catalog.json export/import. Pure helpers; no fs, no DOM.
+  import {
+    buildExportedCatalog,
+    validateImportedCatalog,
+    splitImportedCatalogIntoDrafts,
+  } from '../utils/library/catalog-export-import';
 
   // ── i18n bundle ──────────────────────────────────────────────
   // The single source of admin runtime strings is the i18n table at
@@ -2403,6 +2457,10 @@ const i18nBundle = {
     toastEditorialImportedTpl: string;
     toastEditorialImportInvalidTpl: string;
     importConfirmTpl: string;
+    toastCatalogExportedTpl: string;
+    toastCatalogImportedTpl: string;
+    toastCatalogImportInvalidTpl: string;
+    catalogImportConfirmTpl: string;
     modalDeleting: string;
     modalConfirmText: string;
     modalHeadingBook: string;
@@ -2733,6 +2791,121 @@ const i18nBundle = {
       }
       location.reload();
     });
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // Phase 5 — catalog.json Export
+  // Merges the build-time catalog.json with current Admin drafts via
+  // buildExportedCatalog() (pure helper, no localStorage reads inside)
+  // and triggers a Blob download. The downloaded file is what the
+  // editor commits to src/data/library/catalog.json to publish.
+  // ─────────────────────────────────────────────────────────────
+  document.getElementById('export-catalog-btn')?.addEventListener('click', () => {
+    const payload = buildExportedCatalog({
+      contentDrafts: getAllMetadata(),
+      seriesDrafts: getAllSeriesMetadata(),
+    });
+    const text = JSON.stringify(payload, null, 2) + '\n';
+    const blob = new Blob([text], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'catalog.json';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 0);
+
+    showToast(
+      fmt(i18n.toastCatalogExportedTpl, { count: payload.items.length }),
+    );
+  });
+
+  // ─────────────────────────────────────────────────────────────
+  // Phase 5 — catalog.json Import
+  // Loads a catalog.json into the localStorage draft maps. Validation
+  // gates the file shape (validateImportedCatalog); on success a
+  // native confirm() with the item count is shown, then the validated
+  // payload is split back into ContentMetadata + SeriesMetadata via
+  // splitImportedCatalogIntoDrafts and written through the same
+  // replaceAll* utilities the editorial import flow uses. Does NOT
+  // touch the catalog.json file on disk — publishing still requires
+  // Export → commit.
+  // ─────────────────────────────────────────────────────────────
+  const importCatalogBtn = document.getElementById('import-catalog-btn');
+  const importCatalogInput = document.getElementById(
+    'import-catalog-input',
+  ) as HTMLInputElement | null;
+
+  if (importCatalogBtn && importCatalogInput) {
+    importCatalogBtn.addEventListener('click', () => {
+      // Reset so re-picking the same path still fires `change`.
+      importCatalogInput.value = '';
+      importCatalogInput.click();
+    });
+
+    importCatalogInput.addEventListener('change', async () => {
+      const file = importCatalogInput.files?.[0];
+      if (!file) return;
+
+      let parsed: unknown;
+      try {
+        const text = await file.text();
+        parsed = JSON.parse(text);
+      } catch (err) {
+        showToast(
+          fmt(i18n.toastCatalogImportInvalidTpl, {
+            reason: err instanceof Error ? err.message : 'parse error',
+          }),
+        );
+        return;
+      }
+
+      const result = validateImportedCatalog(parsed);
+      if (!result.ok || !result.items) {
+        showToast(
+          fmt(i18n.toastCatalogImportInvalidTpl, {
+            reason: result.reason ?? 'invalid',
+          }),
+        );
+        return;
+      }
+
+      const count = result.items.length;
+      const ok = window.confirm(
+        fmt(i18n.catalogImportConfirmTpl, { count }),
+      );
+      if (!ok) return;
+
+      const split = splitImportedCatalogIntoDrafts(result.items);
+      replaceAllMetadata(split.contentItems);
+      replaceAllSeriesMetadata(split.seriesItems);
+
+      try {
+        sessionStorage.setItem(
+          'yuval_admin_catalog_import_toast',
+          JSON.stringify({ count }),
+        );
+      } catch {
+        // Quota / disabled — toast loss is acceptable; data is written.
+      }
+      location.reload();
+    });
+  }
+
+  // Catalog import — post-reload toast handoff. Mirrors the editorial
+  // handoff above so the success toast survives the location.reload.
+  try {
+    const raw = sessionStorage.getItem('yuval_admin_catalog_import_toast');
+    if (raw) {
+      sessionStorage.removeItem('yuval_admin_catalog_import_toast');
+      const { count } = JSON.parse(raw) as { count: number };
+      queueMicrotask(() => {
+        showToast(fmt(i18n.toastCatalogImportedTpl, { count }));
+      });
+    }
+  } catch {
+    // Malformed handoff blob — ignore.
   }
 
   // ─────────────────────────────────────────────────────────────

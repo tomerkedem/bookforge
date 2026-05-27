@@ -573,7 +573,7 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
                 is set per-card via inline `--orbit-angle`; CSS handles
                 the rest with cos()/sin(). No queue, no carousel —
                 everything is on screen at once. */}
-            {orbitItems.map(({ item, angle, kind }) => (
+            {orbitItems.map(({ item, angle, kind }, idx) => (
               <div
                 class="galaxy-card"
                 data-galaxy-card
@@ -581,6 +581,20 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
                 data-slug={item.slug}
                 data-series-id={item.seriesId}
                 data-series-name={item.seriesName}
+                data-mobile-slot={
+                  /* Mobile-only 3-slot carousel hint, consumed by the
+                     `.galaxy-card[data-mobile-slot=...]` CSS in the
+                     mobile @media block and updated at runtime by
+                     `updateMobileSlots()` in universe-layout.ts. SSR
+                     assigns the natural rotation=0 layout so the first
+                     paint already shows one centre + two side previews
+                     instead of an orbit. Hidden on desktop via the
+                     desktop CSS — the orbit-math rules win there. */
+                  idx === 0 ? 'center'
+                  : idx === 1 ? 'next'
+                  : idx === orbitItems.length - 1 ? 'prev'
+                  : 'hidden'
+                }
                 style={`--orbit-angle: ${angle}deg;`}
               >
                 <LibraryCard
@@ -895,6 +909,27 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
           universe-layout's `[data-library-focus]` listener. Rendered at
           page level so it can cover the whole stage. */}
     <KnowledgeAtlas items={atlasItems} language={language} />
+
+    {/* Mobile-only carousel position indicator (e.g. "3 / 10").
+        Pinned just above the bottom chevron pill so the user sees
+        BOTH the position and the navigation controls in one glance —
+        a clear signal that there are more books on the carousel.
+        Defaults to hidden globally (see `.galaxy-position-indicator`
+        rule below); the mobile @media block enables it.
+        `updateMobileSlots()` in universe-layout.ts updates the
+        current/total numbers in lockstep with every rotation. */}
+    {showOrbitControls && (
+      <div
+        class="galaxy-position-indicator"
+        data-galaxy-position-indicator
+        role="status"
+        aria-live="polite"
+      >
+        <span data-galaxy-position-current>1</span>
+        <span class="galaxy-position-sep" aria-hidden="true">/</span>
+        <span data-galaxy-position-total>{orbitItems.length}</span>
+      </div>
+    )}
 
     {/* Orbit rotation controls — chevron pair pinned to the bottom of
         the viewport, OUTSIDE the orbit stage so they never overlap the
@@ -1580,6 +1615,13 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
     .galaxy-card.is-series-glow :global(.lc) { animation: none; }
   }
 
+  /* Mobile-only carousel position indicator — defaults to hidden at
+     every breakpoint. The mobile @media block below enables it as an
+     inline-flex pill pinned above the rotate chevrons. Desktop never
+     overrides this default, so the indicator stays out of the desktop
+     dashboard composition. */
+  .galaxy-position-indicator { display: none; }
+
   @media (max-width: 1023px) {
     :global(.lb-area-hero .lh) {
       /* No top padding — the hero text should land right under the
@@ -1665,15 +1707,18 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
 
     .library-galaxy {
       position: fixed;
-      /* Mobile orbit anchored to the boundary between the middle and
-         the bottom third of the viewport (Tomer: "בין שליש תחתון
-         לשליש שני"). Center sits at 2/3 of the viewport (≈66.66dvh)
-         so the orbit body straddles the line — upper stations in the
-         middle third, lower stations in the bottom third. The orbit
-         no longer aligns with the background galaxy image's book icon;
-         that's intentional, the carousel is now a discrete lower-
-         anchored surface rather than a stage centerpiece. */
-      top: calc(200dvh / 3);
+      /* Mobile carousel vertical anchor — 60dvh, balanced between the
+         hero text (which ends ~25dvh) and the bottom rotate-controls
+         pill (which pins to env(safe-area-inset-bottom), ~95dvh on
+         most phones). The previous 2/3-viewport (66.66dvh) anchor
+         was tuned for the old radial-orbit-on-mobile design, where
+         upper stations sat in the middle third and lower stations in
+         the bottom third. With the flat Focus Carousel orbit (ry≈0),
+         every visible station collapses onto a single horizontal
+         line at this anchor — so 60dvh now centres that line in the
+         available content band, putting equal ~22dvh breathing room
+         above and below the visible cards. */
+      top: 60dvh;
       left: 50%;
       transform: translate(-50%, -50%);
       display: block;
@@ -1736,13 +1781,37 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       cursor: pointer;
       top: 50%;
       left: 50%;
-      /* Tighter ellipse on mobile so the orbit's lower edge clears
-         the rotate-controls pill at the viewport bottom with a clear
-         safety gap (not just touching). orbit-ry shrunk again from
-         18vh→13vh, and the floor/ceiling tightened in tandem. */
-      --orbit-rx: clamp(110px, 38vw, 220px);
-      --orbit-ry: clamp(70px, 13vh, 105px);
-      --orbit-active-angle: calc(var(--orbit-angle, 0deg) + var(--orbit-rotation, 0deg));
+      /* Mobile Focus Carousel — true focus model, NOT a flat orbit.
+         Three visible slots: one main centered card, two clearly
+         readable side previews peeking past the screen edges,
+         everything else fully hidden via the ramps below.
+         orbit-rx widened (was 170-250 / 52vw → now 200-280 / 62vw)
+         so side stations land ~55% on-screen at common phone widths
+         (was ~80%, which read as "small orbit of three near-equal
+         cards" rather than "main card with previews from the next /
+         previous slots"). On 390px → side-card centre ≈ 189px, just
+         past the screen half (195px), so ~55% of the side card sits
+         inside the viewport and ~45% beyond the edge — visibly
+         "another card waiting." orbit-ry stays near-zero (0-12px)
+         so every visible station sits on the same near-horizontal
+         line — the carousel reads as a row, not an ellipse. */
+      --orbit-rx: clamp(200px, 62vw, 280px);
+      --orbit-ry: clamp(0px, 1.5vh, 12px);
+      /* Mobile-only +20° offset aligns one station to EXACTLY 270°
+         (top). ORBIT_START_DEG is 250° — chosen for desktop where
+         item #0 must stay clear of the page title — so without the
+         offset item #0 lands 20° left of top and item #1 ~31° right,
+         giving TWO near-top cards (depth ≈ 0.94 and 0.93) instead of
+         one dominant card. The +20° rotation puts item #0 at 270°
+         (depth = 1) and item #1 / item #N-1 at exactly ±360°/N from
+         top — those become the true side previews. Pure CSS, mobile-
+         only by virtue of being inside @media (max-width: 1023px), so
+         desktop's --orbit-active-angle calc (which lives in the
+         min-width: 1024px block) is byte-for-byte unchanged.
+         Chevron / drag / arrow / Atlas rotation still moves in
+         360°/N steps, so after every step a NEW station lands at
+         270° — navigation stays exactly as before. */
+      --orbit-active-angle: calc(var(--orbit-angle, 0deg) + var(--orbit-rotation, 0deg) + 20deg);
       /* Upper arc = near/front, lower arc = far/back (`1 - sin`), same
          inverted depth model as desktop. */
       --orbit-depth: calc((1 - sin(var(--orbit-active-angle, 0deg))) / 2);
@@ -1753,14 +1822,35 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
         cos(var(--orbit-active-angle, 0deg)) *
         cos(var(--orbit-active-angle, 0deg))
       );
-      /* Gentler depth ramp than desktop — phone cards are already
-         small, so far stations only step down to ~0.62 scale and
-         ~0.25 opacity at the inline extremes, ~0.32 opacity at the
-         bottom. Side fade still reads on mobile so the orbit
-         continues past the viewport rather than stopping cleanly at
-         the edge cards. */
-      --slot-scale: calc(0.62 + 0.30 * var(--orbit-depth) - 0.18 * var(--orbit-side));
-      --slot-opacity: calc(0.32 + 0.55 * var(--orbit-depth) - 0.30 * var(--orbit-side));
+      /* Focus Carousel ramps — three-tier model:
+           main   (depth ≈ 1   ): scale 1.10, opacity 1.00
+           preview(depth ≈ 0.81): scale 0.82, opacity 0.73 (day)
+                                  / 0.64 (night)
+           hidden (depth ≤ 0.39): scale 0.55 (floor), opacity 0.00
+         Slopes are intentionally steep so the cliff between
+         "preview" and "hidden" lands between the N=7 ±51.43° ring
+         (depth=0.812) and the next ring at ±102.86° (depth=0.389).
+         Day opacity uses slope 1.73 — at depth=1 the un-clamped
+         result (1.06) clamps to 1.0 (main), at depth=0.812 it
+         lands at 0.73 (preview, well inside the 0.68-0.78 target),
+         at depth=0.389 it lands at ~0.003 (preview cliff → next
+         ring fully invisible). Night opacity uses a steeper slope
+         (1.91) anchored so depth=1 lands at exactly 1.0 and
+         depth=0.812 at 0.64 (within 0.58-0.70 target). Steeper
+         night slope keeps far cards quieter on the dark cosmic
+         scene while preserving the main station's full readability.
+         Scale uses slope 1.5 / offset -0.4 so depth=0.812 lands at
+         0.82 (in 0.78-0.86 target) and the floor 0.55 catches every
+         farther ring. The 1.10 scale ceiling gives the main card a
+         deliberate "pop" past 1× so it reads as dominant against
+         the 0.82 side previews.
+         --orbit-side is declared above for parity with desktop but
+         intentionally unused on mobile — the focus carousel is a
+         depth-only model.
+         Day-mode opacity is the default below; the html.dark
+         override after this rule tightens night-mode side previews. */
+      --slot-scale: clamp(0.55, calc(1.5 * var(--orbit-depth) - 0.4), 1.1);
+      --slot-opacity: clamp(0, calc(1.73 * var(--orbit-depth) - 0.67), 1);
       --tilt: calc(cos(var(--orbit-active-angle, 0deg)) * 4deg * var(--galaxy-dir, 1) * -1);
       transform:
         translate(-50%, -50%)
@@ -1776,20 +1866,175 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
                   var(--orbit-motion-ease, cubic-bezier(0.22, 0.61, 0.36, 1)),
         opacity var(--orbit-motion-duration, 600ms)
                 var(--orbit-motion-ease, cubic-bezier(0.22, 0.61, 0.36, 1));
-      /* Depth-sorted stacking, same as desktop: 2 (back) .. 10 (front). */
-      z-index: calc(2 + var(--orbit-depth) * 8);
+      /* Focus Carousel stacking — wider z-index range so the focused
+         card (z≈100 at depth=1) decisively layers above the side
+         previews (~z=82 at depth=0.815) and far cards (z≤1 at
+         depth=0). Spec explicitly calls for separation by tier. */
+      z-index: calc(1 + var(--orbit-depth) * 99);
       direction: var(--page-direction, ltr);
+    }
+
+    /* ── Mobile Focus Carousel — explicit 3-slot positioning ─────────
+       universe-layout.ts maintains `data-mobile-slot` on each card
+       based on the live rotation:
+         center : card closest to angular top (effective_angle ≈ 270°)
+         next   : its clockwise neighbour
+         prev   : its counter-clockwise neighbour
+         hidden : every other card (kept in the DOM so chevron / drag
+                  can rotate them into a visible slot later)
+       SSR ships an initial assignment (idx 0 → center, idx 1 → next,
+       idx N-1 → prev) so the first paint shows the 3-slot layout
+       directly — no flash of an orbit on mount.
+
+       These rules override the base .galaxy-card transform/opacity by
+       matching attribute-selector specificity (0,2,0) + later source
+       order. The base rule reads `opacity: var(--slot-opacity)`; slot
+       rules set `opacity` directly so the day/night --slot-opacity
+       overrides below cannot dim a slot card. The [data-pos="center"]
+       rule that lives further down in source still wins on a tapped
+       card, so click-to-center continues to lift the card into the
+       reading-overlay state exactly as before.
+
+       translateX is `52vw * --galaxy-dir` so the prev/next slots
+       mirror across the inline-axis in RTL Hebrew — matches the
+       existing orbit math (`cos(angle) * rx * --galaxy-dir`). The
+       tilt sign also flips with --galaxy-dir so each side card leans
+       toward the centre in both reading directions. On a 390px
+       viewport the side card's centre lands at screen-edge + ~8px,
+       so ~42% of the side card sits inside the viewport. */
+    .galaxy-card[data-mobile-slot="center"] {
+      transform: translate(-50%, -50%) scale(1.16);
+      opacity: 1;
+      z-index: 100;
+    }
+    .galaxy-card[data-mobile-slot="prev"] {
+      transform:
+        translate(-50%, -50%)
+        translateX(calc(-52vw * var(--galaxy-dir, 1)))
+        rotate(calc(1.5deg * var(--galaxy-dir, 1)))
+        scale(0.82);
+      opacity: 0.72;
+      z-index: 50;
+    }
+    .galaxy-card[data-mobile-slot="next"] {
+      transform:
+        translate(-50%, -50%)
+        translateX(calc(52vw * var(--galaxy-dir, 1)))
+        rotate(calc(-1.5deg * var(--galaxy-dir, 1)))
+        scale(0.82);
+      opacity: 0.72;
+      z-index: 50;
+    }
+    .galaxy-card[data-mobile-slot="hidden"] {
+      transform: translate(-50%, -50%) scale(0.6);
+      opacity: 0;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    /* Night-mode side previews — slightly dimmer per spec (0.62 vs
+       day 0.72), keeping the night carousel calmer without neon
+       overload on the cosmic scene. Specificity (0,3,0) wins over
+       the day-mode default (0,2,0). */
+    :global(html.dark) .galaxy-card[data-mobile-slot="prev"],
+    :global(html.dark) .galaxy-card[data-mobile-slot="next"] {
+      opacity: 0.62;
+    }
+
+    /* ── Carousel position indicator pill ────────────────────────────
+       Pinned just above the bottom chevron pill (which itself sits at
+       env(safe-area-inset-bottom)). Tabular-nums keeps the "3 / 10"
+       numerals on a stable grid as they change. role=status +
+       aria-live=polite on the wrapper announces position changes to
+       screen readers without stealing focus. The pill is purely
+       informational — pointer-events: none lets touches drop through
+       to anything that might briefly underlap it. */
+    .galaxy-position-indicator {
+      display: inline-flex;
+      position: fixed;
+      inset-block-end: calc(env(safe-area-inset-bottom, 0px) + 52px);
+      left: 50%;
+      transform: translateX(-50%);
+      align-items: center;
+      gap: 0.32rem;
+      padding: 0.22rem 0.72rem;
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.34);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      color: rgba(255, 255, 255, 0.92);
+      font-size: 0.72rem;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+      font-variant-numeric: tabular-nums;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      pointer-events: none;
+      z-index: 40;
+    }
+    :global(html:not(.dark)) .galaxy-position-indicator {
+      background: rgba(255, 253, 249, 0.82);
+      border-color: rgba(34, 52, 92, 0.16);
+      color: rgba(22, 34, 60, 0.85);
+      box-shadow: 0 1px 3px rgba(30, 45, 80, 0.08);
+    }
+    .galaxy-position-sep {
+      opacity: 0.55;
     }
 
     /* Light-mode phone tuning — a lighter card shadow than desktop:
        smaller blur, no cyan edge, to keep compositing cheap and the
        bright scene uncluttered. Overrides the non-media light-mode
        `.galaxy-card` filter above (same specificity, declared later
-       and inside a matching media query). */
+       and inside a matching media query).
+       Also re-applies the mobile Focus Carousel --slot-opacity formula:
+       the global light-mode block at the top of this stylesheet sets a
+       0.62 opacity floor (desktop-orbit polish), which would otherwise
+       win by specificity (0,2,0 vs the plain mobile `.galaxy-card` at
+       0,1,0) and prevent far cards from fading to zero on phones.
+       Restating it inside this matching-specificity block keeps day
+       mode aligned with the aggressive depth ramp the Focus Carousel
+       needs — main card 1.0, side previews ~0.73, far cards 0.0. */
     :global(html:not(.dark)) .galaxy-card {
+      --slot-opacity: clamp(0, calc(1.73 * var(--orbit-depth) - 0.67), 1);
       filter:
         drop-shadow(0 3px 8px rgba(34, 52, 92, 0.16))
         drop-shadow(0 1px 2px rgba(34, 52, 92, 0.12));
+    }
+
+    /* Night-mode Focus Carousel tightening — side previews sit dimmer
+       than day mode and far cards fall to zero just past the side
+       ring, so the night orbit reads calmer and deeper without neon
+       overload. Slope 1.91 anchored so depth=1 → opacity 1.00 exactly
+       and depth=0.812 → opacity 0.64 (in the 0.58-0.70 user target).
+       Far rings (depth ≤ 0.389) un-clamp to negative and clamp to 0.
+       Specificity (0,2,1) beats the plain `.galaxy-card` rule
+       (0,2,0), so this override wins on html.dark and is ignored on
+       html:not(.dark) (the day path above). */
+    :global(html.dark) .galaxy-card {
+      --slot-opacity: clamp(0, calc(1.91 * var(--orbit-depth) - 0.91), 1);
+    }
+
+    /* Night-mode-only subtle dark halo behind the carousel area, so
+       the main centred card stands out cleanly even when the cosmic
+       background image's bright book icon happens to sit directly
+       behind it. Painted as a soft radial gradient inside the stage's
+       own ::before, sized comfortably past the orbit so the falloff
+       blends into the bg without a visible seam. Static — no
+       animation, no transition, no interaction with cards or input.
+       Day mode skips this entirely: the AI Researcher Workspace scene
+       already gives high contrast to the cards. */
+    :global(html.dark) .library-galaxy::before {
+      content: "";
+      position: absolute;
+      inset: -8vh -10vw;
+      background: radial-gradient(
+        ellipse 65% 45% at 50% 50%,
+        rgba(0, 0, 16, 0.50) 0%,
+        rgba(0, 0, 16, 0.30) 45%,
+        transparent 85%
+      );
+      pointer-events: none;
+      z-index: -1;
     }
 
     /* Series capsule a touch wider than a book card, same ratio as desktop.
