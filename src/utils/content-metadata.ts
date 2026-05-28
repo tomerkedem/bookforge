@@ -1,14 +1,27 @@
 /**
- * Editorial metadata storage for Yuval content items.
+ * Editorial metadata in-memory store.
  *
- * Storage key intentionally does NOT contain a slug — the existing
- * `cleanBook(slug)` sweep in /admin matches `_${slug}` substrings, and
- * editorial state must survive both "Clean data" and "Clean global
- * settings". See src/types/content-metadata.ts for the rationale.
+ * Phase 7 — localStorage was removed entirely. This module now backs
+ * editorial state in an in-memory map that is seeded once per page
+ * load from the committed catalog at `src/data/library/catalog.json`.
  *
- * Read returns defaults when nothing is stored. Writes happen only via
- * `setMetadata`, so opening a page that calls `getMetadata` does not
- * mutate localStorage.
+ *   Production source of truth → src/data/library/catalog.json
+ *   Per-page working state    → the maps below (in this module)
+ *   Persistence across reload → none (intentional)
+ *
+ * The public API (`getMetadata`, `setMetadata`, `getAllMetadata`,
+ * `replaceAllMetadata`, and the series equivalents) is unchanged so
+ * every caller — /admin forms, `universe-series-actions.ts`,
+ * `universe-series-hydrator.ts` — continues to compile without
+ * modification. The difference is purely behavioural:
+ *
+ *   - Reads return whatever is currently in memory (seeded from
+ *     catalog.json on first access, then mutated by `set*` calls or
+ *     `replaceAll*` from the Admin Import flow).
+ *   - Writes mutate the in-memory map only. They never persist.
+ *   - Closing the tab or reloading the page discards every unsaved
+ *     edit. The Admin UI surfaces a notice so editors know to Export
+ *     before refreshing.
  */
 
 import {
@@ -19,16 +32,11 @@ import {
   type SeriesMetadata,
   type SeriesMetadataStore,
 } from '../types/content-metadata';
-
-export const CONTENT_METADATA_STORAGE_KEY = 'yuval_content_metadata';
-
-/**
- * Series metadata uses its own key so editing a series cannot touch
- * item metadata or reader progress. The key has no slug substring, so
- * the existing cleanBook(slug) sweep in /admin will not match it; it
- * is also intentionally excluded from GLOBAL_KEYS.
- */
-export const SERIES_METADATA_STORAGE_KEY = 'yuval_series_metadata';
+import {
+  splitImportedCatalogIntoDrafts,
+  validateImportedCatalog,
+} from './library/catalog-export-import';
+import baseCatalog from '../data/library/catalog.json';
 
 /**
  * Build a safe defaults record from the current book id and (optional)
@@ -52,55 +60,63 @@ export function defaultMetadataFor(
   };
 }
 
-function isBrowser(): boolean {
-  return typeof window !== 'undefined' && typeof localStorage !== 'undefined';
+export function defaultSeriesMetadataFor(name: string): SeriesMetadata {
+  return {
+    name,
+    displayTitle: name,
+    visualMode: 'capsule',
+    isVisibleInUniverse: true,
+    status: 'active',
+  };
 }
 
-function emptyStore(): ContentMetadataStore {
-  return { version: CONTENT_METADATA_VERSION, items: {} };
-}
+// ════════════════════════════════════════════════════════════════════
+// In-memory store
+// ════════════════════════════════════════════════════════════════════
+//
+// One Map per record type. Seeded lazily on first access — we cannot
+// run the seed at module init because that would force every importer
+// (including SSR-only code paths) to evaluate the catalog split before
+// it is actually needed. The lazy guard keeps that cost on demand and
+// idempotent.
 
-function readStore(): ContentMetadataStore {
-  if (!isBrowser()) return emptyStore();
-  try {
-    const raw = localStorage.getItem(CONTENT_METADATA_STORAGE_KEY);
-    if (!raw) return emptyStore();
-    const parsed = JSON.parse(raw) as Partial<ContentMetadataStore> | null;
-    if (
-      !parsed ||
-      typeof parsed !== 'object' ||
-      !parsed.items ||
-      typeof parsed.items !== 'object'
-    ) {
-      return emptyStore();
-    }
-    return {
-      version:
-        typeof parsed.version === 'number' ? parsed.version : CONTENT_METADATA_VERSION,
-      items: parsed.items as Record<string, ContentMetadata>,
-    };
-  } catch {
-    return emptyStore();
+const contentStore: Map<string, ContentMetadata> = new Map();
+const seriesStore: Map<string, SeriesMetadata> = new Map();
+let seeded = false;
+
+function seedStoresFromCatalog(): void {
+  if (seeded) return;
+  seeded = true;
+  const validation = validateImportedCatalog(baseCatalog);
+  if (!validation.ok || !validation.items) return;
+  const split = splitImportedCatalogIntoDrafts(validation.items);
+  for (const [slug, meta] of Object.entries(split.contentItems)) {
+    contentStore.set(slug, meta);
+  }
+  for (const [name, meta] of Object.entries(split.seriesItems)) {
+    seriesStore.set(name, meta);
   }
 }
 
-function writeStore(store: ContentMetadataStore): void {
-  if (!isBrowser()) return;
-  try {
-    localStorage.setItem(CONTENT_METADATA_STORAGE_KEY, JSON.stringify(store));
-  } catch {
-    // Quota exceeded / private mode — non-critical, editorial work can
-    // be re-saved next session. Silent no-op is the right default here.
-  }
+function ensureSeeded(): void {
+  if (!seeded) seedStoresFromCatalog();
 }
+
+// ════════════════════════════════════════════════════════════════════
+// Content-metadata API
+// ════════════════════════════════════════════════════════════════════
 
 /**
- * Returns the raw stored map. Items not yet edited by the user are
- * absent. Callers that need a defaults-merged view per slug should use
- * `getMetadata(slug, fallbackTitle)` instead.
+ * Returns the raw stored map. Items not yet edited by the user (and
+ * not in the catalog seed) are absent. Callers that need a
+ * defaults-merged view per slug should use `getMetadata(slug,
+ * fallbackTitle)` instead.
  */
 export function getAllMetadata(): Record<string, ContentMetadata> {
-  return readStore().items;
+  ensureSeeded();
+  const out: Record<string, ContentMetadata> = {};
+  for (const [k, v] of contentStore.entries()) out[k] = v;
+  return out;
 }
 
 /**
@@ -111,7 +127,8 @@ export function getMetadata(
   slug: string,
   fallbackTitle?: string,
 ): ContentMetadata {
-  const stored = readStore().items[slug];
+  ensureSeeded();
+  const stored = contentStore.get(slug);
   const defaults = defaultMetadataFor(slug, fallbackTitle);
   if (!stored) return defaults;
   // Defaults provide the floor so a future schema field gain does not
@@ -122,99 +139,51 @@ export function getMetadata(
 
 /**
  * Merges `patch` into the stored record for `slug` (creating it from
- * defaults if absent) and writes the store. Returns the resulting
- * record. The slug is always re-pinned so it cannot be patched away.
+ * defaults if absent) and writes the in-memory map. Returns the
+ * resulting record. The slug is always re-pinned so it cannot be
+ * patched away.
+ *
+ * Writes do NOT persist beyond the current page load — see file
+ * header for the rationale.
  */
 export function setMetadata(
   slug: string,
   patch: Partial<ContentMetadata>,
   fallbackTitle?: string,
 ): ContentMetadata {
-  const store = readStore();
-  const current = store.items[slug] ?? defaultMetadataFor(slug, fallbackTitle);
+  ensureSeeded();
+  const current = contentStore.get(slug) ?? defaultMetadataFor(slug, fallbackTitle);
   const next: ContentMetadata = { ...current, ...patch, slug };
-  store.items[slug] = next;
-  store.version = CONTENT_METADATA_VERSION;
-  writeStore(store);
+  contentStore.set(slug, next);
   return next;
 }
 
 /**
  * Replace the entire content-metadata store with `items`. Pre-existing
- * slugs that are not in `items` are dropped — this is the bulk
- * destructive counterpart to `setMetadata` and is intended for the
- * /admin "Import editorial JSON" flow. Records are written as-is; per
- * the spec the importer trusts the file contents and does not patch
- * fields in.
+ * slugs that are not in `items` are dropped. Intended for the /admin
+ * Import flow — the importer trusts the file contents.
+ *
+ * After this returns, `getAllMetadata()` reflects `items` exactly.
  */
 export function replaceAllMetadata(
   items: Record<string, ContentMetadata>,
 ): void {
-  writeStore({ version: CONTENT_METADATA_VERSION, items });
-}
-
-// ─────────────────────────────────────────────────────────────────
-// Series metadata
-//
-// Mirrors the item API. A series record is keyed by series name (the
-// `seriesName` field on items). Reads return defaults when nothing is
-// stored; writes happen only via setSeriesMetadata.
-// ─────────────────────────────────────────────────────────────────
-
-export function defaultSeriesMetadataFor(name: string): SeriesMetadata {
-  return {
-    name,
-    displayTitle: name,
-    visualMode: 'capsule',
-    isVisibleInUniverse: true,
-    status: 'active',
-    // color, order, shortDescription, fullDescription, plannedBooksCount
-    // and assetFolder are intentionally left undefined — they are
-    // editorial overrides, not always-present values. A consumer that
-    // reads `meta.color` (or any optional field) should treat falsy as
-    // "use default" / "not set".
-  };
-}
-
-function emptySeriesStore(): SeriesMetadataStore {
-  return { version: SERIES_METADATA_VERSION, items: {} };
-}
-
-function readSeriesStore(): SeriesMetadataStore {
-  if (!isBrowser()) return emptySeriesStore();
-  try {
-    const raw = localStorage.getItem(SERIES_METADATA_STORAGE_KEY);
-    if (!raw) return emptySeriesStore();
-    const parsed = JSON.parse(raw) as Partial<SeriesMetadataStore> | null;
-    if (
-      !parsed ||
-      typeof parsed !== 'object' ||
-      !parsed.items ||
-      typeof parsed.items !== 'object'
-    ) {
-      return emptySeriesStore();
-    }
-    return {
-      version:
-        typeof parsed.version === 'number' ? parsed.version : SERIES_METADATA_VERSION,
-      items: parsed.items as Record<string, SeriesMetadata>,
-    };
-  } catch {
-    return emptySeriesStore();
+  ensureSeeded();
+  contentStore.clear();
+  for (const [slug, meta] of Object.entries(items)) {
+    contentStore.set(slug, meta);
   }
 }
 
-function writeSeriesStore(store: SeriesMetadataStore): void {
-  if (!isBrowser()) return;
-  try {
-    localStorage.setItem(SERIES_METADATA_STORAGE_KEY, JSON.stringify(store));
-  } catch {
-    // Quota / private mode — silent no-op, same as item metadata.
-  }
-}
+// ════════════════════════════════════════════════════════════════════
+// Series-metadata API
+// ════════════════════════════════════════════════════════════════════
 
 export function getAllSeriesMetadata(): Record<string, SeriesMetadata> {
-  return readSeriesStore().items;
+  ensureSeeded();
+  const out: Record<string, SeriesMetadata> = {};
+  for (const [k, v] of seriesStore.entries()) out[k] = v;
+  return out;
 }
 
 /**
@@ -222,7 +191,8 @@ export function getAllSeriesMetadata(): Record<string, SeriesMetadata> {
  * missing fields. Stored fields take priority. Never mutates storage.
  */
 export function getSeriesMetadata(name: string): SeriesMetadata {
-  const stored = readSeriesStore().items[name];
+  ensureSeeded();
+  const stored = seriesStore.get(name);
   const defaults = defaultSeriesMetadataFor(name);
   if (!stored) return defaults;
   return { ...defaults, ...stored, name };
@@ -230,52 +200,62 @@ export function getSeriesMetadata(name: string): SeriesMetadata {
 
 /**
  * Merges `patch` into the stored series record (creating it from
- * defaults if absent) and writes the store. The name is always
- * re-pinned so it cannot be patched away.
+ * defaults if absent) and writes the in-memory map. The name is
+ * always re-pinned so it cannot be patched away.
  */
 export function setSeriesMetadata(
   name: string,
   patch: Partial<SeriesMetadata>,
 ): SeriesMetadata {
-  const store = readSeriesStore();
-  const current = store.items[name] ?? defaultSeriesMetadataFor(name);
+  ensureSeeded();
+  const current = seriesStore.get(name) ?? defaultSeriesMetadataFor(name);
   const next: SeriesMetadata = { ...current, ...patch, name };
-  store.items[name] = next;
-  store.version = SERIES_METADATA_VERSION;
-  writeSeriesStore(store);
+  seriesStore.set(name, next);
   return next;
 }
 
 /**
  * Replace the entire series-metadata store with `items`. Bulk
  * destructive counterpart to `setSeriesMetadata`; used by the /admin
- * import flow. Records are written as-is — the importer is the trust
- * boundary, not this function.
+ * import flow.
  */
 export function replaceAllSeriesMetadata(
   items: Record<string, SeriesMetadata>,
 ): void {
-  writeSeriesStore({ version: SERIES_METADATA_VERSION, items });
+  ensureSeeded();
+  seriesStore.clear();
+  for (const [name, meta] of Object.entries(items)) {
+    seriesStore.set(name, meta);
+  }
 }
 
 /**
- * Deletes the series record for `name`, if any. This is the editorial
- * inverse of `setSeriesMetadata` and ONLY removes the series's
- * presentation properties (displayTitle, color, descriptions, etc.).
+ * Deletes the series record for `name`, if any. Editorial inverse of
+ * `setSeriesMetadata`. Removes only the series's presentation
+ * properties; items still carrying `seriesName: name` keep that field
+ * untouched. Callers wanting a full series teardown must also walk
+ * the affected items and clear their `seriesName`. The series-delete
+ * flow in /admin does both.
  *
- * It does NOT mutate any item metadata: books that still carry
- * `seriesName: name` keep that field untouched. Callers that want a
- * full series teardown (so the auto-detection in /admin no longer
- * resurrects a row) must also walk the affected items and clear
- * their `seriesName`. The series-delete flow in /admin does both.
- *
- * Returns true when a record existed and was removed, false otherwise.
+ * Returns true when a record existed and was removed.
  */
 export function deleteSeriesMetadata(name: string): boolean {
-  const store = readSeriesStore();
-  if (!(name in store.items)) return false;
-  delete store.items[name];
-  store.version = SERIES_METADATA_VERSION;
-  writeSeriesStore(store);
-  return true;
+  ensureSeeded();
+  return seriesStore.delete(name);
+}
+
+// ════════════════════════════════════════════════════════════════════
+// Versioned-store snapshots
+// ════════════════════════════════════════════════════════════════════
+//
+// Some legacy callers still build a versioned `ContentMetadataStore`
+// or `SeriesMetadataStore` for export shaping. Provide thin wrappers
+// so they don't have to learn the in-memory shape.
+
+export function snapshotContentMetadataStore(): ContentMetadataStore {
+  return { version: CONTENT_METADATA_VERSION, items: getAllMetadata() };
+}
+
+export function snapshotSeriesMetadataStore(): SeriesMetadataStore {
+  return { version: SERIES_METADATA_VERSION, items: getAllSeriesMetadata() };
 }

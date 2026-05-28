@@ -100,11 +100,11 @@ export interface ImportSplit {
  *   1. The existing `catalog.json` at build time — the production
  *      source of truth. Provides seeds (e.g. `ai-engineering-series`)
  *      and any prior editorial overrides already committed to disk.
- *   2. Admin series drafts from `yuval_series_metadata`. Each is
- *      converted via the Phase 2 adapter
+ *   2. Admin series drafts (in-memory; see `content-metadata.ts`).
+ *      Each is converted via the Phase 2 adapter
  *      `seriesMetadataToLibraryCatalogItem`. Derived fields are
  *      stripped before merging.
- *   3. Admin content drafts from `yuval_content_metadata`. Each is
+ *   3. Admin content drafts (in-memory). Each is
  *      converted to a `Partial<LibraryCatalogItem>` patch via the
  *      Phase 2 adapter `contentMetadataToLibraryCatalogPatch` and
  *      applied only when a base item with the same slug already

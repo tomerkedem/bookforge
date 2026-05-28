@@ -563,10 +563,9 @@ export function libraryItemToLibraryCatalogItem(
 
 /**
  * Direct mapping from an Admin `SeriesMetadata` record to a unified
- * `LibraryCatalogItem` of type `'series'`. Phase 4 will use this in
- * the Admin write path so the editor saves directly into the unified
- * store instead of the parallel `yuval_series_metadata` localStorage
- * key.
+ * `LibraryCatalogItem` of type `'series'`. Used by the Admin Export
+ * flow (`buildExportedCatalog`) to project the in-memory series store
+ * into a catalog.json-shaped record before download.
  *
  * Slug resolution follows the same rule as `slugFromSeries()` in
  * admin-series.ts: explicit `assetFolder` wins; otherwise the

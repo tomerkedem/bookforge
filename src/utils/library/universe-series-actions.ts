@@ -45,9 +45,8 @@ import {
   getAllSeriesMetadata,
   getSeriesMetadata,
 } from '../content-metadata';
-import { slugFromSeries } from './admin-series';
 import { getKnowledgeCardAssetsOrPlaceholder } from './knowledge-cards';
-import type { SeriesMetadata } from '../../types/content-metadata';
+import { slugFromSeries, type SeriesMetadata } from '../../types/content-metadata';
 import type { SeriesModeHandle } from './universe-series-mode';
 
 interface ActionLabels {

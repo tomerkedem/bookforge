@@ -2642,35 +2642,11 @@ const i18nBundle = {
   });
 
   // ─────────────────────────────────────────────────────────────
-  // Editorial import — post-reload toast handoff
-  // The import handler reloads the page after replacing localStorage
-  // so every renderer reads fresh state. The success toast would die
-  // with the old page, so we hand it off via sessionStorage and
-  // surface it on the next paint.
-  // ─────────────────────────────────────────────────────────────
-  try {
-    const raw = sessionStorage.getItem('yuval_admin_import_toast');
-    if (raw) {
-      sessionStorage.removeItem('yuval_admin_import_toast');
-      const { items, series } = JSON.parse(raw) as { items: number; series: number };
-      // Defer to next microtask so showToast (defined just below) is in
-      // scope and the #toast element is reachable.
-      queueMicrotask(() => {
-        showToast(fmt(i18n.toastEditorialImportedTpl, { items, series }));
-      });
-    }
-  } catch {
-    // Malformed handoff blob — ignore silently. The import already
-    // succeeded; the only thing missing is the toast.
-  }
-
-  // ─────────────────────────────────────────────────────────────
   // Editorial export
-  // Reads `yuval_content_metadata` + `yuval_series_metadata` from
-  // localStorage (via the same utilities the rest of admin uses) and
-  // downloads them as a single `_editorial.json` shaped for output/.
-  // Pure read — never mutates storage. No backend; the download is a
-  // client-side Blob → object URL → <a download> trick.
+  // Reads the in-memory metadata store (seeded from catalog.json at
+  // page load and mutated by /admin edits during the session) and
+  // downloads it as `_editorial.json` shaped for output/. Pure read.
+  // No backend; the download is a client-side Blob → <a download>.
   // ─────────────────────────────────────────────────────────────
   document.getElementById('export-editorial-btn')?.addEventListener('click', () => {
     const items = getAllMetadata();
@@ -2778,18 +2754,17 @@ const i18nBundle = {
       replaceAllMetadata(payload.items);
       replaceAllSeriesMetadata(payload.series);
 
-      // Stash the success toast for the next page, then reload so the
-      // book/series tables and stats repaint from the new stores.
-      try {
-        sessionStorage.setItem(
-          'yuval_admin_import_toast',
-          JSON.stringify({ items: itemCount, series: seriesCount }),
-        );
-      } catch {
-        // Quota / disabled — losing the toast is acceptable; the data
-        // was already written and the reload will still happen.
-      }
-      location.reload();
+      // Phase 7 — no `location.reload()` here. State lives in memory
+      // only; a reload would seed it back from catalog.json and erase
+      // the import. Repaint the affected surfaces in place instead.
+      repaintAllBookCards();
+      renderSeries();
+      showToast(
+        fmt(i18n.toastEditorialImportedTpl, {
+          items: itemCount,
+          series: seriesCount,
+        }),
+      );
     });
   }
 
@@ -2822,15 +2797,16 @@ const i18nBundle = {
   });
 
   // ─────────────────────────────────────────────────────────────
-  // Phase 5 — catalog.json Import
-  // Loads a catalog.json into the localStorage draft maps. Validation
-  // gates the file shape (validateImportedCatalog); on success a
-  // native confirm() with the item count is shown, then the validated
-  // payload is split back into ContentMetadata + SeriesMetadata via
+  // catalog.json Import
+  // Loads a catalog.json into the in-memory state. Validation gates
+  // the file shape; on success a native confirm() with the item
+  // count is shown, then the validated payload is split back into
+  // ContentMetadata + SeriesMetadata via
   // splitImportedCatalogIntoDrafts and written through the same
-  // replaceAll* utilities the editorial import flow uses. Does NOT
-  // touch the catalog.json file on disk — publishing still requires
-  // Export → commit.
+  // replaceAll* utilities. Does NOT touch the catalog.json file on
+  // disk — publishing still requires Export → commit. Does NOT
+  // reload the page (would erase the imported state); the affected
+  // surfaces are repainted in place.
   // ─────────────────────────────────────────────────────────────
   const importCatalogBtn = document.getElementById('import-catalog-btn');
   const importCatalogInput = document.getElementById(
@@ -2881,31 +2857,12 @@ const i18nBundle = {
       replaceAllMetadata(split.contentItems);
       replaceAllSeriesMetadata(split.seriesItems);
 
-      try {
-        sessionStorage.setItem(
-          'yuval_admin_catalog_import_toast',
-          JSON.stringify({ count }),
-        );
-      } catch {
-        // Quota / disabled — toast loss is acceptable; data is written.
-      }
-      location.reload();
+      // Phase 7 — no reload. State lives in memory only; repaint in
+      // place so the editor can continue from the imported state.
+      repaintAllBookCards();
+      renderSeries();
+      showToast(fmt(i18n.toastCatalogImportedTpl, { count }));
     });
-  }
-
-  // Catalog import — post-reload toast handoff. Mirrors the editorial
-  // handoff above so the success toast survives the location.reload.
-  try {
-    const raw = sessionStorage.getItem('yuval_admin_catalog_import_toast');
-    if (raw) {
-      sessionStorage.removeItem('yuval_admin_catalog_import_toast');
-      const { count } = JSON.parse(raw) as { count: number };
-      queueMicrotask(() => {
-        showToast(fmt(i18n.toastCatalogImportedTpl, { count }));
-      });
-    }
-  } catch {
-    // Malformed handoff blob — ignore.
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -3044,11 +3001,10 @@ const i18nBundle = {
 
   // ─────────────────────────────────────────────────────────────
   // Edit Metadata drawer
-  // Reads and writes the editorial layer in src/utils/content-metadata.ts.
-  // The metadata storage key (yuval_content_metadata) is intentionally
-  // NOT matched by cleanBook() or cleanGlobal() above, so editing a
-  // book's metadata never affects reader progress or global prefs —
-  // those code paths are unchanged.
+  // Reads and writes the editorial layer in src/utils/content-metadata.ts,
+  // which is an in-memory store seeded from src/data/library/catalog.json
+  // at page load. Edits live only until the tab is closed; publishing
+  // still requires Export catalog.json → commit.
   // ─────────────────────────────────────────────────────────────
 
   const metaDrawer = document.getElementById('meta-drawer')!;
@@ -3148,16 +3104,40 @@ const i18nBundle = {
     }
   }
 
-  // On boot, overlay each card with its stored metadata (if any).
-  // Cards without stored metadata stay as the SSR rendered them.
-  document.querySelectorAll<HTMLElement>('.book-card').forEach(card => {
-    const slug = card.dataset.slug;
-    if (!slug) return;
-    const titleEl = card.querySelector<HTMLElement>('.book-title');
-    const ssrTitle = titleEl?.textContent?.trim() || slug;
-    const meta = getMetadata(slug, ssrTitle);
-    paintCardFromMetadata(slug, meta);
-  });
+  /**
+   * Repaint every visible book card from the in-memory metadata
+   * store. The metadata layer is seeded from `catalog.json` at module
+   * init, so a freshly-loaded /admin page reflects the published
+   * editorial state. The same function is called after Catalog /
+   * Editorial Import to refresh the UI without a `location.reload()`
+   * (which would discard the in-memory state).
+   *
+   * Cards whose slug has no stored record receive the legacy
+   * defaults (via `getMetadata(slug, ssrTitle)`), so a card the
+   * editor never touched still paints cleanly.
+   *
+   * Title repaint is intentionally NOT opt-in here — at boot time
+   * the SSR-rendered title may differ from the catalog's
+   * displayTitle, and we want the catalog to win. The original
+   * boot loop skipped paintTitle to avoid clobbering manifest text
+   * when the only source was localStorage; with catalog.json as the
+   * source we can trust it.
+   */
+  function repaintAllBookCards(): void {
+    document.querySelectorAll<HTMLElement>('.book-card').forEach((card) => {
+      const slug = card.dataset.slug;
+      if (!slug) return;
+      const titleEl = card.querySelector<HTMLElement>('.book-title');
+      const ssrTitle = titleEl?.textContent?.trim() || slug;
+      const meta = getMetadata(slug, ssrTitle);
+      paintCardFromMetadata(slug, meta);
+    });
+  }
+
+  // On boot, overlay each card with its stored metadata (seeded from
+  // catalog.json at module init). Cards without a stored record
+  // receive the legacy defaults and the SSR rendering carries.
+  repaintAllBookCards();
 
   function openMetaDrawer(slug: string, fallbackTitle: string, trigger: HTMLElement | null) {
     editingSlug = slug;
@@ -3263,9 +3243,9 @@ const i18nBundle = {
   // items the project owner can currently see in /admin) and groups
   // them. Series presentation properties (displayTitle, color, order,
   // visibility, visualMode) live in their own metadata layer accessed
-  // via getSeriesMetadata / setSeriesMetadata. Saving a series writes
-  // ONLY to yuval_series_metadata — never to item metadata, never to
-  // reader progress.
+  // via getSeriesMetadata / setSeriesMetadata. Saving a series mutates
+  // the in-memory series store only — never item metadata, never reader
+  // progress. Publishing still requires Export catalog.json → commit.
   // ─────────────────────────────────────────────────────────────
 
   const DEFAULT_SERIES_COLOR = '#c9a96e';
@@ -3759,7 +3739,7 @@ const i18nBundle = {
 
   // Series drawer — reuses the .meta-drawer slide animation/CSS class
   // structure but is a separate aside (#series-drawer) with its own
-  // open/close/save flow that writes only to yuval_series_metadata.
+  // open/close/save flow that mutates the in-memory series store only.
 
   const seriesDrawer = document.getElementById('series-drawer')!;
   const seriesTitleEl = document.getElementById('series-drawer-title')!;
