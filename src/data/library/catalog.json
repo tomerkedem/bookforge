@@ -8,7 +8,7 @@
       "type": "series",
       "status": "draft",
       "sourceKind": "manual_seed",
-      "title": { "en": "EI Engineering Course" },
+      "title": { "en": "AI Engineering Course" },
       "description": { "en": "A structured AI Engineering learning series" },
       "author": { "en": "Tomer Kedem" },
       "categoryKey": "ai-engineering",

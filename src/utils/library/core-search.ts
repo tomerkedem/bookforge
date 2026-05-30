@@ -69,13 +69,11 @@ function buildIndex(stage: HTMLElement): SearchEntry[] {
     const subtitle = card.querySelector<HTMLElement>('.lc-orbit-subtitle')?.textContent;
     const author = card.querySelector<HTMLElement>('.lc-orbit-author')?.textContent;
     const typeBadge = card.querySelector<HTMLElement>('.lc-orbit-typebadge')?.textContent;
-    const cornerBadge = card.querySelector<HTMLElement>('.lc-orbit-corner-badge')?.textContent;
     const count = card.querySelector<HTMLElement>('.lc-orbit-count')?.textContent;
     if (title)       parts.push(title);
     if (subtitle)    parts.push(subtitle);
     if (author)      parts.push(author);
     if (typeBadge)   parts.push(typeBadge);
-    if (cornerBadge) parts.push(cornerBadge);
     if (count)       parts.push(count);
     if (card.dataset.slug)       parts.push(card.dataset.slug);
     if (card.dataset.seriesName) parts.push(card.dataset.seriesName);

@@ -642,62 +642,78 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
                         real HTML over the image so it stays crisp,
                         translatable and accessible. */}
                     <span class="reading-entry-asset" aria-hidden="true"></span>
+                    {/* Live content stack — redesigned for a clear visual
+                        hierarchy:
+                          1. CHAPTER  — the focal headline ("פרק 1").
+                          2. PROGRESS — thin animated bar + tiny %, driven by
+                             the same hydrator that previously updated the
+                             "X% הושלם" chip.
+                          3. FACTS    — quiet inline strip ("11 פרקים · 113
+                             דק קריאה") with middot separators, no chips.
+                          4. ACTIONS  — a luminous primary CTA pill carrying
+                             the "המשך קריאה" label (decorative; the actual
+                             click target is `.reading-entry-main` above), plus
+                             a small ghost "תקציר הספר" secondary link.
+
+                        All hydration data attributes (`data-cc-primary-label`,
+                        `data-cc-chapter-label`, `data-cc-meta-progress`, etc.)
+                        are preserved on their new hosts so the existing
+                        `hydrateCenterCardExtras` continues to work without
+                        changes. The progress bar's width is driven by a new
+                        `--re-progress` CSS var that the hydrator sets in the
+                        same pass it updates the % label. */}
+                    {/* Live content stack — stripped down to ONLY the two
+                        actions at Tomer's request: primary "Continue
+                        reading" CTA + tiny "Book summary" secondary link.
+                        The chapter headline, progress bar, and facts strip
+                        were removed because the orbit card above already
+                        shows the book identity; this panel is purely the
+                        action surface now.
+
+                        Hydration hooks that lived on the removed rows
+                        (`[data-cc-chapter-label]`, `[data-cc-meta-progress]`)
+                        are gone too — the existing hydrator's `querySelector`
+                        calls null-check and no-op when they're missing, so
+                        no JS change is required. */}
                     <div class="reading-entry-text">
-                      <span
-                        class="reading-entry-title"
-                        data-cc-primary-label
-                        data-continue-template={t('library.readingEntry.continueReadingShort', language)}
-                      >
-                        {t('library.readingEntry.continueReadingShort', language)}
-                      </span>
-                      {typeof item.chapterCount === 'number' && item.chapterCount > 0 && (
-                        <span
-                          class="reading-entry-subtitle"
-                          data-cc-chapter-label
-                          data-chapter-template={t('library.readingEntry.chapterN', language, { n: '__N__' })}
-                        >
-                          {t('library.readingEntry.chapterN', language, { n: 1 })}
-                        </span>
-                      )}
-                      {/* Secondary action — opens the book summary page
-                          ({item.href}), NOT the reader. Subtle glass pill
-                          so it never competes with the main CTA above.
-                          `data-cc-secondary-link` makes universe-layout's
-                          stage click handler bail out without closing the
-                          focused card, preserving native <a> behavior.
-                          Click is `stopPropagation`'d as belt-and-braces
-                          so the launch handler can never observe it. */}
-                      <a
-                        class="reading-entry-summary-pill"
-                        href={item.href}
-                        data-cc-secondary-link
-                        aria-label={t('library.centerCard.bookSummaryPillAria', language)}
-                      >
-                        {t('library.centerCard.bookSummaryPill', language)}
-                      </a>
-                      <div class="cc-meta" data-cc-meta>
-                        {typeof item.chapterCount === 'number' && item.chapterCount > 0 && (
-                          <span class="cc-meta-item" data-cc-meta-chapters>
-                            {t('library.galaxy.chaptersCount', language, { n: item.chapterCount })}
+                      <div class="reading-entry-actions">
+                        {/* Primary CTA — visually anchors the action. The
+                            actual hit target is `.reading-entry-main` above;
+                            this pill is `pointer-events:none` so it never
+                            blocks that click. */}
+                        {/* SSR default = "התחל קריאה" because the server
+                            has no per-user reading state — a brand-new book
+                            (or a fresh browser with no localStorage entries)
+                            should invite the first read, not pretend to be
+                            mid-stream. The hydrator in `hydrateCenterCardExtras`
+                            swaps in the `data-continue-template` text
+                            ("המשך קריאה") the moment any chapter shows
+                            real progress > 0 in localStorage. */}
+                        <span class="reading-entry-cta" aria-hidden="true">
+                          <span
+                            class="reading-entry-cta-label"
+                            data-cc-primary-label
+                            data-continue-template={t('library.readingEntry.continueReadingShort', language)}
+                          >
+                            {t('library.readingEntry.startReadingShort', language)}
                           </span>
-                        )}
-                        {typeof item.readingMinutes === 'number' && item.readingMinutes > 0 && (
-                          <span class="cc-meta-item" data-cc-meta-minutes>
-                            {t('library.centerCard.metaMinutes', language, { n: item.readingMinutes })}
-                          </span>
-                        )}
-                        {/* Progress chip ALWAYS renders so the meta row
-                            stays symmetric — a brand-new book reads
-                            "0% הושלם" instead of dropping the chip.
-                            The hydrator overwrites the value once
-                            localStorage has any real percentage. */}
-                        <span
-                          class="cc-meta-item"
-                          data-cc-meta-progress
-                          data-progress-template={t('library.centerCard.metaProgress', language, { n: '__N__' })}
-                        >
-                          {t('library.centerCard.metaProgress', language, { n: 0 })}
+                          <svg class="reading-entry-cta-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M5 12h14"></path>
+                            <path d="M13 6l6 6-6 6"></path>
+                          </svg>
                         </span>
+                        {/* Secondary — opens the book summary page (not the
+                            reader). `data-cc-secondary-link` makes the stage
+                            click handler bail out without closing the focused
+                            card, preserving native <a> behavior. */}
+                        <a
+                          class="reading-entry-summary-pill"
+                          href={item.href}
+                          data-cc-secondary-link
+                          aria-label={t('library.centerCard.bookSummaryPillAria', language)}
+                        >
+                          {t('library.centerCard.bookSummaryPill', language)}
+                        </a>
                       </div>
                     </div>
                   </div>
@@ -2388,17 +2404,22 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
         box-shadow 220ms ease,
         filter 220ms ease;
     }
+    /* ─── Mobile content stack ─────────────────────────────────────
+       Holds ONLY the action row (primary CTA + secondary link). Same
+       positioning rules as desktop, tightened for phone widths.
+       `justify-content: center` centres the single child vertically
+       in the available area below the baked-in book icon. */
     .reading-entry-text {
       position: absolute;
       left: 50%;
-      top: 58%;
-      width: 94%;
-      transform: translate(-50%, -50%);
+      top: 32%;
+      bottom: 12px;
+      width: calc(100% - 32px);
+      transform: translateX(-50%);
       display: flex;
       flex-direction: column;
-      align-items: center;
+      align-items: stretch;
       justify-content: center;
-      gap: 7px;
       text-align: center;
       pointer-events: none;
       z-index: 3;
@@ -2406,13 +2427,14 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
         'Heebo', 'Inter', system-ui, -apple-system,
         'Segoe UI', 'Noto Sans Hebrew', sans-serif;
     }
-    .reading-entry-title {
-      font-size: 25px;
-      font-weight: 700;
+    .reading-entry-chapter {
+      font-size: 23px;
+      font-weight: 800;
       line-height: 1.05;
-      color: rgba(255, 255, 255, 0.96);
+      letter-spacing: -0.01em;
+      color: rgba(255, 255, 255, 0.98);
       text-shadow:
-        0 0 10px rgba(120, 180, 255, 0.30),
+        0 0 12px rgba(120, 200, 255, 0.32),
         0 2px 4px rgba(0, 0, 0, 0.55);
       margin: 0;
       max-width: 100%;
@@ -2420,67 +2442,157 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       text-overflow: ellipsis;
       white-space: nowrap;
     }
-    .reading-entry-subtitle {
-      font-size: 14px;
-      font-weight: 500;
-      line-height: 1.2;
-      color: rgba(255, 255, 255, 0.72);
-      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
-      margin: 0;
-      max-width: 100%;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+    .reading-entry-progress {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
     }
-    /* Mobile summary pill — slightly smaller than desktop so it stays
-       quietly secondary on a phone. `pointer-events: auto` re-opts the
-       pill into hit-testing while the rest of `.reading-entry-text`
-       passes taps through to `.reading-entry-main`. */
-    .reading-entry-summary-pill {
+    .reading-entry-progress-track {
+      flex: 1 1 auto;
+      position: relative;
+      height: 4px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.12);
+      overflow: hidden;
+      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.35);
+    }
+    .reading-entry-progress-fill {
+      display: block;
+      width: var(--re-progress, 0%);
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #b8e6ff 0%, #22d3ee 60%, #0ea5e9 100%);
+      box-shadow:
+        0 0 6px rgba(34, 211, 238, 0.55),
+        0 0 2px rgba(184, 230, 255, 0.85);
+      transition: width 480ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .reading-entry-progress-pct {
+      font-size: 10.5px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: rgba(170, 230, 255, 0.92);
+      white-space: nowrap;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
+      min-width: 32px;
+      text-align: end;
+    }
+    .reading-entry-facts {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      height: 24px;
-      padding: 0 12px;
-      margin: 1px 0 0;
-      border-radius: 999px;
-      box-sizing: border-box;
+      flex-wrap: wrap;
+      gap: 0;
       font-size: 11.5px;
       font-weight: 500;
-      line-height: 1;
+      letter-spacing: 0.01em;
+      color: rgba(220, 235, 250, 0.62);
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+      line-height: 1.2;
+    }
+    .reading-entry-fact {
+      white-space: nowrap;
+    }
+    .reading-entry-fact + .reading-entry-fact::before {
+      content: '·';
+      margin: 0 6px;
+      opacity: 0.65;
+    }
+    .reading-entry-actions {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      width: 100%;
+    }
+    .reading-entry-cta {
+      pointer-events: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-width: 170px;
+      height: 36px;
+      padding: 0 18px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 700;
       letter-spacing: 0.02em;
-      color: rgba(245, 250, 255, 0.92);
-      background: rgba(8, 18, 40, 0.55);
-      border: 1px solid rgba(120, 175, 235, 0.42);
+      color: rgba(6, 18, 40, 0.96);
+      background:
+        linear-gradient(180deg,
+          rgba(220, 245, 255, 0.96) 0%,
+          rgba(120, 215, 240, 0.96) 55%,
+          rgba(34, 184, 216, 0.96) 100%);
+      border: 1px solid rgba(255, 255, 255, 0.55);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.85),
+        inset 0 -1px 0 rgba(8, 60, 90, 0.30),
+        0 0 18px rgba(34, 211, 238, 0.45),
+        0 4px 12px rgba(8, 18, 40, 0.35);
+      text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
+    }
+    .reading-entry-cta-label {
+      line-height: 1;
+    }
+    .reading-entry-cta-arrow {
+      width: 13px;
+      height: 13px;
+      flex-shrink: 0;
+      stroke: currentColor;
+    }
+    [dir="rtl"] .reading-entry-cta-arrow {
+      transform: scaleX(-1);
+    }
+    .reading-entry-summary-pill {
+      pointer-events: auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.03em;
+      line-height: 1;
+      color: rgba(190, 225, 250, 0.78);
+      background: transparent;
+      border: 1px solid transparent;
       text-decoration: none;
       text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-      pointer-events: auto;
       cursor: pointer;
       transition:
+        color 160ms ease,
         background 160ms ease,
-        border-color 160ms ease,
         transform 160ms ease;
+    }
+    .reading-entry-summary-pill::after {
+      content: '›';
+      font-size: 13px;
+      line-height: 1;
+      opacity: 0.7;
+      transform: translateY(-1px);
+    }
+    [dir="rtl"] .reading-entry-summary-pill::after {
+      content: '‹';
     }
     .reading-entry-summary-pill:active {
       transform: scale(0.97);
-      background: rgba(18, 32, 60, 0.7);
+      background: rgba(18, 32, 60, 0.55);
     }
-    /* Very small phones (≤360px): tighten panel + text so nothing
-       clips in the in-panel layout. */
+
+    /* Very small phones (≤360px): tighten the layout so nothing clips. */
     @media (max-width: 360px) {
       .reading-entry-overlay {
         width: 94vw;
         height: 208px;
       }
-      .reading-entry-title    { font-size: 23px; }
-      .reading-entry-subtitle { font-size: 13px; }
-      .reading-entry-summary-pill {
-        height: 22px;
-        padding: 0 11px;
-        font-size: 11px;
-      }
+      .reading-entry-text         { top: 30%; }
+      .reading-entry-chapter      { font-size: 21px; }
+      .reading-entry-facts        { font-size: 11px; }
+      .reading-entry-cta          { min-width: 150px; height: 34px; font-size: 12.5px; padding: 0 16px; }
+      .reading-entry-summary-pill { font-size: 10.5px; }
     }
     /* Hover is desktop-only per the spec — mobile keeps just the
        press-in scale + brightness so taps still feel responsive. */
@@ -2491,53 +2603,14 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       filter: brightness(1.04);
     }
 
-    /* Standalone extras wrapper, secondary link and section label are
-       retired in this design — the meta row now lives INSIDE the
-       reading-entry panel itself. They are kept in the DOM only for
-       a11y back-compat. */
+    /* Standalone extras wrapper, secondary link and legacy meta-row
+       classes are retired in this design — the meta strip is now
+       `.reading-entry-facts` (styled above). The classes still appear
+       in the DOM as dead-cohabitant hooks; nothing paints. */
     .center-card-extras,
     .cc-secondary-link,
     .cc-meta-label {
       display: none;
-    }
-    /* In-panel lesson meta row — bottom child of `.reading-entry-text`
-       on mobile too. Inherits the panel's counter-scale + centered
-       axis; chips are tightened to fit the narrower phone width. */
-    .cc-meta {
-      margin: 0;
-      padding: 0;
-      display: flex;
-      flex-direction: row;
-      flex-wrap: wrap;
-      justify-content: center;
-      align-items: center;
-      gap: 6px;
-      font-family:
-        'Heebo', 'Inter', system-ui, -apple-system,
-        'Segoe UI', 'Noto Sans Hebrew', sans-serif;
-    }
-    .cc-meta-item {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      height: 26px;
-      padding: 0 10px;
-      border-radius: 999px;
-      box-sizing: border-box;
-      font-size: 12px;
-      font-weight: 500;
-      line-height: 1;
-      color: rgba(235, 242, 255, 0.92);
-      white-space: nowrap;
-      background: rgba(8, 18, 40, 0.55);
-      border: 1px solid rgba(130, 180, 240, 0.28);
-      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-    }
-    /* Disable the legacy middot separator. */
-    .cc-meta-item + .cc-meta-item::before {
-      content: none;
     }
   }
 
@@ -3448,22 +3521,127 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
         inset 0 -1px 0 color-mix(in srgb, #000 25%, transparent);
     }
 
-    /* Centered focus state — overrides the orbit transform so the card
-       flies to the middle, scales up, drops its tilt. Sits above the
-       backdrop and other cards.
-       The extra `translateY(-90px)` after the scale anchors the focused
-       card's TOP edge just below the hero subtitle so the reading
-       "title → focused card" flow is continuous (Tomer asked for the
-       centered card to start "right below the subtitle line", not
-       mid-screen at the orbit center). Note: translateY appears AFTER
-       scale(1.5) in the chain, but CSS applies transforms right-to-
-       left, so the -90 px is multiplied through the 1.5× scale and
-       reads as ~135 px visual upward shift. */
+    /* Centered focus state — uniform fixed-size box anchored right
+       below the hero subtitle "כל הידע שלך…".
+       Switched from `position: absolute` + `transform: scale(1.5)` to
+       `position: fixed` + explicit dimensions so every selection lands
+       at the SAME viewport spot at the SAME visible size — independent
+       of the orbit's --orbit-vertical-offset, the picked card's
+       natural artwork aspect ratio, and any per-station tilt.
+         - height: 45dvh           — 45% of the viewport height.
+         - aspect-ratio: 2 / 3     — standard book-cover proportion;
+                                     width = 30dvh on every screen.
+         - top: var(--focused-card-top, calc(72px + 5rem))
+                                     — the JS-measured viewport Y of
+                                     the subtitle's actual bottom edge
+                                     (`.lh-subtitle` getBoundingClientRect
+                                     plus a 2px hairline). Re-measured
+                                     on resize so the card always lands
+                                     ממש צמוד ומתחת למילים, regardless
+                                     of font-clamp variance, light/dark
+                                     padding deltas, or zoom level.
+                                     Fallback `calc(72px + 5rem)` covers
+                                     the first paint before the script
+                                     runs and SSR clients that disable JS.
+         - left: 50%; translateX   — horizontally centred on the
+                                     viewport regardless of where the
+                                     fixed support panels sit.
+       Inner-image rules below (`object-fit: contain`) keep the BOX
+       size identical for every card while the artwork is contained
+       inside its 2:3 frame. */
     .galaxy-card[data-pos="center"] {
-      transform: translate(-50%, -50%) scale(1.5) translateY(-90px);
+      position: fixed;
+      /* `.library-galaxy` has `transform: translateY(var(--orbit-vertical-offset))`,
+         which makes IT the containing block for this fixed element —
+         `top:` is measured from the galaxy's top, not the viewport.
+         `--focused-card-top` is computed by `initFocusedCardAnchor()`
+         in the script block (subtitle bottom in viewport Y minus galaxy
+         top in viewport Y, +2px hairline), so the card always lands
+         flush below the subtitle "כל הידע שלך…" regardless of clamp /
+         theme / font-load reflow. Fallback `-1rem` covers the brief
+         pre-JS paint: galaxy starts a little below the hero strip, so a
+         small negative top lands the card near the subtitle bottom
+         instead of deep in the orbit field. */
+      top: var(--focused-card-top, -1rem);
+      left: 50%;
+      width: auto;
+      /* 50dvh × 2/3 box — Tomer set the focused-card height to exactly
+         half the viewport. The override directly below this block
+         neutralises the inner `scale(1.5)` + `margin-block: 15%` from
+         LibraryCard.astro's focused-state rules, so the visible
+         artwork tracks this box edge-to-edge with no per-card variance
+         from internal PNG padding or art aspect. Every selection
+         therefore opens at the same fixed visible size: 50dvh tall ×
+         33.3dvh wide. */
+      height: 50dvh;
+      aspect-ratio: 2 / 3;
+      transform: translateX(-50%);
       opacity: 1;
       z-index: 30;
       cursor: default;
+    }
+
+    /* Uniform-size override — neutralise LibraryCard.astro's focused
+       artifact transform so EVERY card renders at exactly the box
+       size. Without this, the component applies `scale(1.5)` plus a
+       `margin-block: 15%` (~4.5dvh on each side), which makes the
+       visible artwork extend beyond the box symmetrically AND leaves
+       a transparent band inside the box — so each cover's apparent
+       size depends on its own PNG padding. Removing both pins the
+       visible artwork to the box, end of story.
+
+       The `.lc-orbit` zero-padding rule below is what actually closes
+       the gap Tomer reported between the cover and the reading-entry
+       panel: in resting orbit state `.lc-orbit` reserves ~1rem of
+       inner padding all round so the cover sits inside a glass
+       cushion. In focused state we don't want that cushion — the
+       reading-entry overlay below is anchored to the .galaxy-card
+       box edge, and any inner padding on `.lc-orbit` becomes a
+       transparent gap between the visible cover bottom and the
+       overlay's top. Zeroing the padding makes the artwork fill the
+       box edge-to-edge so the overlay sits flush. */
+    .galaxy-card[data-pos="center"] :global(.lc-orbit) {
+      padding: 0 !important;
+    }
+    .galaxy-card[data-pos="center"] :global(.lc-orbit-artifact) {
+      transform: none !important;
+      margin-block: 0 !important;
+      width: 100% !important;
+      margin-inline: 0 !important;
+    }
+
+    /* Inner LibraryCard structure fills the fixed-size centred box so
+       the visible artwork tracks the box (not its own intrinsic
+       height).
+
+       `object-fit: cover` makes EVERY card render at the same visible
+       size as the 2:3 frame. Previously `contain` was used so the
+       round AI Engineering Course capsule wouldn't stretch, but the
+       side-effect was non-2:3 artwork sitting inside the frame with
+       transparent margins — different visible sizes per card from the
+       user's POV. Tomer asked for uniform visual size on every focus,
+       so `cover` wins: the box is the unit, and any artwork that
+       isn't 2:3 gets cropped at the top/bottom edges instead of
+       shrinking. The crop is acceptable because the artwork's focal
+       region almost always lives in the centre vertical band, and
+       the `object-position: center` keeps that band in view. */
+    .galaxy-card[data-pos="center"] :global(.lc-orbit) {
+      height: 100%;
+      padding: 0;
+    }
+    .galaxy-card[data-pos="center"] :global(.lc-orbit-artifact) {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      -webkit-mask-image: none;
+      mask-image: none;
+    }
+    .galaxy-card[data-pos="center"] :global(.lc-orbit-artifact-face-front),
+    .galaxy-card[data-pos="center"] :global(.lc-orbit-artifact-face-selected) {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
     }
 
     /* Hover lift — small bump along the radial direction (cards move
@@ -3765,28 +3943,38 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
        single panel (not in a separate section below) so the CTA and
        its facts read as one premium glass surface.
 
-       Width math: `calc(85% * 1.5)` resolves to 127.5% of the parent
-       box. Combined with the parent's 1.5× scale and this element's
-       1/1.5 counter-scale, the visible CTA renders at exactly 85% of
-       the visible card width. */
+       Sizing math: the centred card is now `position: fixed` with no
+       transform scaling (uniform 45dvh × aspect 2/3 box). The earlier
+       `width: calc(85% * 1.5)` + `scale(1/1.5)` counter-scale dance
+       was needed only because the parent card was visually 1.5× its
+       declared box. With that scale gone, this panel inherits its
+       coordinates 1:1 from the parent and just renders at its
+       declared size — width 100% of the card, no counter-scale. */
     .reading-entry-overlay {
       position: absolute;
       left: 50%;
-      /* 18px visible gap below the cover's visible bottom. Cover
-         visible bottom sits ~42px above the card's flow-box bottom
-         (lc-orbit ~28px padding × 1.5 parent scale). For an 18px
-         visible gap, the CTA's visible top should land 24px below
-         the flow-box bottom; in box space that's 24/1.5 = 16px. */
-      top: calc(100% - 16px);
-      width: calc(85% * 1.5);
-      max-width: 620px;
-      min-width: 420px;
-      /* Height bumped from 220 → 240 to give the new summary pill +
-         meta row clear vertical room without clipping. */
-      height: 240px;
+      /* Glued flush to the focused card's bottom edge. The earlier
+         negative overlap (`calc(100% - 5dvh)`) was needed to swallow
+         the transparent margin that the inner artifact left at the
+         box bottom; with the uniform-size override above pinning
+         the visible artwork to the box edges, the artwork now ends
+         exactly at 100% and the overlay sits directly under it with
+         no visible gap. */
+      top: 100%;
+      width: 100%;
+      max-width: 380px;
+      min-width: 280px;
+      /* Adaptive height — the centred composition is now
+         152px (top) + 50dvh (card) + overlay + safe area for the
+         bottom chevron rotate controls (~80px). With the card at
+         exactly half the viewport, the overlay has the remaining
+         (~50dvh − 152px − 96px) of room before it would hit the
+         chevrons. The clamp ceiling stays at 220px so the overlay
+         never grows to compete with the cover above. */
+      height: clamp(170px, calc(100dvh - 152px - 50dvh - 96px), 220px);
       border-radius: 28px;
       box-sizing: border-box;
-      transform: translate(-50%, 0) scale(calc(1 / 1.5));
+      transform: translate(-50%, 0);
       transform-origin: top center;
       display: block;
       margin: 0;
@@ -3860,23 +4048,29 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
         filter 220ms ease;
     }
 
-    /* Live i18n stack — title, subtitle, summary pill, then the meta
-       row. Positioned ABSOLUTELY over the lower portion of the asset
-       so the icon baked into the PNG stays clear at the top center.
-       Container itself is `pointer-events: none` so empty space and
-       text below pass clicks through to `.reading-entry-main`; the
-       pill re-opts in to pointer events below. */
+    /* ─── Live content stack ─────────────────────────────────────────
+       Container holds ONLY the action row now (chapter, progress, and
+       facts were removed at Tomer's request). Positioned absolutely
+       over the BOTTOM ~70% of the panel so the book icon baked into
+       `reading-entry-card1.png` (top ~30%) stays clear. The container
+       is `pointer-events:none` so empty space passes clicks through to
+       `.reading-entry-main`; only the small secondary link re-opts
+       back into hit-testing.
+
+       `justify-content: center` puts the action pair in the vertical
+       centre of the available area — no longer space-between because
+       there's only one child. */
     .reading-entry-text {
       position: absolute;
       left: 50%;
-      top: 58%;
-      width: 92%;
-      transform: translate(-50%, -50%);
+      top: 32%;
+      bottom: 14px;
+      width: calc(100% - 36px);
+      transform: translateX(-50%);
       display: flex;
       flex-direction: column;
-      align-items: center;
+      align-items: stretch;
       justify-content: center;
-      gap: 8px;
       text-align: center;
       pointer-events: none;
       z-index: 3;
@@ -3884,66 +4078,182 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
         'Heebo', 'Inter', system-ui, -apple-system,
         'Segoe UI', 'Noto Sans Hebrew', sans-serif;
     }
-    .reading-entry-title {
-      font-size: 32px;
-      font-weight: 700;
+
+    /* ── 1. Chapter headline — the focal element ─────────────────── */
+    .reading-entry-chapter {
+      font-size: 26px;
+      font-weight: 800;
       line-height: 1.05;
-      letter-spacing: 0;
+      letter-spacing: -0.01em;
       white-space: nowrap;
-      color: rgba(255, 255, 255, 0.96);
+      color: rgba(255, 255, 255, 0.98);
       text-shadow:
-        0 0 12px rgba(120, 180, 255, 0.30),
+        0 0 14px rgba(120, 200, 255, 0.35),
         0 2px 6px rgba(0, 0, 0, 0.55);
       margin: 0;
     }
-    .reading-entry-subtitle {
-      font-size: 18px;
-      font-weight: 500;
-      line-height: 1.2;
-      color: rgba(255, 255, 255, 0.72);
+
+    /* ── 2. Progress row — thin animated bar + tiny % label ──────── */
+    .reading-entry-progress {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+    }
+    .reading-entry-progress-track {
+      flex: 1 1 auto;
+      position: relative;
+      height: 4px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.12);
+      overflow: hidden;
+      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.35);
+    }
+    .reading-entry-progress-fill {
+      display: block;
+      width: var(--re-progress, 0%);
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #b8e6ff 0%, #22d3ee 60%, #0ea5e9 100%);
+      box-shadow:
+        0 0 8px rgba(34, 211, 238, 0.55),
+        0 0 2px rgba(184, 230, 255, 0.85);
+      transition: width 480ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .reading-entry-progress-pct {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: rgba(170, 230, 255, 0.92);
       white-space: nowrap;
-      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
-      margin: 0;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
+      min-width: 36px;
+      text-align: end;
     }
 
-    /* Secondary "Book summary" pill — visually quieter than the title
-       and the meta chips so it reads as an alternate action, never as
-       a competing CTA. Subtle glass: dark translucent fill, thin blue
-       border, white text. `pointer-events: auto` re-opts this single
-       node back into hit-testing, so empty-space clicks still fall
-       through to `.reading-entry-main`. */
-    .reading-entry-summary-pill {
+    /* ── 3. Facts strip — quiet inline text, middot separators ──── */
+    .reading-entry-facts {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      height: 26px;
-      padding: 0 14px;
-      margin: 2px 0 0;
-      border-radius: 999px;
-      box-sizing: border-box;
-      font-size: 12px;
+      flex-wrap: wrap;
+      gap: 0;
+      font-size: 12.5px;
       font-weight: 500;
-      line-height: 1;
+      letter-spacing: 0.01em;
+      color: rgba(220, 235, 250, 0.62);
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+      line-height: 1.2;
+    }
+    .reading-entry-fact {
+      white-space: nowrap;
+    }
+    .reading-entry-fact + .reading-entry-fact::before {
+      content: '·';
+      margin: 0 8px;
+      opacity: 0.65;
+    }
+
+    /* ── 4. Action row — primary CTA + ghost secondary ──────────── */
+    .reading-entry-actions {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      width: 100%;
+    }
+
+    /* PRIMARY CTA — glowing cyan pill. Decorative: the real click
+       target is the full-panel `.reading-entry-main` link. We keep
+       this `pointer-events:none` so it never blocks that click.
+       Hover styling is applied via `.reading-entry-overlay:has(.reading-entry-main:hover)`
+       further down. */
+    .reading-entry-cta {
+      pointer-events: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      min-width: 200px;
+      height: 40px;
+      padding: 0 22px;
+      border-radius: 999px;
+      font-size: 14.5px;
+      font-weight: 700;
       letter-spacing: 0.02em;
-      color: rgba(245, 250, 255, 0.92);
-      background: rgba(8, 18, 40, 0.55);
-      border: 1px solid rgba(120, 175, 235, 0.42);
+      color: rgba(6, 18, 40, 0.96);
+      background:
+        linear-gradient(180deg,
+          rgba(220, 245, 255, 0.96) 0%,
+          rgba(120, 215, 240, 0.96) 55%,
+          rgba(34, 184, 216, 0.96) 100%);
+      border: 1px solid rgba(255, 255, 255, 0.55);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.85),
+        inset 0 -1px 0 rgba(8, 60, 90, 0.30),
+        0 0 22px rgba(34, 211, 238, 0.45),
+        0 6px 16px rgba(8, 18, 40, 0.40);
+      text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
+      transition:
+        box-shadow 200ms cubic-bezier(0.22, 1, 0.36, 1),
+        filter 200ms ease;
+    }
+    .reading-entry-cta-label {
+      line-height: 1;
+    }
+    .reading-entry-cta-arrow {
+      width: 15px;
+      height: 15px;
+      flex-shrink: 0;
+      stroke: currentColor;
+    }
+    /* In Hebrew (RTL) the arrow should point left = "forward". The icon
+       is authored as a right-arrow; flip it for RTL via the inherited
+       overlay dir. */
+    [dir="rtl"] .reading-entry-cta-arrow {
+      transform: scaleX(-1);
+    }
+
+    /* SECONDARY — tiny ghost text link with chevron. Lives just below
+       the primary CTA so the hierarchy reads top-down: chapter →
+       progress → facts → big button → tiny link. */
+    .reading-entry-summary-pill {
+      pointer-events: auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 11.5px;
+      font-weight: 500;
+      letter-spacing: 0.03em;
+      line-height: 1;
+      color: rgba(190, 225, 250, 0.78);
+      background: transparent;
+      border: 1px solid transparent;
       text-decoration: none;
       text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-      pointer-events: auto;
       cursor: pointer;
       transition:
+        color 160ms ease,
         background 160ms ease,
         border-color 160ms ease,
-        color 160ms ease,
         transform 160ms ease;
     }
+    .reading-entry-summary-pill::after {
+      content: '›';
+      font-size: 14px;
+      line-height: 1;
+      opacity: 0.7;
+      transform: translateY(-1px);
+    }
+    [dir="rtl"] .reading-entry-summary-pill::after {
+      content: '‹';
+    }
     .reading-entry-summary-pill:hover {
-      background: rgba(18, 32, 60, 0.7);
-      border-color: rgba(150, 200, 245, 0.6);
-      color: rgba(255, 255, 255, 1);
+      color: rgba(235, 250, 255, 1);
+      background: rgba(18, 32, 60, 0.55);
+      border-color: rgba(150, 200, 245, 0.45);
     }
     .reading-entry-summary-pill:active {
       transform: scale(0.97);
@@ -3955,25 +4265,42 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
         0 0 14px rgba(112, 87, 255, 0.35);
     }
 
-    /* Hover / active — translate + brightness lift on the asset and a
-       tiny press-in scale. Targets the main link so hovering the
-       summary pill (a sibling, not an ancestor) does NOT also trigger
-       the main-CTA lift — that's what keeps the two actions visually
-       distinct. The translate is added to the overlay's existing
-       counter-scale matrix on the parent. */
+    /* Brighten the primary CTA when the main link is hovered so the
+       whole panel reads as one interactive surface anchored by the
+       glowing pill. */
+    .reading-entry-overlay:has(.reading-entry-main:hover) .reading-entry-cta {
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.95),
+        inset 0 -1px 0 rgba(8, 60, 90, 0.30),
+        0 0 28px rgba(34, 211, 238, 0.65),
+        0 8px 20px rgba(8, 18, 40, 0.45);
+      filter: brightness(1.06);
+    }
+    .reading-entry-overlay:has(.reading-entry-main:active) .reading-entry-cta {
+      transform: translateY(1px);
+    }
+
+    /* Hover / active — brightness lift only. NO translate.
+
+       Tomer asked for the panel to stay glued to the orbit card in
+       every state. An earlier `translate(-50%, -2px)` on hover
+       briefly detached the panel from the card above (the gap above
+       grew, the gap below shrank), which read as the panel "lifting
+       away" from its anchor. Hover now changes brightness only so
+       the seam between the two surfaces never moves.
+
+       NOTE: an even earlier `scale(1/1.5)` counter-scale also lived
+       here from the era when the centered card was rendered at
+       scale(1.5). The center card is now sized natively, so any
+       scale() on hover would visibly shrink the panel by 33%. Hover
+       stays both scale-free AND translate-free on purpose. */
     .reading-entry-overlay:has(.reading-entry-main:hover) {
-      transform:
-        translate(-50%, -2px)
-        scale(calc(1 / 1.5));
       filter: brightness(1.08);
     }
     .reading-entry-overlay:has(.reading-entry-main:hover) .reading-entry-asset {
       filter: brightness(1.04) saturate(1.05);
     }
     .reading-entry-overlay:has(.reading-entry-main:active) {
-      transform:
-        translate(-50%, 0)
-        scale(calc((1 / 1.5) * 0.985));
       filter: none;
     }
     .reading-entry-overlay:has(.reading-entry-main:active) .reading-entry-asset {
@@ -3987,7 +4314,6 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
         transition: none;
       }
       .reading-entry-overlay:has(.reading-entry-main:hover) {
-        transform: translate(-50%, 0) scale(calc(1 / 1.5));
         filter: none;
       }
     }
@@ -4003,59 +4329,12 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       display: none;
     }
 
-    /* In-panel lesson meta row — sits as the bottom child of
-       `.reading-entry-text`, so it inherits the panel's centered axis
-       and the same counter-scale (no extra positioning needed). Chips
-       stay lightweight so they read as scannable facts under the CTA
-       headline, not as competing controls. */
-    .cc-meta {
-      margin: 0;
-      padding: 0;
-      display: flex;
-      flex-direction: row;
-      justify-content: center;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 8px;
-      font-family:
-        'Heebo', 'Inter', system-ui, -apple-system,
-        'Segoe UI', 'Noto Sans Hebrew', sans-serif;
-    }
-    .cc-meta-item {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      height: 30px;
-      padding: 0 12px;
-      border-radius: 999px;
-      box-sizing: border-box;
-      font-size: 13px;
-      font-weight: 500;
-      line-height: 1;
-      color: rgba(235, 242, 255, 0.92);
-      white-space: nowrap;
-      background: rgba(8, 18, 40, 0.55);
-      border: 1px solid rgba(130, 180, 240, 0.28);
-      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-    }
-    /* The legacy middot separator is incompatible with the chip layout. */
-    .cc-meta-item + .cc-meta-item::before {
-      content: none;
-    }
-
-    /* Match the pill's launch fade — when the user activates the
-       primary action and the stage flips into the opening state,
-       quietly fade the extras out too so they don't linger after
-       the pill is gone. Opacity-only keeps the secondary link in
-       the a11y tree until navigation fires. */
-    .library-galaxy[data-reading-entry-state="opening"]
-      .galaxy-card[data-pos="center"]
-      .center-card-extras {
-      opacity: 0;
-      transition: opacity 100ms ease-out;
-    }
+    /* Legacy `.cc-meta` / `.cc-meta-item` chip styling retired with the
+       redesign — the meta row is now `.reading-entry-facts` (quiet
+       inline text + middots, styled higher up). The classes still
+       appear in the DOM as dead-cohabitant hooks (the hydrator queries
+       `[data-cc-meta-progress]`, kept on the new % label inside the
+       progress bar) but no painted ruleset remains. */
 
     /* ── Reading-entry confirmation ─────────────────────────────────
        Minimal confirmation transition for the reading-button click.
@@ -5493,23 +5772,81 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
         chapterEl.textContent = chapterTmpl.replace('__N__', String(highestWithProgress));
       }
 
-      // Patch progress chip. Sum/total (not sum/entries) mirrors
-      // hydrateOrbitProgress so a 50%-read single chapter in a 10-
-      // chapter book reads as 5%, not 50% — consistent with the
-      // existing progress bar's interpretation. We rewrite the chip
-      // even when entries === 0 / avg === 0, so a brand-new book
-      // continues to read "0% הושלם" instead of producing a stale
-      // value if SSR ever changes its default.
+      // Patch the progress label + bar. Sum/total (not sum/entries)
+      // mirrors hydrateOrbitProgress so a 50%-read single chapter in
+      // a 10-chapter book reads as 5%, not 50% — consistent with the
+      // existing orbit progress bar's interpretation. We rewrite even
+      // when entries === 0 / avg === 0 so a brand-new book continues
+      // to read "0%" instead of producing a stale value if SSR ever
+      // changes its default.
+      //
+      // Two surfaces are updated together so the bar and the label
+      // can never disagree:
+      //   - `[data-cc-meta-progress]`     → the tiny "X%" text label.
+      //   - `--re-progress` on `.reading-entry-text` → drives the
+      //     `.reading-entry-progress-fill` width via CSS var. The
+      //     redesigned panel uses an animated bar instead of a chip,
+      //     and width: var(--re-progress) keeps the CSS source-of-
+      //     truth co-located with the rest of the panel's styling.
       const avg = entries > 0 ? Math.round(sum / total) : 0;
       const progEl = card.querySelector<HTMLElement>('[data-cc-meta-progress]');
       const tmpl = progEl?.dataset.progressTemplate;
       if (progEl && tmpl) {
         progEl.textContent = tmpl.replace('__N__', String(avg));
       }
+      const textEl = card.querySelector<HTMLElement>('.reading-entry-text');
+      if (textEl) {
+        textEl.style.setProperty('--re-progress', `${avg}%`);
+      }
     });
   }
 
+  /**
+   * Anchor the focused-card TOP flush against the bottom of the hero
+   * subtitle ("כל הידע שלך במרחב אחד חי ומתפתח").
+   *
+   * Why measurement: the hero's vertical height is a moving target —
+   * `lh-title` uses a `clamp(...)` so it grows with viewport width,
+   * `library-root` has different top padding in light vs dark mode,
+   * and the user-agent root font-size can be overridden. Any static
+   * `calc(72px + Xrem)` lands as a gap on some widths and an overlap
+   * on others. Reading the subtitle's `getBoundingClientRect().bottom`
+   * always returns the correct viewport Y on every breakpoint.
+   *
+   * Result is written to `--focused-card-top` on `.library-root`
+   * (inherits down to the stage and the .galaxy-card[data-pos="center"]
+   * rule). 2px hairline keeps the card snug-but-not-touching.
+   * Re-measures on resize + after fonts load so font-swap reflow is
+   * caught too.
+   */
+  function initFocusedCardAnchor(): void {
+    const root = document.querySelector<HTMLElement>('.library-root');
+    if (!root) return;
+    const measure = () => {
+      const sub = root.querySelector<HTMLElement>('.lh-subtitle');
+      const galaxy = root.querySelector<HTMLElement>('.library-galaxy');
+      if (!sub || !galaxy) return;
+      // `.library-galaxy` has `transform: translateY(...)`, which makes
+      // it the containing block for the focused card's `position: fixed`.
+      // So `top:` on the card is measured from the galaxy's top, NOT the
+      // viewport. Convert the subtitle's viewport-Y bottom into the
+      // galaxy's local coordinate space.
+      const subBottom = sub.getBoundingClientRect().bottom;
+      const galaxyTop = galaxy.getBoundingClientRect().top;
+      const localTop = Math.round(subBottom - galaxyTop + 2);
+      root.style.setProperty('--focused-card-top', `${localTop}px`);
+    };
+    // Defer one frame so the initial layout has settled before measuring.
+    requestAnimationFrame(measure);
+    window.addEventListener('resize', measure, { passive: true });
+    // Web fonts shift the subtitle's metrics after first paint.
+    if ('fonts' in document) {
+      document.fonts.ready.then(measure).catch(() => {});
+    }
+  }
+
   function initOrbit() {
+    initFocusedCardAnchor();
     document
       .querySelectorAll<HTMLElement>('[data-galaxy-stage]')
       .forEach((stage) => {

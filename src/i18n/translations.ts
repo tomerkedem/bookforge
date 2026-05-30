@@ -562,6 +562,11 @@ export const translations: Translations = {
   // subtitle. Used by the redesigned premium glass action panel below
   // the focused card.
   'library.readingEntry.continueReadingShort': { he: 'המשך קריאה', en: 'Continue reading', es: 'Continuar leyendo' },
+  // SSR default for books that have NEVER been opened (no localStorage
+  // progress entries). The hydrator in index.astro flips this to
+  // `continueReadingShort` (or the chapter-aware "המשך · פרק N") the
+  // moment any chapter has progress > 0.
+  'library.readingEntry.startReadingShort':    { he: 'התחל קריאה', en: 'Start reading',   es: 'Empezar a leer' },
   'library.readingEntry.chapterN':              { he: 'פרק {{n}}', en: 'Chapter {{n}}',    es: 'Capítulo {{n}}' },
 
   // ── library.centerCard.* — quiet secondary link + metadata row that
