@@ -1783,11 +1783,10 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       flex: initial;
       max-width: none;
       /* Card width shrinks proportionally to viewport. Sized 25% larger
-         than the previous mobile values per Tomer's request: the cover
-         art now carries baked-in mobile typography (front-mobile.png),
-         and the larger cards let that artwork read clearly without an
-         overlay label. Floor: 120px (legible on 360px phones). Cap:
-         175px (still safely under the desktop 190px peer at 1024px).
+         than the previous mobile values so the cover artwork reads
+         clearly without an overlay label. Floor: 120px (legible on
+         360px phones). Cap: 175px (still safely under the desktop
+         190px peer at 1024px).
          Exposed as `--card-base-width` so the focused-state scale rule
          below can target an exact viewport-relative size (70vw) without
          re-deriving the clamp by hand. The series capsule overrides
@@ -2330,12 +2329,32 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
        panel. FULL counter-scale (cbw/70vw) neutralises the focused
        card's 70vw/cbw scale so spec px values map 1:1 to visible
        pixels. */
+    /* On mobile the centered card keeps `.lc-orbit`'s resting padding
+       (~1.125rem bottom). The desktop branch zeroes this for the
+       focused state (see `:global(.lc-orbit)` rules in the desktop
+       media block) — mobile had no equivalent rule, so the cover sat
+       ~18px inside the card box and stacked with both PNGs' transparent
+       glow to produce the visible gap between cards. Mirror the desktop
+       fix here so the cover artwork pins to the box edges. */
+    .galaxy-card[data-pos="center"] :global(.lc-orbit) {
+      padding: 0 !important;
+    }
+    .galaxy-card[data-pos="center"] :global(.lc-orbit-artifact) {
+      margin-block: 0 !important;
+      margin-inline: 0 !important;
+    }
+
     .reading-entry-overlay {
       position: absolute;
       left: 50%;
-      /* 14px visible gap below the cover. With FULL counter-scale the
-         spec value applies 1:1. */
-      top: calc(100% - 14px);
+      /* Glue the panel flush to the cover above. Both PNGs carry their
+         own transparent top/bottom glow that no `top: 100%` can swallow,
+         so we overlap by an amount large enough to consume them both.
+         The value is in pre-scale logical px and gets multiplied by
+         (70vw/cbw) ≈ 1.4 by the parent's focused-state scale, so 90
+         logical px yields ~125 screen px of overlap on a typical phone
+         — enough to bring the visible card borders into hard contact. */
+      top: calc(100% - 90px);
       width: 92vw;
       max-width: 390px;
       /* Height bumped from 190 → 220 so the new summary pill + meta
@@ -3953,14 +3972,17 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
     .reading-entry-overlay {
       position: absolute;
       left: 50%;
-      /* Glued flush to the focused card's bottom edge. The earlier
-         negative overlap (`calc(100% - 5dvh)`) was needed to swallow
-         the transparent margin that the inner artifact left at the
-         box bottom; with the uniform-size override above pinning
-         the visible artwork to the box edges, the artwork now ends
-         exactly at 100% and the overlay sits directly under it with
-         no visible gap. */
-      top: 100%;
+      /* Glue flush to the focused card's bottom edge. The cover-side
+         artwork already pins to the box edges (see `.lc-orbit`
+         padding/margin reset above), but the OVERLAY PNG
+         (`reading-entry-card1.png`) carries ~30px of transparent halo
+         ABOVE its visible blue border. With `top: 100%` that halo
+         rendered as a visible gap between the cover bottom and the
+         panel's actual top edge. Pull the overlay up by exactly that
+         halo so the two visible borders meet without a seam. Centred
+         card is `position: fixed` with no scaling here, so the value
+         applies 1:1 in screen px. */
+      top: calc(100% - 80px);
       width: 100%;
       max-width: 380px;
       min-width: 280px;

@@ -1461,24 +1461,24 @@ const searchAriaLabel = t('header.searchAriaLabel', language);
   }
 
   /* ══════════════════════════════════════════════════════════════════
-     LIGHT-MODE /library — luminous glass header
+     LIGHT-MODE — luminous glass header (every route)
      ══════════════════════════════════════════════════════════════════
-     The global header is a dark cosmic shell by design. On the
-     /library dashboard in LIGHT mode that dark bar floated, detached,
-     above the bright Knowledge Observatory background — and the logo
-     mark's gold glow filter bled past the header's bottom edge, the
-     stray gold smudge the report flagged on the inline-start side.
+     The global header is a dark cosmic shell by design. In LIGHT mode
+     it now re-skins into a soft translucent warm-glass surface with a
+     matte-gold book icon and a crisp navy wordmark — the same texture
+     introduced for /library, now applied site-wide so the day theme
+     reads as one consistent material across every screen.
 
-     This block re-skins ONLY that case into a soft translucent glass
-     header that sits over the observatory instead of on top of it.
-
-     Scope guarantees:
+     Scope:
      - `html:not(.dark)` → never matches in dark mode, so the cosmic
        header is byte-for-byte unchanged in dark mode.
-     - `:has(.library-dark-showcase)` → only the /library route carries
-       that class, so every other route's header is untouched.
-     Reading mode keeps its own parchment overrides — unaffected. */
-  :global(html:not(.dark):has(.library-dark-showcase)) .yuval-header {
+     - Reading mode keeps its own parchment overrides — its rules sit
+       later in this stylesheet and at equal specificity, so they win
+       on the reading shell automatically.
+     - The header search field is gated separately by the `showSearch`
+       prop (only LibraryLayout passes `true`), so this light shell
+       appears everywhere while the search itself stays on `/`. */
+  :global(html:not(.dark)) .yuval-header {
     /* Blue-gray knowledge grid for the light glass surface — same
        hue family as the Atlas light grid (`--atlas-grid-line`),
        strong enough to register over the warm glass. */
@@ -1514,7 +1514,7 @@ const searchAriaLabel = t('header.searchAriaLabel', language);
      `isolation: isolate` clamps that negative layer inside the header;
      pointer-events:none keeps every click on the real controls.
      /library carries no base .yuval-header::before, so this owns it. */
-  :global(html:not(.dark):has(.library-dark-showcase)) .yuval-header::before {
+  :global(html:not(.dark)) .yuval-header::before {
     content: '';
     position: absolute;
     inset: 0;
@@ -1528,9 +1528,9 @@ const searchAriaLabel = t('header.searchAriaLabel', language);
      specular line, the ambient star constellation and the search's
      blue halo are tuned for the dark surface and only read as stray
      smudges on warm glass. */
-  :global(html:not(.dark):has(.library-dark-showcase)) .yuval-header::after,
-  :global(html:not(.dark):has(.library-dark-showcase)) .yuval-header > .header-inner::before,
-  :global(html:not(.dark):has(.library-dark-showcase)) .header-search::before {
+  :global(html:not(.dark)) .yuval-header::after,
+  :global(html:not(.dark)) .yuval-header > .header-inner::before,
+  :global(html:not(.dark)) .header-search::before {
     display: none;
   }
 
@@ -1540,42 +1540,42 @@ const searchAriaLabel = t('header.searchAriaLabel', language);
      one solid matte gold (no gradient, no neon), heavier strokes, no
      glow halo, no blur, no shadow — an editorial library mark.
      The `::before` warm halo is retired too. */
-  :global(html:not(.dark):has(.library-dark-showcase)) .logo-mark {
+  :global(html:not(.dark)) .logo-mark {
     filter: none;
   }
-  :global(html:not(.dark):has(.library-dark-showcase)) .yuval-logo:hover .logo-mark {
+  :global(html:not(.dark)) .yuval-logo:hover .logo-mark {
     filter: none;
     transform: translateY(-1px);
   }
-  :global(html:not(.dark):has(.library-dark-showcase)) .yuval-logo::before {
+  :global(html:not(.dark)) .yuval-logo::before {
     display: none;
   }
   /* Warm glow halo behind the book — gone in light mode. */
-  :global(html:not(.dark):has(.library-dark-showcase)) .logo-mark svg .bk-glow {
+  :global(html:not(.dark)) .logo-mark svg .bk-glow {
     display: none;
   }
   /* Book outline — the strongest line, solid matte gold + heavier
      stroke (0.9 → 1.3) so the mark holds its own next to the text. */
-  :global(html:not(.dark):has(.library-dark-showcase)) .logo-mark svg path {
+  :global(html:not(.dark)) .logo-mark svg path {
     stroke: #a87e2e;
     stroke-width: 1.3;
     fill: rgba(168, 126, 46, 0.06);
   }
   /* Center spine — structural, sits just under the outline. */
-  :global(html:not(.dark):has(.library-dark-showcase)) .logo-mark svg .bk-spine {
+  :global(html:not(.dark)) .logo-mark svg .bk-spine {
     stroke: #a87e2e;
     stroke-width: 0.9;
     opacity: 0.7;
   }
   /* Page text lines — light interior detail, crisp not faded;
      uniform stroke + opacity replaces the varied holographic dimming. */
-  :global(html:not(.dark):has(.library-dark-showcase)) .logo-mark svg line:not(.bk-spine) {
+  :global(html:not(.dark)) .logo-mark svg line:not(.bk-spine) {
     stroke: #a87e2e;
     stroke-width: 0.62;
     opacity: 0.5;
   }
   /* Knowledge particles — solid matte gold, no neon cream highlight. */
-  :global(html:not(.dark):has(.library-dark-showcase)) .logo-mark svg circle:not(.bk-glow) {
+  :global(html:not(.dark)) .logo-mark svg circle:not(.bk-glow) {
     fill: #a87e2e;
     opacity: 0.7;
   }
@@ -1584,7 +1584,7 @@ const searchAriaLabel = t('header.searchAriaLabel', language);
      it to a crisp solid deep-navy wordmark for clean high contrast on
      the light header. The gold survives as the brand accent on the book
      icon only. No gradient text-clip, no glow, no engraving shadow. */
-  :global(html:not(.dark):has(.library-dark-showcase)) .logo-word {
+  :global(html:not(.dark)) .logo-word {
     background: none;
     -webkit-text-fill-color: #1e2d50;
     color: #1e2d50;
@@ -1592,11 +1592,11 @@ const searchAriaLabel = t('header.searchAriaLabel', language);
   }
   /* Solid color leaves the shimmer sweep nothing to travel over —
      silence it so the wordmark is crisp from the first paint. */
-  :global(html:not(.dark):has(.library-dark-showcase)) .yuval-logo.is-mounted .logo-word {
+  :global(html:not(.dark)) .yuval-logo.is-mounted .logo-word {
     animation: none;
   }
   /* Hover — a small navy deepen, no gold glow, no blur. */
-  :global(html:not(.dark):has(.library-dark-showcase)) .yuval-logo:hover .logo-word {
+  :global(html:not(.dark)) .yuval-logo:hover .logo-word {
     -webkit-text-fill-color: #0f1d3d;
     color: #0f1d3d;
     filter: none;
@@ -1604,7 +1604,7 @@ const searchAriaLabel = t('header.searchAriaLabel', language);
   }
   /* Hover surface — replace the gold tint + 24 px gold bloom with a
      faint navy wash so the brand hover stays crisp on warm glass. */
-  :global(html:not(.dark):has(.library-dark-showcase)) .yuval-logo:hover {
+  :global(html:not(.dark)) .yuval-logo:hover {
     background: rgba(34, 52, 92, 0.05);
     box-shadow: none;
   }
@@ -1612,37 +1612,37 @@ const searchAriaLabel = t('header.searchAriaLabel', language);
   /* Search — flip the embedded dark-glass recess to a light, elegant
      capsule with a navy hairline. Higher text contrast, never a dark
      hole punched into the warm header. */
-  :global(html:not(.dark):has(.library-dark-showcase)) .header-search-field {
+  :global(html:not(.dark)) .header-search-field {
     background: rgba(255, 255, 255, 0.66);
     border: 1.5px solid rgba(34, 52, 92, 0.20);
     box-shadow:
       inset 0 1px 2px rgba(30, 45, 80, 0.06),
       0 1px 0 rgba(255, 255, 255, 0.55);
   }
-  :global(html:not(.dark):has(.library-dark-showcase)) .header-search-field:hover {
+  :global(html:not(.dark)) .header-search-field:hover {
     border-color: rgba(34, 52, 92, 0.32);
     box-shadow:
       inset 0 1px 2px rgba(30, 45, 80, 0.08),
       0 1px 0 rgba(255, 255, 255, 0.55);
   }
-  :global(html:not(.dark):has(.library-dark-showcase)) .header-search-field:focus-within {
+  :global(html:not(.dark)) .header-search-field:focus-within {
     background: rgba(255, 255, 255, 0.84);
     border-color: rgba(14, 116, 144, 0.55);
     box-shadow:
       inset 0 1px 2px rgba(30, 45, 80, 0.06),
       0 0 0 3px rgba(14, 116, 144, 0.14);
   }
-  :global(html:not(.dark):has(.library-dark-showcase)) .header-search-input {
+  :global(html:not(.dark)) .header-search-input {
     color: #16223c;
   }
-  :global(html:not(.dark):has(.library-dark-showcase)) .header-search-input::placeholder {
+  :global(html:not(.dark)) .header-search-input::placeholder {
     color: #6a778d;
   }
-  :global(html:not(.dark):has(.library-dark-showcase)) .header-search-icon {
+  :global(html:not(.dark)) .header-search-icon {
     color: #46556f;
     filter: none;
   }
-  :global(html:not(.dark):has(.library-dark-showcase)) .header-search-field:focus-within .header-search-icon {
+  :global(html:not(.dark)) .header-search-field:focus-within .header-search-icon {
     color: #0e7490;
     filter: none;
   }
@@ -2385,6 +2385,201 @@ const searchAriaLabel = t('header.searchAriaLabel', language);
     :global(body.reading-mode) .header-inner > div:last-child {
       transition: none !important;
     }
+  }
+
+  /* ══════════════════════════════════════════════════════════════════
+     READING-MODE × LIGHT — restore the library luminous-glass header
+     ══════════════════════════════════════════════════════════════════
+     The reading-mode rules above flatten the header to opaque
+     parchment cream, compress it to 52 px, dim the brand to 0.85, and
+     repurpose `::before` as a sepia hairline divider. That treatment
+     is calibrated for the dark reading shell. In light mode Tomer
+     wants the same luminous-glass header that the library page uses,
+     on every screen — including the reading page. This block restores
+     the library treatment for the light reading shell only; dark
+     reading mode keeps its parchment-cream override untouched. The
+     selector outranks the reading-mode rules above (extra
+     `html:not(.dark)` adds class + tag specificity), so no
+     `!important` is needed. */
+  :global(html:not(.dark) body.reading-mode) .yuval-header {
+    background:
+      linear-gradient(
+        180deg,
+        rgba(255, 254, 250, 0.86) 0%,
+        rgba(249, 247, 240, 0.74) 100%
+      );
+    border-bottom: 1px solid rgba(34, 52, 92, 0.16);
+    box-shadow: 0 5px 18px -8px rgba(40, 70, 145, 0.28);
+  }
+
+  /* Replace the sepia hairline `::before` with the frosted-glass
+     backdrop blur the library header uses. Full inset, negative
+     z-index, no fill — same layer the light-mode block above
+     defines. The reading-mode default's bottom-anchored 1 px sepia
+     line is cancelled by overriding every relevant property. */
+  :global(html:not(.dark) body.reading-mode) .yuval-header::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: auto;
+    z-index: -1;
+    background: none;
+    -webkit-backdrop-filter: blur(14px) saturate(1.08);
+    backdrop-filter: blur(14px) saturate(1.08);
+    pointer-events: none;
+  }
+
+  /* Restore the full-bleed header height — 72 px like the library
+     page — instead of the 52 px reading-mode compression. Mobile
+     keeps the library's auto-with-min-height pattern so the controls
+     row can still grow vertically if it wraps. */
+  :global(html:not(.dark) body.reading-mode) .header-inner {
+    height: 72px;
+  }
+  @media (max-width: 767px) {
+    :global(html:not(.dark) body.reading-mode) .header-inner {
+      height: auto;
+      min-height: 64px;
+    }
+  }
+
+  /* Brand + trailing controls return to full opacity. Reading-mode
+     dims them to 0.85 to recede; in light mode the library header is
+     the design target, so they sit at full presence. */
+  :global(html:not(.dark) body.reading-mode) .yuval-logo,
+  :global(html:not(.dark) body.reading-mode) .header-inner > div:last-child {
+    opacity: 1;
+  }
+
+  /* Re-paint the knowledge grid on the header surface. Reading-mode
+     hides `.header-inner::after` (where the grid lives) to keep its
+     parchment header clean; in light mode the grid is part of the
+     library header identity Tomer wants on every screen, so we
+     restore it here. The grid color resolves from `--header-grid-line`
+     which the light-mode block above already sets to the blue-gray
+     atlas-grid tint. */
+  :global(html:not(.dark) body.reading-mode) .yuval-header > .header-inner::after {
+    content: '';
+    display: block;
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-image:
+      linear-gradient(var(--header-grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--header-grid-line) 1px, transparent 1px);
+    background-size: 40px 40px;
+    -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 13%, #000 87%, transparent 100%);
+    mask-image: linear-gradient(90deg, transparent 0%, #000 13%, #000 87%, transparent 100%);
+  }
+
+  /* ══════════════════════════════════════════════════════════════════
+     READING-MODE × DARK — restore the library cosmic header
+     ══════════════════════════════════════════════════════════════════
+     Mirror of the light block above. The reading-mode default flattens
+     dark mode to `var(--yuval-surface, #1a1a1a)`, kills the top-edge
+     specular and the knowledge grid, repurposes `::before` as a sepia
+     hairline, compresses the bar to 52 px, and dims the brand to
+     0.85. In dark mode Tomer wants the library cosmic header — five
+     stacked gradients + grid + star specks — on every screen,
+     including the reading page. This block restores it. */
+  :global(html.dark body.reading-mode) .yuval-header {
+    background:
+      radial-gradient(
+        80% 200% at 50% 70%,
+        rgba(90, 140, 255, 0.15) 0%,
+        rgba(53, 109, 216, 0.09) 22%,
+        rgba(53, 109, 216, 0.04) 42%,
+        transparent 65%
+      ),
+      radial-gradient(
+        70% 180% at 100% 50%,
+        rgba(53, 75, 160, 0.10) 0%,
+        rgba(0, 1, 13, 0) 60%
+      ),
+      radial-gradient(
+        70% 180% at 0% 50%,
+        rgba(36, 60, 130, 0.07) 0%,
+        rgba(0, 1, 13, 0) 60%
+      ),
+      radial-gradient(
+        160% 220% at 50% 50%,
+        transparent 0%,
+        transparent 50%,
+        rgba(0, 0, 0, 0.75) 100%
+      ),
+      linear-gradient(180deg, #020610 0%, #00040E 55%, #00010d 100%),
+      #00010d;
+    box-shadow:
+      0 1px 0 rgba(140, 178, 255, 0.18),
+      0 9px 26px -10px rgba(92, 146, 255, 0.50),
+      0 1px 0 rgba(255, 255, 255, 0.03) inset,
+      0 -1px 0 rgba(0, 0, 0, 0.30) inset;
+  }
+
+  /* Cancel the reading-mode sepia hairline `::before`. Dark library
+     header has no `::before` — the top edge is owned by `::after`. */
+  :global(html.dark body.reading-mode) .yuval-header::before {
+    display: none;
+  }
+
+  /* Restore the top-edge specular highlight that reading-mode hides. */
+  :global(html.dark body.reading-mode) .yuval-header::after {
+    content: '';
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(170, 195, 255, 0.10) 30%,
+      rgba(220, 230, 255, 0.16) 50%,
+      rgba(170, 195, 255, 0.10) 70%,
+      transparent 100%
+    );
+    pointer-events: none;
+    z-index: 3;
+  }
+
+  /* Restore the knowledge grid (`.header-inner::after`). Grid color
+     falls back to the dark default `--header-grid-line` set on
+     `.yuval-header` at the top of this stylesheet
+     (rgba(158, 188, 252, 0.10)). */
+  :global(html.dark body.reading-mode) .yuval-header > .header-inner::after {
+    content: '';
+    display: block;
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-image:
+      linear-gradient(var(--header-grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--header-grid-line) 1px, transparent 1px);
+    background-size: 40px 40px;
+    -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 13%, #000 87%, transparent 100%);
+    mask-image: linear-gradient(90deg, transparent 0%, #000 13%, #000 87%, transparent 100%);
+  }
+
+  /* Header height + brand opacity — match the library page. */
+  :global(html.dark body.reading-mode) .header-inner {
+    height: 72px;
+  }
+  @media (max-width: 767px) {
+    :global(html.dark body.reading-mode) .header-inner {
+      height: auto;
+      min-height: 64px;
+    }
+  }
+  :global(html.dark body.reading-mode) .yuval-logo,
+  :global(html.dark body.reading-mode) .header-inner > div:last-child {
+    opacity: 1;
   }
 </style>
 

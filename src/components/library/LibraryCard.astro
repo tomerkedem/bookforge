@@ -255,33 +255,15 @@ const extraTopics = topics.length - topicChips.length;
             Legacy left/right/selected faces are optional — when a
             folder ships only `front.png`, all four <img> tags resolve
             to the same URL and the card renders as a single static
-            face without breaking the markup.
-            The front face is wrapped in a <picture> so phone-sized
-            viewports pick up the optional `front-mobile.png` variant
-            (carousel-only — the selected face below always renders
-            the canonical `front.png` for the focused / opened state).
-            `picture { display: contents }` keeps the wrapper layout-
-            transparent so the existing CSS that targets the inner
-            `<img>` keeps working unchanged. The inline `onerror`
-            handles the runtime fallback when `front-mobile.png` is
-            present at build time but fails to load at runtime: it
-            strips the `<source>` and re-points the `<img>` at the
-            desktop `front.png` carried in `data-front-desktop`. */}
-        <picture>
-          {artifact.frontMobile && (
-            <source media="(max-width: 1023px)" srcset={artifact.frontMobile} />
-          )}
-          <img
-            class="lc-orbit-artifact-face lc-orbit-artifact-face-front"
-            src={artifact.front}
-            alt=""
-            loading="lazy"
-            decoding="async"
-            draggable={false}
-            data-front-desktop={artifact.front}
-            onerror="this.onerror=null;var p=this.parentElement;if(p){var s=p.querySelector('source');if(s)s.remove();}this.src=this.dataset.frontDesktop;"
-          />
-        </picture>
+            face without breaking the markup. */}
+        <img
+          class="lc-orbit-artifact-face lc-orbit-artifact-face-front"
+          src={artifact.front}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          draggable={false}
+        />
         <img
           class="lc-orbit-artifact-face lc-orbit-artifact-face-left"
           src={artifact.left ?? artifact.front}
@@ -435,33 +417,15 @@ const extraTopics = topics.length - topicChips.length;
             Legacy left/right/selected faces are optional — when a
             folder ships only `front.png`, all four <img> tags resolve
             to the same URL and the card renders as a single static
-            face without breaking the markup.
-            The front face is wrapped in a <picture> so phone-sized
-            viewports pick up the optional `front-mobile.png` variant
-            (carousel-only — the selected face below always renders
-            the canonical `front.png` for the focused / opened state).
-            `picture { display: contents }` keeps the wrapper layout-
-            transparent so the existing CSS that targets the inner
-            `<img>` keeps working unchanged. The inline `onerror`
-            handles the runtime fallback when `front-mobile.png` is
-            present at build time but fails to load at runtime: it
-            strips the `<source>` and re-points the `<img>` at the
-            desktop `front.png` carried in `data-front-desktop`. */}
-        <picture>
-          {artifact.frontMobile && (
-            <source media="(max-width: 1023px)" srcset={artifact.frontMobile} />
-          )}
-          <img
-            class="lc-orbit-artifact-face lc-orbit-artifact-face-front"
-            src={artifact.front}
-            alt=""
-            loading="lazy"
-            decoding="async"
-            draggable={false}
-            data-front-desktop={artifact.front}
-            onerror="this.onerror=null;var p=this.parentElement;if(p){var s=p.querySelector('source');if(s)s.remove();}this.src=this.dataset.frontDesktop;"
-          />
-        </picture>
+            face without breaking the markup. */}
+        <img
+          class="lc-orbit-artifact-face lc-orbit-artifact-face-front"
+          src={artifact.front}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          draggable={false}
+        />
         <img
           class="lc-orbit-artifact-face lc-orbit-artifact-face-left"
           src={artifact.left ?? artifact.front}
@@ -884,15 +848,6 @@ const extraTopics = topics.length - topicChips.length;
        transition is killed (rule below) so opacity tracks the cursor
        in real time. */
     transition: opacity 540ms cubic-bezier(0.4, 0, 0.2, 1);
-  }
-  /* The front face is wrapped in <picture> so phone viewports can pick
-     up `front-mobile.png` via a `<source media>` rule. `display: contents`
-     makes the wrapper layout-transparent: the inner <img> behaves
-     exactly as a direct child of `.lc-orbit-artifact`, so every existing
-     rule that targets `.lc-orbit-artifact-face-front` keeps working
-     without change. */
-  .lc-orbit-artifact > picture {
-    display: contents;
   }
   .lc-orbit-artifact-face-front {
     /* In flow — defines the artifact's natural box dimensions. */
