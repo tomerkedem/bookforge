@@ -47,6 +47,15 @@ const COLLAPSED_LIMIT = 6;
 // In compact-full we deliberately render every chapter — the whole point
 // of the mode is "no hidden tail behind a toggle".
 const collapsible = !isCompactFull && chapters.length > COLLAPSED_LIMIT;
+
+// Reading-time per chapter at the project-wide ~200 wpm rate. Returns 0
+// when word_count is missing/zero so the duration chip can be skipped
+// without inventing data.
+function chapterMinutes(chapter: Chapter): number {
+  const wc = chapter.word_count ?? 0;
+  if (wc <= 0) return 0;
+  return Math.max(1, Math.ceil(wc / 200));
+}
 ---
 
 <section
@@ -58,12 +67,24 @@ const collapsible = !isCompactFull && chapters.length > COLLAPSED_LIMIT;
     <header class="boch-heading-row">
       <span class="boch-heading-icon" aria-hidden="true">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M4 6h16M4 12h16M4 18h10" />
+          <circle cx="6" cy="6"  r="2" stroke-width="1.7" />
+          <circle cx="6" cy="18" r="2" stroke-width="1.7" />
+          <circle cx="18" cy="12" r="2" stroke-width="1.7" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M6 8v8M8 7l8 4M8 17l8-4" />
         </svg>
       </span>
-      <h2 id="boch-title" class="boch-heading">
-        {t('sidebar.chapters', language)}
+      <h2 id="boch-title" class="boch-heading" data-i18n="lessonSummary.lessonPath.title">
+        {t('lessonSummary.lessonPath.title', language)}
       </h2>
+      {/* Current-lesson pill. Hidden until at least one row carries
+          [data-read-status='current'] — driven entirely by CSS :has(),
+          no JS state needed. */}
+      <span class="boch-current-pill" aria-hidden="true">
+        <span class="boch-current-dot"></span>
+        <span data-i18n="lessonSummary.lessonPath.currentLesson">
+          {t('lessonSummary.lessonPath.currentLesson', language)}
+        </span>
+      </span>
     </header>
 
     <ol
@@ -78,7 +99,12 @@ const collapsible = !isCompactFull && chapters.length > COLLAPSED_LIMIT;
           const locked = chapter.locked === true;
           const beyondLimit = collapsible && idx >= COLLAPSED_LIMIT;
           const numberLabel = chapterNum.toString().padStart(2, '0');
-          const lockedLabel = t('bookOverview.locked', language);
+          const minutes = chapterMinutes(chapter);
+          const ariaLabel = t('lessonSummary.lessonPath.chapterAriaLabel', language, {
+            n: numberLabel,
+            title: chapterTitle,
+          });
+          const lockedLabel = t('lessonSummary.lessonPath.locked', language);
 
           const itemClasses = [
             'boch-item',
@@ -114,8 +140,47 @@ const collapsible = !isCompactFull && chapters.length > COLLAPSED_LIMIT;
 
           const content = (
             <span class="boch-content">
-              <span class="boch-num" aria-hidden="true">{numberLabel}</span>
-              <h3 class="boch-title">{chapterTitle}</h3>
+              <span class="boch-content-main">
+                <span class="boch-num" aria-hidden="true">{numberLabel}</span>
+                <h3 class="boch-title">{chapterTitle}</h3>
+              </span>
+              {(minutes > 0 || locked) && (
+                <span class="boch-content-meta" aria-hidden="true">
+                  {minutes > 0 && (
+                    <span class="boch-duration">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                        <circle cx="12" cy="12" r="8" stroke-width="1.6" />
+                        <path d="M12 8v4l2.5 2" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                      </svg>
+                      <span>{t('lessonSummary.lessonPath.durationMinutes', language, { n: minutes })}</span>
+                    </span>
+                  )}
+                </span>
+              )}
+              {/* SR-only state label. Visible label is conveyed by
+                  shape + color; this row keeps the state in the a11y
+                  tree for users who rely on it. The page-level script
+                  drives [data-read-status] on the parent row, so the
+                  three CSS rules below select on it without JS. */}
+              <span class="boch-state-sr" data-state="upcoming" data-i18n="lessonSummary.lessonPath.upcoming">
+                {t('lessonSummary.lessonPath.upcoming', language)}
+              </span>
+              <span class="boch-state-sr" data-state="active" data-i18n="lessonSummary.lessonPath.active">
+                {t('lessonSummary.lessonPath.active', language)}
+              </span>
+              <span class="boch-state-sr" data-state="completed" data-i18n="lessonSummary.lessonPath.completed">
+                {t('lessonSummary.lessonPath.completed', language)}
+              </span>
+              <span class="boch-state-sr" data-state="locked" data-i18n="lessonSummary.lessonPath.locked">
+                {t('lessonSummary.lessonPath.locked', language)}
+              </span>
+              {/* Per-row progress fill. Width is updated by the page
+                  script (`.chapter-progress-fill`) when chapter
+                  progress lives in localStorage. Hidden by CSS when
+                  width is 0 to keep upcoming rows clean. */}
+              <span class="boch-progress" aria-hidden="true">
+                <span class="boch-progress-fill chapter-progress-fill"></span>
+              </span>
             </span>
           );
 
@@ -129,7 +194,7 @@ const collapsible = !isCompactFull && chapters.length > COLLAPSED_LIMIT;
                   data-locked="true"
                   aria-disabled="true"
                   role="link"
-                  aria-label={`${numberLabel} — ${chapterTitle} (${lockedLabel})`}
+                  aria-label={`${ariaLabel} (${lockedLabel})`}
                 >
                   {indicator}
                   {content}
@@ -140,6 +205,7 @@ const collapsible = !isCompactFull && chapters.length > COLLAPSED_LIMIT;
                   class="boch-row chapter-link"
                   data-chapter-id={chapter.id}
                   data-book-slug={slug}
+                  aria-label={ariaLabel}
                 >
                   {indicator}
                   {content}
@@ -206,8 +272,59 @@ const collapsible = !isCompactFull && chapters.length > COLLAPSED_LIMIT;
 </script>
 
 <style>
-  /* ── Card shell — same depth language as Hero/Progress/Summary/Learn */
+  /* ═══════════════════════════════════════════════════════════════
+     LESSON PATH — local design tokens
+     ───────────────────────────────────────────────────────────────
+     One namespace (`--lesson-path-*`) the rest of this stylesheet
+     reads from. Values lean on the page-level `--bo-*` tokens so
+     this component shares the Book Overview palette today, and so
+     Phase 3 can split it into true day/night by re-assigning the
+     tokens in a single place (here) instead of hunting through
+     every selector below.
+     ═══════════════════════════════════════════════════════════════ */
   .boch {
+    --lesson-path-panel-bg:           var(--bo-surface);
+    --lesson-path-panel-border:       var(--bo-border);
+    --lesson-path-panel-border-hover: var(--bo-border-strong);
+
+    --lesson-path-item-bg:            transparent;
+    --lesson-path-item-border:        transparent;
+    --lesson-path-item-hover-bg:      var(--bo-surface-elevated);
+    --lesson-path-item-hover-border:  var(--bo-border-strong);
+
+    --lesson-path-item-active-bg:
+      linear-gradient(135deg,
+        color-mix(in srgb, var(--bo-purple) 14%, transparent),
+        color-mix(in srgb, var(--bo-blue) 10%, transparent)
+      );
+    --lesson-path-item-active-border:
+      color-mix(in srgb, var(--bo-purple) 38%, transparent);
+    --lesson-path-item-active-ring:
+      color-mix(in srgb, var(--bo-purple) 22%, transparent);
+
+    --lesson-path-text-primary:       var(--bo-text-primary);
+    --lesson-path-text-secondary:     var(--bo-text-secondary);
+    --lesson-path-text-muted:         var(--bo-text-muted);
+
+    --lesson-path-num:                var(--bo-text-muted);
+    --lesson-path-num-active:         var(--bo-violet);
+
+    --lesson-path-timeline:           color-mix(in srgb, var(--bo-text-muted) 16%, transparent);
+    --lesson-path-timeline-active:    color-mix(in srgb, var(--bo-purple) 55%, transparent);
+
+    --lesson-path-accent:             var(--bo-violet);
+    --lesson-path-accent-soft:        var(--bo-purple-soft);
+    --lesson-path-accent-glow:        color-mix(in srgb, var(--bo-purple) 16%, transparent);
+
+    --lesson-path-muted-icon:         var(--bo-text-muted);
+
+    --lesson-path-completed:          var(--bo-success);
+    --lesson-path-completed-soft:     var(--bo-success-soft);
+    --lesson-path-completed-border:   var(--bo-success-border);
+
+    --lesson-path-progress-track:     color-mix(in srgb, var(--bo-text-muted) 12%, transparent);
+    --lesson-path-progress-fill:      var(--bo-grad-progress);
+
     position: relative;
   }
   @media (min-width: 1024px) {
@@ -237,6 +354,7 @@ const collapsible = !isCompactFull && chapters.length > COLLAPSED_LIMIT;
     align-items: center;
     gap: 0.65rem;
     margin: 0 0 1.1rem 0;
+    flex-wrap: wrap;
   }
   .boch-heading-icon {
     inline-size: 2rem;
@@ -246,9 +364,9 @@ const collapsible = !isCompactFull && chapters.length > COLLAPSED_LIMIT;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    color: var(--bo-cyan);
-    background: var(--bo-cyan-soft);
-    border: 1px solid var(--bo-border);
+    color: var(--lesson-path-accent);
+    background: var(--lesson-path-accent-soft);
+    border: 1px solid var(--lesson-path-panel-border);
   }
   .boch-heading-icon svg {
     inline-size: 1.05rem;
@@ -260,7 +378,48 @@ const collapsible = !isCompactFull && chapters.length > COLLAPSED_LIMIT;
     font-weight: 600;
     font-size: 1.1rem;
     letter-spacing: 0.01em;
-    color: var(--bo-text-primary);
+    color: var(--lesson-path-text-primary);
+    flex: 1 1 auto;
+    min-inline-size: 0;
+  }
+
+  /* ── Current-lesson pill ──────────────────────────────────────
+     Hidden until at least one row carries data-read-status='current'.
+     `:has()` makes this purely declarative — no JS state hand-off
+     beyond the existing page-level updater. */
+  .boch-current-pill {
+    display: none;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.2rem 0.6rem 0.22rem;
+    border-radius: 999px;
+    background: var(--lesson-path-accent-soft);
+    border: 1px solid var(--lesson-path-item-active-border);
+    color: var(--lesson-path-text-primary);
+    font-family: 'Assistant', system-ui, sans-serif;
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .boch:has(.boch-row[data-read-status='current']) .boch-current-pill {
+    display: inline-flex;
+  }
+  .boch-current-dot {
+    inline-size: 0.42rem;
+    block-size: 0.42rem;
+    border-radius: 999px;
+    background: var(--lesson-path-accent);
+    box-shadow: 0 0 0 3px var(--lesson-path-accent-glow);
+    animation: bochCurrentPulse 2.4s ease-in-out infinite;
+  }
+  @keyframes bochCurrentPulse {
+    0%, 100% { opacity: 1;   transform: scale(1); }
+    50%      { opacity: 0.55; transform: scale(0.78); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .boch-current-dot { animation: none; }
   }
 
   /* ── Timeline list ──────────────────────────────────────────── */
@@ -302,7 +461,7 @@ const collapsible = !isCompactFull && chapters.length > COLLAPSED_LIMIT;
     inset-block: 0;
     inset-inline-start: calc(0.75rem - 0.5px);
     width: 1px;
-    background: var(--bo-border);
+    background: var(--lesson-path-timeline);
     z-index: 0;
     pointer-events: none;
   }
@@ -336,8 +495,8 @@ const collapsible = !isCompactFull && chapters.length > COLLAPSED_LIMIT;
     gap: 0.75rem;
     padding: 0.75rem 0.65rem;
     border-radius: 10px;
-    background: transparent;
-    border: 1px solid transparent;
+    background: var(--lesson-path-item-bg);
+    border: 1px solid var(--lesson-path-item-border);
     text-decoration: none;
     color: inherit;
     transition:
@@ -348,8 +507,8 @@ const collapsible = !isCompactFull && chapters.length > COLLAPSED_LIMIT;
     z-index: 1;
   }
   .boch-row:hover {
-    background: var(--bo-surface-elevated);
-    border-color: var(--bo-cyan);
+    background: var(--lesson-path-item-hover-bg);
+    border-color: var(--lesson-path-item-hover-border);
   }
   .boch-row:focus-visible {
     outline: 2px solid var(--bo-focus-ring);
@@ -366,11 +525,11 @@ const collapsible = !isCompactFull && chapters.length > COLLAPSED_LIMIT;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    background: var(--bo-surface);
-    border: 1.5px solid var(--bo-border-strong);
-    color: var(--bo-text-muted);
+    background: var(--lesson-path-panel-bg);
+    border: 1.5px solid var(--lesson-path-timeline);
+    color: var(--lesson-path-muted-icon);
     flex-shrink: 0;
-    transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease;
+    transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
     position: relative;
     z-index: 1;
   }
@@ -384,8 +543,14 @@ const collapsible = !isCompactFull && chapters.length > COLLAPSED_LIMIT;
     block-size: 0.75rem;
   }
 
-  /* ── Content (number + title) ───────────────────────────────── */
+  /* ── Content (number + title + meta) ────────────────────────── */
   .boch-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    min-inline-size: 0;
+  }
+  .boch-content-main {
     display: grid;
     grid-template-columns: auto 1fr;
     align-items: baseline;
@@ -398,7 +563,8 @@ const collapsible = !isCompactFull && chapters.length > COLLAPSED_LIMIT;
     font-size: 0.75rem;
     font-feature-settings: 'tnum';
     letter-spacing: 0.04em;
-    color: var(--bo-text-muted);
+    color: var(--lesson-path-num);
+    transition: color 160ms ease;
   }
   .boch-title {
     margin: 0;
@@ -406,26 +572,103 @@ const collapsible = !isCompactFull && chapters.length > COLLAPSED_LIMIT;
     font-weight: 500;
     font-size: 0.95rem;
     line-height: 1.4;
-    color: var(--bo-text-primary);
+    color: var(--lesson-path-text-primary);
     overflow: hidden;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
   }
 
-  /* ── Status: CURRENT — purple/violet ring + play glyph.
-     The strong purple glow was removed so the active row reads as a
-     calm focus rather than a spotlight — the dot emphasis + accent
-     border + purple-soft surface are enough to identify "you are here". */
+  /* ── Meta row (duration chip) ──────────────────────────────── */
+  .boch-content-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--lesson-path-text-muted);
+    font-family: 'Assistant', system-ui, sans-serif;
+    font-size: 0.72rem;
+    font-weight: 500;
+  }
+  .boch-duration {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    line-height: 1;
+  }
+  .boch-duration svg {
+    inline-size: 0.78rem;
+    block-size: 0.78rem;
+    opacity: 0.7;
+  }
+  .boch-duration > span {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ── SR-only state labels ─────────────────────────────────────
+     One label per possible state; CSS reveals only the one that
+     matches the row's current [data-read-status]/[data-locked].
+     Visually hidden in all cases — purely for assistive tech. */
+  .boch-state-sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+    display: none;
+  }
+  .boch-row:not([data-read-status]):not([data-locked='true']) .boch-state-sr[data-state='upcoming'] { display: block; }
+  .boch-row[data-read-status='current']    .boch-state-sr[data-state='active']    { display: block; }
+  .boch-row[data-read-status='in-progress'] .boch-state-sr[data-state='active']    { display: block; }
+  .boch-row[data-read-status='completed']  .boch-state-sr[data-state='completed'] { display: block; }
+  .boch-row[data-locked='true']            .boch-state-sr[data-state='locked']    { display: block; }
+
+  /* ── Per-row progress fill ────────────────────────────────────
+     A 2px rail along the row's block-end edge. The page-level
+     script writes `width: X%` on `.chapter-progress-fill`; until
+     it does, the rail stays invisible so unread rows don't carry
+     an empty trough. */
+  .boch-progress {
+    position: absolute;
+    inset-inline: 0.55rem;
+    inset-block-end: 0.35rem;
+    block-size: 2px;
+    border-radius: 999px;
+    background: transparent;
+    overflow: hidden;
+    pointer-events: none;
+  }
+  .boch-row[data-read-status] .boch-progress {
+    background: var(--lesson-path-progress-track);
+  }
+  .boch-progress-fill {
+    display: block;
+    block-size: 100%;
+    inline-size: 0%;
+    background: var(--lesson-path-progress-fill);
+    border-radius: inherit;
+    transition: width 320ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .boch-progress-fill { transition: none; }
+  }
+
+  /* ── Status: CURRENT — calm violet/blue tint + play glyph.
+     The visual weight comes from a soft accent fill and a thin
+     accent border + ring on the dot. No spotlight glow; the row
+     stays a focus cue, not a stage light. */
   .boch-row[data-read-status='current'] {
-    background: var(--bo-purple-soft);
-    border-color: var(--bo-border-accent);
+    background: var(--lesson-path-item-active-bg);
+    border-color: var(--lesson-path-item-active-border);
   }
   .boch-row[data-read-status='current'] .boch-dot {
-    background: var(--bo-purple);
-    border-color: var(--bo-violet);
-    color: var(--bo-text-primary);
-    box-shadow: 0 0 0 3px var(--bo-purple-soft);
+    background: var(--lesson-path-accent-soft);
+    border-color: var(--lesson-path-item-active-border);
+    color: var(--lesson-path-text-primary);
+    box-shadow: 0 0 0 3px var(--lesson-path-item-active-ring);
   }
   /* Play triangle drawn via logical borders so it points in the
      reading direction (▶ in LTR, ◀ in RTL — both = "forward"). */
@@ -435,38 +678,41 @@ const collapsible = !isCompactFull && chapters.length > COLLAPSED_LIMIT;
     height: 0;
     border-block-start: 4px solid transparent;
     border-block-end: 4px solid transparent;
-    border-inline-start: 6px solid var(--bo-text-primary);
+    border-inline-start: 6px solid var(--lesson-path-text-primary);
     margin-inline-start: 1px;
   }
-  .boch-row[data-read-status='current'] .boch-num,
-  .boch-row[data-read-status='current'] .boch-title {
-    color: var(--bo-text-primary);
+  .boch-row[data-read-status='current'] .boch-num {
+    color: var(--lesson-path-num-active);
   }
   .boch-row[data-read-status='current'] .boch-title {
+    color: var(--lesson-path-text-primary);
     font-weight: 600;
   }
 
-  /* ── Status: IN-PROGRESS — cyan ring, no glow, no glyph ─────── */
+  /* ── Status: IN-PROGRESS — accent ring, no glow, no glyph ───── */
   .boch-row[data-read-status='in-progress'] .boch-dot {
-    border-color: var(--bo-cyan);
-    color: var(--bo-cyan);
+    border-color: var(--lesson-path-accent);
+    color: var(--lesson-path-accent);
+  }
+  .boch-row[data-read-status='in-progress'] .boch-num {
+    color: var(--lesson-path-accent);
   }
 
-  /* ── Status: COMPLETED — readable but secondary, cyan check ──── */
+  /* ── Status: COMPLETED — readable but secondary, green check ── */
   .boch-row[data-read-status='completed'] {
-    opacity: 0.78;
+    opacity: 0.82;
   }
   .boch-row[data-read-status='completed']:hover {
     opacity: 1;
   }
   .boch-row[data-read-status='completed'] .boch-dot {
-    background: var(--bo-cyan-soft);
-    border-color: var(--bo-cyan);
-    color: var(--bo-cyan);
+    background: var(--lesson-path-completed-soft);
+    border-color: var(--lesson-path-completed-border);
+    color: var(--lesson-path-completed);
   }
   .boch-row[data-read-status='completed'] .boch-dot-check {
     display: block;
-    color: var(--bo-cyan);
+    color: var(--lesson-path-completed);
   }
   .boch-row[data-read-status='completed'] .boch-title {
     font-weight: 400;
@@ -480,22 +726,22 @@ const collapsible = !isCompactFull && chapters.length > COLLAPSED_LIMIT;
   /* ── Status: LOCKED — dimmed, lock glyph, no link affordance ── */
   .boch-row[data-locked='true'] {
     cursor: not-allowed;
-    opacity: 0.4;
-    filter: grayscale(0.3);
+    opacity: 0.45;
+    filter: grayscale(0.25);
   }
   .boch-row[data-locked='true']:hover {
     background: transparent;
     border-color: transparent;
     transform: none;
-    opacity: 0.5;
+    opacity: 0.55;
   }
   .boch-row[data-locked='true'] .boch-dot {
-    background: var(--bo-surface);
-    border-color: var(--bo-border);
+    background: var(--lesson-path-panel-bg);
+    border-color: var(--lesson-path-timeline);
   }
   .boch-row[data-locked='true'] .boch-dot-lock {
     display: block;
-    color: var(--bo-text-muted);
+    color: var(--lesson-path-muted-icon);
   }
 
   /* ── Toggle — link-style ─────────────────────────────────────
@@ -557,11 +803,14 @@ const collapsible = !isCompactFull && chapters.length > COLLAPSED_LIMIT;
     /* Secondary navigation: softer surface and lighter border, no
        elevation shadow. Summary is the focal element on this page —
        the timeline supports it rather than competing with it. */
-    background: rgba(15, 23, 42, 0.4);
-    border-color: rgba(148, 163, 184, 0.12);
+    background: color-mix(in srgb, var(--lesson-path-panel-bg) 70%, transparent);
+    border-color: var(--lesson-path-panel-border);
     box-shadow: none;
     opacity: 0.94;
-    transition: opacity 200ms ease;
+    transition: opacity 200ms ease, border-color 200ms ease;
+  }
+  .boch.is-compact-full .boch-card:hover {
+    border-color: var(--lesson-path-panel-border-hover);
   }
   .boch.is-compact-full .boch-card:hover,
   .boch.is-compact-full .boch-card:focus-within {
@@ -609,7 +858,7 @@ const collapsible = !isCompactFull && chapters.length > COLLAPSED_LIMIT;
   /* Timeline line — desaturated slate per spec. Extends past the row
      into the gap so adjacent dots stay visually connected. */
   .boch.is-compact-full .boch-item::before {
-    background: rgba(148, 163, 184, 0.10);
+    background: var(--lesson-path-timeline);
     /* Bridge the 6px gap above this row so the line is continuous. */
     inset-block-start: -6px;
   }
@@ -625,12 +874,12 @@ const collapsible = !isCompactFull && chapters.length > COLLAPSED_LIMIT;
     /* Dot column matches new node size (~30px); rest is title. */
     grid-template-columns: 30px minmax(0, 1fr);
     gap: 0.6rem;
-    padding: 10px 12px;
+    padding: 10px 12px 14px;
     border-radius: 10px;
     border-color: transparent;
   }
   .boch.is-compact-full .boch-row:hover {
-    background: rgba(59, 130, 246, 0.08);
+    background: var(--lesson-path-item-hover-bg);
     border-color: transparent;
   }
 
@@ -639,68 +888,74 @@ const collapsible = !isCompactFull && chapters.length > COLLAPSED_LIMIT;
     inline-size: 30px;
     block-size: 30px;
     background: transparent;
-    border: 1px solid rgba(148, 163, 184, 0.22);
-    color: var(--bo-text-muted);
+    border: 1px solid var(--lesson-path-timeline);
+    color: var(--lesson-path-muted-icon);
   }
 
   .boch.is-compact-full .boch-content {
+    gap: 0.25rem;
+  }
+  .boch.is-compact-full .boch-content-main {
     gap: 0.45rem;
   }
   .boch.is-compact-full .boch-num {
     font-size: 0.72rem;
-    color: var(--bo-text-muted);
   }
   .boch.is-compact-full .boch-title {
     font-size: clamp(0.82rem, 0.9vw, 0.95rem);
     line-height: 1.35;
     -webkit-line-clamp: 1;
   }
+  .boch.is-compact-full .boch-content-meta {
+    font-size: 0.68rem;
+  }
+  .boch.is-compact-full .boch-progress {
+    inset-inline: 12px;
+    inset-block-end: 6px;
+    block-size: 2px;
+  }
 
-  /* ── Status: CURRENT — calm purple, no neon ──────────────────── */
+  /* ── Status: CURRENT — calm violet/blue tint per spec ────────── */
   .boch.is-compact-full .boch-row[data-read-status='current'] {
-    background: linear-gradient(
-      135deg,
-      rgba(124, 58, 237, 0.14),
-      rgba(59, 130, 246, 0.10)
-    );
-    border: 1px solid rgba(124, 58, 237, 0.35);
+    background: var(--lesson-path-item-active-bg);
+    border: 1px solid var(--lesson-path-item-active-border);
     border-radius: 12px;
   }
   .boch.is-compact-full .boch-row[data-read-status='current'] .boch-dot {
-    background: rgba(124, 58, 237, 0.12);
-    border-color: rgba(124, 58, 237, 0.45);
-    color: var(--bo-text-primary);
+    background: var(--lesson-path-accent-soft);
+    border-color: var(--lesson-path-item-active-border);
+    color: var(--lesson-path-text-primary);
     /* Reduced halo — chapters are secondary on the BO page, so the
        active row stays identifiable without pulling focus from
        the Summary. */
     box-shadow:
-      0 0 0 1px rgba(124, 58, 237, 0.28),
-      0 3px 10px rgba(124, 58, 237, 0.10);
+      0 0 0 1px var(--lesson-path-item-active-ring),
+      0 3px 10px var(--lesson-path-accent-glow);
   }
   .boch.is-compact-full .boch-row[data-read-status='current'] .boch-dot::after {
-    border-inline-start-color: var(--bo-violet);
+    border-inline-start-color: var(--lesson-path-accent);
   }
 
   /* ── Status: COMPLETED — green per spec (NOT cyan) ───────────── */
   .boch.is-compact-full .boch-row[data-read-status='completed'] {
-    opacity: 0.8;
+    opacity: 0.82;
   }
   .boch.is-compact-full .boch-row[data-read-status='completed']:hover {
     opacity: 1;
   }
   .boch.is-compact-full .boch-row[data-read-status='completed'] .boch-dot {
-    background: rgba(34, 197, 94, 0.12);
-    border-color: rgba(34, 197, 94, 0.45);
-    color: #22c55e;
+    background: var(--lesson-path-completed-soft);
+    border-color: var(--lesson-path-completed-border);
+    color: var(--lesson-path-completed);
   }
   .boch.is-compact-full .boch-row[data-read-status='completed'] .boch-dot-check {
-    color: #22c55e;
+    color: var(--lesson-path-completed);
   }
 
   /* In-progress kept consistent with rest of variant — soft, no glow. */
   .boch.is-compact-full .boch-row[data-read-status='in-progress'] .boch-dot {
-    border-color: rgba(124, 58, 237, 0.35);
-    color: var(--bo-violet);
+    border-color: var(--lesson-path-item-active-border);
+    color: var(--lesson-path-accent);
   }
 
   /* ── Status: LOCKED — quiet, per spec ────────────────────────── */
@@ -713,12 +968,31 @@ const collapsible = !isCompactFull && chapters.length > COLLAPSED_LIMIT;
     background: transparent;
   }
   .boch.is-compact-full .boch-row[data-locked='true'] .boch-dot {
-    background: rgba(148, 163, 184, 0.05);
-    border-color: rgba(148, 163, 184, 0.2);
-    color: var(--bo-text-muted);
+    background: color-mix(in srgb, var(--lesson-path-muted-icon) 5%, transparent);
+    border-color: color-mix(in srgb, var(--lesson-path-muted-icon) 22%, transparent);
+    color: var(--lesson-path-muted-icon);
   }
   .boch.is-compact-full .boch-row[data-locked='true'] .boch-dot-lock {
-    color: var(--bo-text-muted);
+    color: var(--lesson-path-muted-icon);
+  }
+
+  /* ── Mobile guard ─────────────────────────────────────────────
+     Below 1024px the boch panel is no longer in a side-by-side
+     layout; the page stacks it under the Hero. Loosen the sticky
+     cap so the whole list scrolls naturally, and shrink the row
+     padding a hair to keep the column compact. */
+  @media (max-width: 1023px) {
+    .boch.is-compact-full .boch-card {
+      max-block-size: none;
+      opacity: 1;
+    }
+    .boch.is-compact-full .boch-row {
+      padding: 9px 10px 13px;
+    }
+    .boch.is-compact-full .boch-progress {
+      inset-inline: 10px;
+      inset-block-end: 5px;
+    }
   }
 
   /* ── Bottom action — text link, no pill ──────────────────────── */

@@ -115,6 +115,34 @@ export const translations: Translations = {
   'bookOverview.whatYouWillLearn':  { he: 'מה תלמדו',                            en: 'What you will learn',                     es: 'Lo que aprenderás' },
   'bookOverview.listenSummary':     { he: 'האזן לסיכום',                         en: 'Listen to summary',                       es: 'Escuchar resumen' },
 
+  // ── Lesson Summary — center summary card ───────────────────────────────────
+  // Used by BookOverviewSummary on the lesson summary page. The titles
+  // are intentionally framed as "lesson summary" rather than the older
+  // "book summary" to reinforce that this screen is the entry to a
+  // single lesson's content.
+  'lessonSummary.summary.title':         { he: 'תקציר השיעור',                en: 'Lesson summary',                  es: 'Resumen de la lección' },
+  'lessonSummary.summary.subtitle':      { he: 'במה עוסק השיעור הזה ומה תקבלו ממנו', en: 'What this lesson covers and what you will take away', es: 'De qué trata esta lección y qué obtendrás' },
+  'lessonSummary.summary.emptyState':    { he: 'אין כרגע תקציר זמין לשיעור הזה.', en: 'No summary is available for this lesson yet.', es: 'Aún no hay un resumen disponible para esta lección.' },
+  'lessonSummary.summary.readAloud':     { he: 'הקראת התקציר',                en: 'Read summary aloud',              es: 'Leer resumen en voz alta' },
+  'lessonSummary.summary.keyTakeaways':  { he: 'נקודות מפתח',                  en: 'Key takeaways',                   es: 'Puntos clave' },
+
+  // ── Lesson Summary — right "Lesson Path" panel ─────────────────────────────
+  // Used by BookOverviewChapters (the right-rail chapters menu on the book
+  // landing / lesson summary page). Strings frame the panel as a learning
+  // journey rather than a flat chapter list. Reused state labels (completed,
+  // active, locked, upcoming) live here so the screen reader story stays
+  // consistent across the rail and any future tooltips.
+  'lessonSummary.lessonPath.title':            { he: 'מסלול השיעור',           en: 'Lesson path',           es: 'Ruta de la lección' },
+  'lessonSummary.lessonPath.currentLesson':    { he: 'שיעור נוכחי',            en: 'Current lesson',        es: 'Lección actual' },
+  'lessonSummary.lessonPath.chapterAriaLabel': { he: 'פרק {{n}}: {{title}}',  en: 'Chapter {{n}}: {{title}}', es: 'Capítulo {{n}}: {{title}}' },
+  'lessonSummary.lessonPath.completed':        { he: 'הושלם',                 en: 'Completed',             es: 'Completado' },
+  'lessonSummary.lessonPath.active':           { he: 'פעיל',                  en: 'Active',                es: 'Activo' },
+  'lessonSummary.lessonPath.locked':           { he: 'נעול',                  en: 'Locked',                es: 'Bloqueado' },
+  'lessonSummary.lessonPath.upcoming':         { he: 'בהמשך',                  en: 'Upcoming',              es: 'Próximamente' },
+  'lessonSummary.lessonPath.durationMinutes':  { he: '{{n}} ד׳',              en: '{{n}} min',             es: '{{n}} min' },
+  'lessonSummary.lessonPath.startChapter':     { he: 'התחל פרק',               en: 'Start chapter',         es: 'Iniciar capítulo' },
+  'lessonSummary.lessonPath.continueChapter':  { he: 'המשך פרק',               en: 'Continue chapter',      es: 'Continuar capítulo' },
+
   // ── Courses (learning) section ──────────────────────────────────────────────
   'courses.title':         { he: 'למידה מקורסים',    en: 'Learning from Courses', es: 'Aprendizaje de cursos' },
   'courses.subtitle':      { he: 'סיכומי שיעורים בתהליך', en: 'Lecture summaries in progress', es: 'Resúmenes de clases en curso' },

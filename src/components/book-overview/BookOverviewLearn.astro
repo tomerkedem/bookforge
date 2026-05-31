@@ -93,16 +93,39 @@ const shouldRender = items.length > 0;
 
 <style>
   /* Surface (background, border, shadow, grain) comes from
-     `.bo-premium-surface` in theme.css. Only layout bits here. */
+     `.bo-premium-surface` in theme.css. Only layout + supporting-card
+     overrides live here.
+
+     Visual weight hierarchy on the lesson summary page:
+       Summary (--bo-shadow-lg, top ribbon, deepest)
+        > Hero (--bo-shadow-md, side ribbon)
+        > Lesson Path (sticky, calm)
+        > Learn (this — --bo-shadow-sm, opacity 0.95)
+        > Progress (no shadow, slim strip)
+     The Learn card supports the Summary, it doesn't compete with it,
+     so we override `bo-premium-surface`'s --bo-shadow-md down to
+     --bo-shadow-sm and dim slightly. Hover restores full opacity
+     so reading the list doesn't feel washed out when the user
+     focuses on it. */
   .bol-card {
     border-radius: 14px;
     padding: 1.25rem 1.5rem;
     color: var(--bo-text-primary);
+    box-shadow: var(--bo-shadow-sm);
+    opacity: 0.95;
+    transition: opacity 200ms ease, box-shadow 200ms ease, border-color 200ms ease;
+  }
+  .bol-card:hover,
+  .bol-card:focus-within {
+    opacity: 1;
   }
   @media (min-width: 640px) {
     .bol-card {
       padding: 1.5rem 1.75rem;
     }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .bol-card { transition: none; }
   }
 
   /* ── Heading row ──────────────────────────────────────────────── */
@@ -161,9 +184,16 @@ const shouldRender = items.length > 0;
     grid-template-columns: 1.4rem 1fr;
     align-items: start;
     gap: 0.55rem;
-    font-size: 0.95rem;
+    /* 1rem (16px) baseline keeps mobile readability above the WCAG-
+       comfortable threshold; sm+ shrinks back to 0.95rem because the
+       two-column grid there gives each item less inline space and the
+       smaller size avoids item wrap. */
+    font-size: 1rem;
     line-height: 1.5;
     color: var(--bo-text-secondary);
+  }
+  @media (min-width: 640px) {
+    .bol-item { font-size: 0.95rem; }
   }
 
   /* Compact violet circle with a cyan check inside. The two-tone bullet

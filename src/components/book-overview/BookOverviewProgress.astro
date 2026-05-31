@@ -301,11 +301,17 @@ const chaptersData = JSON.stringify(
     padding: 0.55rem 0.9rem;
     border-radius: 12px;
     color: var(--bo-text-primary);
-    /* De-emphasize: this is a status strip, not a card. */
-    background: rgba(15, 23, 42, 0.35);
+    /* De-emphasize: this is a status strip, not a card. The 92%
+       opacity on var(--bo-surface) creates a faint step-down from
+       the surrounding Summary/Hero cards in both themes — pearl
+       glass goes slightly transparent over the page on day, navy
+       glass goes slightly transparent over the page on night. No
+       hardcoded overlay color so the strip never inverts contrast
+       between modes. */
+    background: color-mix(in srgb, var(--bo-surface) 92%, transparent);
     border-color: var(--bo-border);
     box-shadow: none;
-    opacity: 0.92;
+    opacity: 0.95;
   }
 
   /* Three columns once the card has the room. The bar takes the bulk
@@ -369,7 +375,10 @@ const chaptersData = JSON.stringify(
     position: relative;
     height: 4px;
     border-radius: 999px;
-    background: rgba(148, 163, 184, 0.08);
+    /* Track from --bo-text-muted at low alpha — readable on both
+       pearl (slate on warm white) and navy (slate on dark), no
+       per-theme conditional needed. */
+    background: color-mix(in srgb, var(--bo-text-muted) 18%, transparent);
     overflow: hidden;
   }
   .bop-bar-fill {

@@ -109,16 +109,29 @@ const description = getLocalizedText(book.descriptions, language);
 
       <!--
         Layout strategy:
-        - Mobile (default): stacked — content (with image), then chapters
+        - Mobile / Tablet (default): stacked. Content column FIRST
+          (Hero → Progress → Summary → Learn), Lesson Path LAST. The
+          Summary is the page's primary content on small screens, so it
+          must appear above the chapter list — otherwise the chapter
+          rail would push the lesson summary far below the fold on a
+          long book.
         - Desktop (lg+): 2 columns side-by-side
-          * Chapters column (smaller, ~1fr)
-          * Content column (larger, ~2.5fr) — includes title, subtitle,
-            cover image (as figure), description paragraphs, meta stats
-        - Source order: chapters first, so in RTL chapters render on the
-          right (reading start), and in LTR on the left. Same principle
-          both ways.
-        - Cover image floats inside the content column: opposite side
-          from the reading start, so description text wraps around it.
+          * Chapters column (smaller, ~1fr) — DOM-first so RTL flexbox
+            puts it on the right edge (reading start), LTR on the left.
+          * Content column (larger, ~2.5fr) — includes Hero, Progress,
+            Summary, Learn.
+
+        Visual reordering is done with CSS `order` (Tailwind utilities)
+        so DOM source order stays optimal for desktop RTL/LTR. Below lg
+        the order is flipped:
+            content (order-1) → chapters (order-2)
+        At lg+ both go back to `order-none` (= 0) and the grid columns
+        themselves arrange the layout.
+
+        Note: visual order ≠ tab order. Screen-reader / keyboard users
+        on mobile will still traverse Chapters first → Content second.
+        That's the standard tradeoff of using CSS order; acceptable
+        because Chapters is a secondary nav rail on this page.
       -->
       <div
         class:list={[
@@ -139,8 +152,10 @@ const description = getLocalizedText(book.descriptions, language);
       >
         <!-- Chapters sidebar. The id is the scroll target for the
              hero's secondary CTA ("View chapters"); scroll-margin keeps
-             the heading clear of any sticky chrome above. -->
-        <div id="chapters" class="boh-chapters-anchor">
+             the heading clear of any sticky chrome above.
+             order-2 on small/tablet → renders BELOW content.
+             lg:order-none → desktop falls back to DOM order (first). -->
+        <div id="chapters" class="boh-chapters-anchor order-2 lg:order-none">
           <BookOverviewChapters
             chapters={book.chapters}
             slug={slug}
@@ -150,8 +165,10 @@ const description = getLocalizedText(book.descriptions, language);
           />
         </div>
 
-        <!-- Content column: hero card + summary -->
-        <div class:list={[isRtl && 'text-right']}>
+        <!-- Content column: hero card + summary.
+             order-1 on small/tablet → renders ABOVE Lesson Path.
+             lg:order-none → desktop falls back to DOM order (second). -->
+        <div class:list={['order-1', 'lg:order-none', isRtl && 'text-right']}>
           <BookOverviewHero
             title={title}
             subtitle={subtitle}

@@ -324,19 +324,25 @@ const levelLabel = level && levelKey ? t(levelKey, language) : '';
      `.bo-premium-surface` class in src/styles/theme.css. This rule
      adds only the layout-specific bits: grid, gap, padding, radius,
      and the `overflow: hidden` that clips the inline-start accent
-     strip below. */
+     strip below.
+
+     Compact-by-design: the Hero is the page's entry gate, not its
+     main content. Summary takes the visual weight; padding and gaps
+     here are tuned to give the Hero presence without claiming the
+     prime real estate. */
   .boh-card {
     display: grid;
     grid-template-columns: 1fr;
-    gap: 1rem;
-    padding: 0.85rem 1rem;
-    border-radius: 18px;
+    gap: 0.85rem;
+    padding: 0.75rem 1rem;
+    border-radius: 16px;
     color: var(--bo-text-primary);
     overflow: hidden;
   }
 
   /* Subtle accent edge along the inline-start side. Cool blue/purple
-     instead of gold. */
+     instead of gold. Day mode reduces the opacity slightly so the
+     ribbon doesn't read as a colored bar against pearl. */
   .boh-card::before {
     content: '';
     position: absolute;
@@ -352,16 +358,19 @@ const levelLabel = level && levelKey ? t(levelKey, language) : '';
       transparent 100%
     );
     pointer-events: none;
+    opacity: 0.55;
+  }
+  :global(.dark) .boh-card::before {
     opacity: 0.6;
   }
 
   @media (min-width: 640px) {
-    .boh-card { padding: 1.1rem 1.35rem; gap: 1.25rem; }
+    .boh-card { padding: 0.95rem 1.25rem; gap: 1.1rem; }
   }
 
   @container (min-width: 720px) {
     .boh-card {
-      grid-template-columns: minmax(150px, 180px) minmax(0, 1fr);
+      grid-template-columns: minmax(130px, 150px) minmax(0, 1fr);
       align-items: center;
     }
   }
@@ -375,23 +384,32 @@ const levelLabel = level && levelKey ? t(levelKey, language) : '';
 
   .boh-cover {
     width: 100%;
-    max-width: 180px;
+    max-width: 150px;
     height: auto;
     border-radius: 10px;
     background: transparent;
+    /* Layered shadow: themed drop from the global shadow token + a
+       hairline outline so the cover never floats unbordered on a
+       light surface. The drop uses the day/night token so it stays
+       restrained on pearl and richer on navy without redefining. */
     box-shadow:
-      0 10px 22px -10px rgba(2, 6, 23, 0.55),
+      var(--bo-shadow-md),
       0 0 0 1px var(--bo-border);
   }
-  /* Subtle glow only — no longer a focal halo. */
+  /* Subtle glow only — no longer a focal halo. Day mode dampens it
+     further since the aura color (alpha 0.14) is already much lower
+     than night (alpha 0.28). */
   .boh-cover-wrap.bo-hero-glow::before {
-    opacity: 0.45;
+    opacity: 0.5;
     filter: blur(6px);
+  }
+  :global(.dark) .boh-cover-wrap.bo-hero-glow::before {
+    opacity: 0.45;
   }
 
   @container (min-width: 720px) {
     .boh-cover-wrap { justify-content: flex-start; }
-    .boh-cover { max-width: 160px; }
+    .boh-cover { max-width: 140px; }
   }
 
   /* ── Content column ──────────────────────────────────────────── */
@@ -406,7 +424,7 @@ const levelLabel = level && levelKey ? t(levelKey, language) : '';
     font-family: 'Assistant', system-ui, sans-serif;
     display: flex;
     flex-direction: column;
-    gap: 0.55rem;
+    gap: 0.4rem;
     min-width: 0;
     text-align: start;
     position: relative;
@@ -426,27 +444,33 @@ const levelLabel = level && levelKey ? t(levelKey, language) : '';
   }
 
   /* ── Level badge ─────────────────────────────────────────────
-     Purple gradient pill with a soft cyan inner highlight. No gold. */
+     Purple gradient pill. The pill background is uniformly saturated
+     in both themes, so the white inner highlight (specular cue) is
+     pill-relative and works on day + night without change. The outer
+     drop uses the themed --bo-shadow-sm so it stays subtle on pearl. */
   .boh-level {
     display: inline-flex;
     align-items: center;
-    padding: 0.3rem 0.75rem;
+    padding: 0.25rem 0.7rem;
     border-radius: 999px;
     font-family: 'Assistant', system-ui, sans-serif;
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     font-weight: 600;
     letter-spacing: 0.04em;
-    color: var(--bo-text-primary);
+    /* Text on a saturated purple→blue gradient — always white. The
+       day-mode text-primary is navy, which would invert against this
+       pill. Use white directly so the badge reads on both themes. */
+    color: #FFFFFF;
     background: linear-gradient(
       135deg,
       var(--bo-purple) 0%,
       var(--bo-violet) 60%,
       var(--bo-blue) 100%
     );
-    border: 1px solid var(--bo-border-strong);
+    border: 1px solid var(--bo-border-accent);
     box-shadow:
-      0 1px 2px rgba(2, 6, 23, 0.45),
-      inset 0 1px 0 rgba(255, 255, 255, 0.18);
+      var(--bo-shadow-sm),
+      inset 0 1px 0 rgba(255, 255, 255, 0.22);
   }
 
   /* ── Bookmark — small dark outline square at the end of the
@@ -490,7 +514,7 @@ const levelLabel = level && levelKey ? t(levelKey, language) : '';
     margin: 0;
     font-family: 'Assistant', system-ui, sans-serif;
     font-weight: 600;
-    font-size: clamp(1.25rem, 1.8vw, 1.7rem);
+    font-size: clamp(1.2rem, 1.55vw, 1.55rem);
     line-height: 1.15;
     letter-spacing: -0.01em;
     color: var(--bo-text-primary);
@@ -527,15 +551,15 @@ const levelLabel = level && levelKey ? t(levelKey, language) : '';
   /* ── Meta row ────────────────────────────────────────────────── */
   .boh-meta {
     list-style: none;
-    margin: 0;
-    padding: 0.45rem 0;
+    margin: 0.1rem 0 0;
+    padding: 0.4rem 0;
     border-block-start: 1px solid var(--bo-border);
     border-block-end: 1px solid var(--bo-border);
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem 1.25rem;
+    gap: 0.4rem 1.1rem;
     font-family: 'Assistant', system-ui, sans-serif !important;
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     color: var(--bo-text-secondary);
   }
   .boh-meta-item,
@@ -561,18 +585,19 @@ const levelLabel = level && levelKey ? t(levelKey, language) : '';
   .boh-actions {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.65rem;
-    margin-block-start: 0.25rem;
+    align-items: center;
+    gap: 0.55rem;
+    margin-block-start: 0.15rem;
   }
 
   .boh-cta {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 0.55rem 1.05rem;
+    padding: 0.5rem 1rem;
     border-radius: 999px;
     font-weight: 600;
-    font-size: 0.875rem;
+    font-size: 0.85rem;
     line-height: 1;
     text-decoration: none;
     transition:
@@ -589,13 +614,17 @@ const levelLabel = level && levelKey ? t(levelKey, language) : '';
     outline-offset: 3px;
   }
 
-  /* Primary — purple → indigo → cyan gradient pill, dominant. */
+  /* Primary — purple → indigo → cyan gradient pill, dominant.
+     Text is white literally (not --bo-text-primary) because the day
+     theme inverts text-primary to navy, which would clash against
+     the saturated gradient. The pill background is uniform across
+     themes, so the inner specular highlight reads in both modes. */
   .boh-cta-primary {
     background: var(--bo-grad-cta);
-    color: var(--bo-text-primary);
+    color: #FFFFFF;
     border: 1px solid transparent;
     box-shadow:
-      0 4px 14px -4px rgba(2, 6, 23, 0.55),
+      var(--bo-shadow-md),
       0 0 0 1px var(--bo-border-accent),
       inset 0 1px 0 rgba(255, 255, 255, 0.18);
   }
@@ -603,7 +632,7 @@ const levelLabel = level && levelKey ? t(levelKey, language) : '';
     transform: translateY(-1px);
     filter: brightness(1.06);
     box-shadow:
-      0 8px 22px -6px rgba(2, 6, 23, 0.65),
+      var(--bo-shadow-lg),
       0 0 0 1px var(--bo-border-accent),
       var(--bo-glow-purple),
       inset 0 1px 0 rgba(255, 255, 255, 0.22);
