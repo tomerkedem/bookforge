@@ -25,6 +25,15 @@ interface Props {
    */
   showSearch?: boolean;
   /**
+   * Renders the compact mobile/tablet search icon button inside the
+   * header controls rail. Tapping it opens the existing Core Search
+   * panel (the button carries `data-core-search-trigger` so the
+   * `core-search.ts` wiring picks it up unchanged). Defaults to false.
+   * Only LibraryLayout opts in — the panel itself is rendered by the
+   * /library page, so the button has nowhere to open elsewhere.
+   */
+  showCoreSearchTrigger?: boolean;
+  /**
    * Step-2 rollout switch. When true, the new circular
    * LanguageGlobeSelector is rendered instead of the legacy
    * LanguageSelector. Defaults to `false` so every existing route
@@ -42,6 +51,7 @@ const {
   showLanguageToggle = true,
   showQuote = true,
   showSearch = false,
+  showCoreSearchTrigger = false,
   useGlobeLanguageSelector = true,
   class: className
 } = Astro.props;
@@ -214,6 +224,24 @@ const searchAriaLabel = t('header.searchAriaLabel', language);
             current={language}
           />
         )
+      )}
+      {showCoreSearchTrigger && (
+        <button
+          type="button"
+          class="header-core-search-trigger"
+          data-core-search-trigger
+          aria-expanded="false"
+          aria-controls="core-search-panel"
+          data-i18n-aria-label="library.coreSearch.openAria"
+          aria-label={t('library.coreSearch.openAria', language)}
+        >
+          <span class="header-core-search-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" focusable="false">
+              <circle cx="11" cy="11" r="7"></circle>
+              <path d="m20 20-3.5-3.5"></path>
+            </svg>
+          </span>
+        </button>
       )}
       <ThemeToggle />
     </div>
@@ -602,14 +630,23 @@ const searchAriaLabel = t('header.searchAriaLabel', language);
     }
 
     /* Compensate the global `<main>` content area for the fixed
-       header that's no longer in flow. The offset = the on-mobile
-       header height (`min-height: 64px` on .header-inner) plus the
-       iOS safe-area inset (~44px on notched iPhones, 0 elsewhere).
-       Scoped to mobile via this query, so desktop's flow is
-       untouched. Targeted via :global() because `main#main-content`
-       lives in BaseLayout, outside this component's scope. */
+       header that's no longer in flow. The offset MUST match the
+       mobile header's actual rendered height: `.header-inner` carries
+       `min-height: 64px` (later in this stylesheet), plus the iOS
+       safe-area inset (~44px on notched iPhones, 0 elsewhere). The
+       previous value of 52px was tuned to an earlier 52 px header
+       min-height and left a ~12 px gap on dark-mode /library where
+       `.library-root`'s 0.25 rem top padding wasn't enough to clear
+       the fixed header — the hero eyebrow ("ברוך הבא…") was visibly
+       sliding under the header on dark mode. Light /library hid the
+       bug because it adds 1.1 rem to `.library-root`. Aligning to
+       the real 64 px clears the eyebrow on both themes and on every
+       route that uses BaseLayout. Scoped to mobile via this query,
+       so desktop's flow is untouched. Targeted via :global() because
+       `main#main-content` lives in BaseLayout, outside this
+       component's scope. */
     :global(main#main-content) {
-      padding-top: calc(52px + env(safe-area-inset-top, 0px));
+      padding-top: calc(64px + env(safe-area-inset-top, 0px));
     }
 
     /* ── /library mobile: suppress the legacy header search ──────
@@ -1263,6 +1300,128 @@ const searchAriaLabel = t('header.searchAriaLabel', language);
   .header-search-input::-webkit-search-decoration {
     -webkit-appearance: none;
     appearance: none;
+  }
+
+  /* ── Mobile/tablet header search trigger ────────────────────────
+     Compact icon button rendered inside the controls rail when
+     LibraryLayout passes `showCoreSearchTrigger={true}`. It carries
+     `data-core-search-trigger`, so the existing core-search.ts
+     handler binds to this button instead of (or in addition to) the
+     in-stage one — moving the affordance out of the carousel center,
+     where it was getting covered by orbit cards on phones.
+
+     Visibility mirrors the breakpoint where Core Search Mode lives:
+     ≤1023px. On desktop the rail's `.header-search` input bar already
+     provides search, so the icon button stays hidden. */
+  .header-core-search-trigger {
+    display: none;
+  }
+
+  @media (max-width: 1023px) {
+    .header-core-search-trigger {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      width: 44px;
+      height: 44px;
+      min-width: 44px;
+      min-height: 44px;
+      padding: 0;
+      border-radius: 50%;
+      border: 1px solid rgba(94, 234, 212, 0.30);
+      background:
+        radial-gradient(
+          circle at 50% 35%,
+          rgba(94, 234, 212, 0.18) 0%,
+          rgba(94, 234, 212, 0.05) 55%,
+          transparent 100%),
+        rgba(0, 1, 13, 0.45);
+      color: #5eead4;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      box-shadow:
+        inset 0 0 0 1px rgba(94, 234, 212, 0.10),
+        0 0 12px rgba(94, 234, 212, 0.18);
+      transition:
+        transform 200ms cubic-bezier(0.4, 0, 0.2, 1),
+        box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1),
+        border-color 200ms cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .header-core-search-trigger:hover,
+    .header-core-search-trigger:focus-visible {
+      border-color: rgba(94, 234, 212, 0.55);
+      box-shadow:
+        inset 0 0 0 1px rgba(94, 234, 212, 0.15),
+        0 0 18px rgba(94, 234, 212, 0.32);
+      outline: none;
+    }
+
+    .header-core-search-trigger:focus-visible {
+      outline: 2px solid rgba(94, 234, 212, 0.55);
+      outline-offset: 2px;
+    }
+
+    .header-core-search-trigger:active {
+      transform: scale(0.94);
+    }
+
+    .header-core-search-icon {
+      display: inline-flex;
+      width: 18px;
+      height: 18px;
+      filter: drop-shadow(0 0 4px rgba(94, 234, 212, 0.55));
+    }
+
+    .header-core-search-icon svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Light-mode skin — match the warm-glass header treatment so the
+       button reads as part of the same material family, not a stranded
+       dark-mode capsule on a light surface. */
+    :global(html:not(.dark)) .header-core-search-trigger {
+      border-color: rgba(40, 65, 130, 0.30);
+      background:
+        radial-gradient(
+          circle at 50% 35%,
+          rgba(40, 65, 130, 0.10) 0%,
+          rgba(40, 65, 130, 0.03) 55%,
+          transparent 100%),
+        rgba(255, 255, 255, 0.55);
+      color: #2c4274;
+      box-shadow:
+        inset 0 0 0 1px rgba(40, 65, 130, 0.08),
+        0 1px 3px rgba(40, 65, 130, 0.12);
+    }
+
+    :global(html:not(.dark)) .header-core-search-trigger:hover,
+    :global(html:not(.dark)) .header-core-search-trigger:focus-visible {
+      border-color: rgba(40, 65, 130, 0.55);
+      box-shadow:
+        inset 0 0 0 1px rgba(40, 65, 130, 0.12),
+        0 2px 8px rgba(40, 65, 130, 0.18);
+    }
+
+    :global(html:not(.dark)) .header-core-search-icon {
+      filter: none;
+    }
+  }
+
+  /* Mobile (<768px): the controls rail gap on this breakpoint is
+     calibrated for two children (globe + theme). With the search
+     trigger inserted between them the row needs a tighter gap so the
+     three controls fit on the smallest phones (320px) without
+     wrapping below the brand. `:has()` is supported across the
+     evergreen browsers Yuval targets; on older engines the rail
+     simply falls back to the 18 px base — still functional, just a
+     hair tighter on the very smallest screens. */
+  @media (max-width: 767px) {
+    .header-controls-rail:has(.header-core-search-trigger) {
+      gap: 10px;
+    }
   }
 
   /* RTL: keep input text aligned to the inline-start so the placeholder

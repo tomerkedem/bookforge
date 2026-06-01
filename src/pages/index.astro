@@ -291,36 +291,13 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
 
             <div class="galaxy-backdrop" data-galaxy-backdrop aria-hidden="true"></div>
 
-            {/* Mobile-only core-search. SSR ships the chrome
-                unconditionally; CSS hides every node on desktop. Runtime
-                wired in src/utils/library/core-search.ts. */}
-            <button
-              type="button"
-              class="core-search-trigger"
-              data-core-search-trigger
-              aria-expanded="false"
-              aria-controls="core-search-panel"
-              data-i18n-aria-label="library.coreSearch.openAria"
-              aria-label={t('library.coreSearch.openAria', language)}
-            >
-              <span class="core-search-trigger-glow" aria-hidden="true"></span>
-              <span class="core-search-trigger-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <circle cx="11" cy="11" r="7"></circle>
-                  <path d="m20 20-3.5-3.5"></path>
-                </svg>
-              </span>
-            </button>
-
-            <div
-              class="core-search-hint"
-              data-core-search-hint
-              data-core-search-hint-state="hidden"
-              aria-hidden="true"
-            >
-              <span data-i18n="library.coreSearch.hint">{t('library.coreSearch.hint', language)}</span>
-            </div>
-
+            {/* Mobile/tablet core-search. The trigger now lives in the
+                Header's controls rail (see Header.astro
+                `showCoreSearchTrigger`) so orbit cards can no longer
+                cover it. The panel + its open/close machinery still
+                ship from here — `core-search.ts` finds the trigger via
+                `document.querySelector('[data-core-search-trigger]')`,
+                so wiring is unchanged. CSS hides the panel on desktop. */}
             <div
               id="core-search-panel"
               class="core-search-panel"
@@ -666,39 +643,64 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
         Selecting an item bridges back via [data-library-focus]. */}
     <KnowledgeAtlas items={atlasItems} language={language} />
 
-    {/* Mobile-only "3 / 10" position pill, paired with the rotate chevrons.
-        updateMobileSlots() in universe-layout.ts keeps the numbers in sync. */}
-    {showOrbitControls && (
-      <div
-        class="galaxy-position-indicator"
-        data-galaxy-position-indicator
-        role="status"
-        aria-live="polite"
-      >
-        <span data-galaxy-position-current>1</span>
-        <span class="galaxy-position-sep" aria-hidden="true">/</span>
-        <span data-galaxy-position-total>{orbitItems.length}</span>
-      </div>
-    )}
+    {/* Mobile carousel navigation. A single wrapper hosts every nav
+        element so the bottom row stays cohesive and never overlaps the
+        cards. On desktop the wrapper falls back to `display: contents`
+        so the inner `.galaxy-orbit-controls` keeps its existing fixed
+        bottom-pill behaviour without any HTML duplication.
 
-    {/* Pinned outside the stage so they never overlap the focused card.
-        Click handler in universe-layout.ts uses a document-level delegate. */}
+        Click handler in universe-layout.ts is a document-level delegate
+        keyed on [data-galaxy-rotate], so the buttons keep working from
+        any DOM position. */}
     {showOrbitControls && (
-      <div class="galaxy-orbit-controls" aria-hidden="false">
-        <button
-          type="button"
-          class="galaxy-orbit-btn"
-          data-galaxy-rotate
-          data-direction="prev"
-          aria-label={t('library.galaxy.rotatePrev', language)}
-        ><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
-        <button
-          type="button"
-          class="galaxy-orbit-btn"
-          data-galaxy-rotate
-          data-direction="next"
-          aria-label={t('library.galaxy.rotateNext', language)}
-        ><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+      <div class="galaxy-mobile-nav" data-galaxy-mobile-nav>
+        <div class="galaxy-orbit-controls" aria-hidden="false">
+          <button
+            type="button"
+            class="galaxy-orbit-btn"
+            data-galaxy-rotate
+            data-direction="prev"
+            aria-label={t('library.galaxy.rotatePrev', language)}
+          ><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+
+          {/* Counter only renders on mobile (display:none on desktop)
+              so the desktop pill still reads as just two chevrons. */}
+          <div
+            class="galaxy-position-indicator"
+            data-galaxy-position-indicator
+            role="status"
+            aria-live="polite"
+          >
+            <span data-galaxy-position-current>1</span>
+            <span class="galaxy-position-sep" aria-hidden="true">/</span>
+            <span data-galaxy-position-total>{orbitItems.length}</span>
+          </div>
+
+          <button
+            type="button"
+            class="galaxy-orbit-btn"
+            data-galaxy-rotate
+            data-direction="next"
+            aria-label={t('library.galaxy.rotateNext', language)}
+          ><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+        </div>
+
+        {/* Pagination dots — universe-layout.ts toggles [data-active]
+            inside setPositionIndicator() so the active dot stays in
+            lockstep with the counter and the focused carousel slot. */}
+        <div
+          class="galaxy-position-dots"
+          data-galaxy-position-dots
+          aria-hidden="true"
+        >
+          {orbitItems.map((_, i) => (
+            <span
+              class="galaxy-position-dot"
+              data-galaxy-position-dot
+              data-index={i}
+            ></span>
+          ))}
+        </div>
       </div>
     )}
 
@@ -817,9 +819,24 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
     background:
       radial-gradient(circle at 50% 38%, rgba(210, 235, 255, 0.55), transparent 42%),
       linear-gradient(180deg, #ffffff 0%, #f7f9ff 48%, #eef5ff 100%);
-    /* Specificity (0,2,1) outranks the plain `.library-root` padding
-       shorthand below so this wins at every breakpoint in light mode. */
-    padding-top: 1.1rem;
+  }
+
+  /* Desktop-only light-mode top breathing room. The override used to
+     apply at every breakpoint (the previous `padding-top: 1.1rem` rule
+     directly on the light `.library-root`), which on mobile pushed the
+     "ברוך הבא" eyebrow ~14 px lower in light mode than in dark mode —
+     visible mismatch when toggling themes (Tomer: "הטקסט ברוך הבא כל
+     פעם בגובה שונה"). The original purpose of the override was to
+     compensate for the fixed-header overlap that existed when
+     `<main>`'s mobile `padding-top` was only 52 px; that root cause
+     is now fixed in Header.astro (64 px + safe-area), so mobile no
+     longer needs the extra padding. Desktop keeps the 1.1 rem
+     because the sticky header sits in flow there and the cosmic
+     stage benefits from a small breath below the brand bar. */
+  @media (min-width: 1024px) {
+    :global(html:not(.dark)) .library-root {
+      padding-top: 1.1rem;
+    }
   }
 
   :global(html:not(.dark)) .library-starfield {
@@ -1084,6 +1101,15 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
   }
 
   .galaxy-position-indicator { display: none; }
+  .galaxy-position-dots { display: none; }
+  /* The mobile-nav wrapper is a plain block on desktop — its only
+     mobile-visible children (counter + dots) are display:none, and the
+     inner `.galaxy-orbit-controls` is `position: fixed` via the desktop
+     media query, so the wrapper itself collapses to a 0-height box and
+     occupies nothing. We deliberately AVOID `display: contents` here
+     because that strips the box, which would defeat `position: fixed`
+     on the mobile-only override below. */
+  .galaxy-mobile-nav { display: block; }
 
   @media (max-width: 1023px) {
     :global(.lb-area-hero .lh) {
@@ -1259,42 +1285,109 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       -webkit-backface-visibility: hidden;
     }
 
-    .galaxy-position-indicator {
-      display: inline-flex;
-      position: fixed;
-      inset-block-end: calc(env(safe-area-inset-bottom, 0px) + 72px);
-      left: 50%;
-      transform: translateX(-50%);
+    /* Mobile nav wrapper — a compact floating layer pinned to the
+       bottom of the viewport, below the carousel cards.
+
+       !important on `display` and `position` is defensive: the default
+       desktop rule (`display: block`) sits earlier in the file but at
+       the same specificity, so any tooling that ever reorders CSS (or
+       a stale-cache scenario) could let it win and drop the wrapper
+       back into normal flow — which is exactly what the user reported
+       in the previous iteration ("arrows above the card"). Forcing it
+       here makes the positioning robust to ordering. */
+    .galaxy-mobile-nav {
+      display: flex !important;
+      position: fixed !important;
+      inset-block-end: calc(env(safe-area-inset-bottom, 0px) + 8px);
+      inset-inline: 0;
+      flex-direction: column;
       align-items: center;
-      gap: 0.4rem;
-      padding: 0.34rem 0.95rem;
-      border-radius: 999px;
-      background: rgba(0, 0, 0, 0.42);
-      border: 1px solid rgba(255, 255, 255, 0.18);
-      color: rgba(255, 255, 255, 0.96);
-      font-size: 0.85rem;
-      font-weight: 600;
-      letter-spacing: 0.06em;
-      font-variant-numeric: tabular-nums;
-      box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.14),
-        0 4px 12px rgba(0, 0, 0, 0.28);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
+      gap: 6px;
       pointer-events: none;
       z-index: 40;
     }
+
+    /* Subtle slide-counter (e.g. "1 / 11") — sits between the arrows
+       inside the nav row. No pill chrome. Compact font keeps it from
+       competing with the buttons. */
+    .galaxy-position-indicator {
+      display: inline-flex !important;
+      position: static;
+      transform: none;
+      align-items: baseline;
+      gap: 0.25rem;
+      padding: 0 0.25rem;
+      min-width: 2.75rem;
+      justify-content: center;
+      background: transparent;
+      border: 0;
+      box-shadow: none;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+      color: rgba(255, 255, 255, 0.82);
+      font-size: 0.8125rem;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      font-variant-numeric: tabular-nums;
+      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.55);
+      pointer-events: none;
+    }
     :global(html:not(.dark)) .galaxy-position-indicator {
-      background: rgba(255, 253, 249, 0.86);
-      border-color: rgba(34, 52, 92, 0.20);
+      color: rgba(22, 34, 60, 0.66);
+      text-shadow: none;
+    }
+    [data-galaxy-position-current] {
+      color: rgba(255, 255, 255, 0.98);
+      font-weight: 600;
+    }
+    :global(html:not(.dark)) [data-galaxy-position-current] {
       color: rgba(22, 34, 60, 0.92);
-      box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.65),
-        0 2px 6px rgba(30, 45, 80, 0.10);
     }
     .galaxy-position-sep {
-      opacity: 0.5;
+      opacity: 0.4;
       font-weight: 400;
+      margin-inline: 0.05rem;
+    }
+
+    /* Pagination dots — small, calm, centered, directly under the arrow
+       row. Active dot stretches to a rounded pill in the Yuval accent
+       blue. */
+    .galaxy-position-dots {
+      display: inline-flex !important;
+      position: static;
+      transform: none;
+      align-items: center;
+      gap: 6px;
+      padding: 0 12px;
+      max-width: 100%;
+      flex-wrap: nowrap;
+      overflow: hidden;
+      pointer-events: none;
+    }
+    .galaxy-position-dot {
+      flex: 0 0 auto;
+      width: 5px;
+      height: 5px;
+      border-radius: 999px;
+      /* Solid grays beat translucent over the bright cyan/white floor
+         in day mode — the old 0.22 alpha vanished against the bg. */
+      background: rgba(255, 255, 255, 0.55);
+      transition:
+        width 220ms cubic-bezier(0.22, 0.61, 0.36, 1),
+        background-color 220ms ease,
+        box-shadow 220ms ease;
+    }
+    .galaxy-position-dot[data-active] {
+      width: 18px;
+      background: var(--yuval-galaxy-accent-cyan, #22d3ee);
+      box-shadow: 0 0 8px rgba(34, 211, 238, 0.55);
+    }
+    :global(html:not(.dark)) .galaxy-position-dot {
+      background: rgba(34, 52, 92, 0.45);
+    }
+    :global(html:not(.dark)) .galaxy-position-dot[data-active] {
+      background: #2563eb;
+      box-shadow: 0 0 8px rgba(37, 99, 235, 0.40);
     }
 
     /* Re-states --slot-opacity at matching specificity (0,2,0) so it
@@ -1349,72 +1442,131 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       -webkit-user-drag: none;
     }
 
+    /* Mobile arrow row inside .galaxy-mobile-nav — sits BELOW the
+       carousel cards. Layout: [prev btn] [counter] [next btn]. The
+       wrapper handles fixed positioning; this row only handles inline
+       arrangement and resets every desktop-pill style. */
     .galaxy-orbit-controls {
-      position: fixed !important;
-      inset-block-end: auto;
-      bottom: calc(env(safe-area-inset-bottom, 0px) + 14px) !important;
-      left: 0;
-      right: 0;
-      margin-inline: auto;
-      display: flex;
-      width: max-content;
+      position: static !important;
+      inset: auto !important;
+      bottom: auto !important;
+      top: auto;
+      margin: 0;
+      width: auto;
+      max-width: calc(100vw - 28px);
+      display: inline-flex;
+      flex-direction: row;
+      justify-content: center;
       align-items: center;
-      gap: 0.625rem;
-      padding: 0.375rem;
-      border-radius: 999px;
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid rgba(255, 255, 255, 0.16);
-      box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.22),
-        0 8px 22px rgba(0, 0, 0, 0.34);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      z-index: 40;
+      gap: 10px;
+      padding: 0;
+      border-radius: 0;
+      background: transparent;
+      border: 0;
+      box-shadow: none;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+      transform: none;
       direction: ltr;
+      pointer-events: none;
     }
     :global(html:not(.dark)) .galaxy-orbit-controls {
-      background: rgba(255, 253, 249, 0.78);
-      border-color: rgba(34, 52, 92, 0.18);
-      box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.65),
-        0 6px 16px rgba(30, 45, 80, 0.12);
+      background: transparent;
+      border: 0;
+      box-shadow: none;
     }
+
+    /* Mobile arrow button. The OUTER 44px box is the tap target (iOS
+       HIG minimum); the visible chrome — a 38px white circle — is
+       painted by ::before so the button stays touch-friendly while
+       looking small and floating. Background on the button itself is
+       transparent so only the inner circle reads as the control.
+
+       z-index: 0 + ::before z-index: -1 keeps the visible circle
+       below the SVG icon (z-index auto inside the flex line). Without
+       the explicit `isolation: isolate`, the negative-z pseudo can
+       escape the wrapper's stacking context on Safari. */
     .galaxy-orbit-btn {
-      width: 38px;
-      height: 38px;
+      pointer-events: auto;
+      position: relative;
+      isolation: isolate;
+      width: 44px;
+      height: 44px;
+      flex: 0 0 44px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       border-radius: 50%;
-      color: rgba(255, 255, 255, 0.94);
-      background: rgba(255, 255, 255, 0.12);
-      border: 1px solid rgba(255, 255, 255, 0.26);
-      box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.32),
-        0 2px 6px rgba(0, 0, 0, 0.26);
+      color: #1a2b4a;
+      background: transparent;
+      border: 0;
+      box-shadow: none;
       cursor: pointer;
       padding: 0;
-      transition: color 0.15s ease, background-color 0.15s ease,
-                  border-color 0.15s ease, transform 0.15s ease;
+      transition: color 0.15s ease, transform 0.15s ease;
+    }
+    .galaxy-orbit-btn::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 38px;
+      height: 38px;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.96);
+      border: 1px solid rgba(34, 52, 92, 0.08);
+      box-shadow:
+        0 1px 2px rgba(15, 25, 50, 0.10),
+        0 4px 12px rgba(15, 25, 50, 0.16);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      z-index: -1;
+      transition: background-color 0.15s ease, border-color 0.15s ease,
+                  box-shadow 0.15s ease;
     }
     :global(html:not(.dark)) .galaxy-orbit-btn {
-      color: rgba(22, 34, 60, 0.88);
-      background: rgba(255, 255, 255, 0.55);
-      border-color: rgba(34, 52, 92, 0.20);
+      color: #1a2b4a;
+      background: transparent;
+      border: 0;
+      box-shadow: none;
+    }
+    :global(html:not(.dark)) .galaxy-orbit-btn::before {
+      background: #ffffff;
+      border-color: rgba(34, 52, 92, 0.10);
       box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.85),
-        0 1px 3px rgba(30, 45, 80, 0.10);
+        0 1px 2px rgba(30, 45, 80, 0.08),
+        0 4px 10px rgba(30, 45, 80, 0.12);
     }
     .galaxy-orbit-btn:hover,
     .galaxy-orbit-btn:focus-visible {
-      color: #ffffff;
-      background: rgba(255, 255, 255, 0.18);
-      border-color: rgba(255, 255, 255, 0.36);
+      color: #0f1c38;
       outline: none;
+    }
+    /* Same-specificity override (0,3,1) for the global light-mode hover
+       at the top of the file — without this the 44px button paints a
+       square halo behind the 38px circle. */
+    :global(html:not(.dark)) .galaxy-orbit-btn:hover,
+    :global(html:not(.dark)) .galaxy-orbit-btn:focus-visible {
+      background: transparent;
+      border: 0;
+      box-shadow: none;
+    }
+    .galaxy-orbit-btn:hover::before,
+    .galaxy-orbit-btn:focus-visible::before {
+      background: #ffffff;
+      border-color: rgba(34, 52, 92, 0.20);
+      box-shadow:
+        0 1px 3px rgba(15, 25, 50, 0.14),
+        0 6px 16px rgba(15, 25, 50, 0.22);
+    }
+    .galaxy-orbit-btn:active {
+      transform: scale(0.94);
     }
     .galaxy-orbit-btn svg {
       width: 16px;
       height: 16px;
+      stroke-width: 2;
     }
     [dir="rtl"] .galaxy-orbit-btn svg { transform: scaleX(-1); }
 
@@ -3759,18 +3911,18 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
   }
 
   /* ════════════════════════════════════════════════════════════════
-     Core Search Mode — mobile-only "tap the core" search affordance
+     Core Search Mode — mobile/tablet search affordance
      ──────────────────────────────────────────────────────────────
-     Three SSR-rendered surfaces inside `.library-galaxy`:
-       1. `.core-search-trigger`   — small luminous button anchored at
-                                     the visual centre. Tap opens.
-       2. `.core-search-hint`      — one-shot tooltip above the trigger
-                                     ("Tap the Core to search").
-       3. `.core-search-panel`     — glass input that expands from the
-                                     trigger's centre when open.
+     Trigger: `.header-core-search-trigger` in the global header
+              (Header.astro, gated by `showCoreSearchTrigger`). The
+              button carries `data-core-search-trigger` so the
+              wiring in `core-search.ts` picks it up unchanged.
+     Panel:   `.core-search-panel` — glass input rendered here in
+              the stage. Hidden until the header trigger toggles
+              `data-core-search-state="open"` on `.library-galaxy`.
 
      State machine lives on the stage element:
-       data-core-search-state="closed"     → trigger only
+       data-core-search-state="closed"     → panel hidden
                                 "open"      → panel + dimmed orbit
                                 "no-matches"→ panel + dim-everything
 
@@ -3778,160 +3930,38 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
        data-core-search-match="yes"|"no"
      CSS owns the entire visual response — JS only stamps attributes.
 
-     Everything in this section is gated on @media (max-width: 1023px)
-     so desktop never sees these nodes. Reduced motion users get an
-     opacity/border-only emphasis (no scale changes).
+     The panel itself is gated on @media (max-width: 1023px) so
+     desktop never sees it (desktop search lives in the header
+     input bar via Header.astro `showSearch`).
      ════════════════════════════════════════════════════════════════ */
 
-  .core-search-trigger,
-  .core-search-hint,
   .core-search-panel {
     display: none;
   }
 
   @media (max-width: 1023px) {
-    /* ── Trigger button ────────────────────────────────────────── */
-    .core-search-trigger {
-      position: absolute;
-      /* Mobile-only: search trigger sits at the visual centre of the
-         carousel (Tomer: "אייקון החיפוש במרכז הקורוסלה במובייל בלבד").
-         The orbit cards fan around this point on the elliptical orbit
-         (top: 50% of `.library-galaxy`), so the search icon now reads
-         as the luminous core that the orbit revolves around. Hidden
-         automatically when a card is focused (rule below) so it never
-         overlaps the centered card. Desktop is untouched — the whole
-         trigger / hint / panel block is gated to ≤1023px. */
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 52px;
-      height: 52px;
-      padding: 0;
-      border-radius: 50%;
-      border: 1px solid
-        color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 60%, transparent);
-      background:
-        radial-gradient(
-          circle at 50% 35%,
-          color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 28%, transparent) 0%,
-          color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 8%, transparent) 55%,
-          transparent 100%),
-        color-mix(in srgb, var(--yuval-galaxy-bg, #00010d) 55%, transparent);
-      color: var(--yuval-galaxy-accent, #5eead4);
-      cursor: pointer;
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      box-shadow:
-        0 0 0 1px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 22%, transparent) inset,
-        0 0 14px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 40%, transparent),
-        0 0 30px -4px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 50%, transparent);
-      /* Trigger sits above orbit cards (z:2) AND above the focused
-         card (z:30) so a tap always reaches it. The expanded panel
-         below uses the same stacking context. */
-      z-index: 40;
-      animation: core-search-trigger-pulse 3.4s ease-in-out infinite;
-      transition:
-        transform 220ms cubic-bezier(0.4, 0, 0.2, 1),
-        box-shadow 220ms cubic-bezier(0.4, 0, 0.2, 1),
-        opacity 200ms ease;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .core-search-trigger-glow {
-      position: absolute;
-      inset: -8px;
-      border-radius: 50%;
-      background: radial-gradient(
-        circle,
-        color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 30%, transparent) 0%,
-        transparent 70%);
-      opacity: 0.7;
-      pointer-events: none;
-      filter: blur(6px);
-    }
-    .core-search-trigger-icon {
-      position: relative;
-      width: 20px;
-      height: 20px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      filter: drop-shadow(
-        0 0 6px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 70%, transparent));
-    }
-    .core-search-trigger-icon svg {
-      width: 100%;
-      height: 100%;
-    }
-    .core-search-trigger:hover,
-    .core-search-trigger:focus-visible {
-      transform: translate(-50%, -50%) translateY(-1px);
-      box-shadow:
-        0 0 0 1px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 35%, transparent) inset,
-        0 0 22px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 60%, transparent),
-        0 0 44px -4px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 65%, transparent);
-      outline: none;
-    }
-    .core-search-trigger:active {
-      transform: translate(-50%, -50%) scale(0.96);
-    }
-
-    @keyframes core-search-trigger-pulse {
-      0%, 100% {
-        box-shadow:
-          0 0 0 1px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 22%, transparent) inset,
-          0 0 14px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 40%, transparent),
-          0 0 30px -4px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 50%, transparent);
-      }
-      50% {
-        box-shadow:
-          0 0 0 1px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 30%, transparent) inset,
-          0 0 20px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 55%, transparent),
-          0 0 40px -4px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 65%, transparent);
-      }
-    }
-
-    /* ── First-visit hint ──────────────────────────────────────── */
-    .core-search-hint {
-      position: absolute;
-      top: calc(18% - 52px);
-      left: 50%;
-      transform: translate(-50%, -50%);
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 0.375rem 0.75rem;
-      border-radius: 999px;
-      font-size: 0.75rem;
-      font-weight: 500;
-      letter-spacing: 0.01em;
-      color: var(--yuval-galaxy-text, #ececea);
-      background: color-mix(in srgb, var(--yuval-galaxy-bg, #00010d) 82%, transparent);
-      border: 1px solid
-        color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 32%, transparent);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-      box-shadow:
-        0 0 12px -2px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 35%, transparent);
-      white-space: nowrap;
-      pointer-events: none;
-      opacity: 0;
-      z-index: 41;
-      transition: opacity 240ms ease, transform 240ms ease;
-    }
-    .core-search-hint[data-core-search-hint-state="visible"] {
-      opacity: 1;
-      transform: translate(-50%, -50%) translateY(-2px);
-    }
-
     /* ── Expanded glass panel ──────────────────────────────────── */
     .core-search-panel {
       position: absolute;
-      top: 18%;
+      /* Anchor the panel's TOP edge slightly ABOVE the subtitle's
+         bottom edge (per Tomer's "תעלה את תיבת החיפוש עוד קצת
+         למעלה"). `--focused-card-top` is computed by
+         initFocusedCardAnchor() as subtitle-bottom in galaxy-local
+         coords — the SAME measurement the focused card uses, so the
+         search panel and the focused card share one rhythm. `- 8px`
+         lifts the pill into the subtitle's descender band so it
+         reads as connected to the title block rather than hovering
+         under it. Fallback (4.25rem ≈ 68px) covers the brief pre-JS
+         first paint before the script writes the measured value. */
+      top: calc(var(--focused-card-top, 4.25rem) - 8px);
       left: 50%;
-      transform: translate(-50%, -50%) scale(0.6);
+      /* translate(-50%, 0) anchors the TOP edge at the computed Y
+         (not the centre) so the panel grows downward from the
+         subtitle. transform-origin: top center keeps the open/close
+         scale animation feeling like a drop-down from that anchor
+         rather than an expand-from-centre. */
+      transform: translate(-50%, 0) scale(0.6);
+      transform-origin: top center;
       display: flex;
       flex-direction: row;
       align-items: center;
@@ -4072,25 +4102,12 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
     }
 
     /* ── State: open ───────────────────────────────────────────── */
-    .library-galaxy[data-core-search-state="open"] .core-search-trigger,
-    .library-galaxy[data-core-search-state="no-matches"] .core-search-trigger,
-    /* Card focused → hide the trigger so it doesn't sit on top of the
-       centered card. The trigger now lives at the orbit centre (mobile
-       only — see `.core-search-trigger` block above), which is the same
-       point a focused card flies to. Reusing the visibility transition
-       from the open-state rule above so the fade-out matches. */
-    .library-galaxy[data-galaxy-focused] .core-search-trigger {
-      opacity: 0;
-      pointer-events: none;
-      visibility: hidden;
-      transition: opacity 200ms ease, visibility 0s linear 200ms;
-    }
     .library-galaxy[data-core-search-state="open"] .core-search-panel,
     .library-galaxy[data-core-search-state="no-matches"] .core-search-panel {
       opacity: 1;
       visibility: visible;
       pointer-events: auto;
-      transform: translate(-50%, -50%) scale(1);
+      transform: translate(-50%, 0) scale(1);
       transition:
         opacity 260ms cubic-bezier(0.4, 0, 0.2, 1),
         transform 320ms cubic-bezier(0.34, 1.4, 0.64, 1),
@@ -4112,12 +4129,11 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       transition: opacity 240ms ease;
     }
 
-    /* Reduced motion — drop the trigger pulse and the panel spring.
-       The per-card scale/blur reset lives in the global reduced-motion
-       block below so it applies on desktop too. */
+    /* Reduced motion — drop the panel spring. The per-card scale/blur
+       reset lives in the global reduced-motion block below so it
+       applies on desktop too. */
     @media (prefers-reduced-motion: reduce) {
-      .core-search-trigger { animation: none; }
-      .core-search-panel { transition: opacity 200ms ease, visibility 0s linear 200ms; transform: translate(-50%, -50%); }
+      .core-search-panel { transition: opacity 200ms ease, visibility 0s linear 200ms; transform: translate(-50%, 0); }
     }
   }
 

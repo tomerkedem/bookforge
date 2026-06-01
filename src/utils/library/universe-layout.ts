@@ -112,6 +112,23 @@ export function initStageLayout(stage: HTMLElement): void {
     if (totalEl && totalEl.textContent !== String(total)) {
       totalEl.textContent = String(total);
     }
+    // Mirror the active position onto the dot row. `current` is 1-based
+    // and matches the source-order indices the SSR markup uses, so dot
+    // at index `current - 1` lights up. No-op when the dot container
+    // isn't rendered (single-item orbits / desktop SSR without dots).
+    const dots = document.querySelectorAll<HTMLElement>(
+      '[data-galaxy-position-dot]',
+    );
+    if (dots.length > 0) {
+      const activeIdx = current - 1;
+      dots.forEach((dot, i) => {
+        if (i === activeIdx) {
+          dot.setAttribute('data-active', '');
+        } else {
+          dot.removeAttribute('data-active');
+        }
+      });
+    }
   }
 
   function updateMobileSlots(): void {
