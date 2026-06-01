@@ -124,8 +124,10 @@ const hasDescription = descriptionParagraphs.some((p) => {
   const cleaned = p.trim().replace(/[:：]\s*$/, '').trim();
   return cleaned.length >= 20;
 });
-const DESCRIPTION_TRUNCATE_THRESHOLD = 280;
-const descriptionTruncatable = hasDescription && cleanedDescription.length > DESCRIPTION_TRUNCATE_THRESHOLD;
+// Description is now always rendered in full — the read-more /
+// show-less toggle and the truncate clamp were removed since "What
+// you'll learn" no longer sits below this card, so the Hero has
+// room to breathe and the affordance just added friction.
 
 // Lecturer + date can also live in `credits` directly (manifest field).
 // If the description didn't carry them inline, fall back to whatever the
@@ -145,8 +147,12 @@ const displayDate = extractedDate;
 
 <section class:list={['boh', isRtl && 'is-rtl']} aria-labelledby="boh-title">
   <div class="boh-card bo-premium-surface">
-    <!-- Cover with subtle purple/blue aura behind it (`bo-hero-glow`
-         handles the radial aura via theme.css).
+    <!-- Cover-side rail: cover + author byline.
+         The cover sits at the top of its grid column; the author
+         line ("מאת: …") sits directly beneath it so the byline is
+         visually attached to the artwork rather than the editorial
+         column. The other credits (lecturer / editor / date) remain
+         in `.boh-credits` inside the content column.
 
          When the page resolves a real cover URL (from knowledge-cards
          or book metadata), render the real image. When it falls back
@@ -154,32 +160,40 @@ const displayDate = extractedDate;
          BO palette and the lesson title instead — never the generic
          dark "No Cover" placeholder, which looks like a missing
          asset rather than intentional branding. -->
-    <figure class="boh-cover-wrap bo-hero-glow">
-      {coverImage ? (
-        <img
-          src={coverImage}
-          alt={title}
-          loading="lazy"
-          decoding="async"
-          class="book-cover-img boh-cover"
-        />
-      ) : (
-        <div class="boh-cover boh-cover-fallback" role="img" aria-label={title}>
-          <span class="boh-cover-fallback-glow" aria-hidden="true"></span>
-          <span class="boh-cover-fallback-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                d="M4 5.5A1.5 1.5 0 0 1 5.5 4H10a3 3 0 0 1 2 .8A3 3 0 0 1 14 4h4.5A1.5 1.5 0 0 1 20 5.5V18a1 1 0 0 1-1 1h-5a2 2 0 0 0-2 2 2 2 0 0 0-2-2H5a1 1 0 0 1-1-1V5.5z" />
-              <path stroke-linecap="round" stroke-width="1.5" d="M12 6v15" />
-            </svg>
-          </span>
-          {level && levelKey && (
-            <span class="boh-cover-fallback-cat" data-i18n={levelKey}>{levelLabel}</span>
-          )}
-          <span class="boh-cover-fallback-title">{title}</span>
-        </div>
+    <div class="boh-aside">
+      <figure class="boh-cover-wrap bo-hero-glow">
+        {coverImage ? (
+          <img
+            src={coverImage}
+            alt={title}
+            loading="lazy"
+            decoding="async"
+            class="book-cover-img boh-cover"
+          />
+        ) : (
+          <div class="boh-cover boh-cover-fallback" role="img" aria-label={title}>
+            <span class="boh-cover-fallback-glow" aria-hidden="true"></span>
+            <span class="boh-cover-fallback-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                  d="M4 5.5A1.5 1.5 0 0 1 5.5 4H10a3 3 0 0 1 2 .8A3 3 0 0 1 14 4h4.5A1.5 1.5 0 0 1 20 5.5V18a1 1 0 0 1-1 1h-5a2 2 0 0 0-2 2 2 2 0 0 0-2-2H5a1 1 0 0 1-1-1V5.5z" />
+                <path stroke-linecap="round" stroke-width="1.5" d="M12 6v15" />
+              </svg>
+            </span>
+            {level && levelKey && (
+              <span class="boh-cover-fallback-cat" data-i18n={levelKey}>{levelLabel}</span>
+            )}
+            <span class="boh-cover-fallback-title">{title}</span>
+          </div>
+        )}
+      </figure>
+      {credits?.author && (
+        <p class="boh-cover-author">
+          <span class="boh-credits-label">{t('book.by', language)}</span>{' '}
+          <span data-credit-localized={creditDataAttr(credits.author)}>{getCreditText(credits.author, language)}</span>
+        </p>
       )}
-    </figure>
+    </div>
 
     <div class="boh-content">
       {level && levelKey && (
@@ -190,18 +204,23 @@ const displayDate = extractedDate;
         </div>
       )}
 
-      <h1 id="boh-title" class="boh-title">{title}</h1>
+      {/* Title + subtitle share one inline row when the container has
+          room: title at the inline-start, subtitle at the inline-end of
+          the same baseline so it reads as a tagline next to the name
+          instead of a second stacked line. Saves a row of vertical
+          space in the hero. On narrow containers (<720px) the flex
+          row collapses to a column so the subtitle stacks under the
+          title — same behavior as before. */}
+      <div class="boh-headline">
+        <h1 id="boh-title" class="boh-title">{title}</h1>
+        {subtitle && <p class="boh-subtitle">{subtitle}</p>}
+      </div>
 
-      {subtitle && <p class="boh-subtitle">{subtitle}</p>}
-
-      {(credits?.author || credits?.editor || displayLecturer || displayDate) && (
+      {/* Author byline now renders under the cover (`.boh-cover-author`).
+          This block keeps the remaining credit lines — lecturer, editor,
+          date — and only renders when at least one of them exists. */}
+      {(credits?.editor || displayLecturer || displayDate) && (
         <div class="boh-credits">
-          {credits?.author && (
-            <p class="boh-credits-line">
-              <span class="boh-credits-label">{t('book.by', language)}</span>{' '}
-              <span data-credit-localized={creditDataAttr(credits.author)}>{getCreditText(credits.author, language)}</span>
-            </p>
-          )}
           {displayLecturer && (
             <p class="boh-credits-line">
               <span class="boh-credits-label">{t('book.lecturer', language)}:</span>{' '}
@@ -232,15 +251,8 @@ const displayDate = extractedDate;
           <div class="boh-description-row">
             <!-- `.chapter-content` is the contract the TTS engine
                  reads from (initTextToSpeech looks for paragraph
-                 nodes inside this class). The truncate state is
-                 applied on the same node so collapsed text is still
-                 readable by the TTS pipeline — the engine reads the
-                 full DOM text, only the visual is clipped. -->
-            <div
-              class:list={['boh-description-body', 'chapter-content']}
-              data-truncatable={descriptionTruncatable ? 'true' : undefined}
-              data-collapsed={descriptionTruncatable ? 'true' : undefined}
-            >
+                 nodes inside this class). -->
+            <div class:list={['boh-description-body', 'chapter-content']}>
               {descriptionParagraphs.map((para) => (
                 <p class="boh-description-para" set:html={renderInlineMarkdown(para.trim())} />
               ))}
@@ -266,17 +278,6 @@ const displayDate = extractedDate;
               </span>
             </button>
           </div>
-          {descriptionTruncatable && (
-            <button
-              type="button"
-              class="boh-description-toggle"
-              data-boh-description-toggle
-              data-i18n="bookOverview.readMore"
-              aria-expanded="false"
-            >
-              {t('bookOverview.readMore', language)}
-            </button>
-          )}
         </div>
       )}
 
@@ -572,8 +573,28 @@ const displayDate = extractedDate;
   @container (min-width: 720px) {
     .boh-card {
       grid-template-columns: minmax(110px, 128px) minmax(0, 1fr);
-      align-items: center;
+      /* Anchor cover + author rail to the top of the row so the cover
+         sits at the top-inline-end (RTL: top-right) corner of the
+         hero, with the author byline beneath it — mirroring the
+         editorial column's natural reading flow on the other side. */
+      align-items: start;
     }
+  }
+
+  /* ── Cover-side rail ─────────────────────────────────────────────
+     Holds the cover figure + the author byline directly beneath it.
+     Flex column so the byline always sits under the artwork at every
+     viewport, including the ≤719px stacked layout where this rail
+     spans the full row above the content. */
+  .boh-aside {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+    min-width: 0;
+  }
+  @container (min-width: 720px) {
+    .boh-aside { align-items: flex-start; }
   }
 
   /* ── Cover ───────────────────────────────────────────────────── */
@@ -581,6 +602,25 @@ const displayDate = extractedDate;
     margin: 0;
     display: flex;
     justify-content: center;
+    width: 100%;
+  }
+
+  /* Author line under the cover — same muted italic treatment as the
+     other credit lines, kept compact so it reads as a caption to the
+     artwork above. */
+  .boh-cover-author {
+    margin: 0;
+    font-family: 'Assistant', system-ui, sans-serif !important;
+    font-size: 0.85rem;
+    line-height: 1.4;
+    color: var(--bo-text-muted);
+    font-style: italic;
+    text-align: center;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+  @container (min-width: 720px) {
+    .boh-cover-author { text-align: start; }
   }
 
   .boh-cover {
@@ -818,6 +858,25 @@ const displayDate = extractedDate;
   }
 
   /* ── Title / subtitle / credits ──────────────────────────────── */
+  /* Headline row — wraps title + subtitle so they share one inline
+     baseline at ≥720px. Mobile keeps the original column stack so the
+     subtitle never gets squeezed under a narrow Hero. */
+  .boh-headline {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    min-width: 0;
+  }
+  @container (min-width: 720px) {
+    .boh-headline {
+      flex-direction: row;
+      align-items: baseline;
+      flex-wrap: wrap;
+      column-gap: 0.6rem;
+      row-gap: 0.1rem;
+    }
+  }
+
   .boh-title {
     margin: 0;
     font-family: 'Assistant', system-ui, sans-serif;
@@ -826,6 +885,7 @@ const displayDate = extractedDate;
     line-height: 1.15;
     letter-spacing: -0.01em;
     color: var(--bo-text-primary);
+    flex: 0 0 auto;
   }
 
   /* Editorial elements share the same Hebrew serif as the title
@@ -840,6 +900,12 @@ const displayDate = extractedDate;
     font-size: clamp(0.85rem, 1.1vw, 0.95rem);
     line-height: 1.45;
     color: var(--bo-text-secondary);
+    /* Take only the inline space the tagline actually needs when it
+       sits beside the title; wrap to the next row before pushing the
+       title out. `min-width: 0` lets the flex item shrink below its
+       content size so long Hebrew taglines wrap gracefully. */
+    flex: 1 1 auto;
+    min-width: 0;
   }
 
   /* Credits stacks vertically now — one line per piece of metadata

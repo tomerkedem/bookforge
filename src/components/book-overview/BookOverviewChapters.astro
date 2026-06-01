@@ -341,6 +341,20 @@ function chapterMinutes(chapter: Chapter): number {
     border-radius: 14px;
     padding: 1.25rem 1.25rem;
     color: var(--bo-text-primary);
+    /* Cap the card at the viewport height minus the global header
+       and breadcrumb row so the heading row stays anchored while the
+       chapter list scrolls internally — the surrounding page never
+       needs to scroll to reach the bottom of a long TOC. Flex column
+       lets the list claim the remaining height after the header.
+       `100dvh` follows the visible viewport on mobile (URL bar
+       collapse). The subtracted offset (~96px) covers:
+         · global site header (56–52px)
+         · breadcrumb / sub-nav row above the card (~32px)
+         · 3px breathing margin so the bottom edge isn't flush. */
+    max-block-size: calc(100dvh - 96px);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
   }
   @media (min-width: 640px) {
     .boch-card {
@@ -435,16 +449,19 @@ function chapterMinutes(chapter: Chapter): number {
     flex-direction: column;
     /* No row-gap — the timeline line needs adjacent items to share an
        unbroken column. Padding inside each row provides the spacing. */
+    /* Claim the remaining height inside `.boch-card` and scroll
+       internally. `min-block-size: 0` is required so the flex item
+       can shrink below its content size, which is what enables the
+       inner scrollbar. Applied on every viewport, not just desktop —
+       mobile was previously growing the page until the TOC ran off
+       the screen. */
+    flex: 1 1 auto;
+    min-block-size: 0;
+    overflow-y: auto;
+    padding-inline-end: 0.25rem;
   }
   .boch-list.is-collapsible[data-collapsed='true'] .boch-item.is-beyond-limit {
     display: none;
-  }
-  @media (min-width: 1024px) {
-    .boch-list {
-      max-block-size: calc(100vh - 12rem);
-      overflow-y: auto;
-      padding-inline-end: 0.25rem;
-    }
   }
 
   .boch-item {

@@ -2,7 +2,6 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Breadcrumbs from '../../components/Breadcrumbs.astro';
 import BookOverviewHero from '../../components/book-overview/BookOverviewHero.astro';
-import BookOverviewLearn from '../../components/book-overview/BookOverviewLearn.astro';
 import BookOverviewChapters from '../../components/book-overview/BookOverviewChapters.astro';
 import { getLocalizedText } from '../../components/book-overview/utils';
 import type { Language } from '../../types/index';
@@ -207,8 +206,11 @@ const description = getLocalizedText(book.descriptions, language);
           />
         </div>
 
-        <!-- Content column: hero (now carries the description inline)
-             followed by Learn.
+        <!-- Content column: hero (now carries the description inline).
+             "What you'll learn" (BookOverviewLearn) was removed — it
+             duplicated the first 6 entries of the Lesson Path / TOC
+             that already sits in the right column, so the page now
+             ends cleanly with the hero card.
              order-1 on small/tablet → renders ABOVE Lesson Path.
              lg:order-none → desktop falls back to DOM order (second). -->
         <div class:list={['order-1', 'lg:order-none', isRtl && 'text-right']}>
@@ -225,13 +227,6 @@ const description = getLocalizedText(book.descriptions, language);
             language={language}
             isRtl={isRtl}
           />
-
-          <div class="mt-6 sm:mt-8">
-            <BookOverviewLearn
-              chapters={book.chapters}
-              language={language}
-            />
-          </div>
         </div>
       </div>
     </div>

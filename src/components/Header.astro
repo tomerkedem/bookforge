@@ -569,13 +569,13 @@ const searchAriaLabel = t('header.searchAriaLabel', language);
   .header-inner {
     position: relative;
     z-index: 1;
-    height: 72px;
+    height: 56px;
   }
 
   @media (max-width: 767px) {
     .header-inner {
       height: auto;
-      min-height: 64px;
+      min-height: 52px;
     }
   }
 
@@ -609,7 +609,7 @@ const searchAriaLabel = t('header.searchAriaLabel', language);
        untouched. Targeted via :global() because `main#main-content`
        lives in BaseLayout, outside this component's scope. */
     :global(main#main-content) {
-      padding-top: calc(64px + env(safe-area-inset-top, 0px));
+      padding-top: calc(52px + env(safe-area-inset-top, 0px));
     }
 
     /* ── /library mobile: suppress the legacy header search ──────
