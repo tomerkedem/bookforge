@@ -1322,26 +1322,27 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
          of the side cards (no breathing room). The 0px offset matches
          the side-card half-height math; the row visually touches the
          card edge. Tomer asked for "as snug as possible". */
-      top: calc(50dvh + clamp(163px, 46vw, 230px));
+      top: calc(50dvh + clamp(163px, 46vw, 230px) - 30px);
       inset-block-end: auto;
       inset-inline: 0;
       flex-direction: column;
       align-items: center;
-      gap: 2px;
+      gap: 0;
       pointer-events: none;
       z-index: 40;
     }
 
-    /* Subtle slide-counter (e.g. "1 / 11") — sits on its OWN row at
-       the top of the nav, flush against the carousel cards. Tomer
-       wanted it stuck high, immediately under the cards. */
+    /* Slide-counter ("1 / 11") — small text, glued right above the
+       dots row. Negative margin-bottom pulls it down so it visually
+       hugs the top edge of the dots inside the arrow rail. */
     .galaxy-position-indicator {
       display: inline-flex !important;
       position: static;
       transform: none;
       align-items: baseline;
-      gap: 0.25rem;
+      gap: 0.2rem;
       padding: 0;
+      margin: 0 0 -10px;
       min-width: 0;
       justify-content: center;
       background: transparent;
@@ -1350,7 +1351,7 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       backdrop-filter: none;
       -webkit-backdrop-filter: none;
       color: rgba(255, 255, 255, 0.82);
-      font-size: 0.8125rem;
+      font-size: 0.6875rem;
       font-weight: 500;
       letter-spacing: 0.04em;
       font-variant-numeric: tabular-nums;
