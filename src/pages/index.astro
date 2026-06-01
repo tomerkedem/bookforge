@@ -654,25 +654,23 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
         any DOM position. */}
     {showOrbitControls && (
       <div class="galaxy-mobile-nav" data-galaxy-mobile-nav>
-        {/* Mobile DOM order: dots first, arrow row second. With the
-            wrapper's column flex this puts the dots VISUALLY ABOVE the
-            arrows, sitting right under the carousel cards.
-
-            Pagination dots — universe-layout.ts toggles [data-active]
-            inside setPositionIndicator() so the active dot stays in
-            lockstep with the counter and the focused carousel slot. */}
+        {/* Mobile layout:
+              row 1  counter "1 / 11"            (closest to carousel)
+              row 2  [prev]   • • • • • •   [next]   (single row;
+                                                     dots centered)
+            Counter is its own row above the arrow rail; dots live
+            INSIDE the arrow rail so the row reads as one composition.
+            Counter is display:none on desktop, so the desktop pill is
+            byte-for-byte unchanged. */}
         <div
-          class="galaxy-position-dots"
-          data-galaxy-position-dots
-          aria-hidden="true"
+          class="galaxy-position-indicator"
+          data-galaxy-position-indicator
+          role="status"
+          aria-live="polite"
         >
-          {orbitItems.map((_, i) => (
-            <span
-              class="galaxy-position-dot"
-              data-galaxy-position-dot
-              data-index={i}
-            ></span>
-          ))}
+          <span data-galaxy-position-current>1</span>
+          <span class="galaxy-position-sep" aria-hidden="true">/</span>
+          <span data-galaxy-position-total>{orbitItems.length}</span>
         </div>
 
         <div class="galaxy-orbit-controls" aria-hidden="false">
@@ -684,17 +682,22 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
             aria-label={t('library.galaxy.rotatePrev', language)}
           ><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
 
-          {/* Counter only renders on mobile (display:none on desktop)
-              so the desktop pill still reads as just two chevrons. */}
+          {/* Pagination dots — between the chevrons. universe-layout.ts
+              toggles [data-active] inside setPositionIndicator() so the
+              active dot stays in lockstep with the counter and the
+              focused carousel slot. */}
           <div
-            class="galaxy-position-indicator"
-            data-galaxy-position-indicator
-            role="status"
-            aria-live="polite"
+            class="galaxy-position-dots"
+            data-galaxy-position-dots
+            aria-hidden="true"
           >
-            <span data-galaxy-position-current>1</span>
-            <span class="galaxy-position-sep" aria-hidden="true">/</span>
-            <span data-galaxy-position-total>{orbitItems.length}</span>
+            {orbitItems.map((_, i) => (
+              <span
+                class="galaxy-position-dot"
+                data-galaxy-position-dot
+                data-index={i}
+              ></span>
+            ))}
           </div>
 
           <button
@@ -1289,13 +1292,21 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       -webkit-backface-visibility: hidden;
     }
 
-    /* Mobile nav wrapper — anchored to JUST BELOW the carousel cards
-       (not the viewport bottom) so additional info cards can stack
-       underneath later. The carousel container is `top: 50dvh`
-       translate(-50%, -50%) with `min-height: clamp(440px, 95vw, 640px)`
-       — its visual bottom on common phones lands around 75-80dvh, so
-       `top: 78dvh` puts the nav directly under the visible card edge
-       on every device size without overlap.
+    /* Mobile nav wrapper — anchored snug under the visible side cards.
+       Math (mirrors the focus-carousel transform in this same file):
+         side-card visible half-height
+           = card-base-width × 1.5 × side-scale(1.28) / 2
+           = card-base-width × 0.96
+         card-base-width = clamp(170px, 48vw, 240px)
+         → half-height    ≈ clamp(163px, 46vw, 230px)
+         → cards bottom    = 50dvh + that
+         → nav top         = cards bottom + 4px breathing room
+
+       This adapts per device width so the nav always lands ~4px
+       below the lowest visible card edge — no dead space on tall
+       phones (iPhone 12+), no overlap on short ones (iPhone SE).
+       Leaves the bottom 20-25% of the viewport free for additional
+       info cards stacked underneath.
 
        Visual stacking inside the wrapper (top→bottom):
          row 1  dots
@@ -1307,27 +1318,31 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
     .galaxy-mobile-nav {
       display: flex !important;
       position: fixed !important;
-      top: 78dvh;
+      /* Push UP so the counter row sits flush at the visible bottom
+         of the side cards (no breathing room). The 0px offset matches
+         the side-card half-height math; the row visually touches the
+         card edge. Tomer asked for "as snug as possible". */
+      top: calc(50dvh + clamp(163px, 46vw, 230px));
       inset-block-end: auto;
       inset-inline: 0;
       flex-direction: column;
       align-items: center;
-      gap: 10px;
+      gap: 2px;
       pointer-events: none;
       z-index: 40;
     }
 
-    /* Subtle slide-counter (e.g. "1 / 11") — sits between the arrows
-       inside the nav row. No pill chrome. Compact font keeps it from
-       competing with the buttons. */
+    /* Subtle slide-counter (e.g. "1 / 11") — sits on its OWN row at
+       the top of the nav, flush against the carousel cards. Tomer
+       wanted it stuck high, immediately under the cards. */
     .galaxy-position-indicator {
       display: inline-flex !important;
       position: static;
       transform: none;
       align-items: baseline;
       gap: 0.25rem;
-      padding: 0 0.25rem;
-      min-width: 2.75rem;
+      padding: 0;
+      min-width: 0;
       justify-content: center;
       background: transparent;
       border: 0;
@@ -1341,6 +1356,7 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       font-variant-numeric: tabular-nums;
       text-shadow: 0 1px 4px rgba(0, 0, 0, 0.55);
       pointer-events: none;
+      line-height: 1;
     }
     :global(html:not(.dark)) .galaxy-position-indicator {
       color: rgba(22, 34, 60, 0.66);
@@ -1359,18 +1375,20 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       margin-inline: 0.05rem;
     }
 
-    /* Pagination dots — small, calm, centered. Sits ABOVE the arrow
-       rail (markup order: dots first, arrows second; flex column
-       puts the first child on top). Active dot stretches to a rounded
-       pill in the Yuval accent blue. */
+    /* Pagination dots — live INSIDE the arrow rail between the prev
+       and next buttons. `space-between` on the rail pushes the dots
+       container to the natural optical centre. Active dot stretches
+       to a rounded pill in the Yuval accent blue. */
     .galaxy-position-dots {
       display: inline-flex !important;
       position: static;
       transform: none;
       align-items: center;
+      justify-content: center;
       gap: 6px;
-      padding: 0 12px;
-      max-width: 100%;
+      padding: 0 8px;
+      max-width: calc(100% - 96px);
+      flex: 0 1 auto;
       flex-wrap: nowrap;
       overflow: hidden;
       pointer-events: none;
@@ -1455,11 +1473,12 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
 
     /* Mobile arrow rail — spans the full viewport width with the prev
        button anchored to the LEFT edge, the next button to the RIGHT
-       edge, and the counter centered between them. `justify-content:
-       space-between` distributes naturally because both buttons share
-       the same fixed width (44px), which places the counter at exact
-       optical centre. The row resets every desktop-pill style so the
-       wrapper's positioning fully owns layout on mobile. */
+       edge, and the pagination DOTS centered between them.
+       `justify-content: space-between` distributes naturally because
+       both buttons share the same fixed width (44px), which places
+       the dots container at the exact optical centre. The row resets
+       every desktop-pill style so the wrapper's positioning fully
+       owns layout on mobile. */
     .galaxy-orbit-controls {
       position: static !important;
       inset: auto !important;
