@@ -120,9 +120,9 @@ export const translations: Translations = {
   // are intentionally framed as "lesson summary" rather than the older
   // "book summary" to reinforce that this screen is the entry to a
   // single lesson's content.
-  'lessonSummary.summary.title':         { he: 'תקציר השיעור',                en: 'Lesson summary',                  es: 'Resumen de la lección' },
-  'lessonSummary.summary.subtitle':      { he: 'במה עוסק השיעור הזה ומה תקבלו ממנו', en: 'What this lesson covers and what you will take away', es: 'De qué trata esta lección y qué obtendrás' },
-  'lessonSummary.summary.emptyState':    { he: 'אין כרגע תקציר זמין לשיעור הזה.', en: 'No summary is available for this lesson yet.', es: 'Aún no hay un resumen disponible para esta lección.' },
+  'lessonSummary.summary.title':         { he: 'תקציר',                       en: 'Summary',                          es: 'Resumen' },
+  'lessonSummary.summary.subtitle':      { he: 'עיקרי הדברים לפני הקריאה',     en: 'Key points before reading',        es: 'Puntos clave antes de leer' },
+  'lessonSummary.summary.emptyState':    { he: 'אין כרגע תקציר זמין לפרק הזה.', en: 'No summary is available for this chapter yet.', es: 'Aún no hay un resumen disponible para este capítulo.' },
   'lessonSummary.summary.readAloud':     { he: 'הקראת התקציר',                en: 'Read summary aloud',              es: 'Leer resumen en voz alta' },
   'lessonSummary.summary.keyTakeaways':  { he: 'נקודות מפתח',                  en: 'Key takeaways',                   es: 'Puntos clave' },
 
@@ -132,8 +132,8 @@ export const translations: Translations = {
   // journey rather than a flat chapter list. Reused state labels (completed,
   // active, locked, upcoming) live here so the screen reader story stays
   // consistent across the rail and any future tooltips.
-  'lessonSummary.lessonPath.title':            { he: 'מסלול השיעור',           en: 'Lesson path',           es: 'Ruta de la lección' },
-  'lessonSummary.lessonPath.currentLesson':    { he: 'שיעור נוכחי',            en: 'Current lesson',        es: 'Lección actual' },
+  'lessonSummary.lessonPath.title':            { he: 'תוכן העניינים',          en: 'Table of contents',     es: 'Índice' },
+  'lessonSummary.lessonPath.currentLesson':    { he: 'פרק נוכחי',              en: 'Current chapter',       es: 'Capítulo actual' },
   'lessonSummary.lessonPath.chapterAriaLabel': { he: 'פרק {{n}}: {{title}}',  en: 'Chapter {{n}}: {{title}}', es: 'Capítulo {{n}}: {{title}}' },
   'lessonSummary.lessonPath.completed':        { he: 'הושלם',                 en: 'Completed',             es: 'Completado' },
   'lessonSummary.lessonPath.active':           { he: 'פעיל',                  en: 'Active',                es: 'Activo' },
@@ -189,6 +189,7 @@ export const translations: Translations = {
   'book.lecturer':         { he: 'מרצה',         en: 'Lecturer',         es: 'Instructor' },
   'book.editedBy':         { he: 'סיכום ועריכה', en: 'Summarized and edited by', es: 'Resumido y editado por' },
   'book.by':               { he: 'מאת:',          en: 'By:',              es: 'Por:' },
+  'book.date':             { he: 'תאריך',         en: 'Date',             es: 'Fecha' },
 
   // ── Header ─────────────────────────────────────────────────────────────────
   'header.skipToContent':  { he: 'דלג לתוכן',       en: 'Skip to content',  es: 'Saltar al contenido' },

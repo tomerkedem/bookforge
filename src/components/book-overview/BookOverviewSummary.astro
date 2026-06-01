@@ -51,9 +51,6 @@ const truncatable = hasSummary && description.length > TRUNCATE_THRESHOLD;
         <h2 id="bos-title" class="bos-heading" data-i18n="lessonSummary.summary.title">
           {t('lessonSummary.summary.title', language)}
         </h2>
-        <p class="bos-subhead" data-i18n="lessonSummary.summary.subtitle">
-          {t('lessonSummary.summary.subtitle', language)}
-        </p>
       </div>
 
       <!-- TTS control. Reuses the existing inline-trigger contract:
@@ -280,22 +277,6 @@ const truncatable = hasSummary && description.length > TRUNCATE_THRESHOLD;
     }
   }
 
-  /* Subhead — one line of context under the section title. Uses the
-     secondary text tone so it's clearly subordinate. */
-  .bos-subhead {
-    margin: 0;
-    font-family: 'Assistant', system-ui, sans-serif;
-    font-size: 0.85rem;
-    line-height: 1.4;
-    color: var(--bo-text-secondary);
-    font-weight: 400;
-  }
-  @media (min-width: 1024px) {
-    .bos-subhead {
-      font-size: 0.9rem;
-    }
-  }
-
   /* ── TTS control ─────────────────────────────────────────────────
      Icon-only square. Sits at the inline-end of the heading row so it
      never competes with the primary CTAs in the Hero. The button
@@ -370,14 +351,13 @@ const truncatable = hasSummary && description.length > TRUNCATE_THRESHOLD;
   }
 
   /* ── Body content ─────────────────────────────────────────────
-     Reader-grade rhythm: line-height 1.85, generous paragraph gaps,
-     comfortable measure. The max-width caps the line length around
-     the editorial sweet spot so paragraphs stay readable even when the
-     card itself is wide. Color comes from the card-level base so
-     individual paragraphs don't need to repeat it. */
+     Reader-grade rhythm: line-height 1.85, generous paragraph gaps.
+     The body is allowed to span the full card width so the Summary
+     uses its panel real estate instead of sitting in a narrow column.
+     Generous card padding (1.75rem → 3rem at lg) keeps comfortable
+     breathing room without an inline-size cap. */
   .bos-content {
     color: var(--bo-text-secondary);
-    max-inline-size: 68ch;
   }
   .bos-para {
     margin: 0;

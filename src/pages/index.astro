@@ -595,7 +595,22 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
                   : idx === orbitItems.length - 1 ? 'prev'
                   : 'hidden'
                 }
-                style={`--orbit-angle: ${angle}deg;`}
+                style={`--orbit-angle: ${angle}deg; --mobile-carousel-rel: ${
+                  /* Mobile coverflow position relative to the centre
+                     card. SSR ships the natural rotation=0 mapping:
+                     idx 0 → 0 (centre), idx 1..⌊N/2⌋ → +idx (clockwise
+                     side), idx > ⌊N/2⌋ → idx-N (counter-clockwise side).
+                     universe-layout.ts's updateMobileSlots() rewrites
+                     this on every rotation so the centre always lands
+                     on the card closest to angular top. Wraparound
+                     point is arbitrary because far cards fade to 0
+                     opacity anyway. */
+                  idx === 0
+                    ? 0
+                    : idx * 2 <= orbitItems.length
+                      ? idx
+                      : idx - orbitItems.length
+                };`}
               >
                 <LibraryCard
                   item={item}
@@ -780,6 +795,36 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
               aria-label={t('library.series.children.region', language)}
               hidden
             ></div>
+
+            {/* Series carousel chevrons + position pill —
+                SSR-rendered chrome that flanks the coverflow carousel
+                inside series mode. Hidden by default; revealed via
+                `[data-stage-mode="series"] .series-carousel-nav` /
+                `.series-carousel-position` in the stylesheet below.
+                Click handlers are attached directly to the buttons in
+                universe-series-mode.ts (not delegated) so the click
+                path is independent of capture-phase ordering. */}
+            <button
+              type="button"
+              class="series-carousel-nav series-carousel-nav-prev"
+              data-series-carousel-nav="prev"
+              aria-label="Previous book"
+            ><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+            <button
+              type="button"
+              class="series-carousel-nav series-carousel-nav-next"
+              data-series-carousel-nav="next"
+              aria-label="Next book"
+            ><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+            <div
+              class="series-carousel-position"
+              data-series-carousel-position
+              aria-live="polite"
+            >
+              <span data-series-pos-current>1</span>
+              <span class="series-carousel-position-sep" aria-hidden="true">/</span>
+              <span data-series-pos-total>0</span>
+            </div>
 
           </div>
         </section>
@@ -1788,10 +1833,22 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
          360px phones). Cap: 175px (still safely under the desktop
          190px peer at 1024px).
          Exposed as `--card-base-width` so the focused-state scale rule
-         below can target an exact viewport-relative size (70vw) without
-         re-deriving the clamp by hand. The series capsule overrides
-         this variable for its slightly wider footprint. */
+         below can target an exact visible size (`--center-card-w`)
+         without re-deriving the clamp by hand. The series capsule
+         overrides this variable for its slightly wider footprint. */
       --card-base-width: clamp(170px, 48vw, 240px);
+      /* Centered-state visible width. Clamped by BOTH inline (vw) and
+         block (dvh) so the focused `selected.png` cover (intrinsic
+         ~1:1.5 aspect — see LibraryCard's "selected.png is ~50% taller
+         than front.png" comment) never overflows the carousel band on
+         short phones, tablets in landscape, or any viewport where vw
+         alone would let the cover bleed past the rotate-controls pill
+         at the bottom. Bumped 15% (56→64vw, 30→34.5dvh) so the cover
+         reads larger; the cover height (= width × 1.5) grows by the
+         same 15% since aspect is preserved. Single source of truth —
+         every counter-scale and the reading-entry panel width below
+         derive their value from this. */
+      --center-card-w: min(64vw, 34.5dvh);
       width: var(--card-base-width);
       cursor: pointer;
       top: 50%;
@@ -1889,71 +1946,58 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       direction: var(--page-direction, ltr);
     }
 
-    /* ── Mobile Focus Carousel — explicit 3-slot positioning ─────────
-       universe-layout.ts maintains `data-mobile-slot` on each card
-       based on the live rotation:
-         center : card closest to angular top (effective_angle ≈ 270°)
-         next   : its clockwise neighbour
-         prev   : its counter-clockwise neighbour
-         hidden : every other card (kept in the DOM so chevron / drag
-                  can rotate them into a visible slot later)
-       SSR ships an initial assignment (idx 0 → center, idx 1 → next,
-       idx N-1 → prev) so the first paint shows the 3-slot layout
-       directly — no flash of an orbit on mount.
+    /* ── Mobile coverflow carousel ─────────────────────────────────
+       Same coverflow rig the series-mode carousel uses, applied to
+       the main universe orbit on phones. Every card carries a
+       `--mobile-carousel-rel` CSS variable — 0 for the card closest
+       to angular top (centre), +1/+2/… for clockwise siblings,
+       -1/-2/… for counter-clockwise. SSR ships the natural
+       rotation=0 mapping; universe-layout.ts's updateMobileSlots()
+       rewrites it on every rotation so the centre always lands on
+       the card closest to top.
 
-       These rules override the base .galaxy-card transform/opacity by
-       matching attribute-selector specificity (0,2,0) + later source
-       order. The base rule reads `opacity: var(--slot-opacity)`; slot
-       rules set `opacity` directly so the day/night --slot-opacity
-       overrides below cannot dim a slot card. The [data-pos="center"]
-       rule that lives further down in source still wins on a tapped
-       card, so click-to-center continues to lift the card into the
-       reading-overlay state exactly as before.
-
-       translateX is `52vw * --galaxy-dir` so the prev/next slots
-       mirror across the inline-axis in RTL Hebrew — matches the
-       existing orbit math (`cos(angle) * rx * --galaxy-dir`). The
-       tilt sign also flips with --galaxy-dir so each side card leans
-       toward the centre in both reading directions. On a 390px
-       viewport the side card's centre lands at screen-edge + ~8px,
-       so ~42% of the side card sits inside the viewport. */
-    .galaxy-card[data-mobile-slot="center"] {
-      transform: translate(-50%, -50%) scale(1.50);
-      opacity: 1;
-      z-index: 100;
-    }
-    .galaxy-card[data-mobile-slot="prev"] {
+       This rule has the same (0,1,0) specificity as the base
+       .galaxy-card orbit transform above; it wins by being later
+       in source. The series-mode carousel selector
+       (`[data-stage-mode="series"] .galaxy-card.is-active-series-member`,
+       specificity 0,3,0) still wins for series members so the two
+       carousels nest cleanly. */
+    .galaxy-card {
+      --mobile-step: clamp(100px, 28vw, 170px);
+      --mobile-abs-rel: max(
+        calc(var(--mobile-carousel-rel, 0) * -1),
+        var(--mobile-carousel-rel, 0)
+      );
+      --mobile-row-x: calc(
+        var(--mobile-carousel-rel, 0)
+        * var(--mobile-step)
+        * var(--galaxy-dir, 1)
+      );
       transform:
         translate(-50%, -50%)
-        translateX(calc(-50vw * var(--galaxy-dir, 1)))
-        rotate(calc(1.5deg * var(--galaxy-dir, 1)))
-        scale(1.10);
-      opacity: 0.82;
-      z-index: 50;
-    }
-    .galaxy-card[data-mobile-slot="next"] {
-      transform:
-        translate(-50%, -50%)
-        translateX(calc(50vw * var(--galaxy-dir, 1)))
-        rotate(calc(-1.5deg * var(--galaxy-dir, 1)))
-        scale(1.10);
-      opacity: 0.82;
-      z-index: 50;
-    }
-    .galaxy-card[data-mobile-slot="hidden"] {
-      transform: translate(-50%, -50%) scale(0.6);
-      opacity: 0;
-      pointer-events: none;
-      z-index: 1;
-    }
-
-    /* Night-mode side previews — slightly dimmer per spec (0.68 vs
-       day 0.82), keeping the night carousel calmer without neon
-       overload on the cosmic scene. Specificity (0,3,0) wins over
-       the day-mode default (0,2,0). */
-    :global(html.dark) .galaxy-card[data-mobile-slot="prev"],
-    :global(html.dark) .galaxy-card[data-mobile-slot="next"] {
-      opacity: 0.68;
+        translateX(var(--mobile-row-x))
+        perspective(900px)
+        rotateY(calc(
+          var(--mobile-carousel-rel, 0)
+          * -18deg
+          * var(--galaxy-dir, 1)
+        ))
+        scale(calc(1.50 - var(--mobile-abs-rel) * 0.22));
+      opacity: calc(1 - var(--mobile-abs-rel) * 0.32);
+      /* Centre wins z-stack so its reading-entry overlay sits on
+         top of side cards. 100 matches the previous 3-slot ceiling. */
+      z-index: calc(100 - var(--mobile-abs-rel));
+      /* Defensive: keep side cards clickable so users can tap any
+         visible book to bring it to centre. */
+      pointer-events: auto;
+      /* Hide the back of the card when its rotateY pushes past 90°
+         (cards with |rel| >= 5 are rotated to ±90°+). Without this
+         the card's title / subtitle text bleeds through mirrored on
+         the inline-end edge, reading as "leftover marks". Modern
+         engines need both the standard and -webkit- form for the
+         transform to flatten correctly inside the 3D context. */
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
     }
 
     /* ── Carousel position indicator pill ────────────────────────────
@@ -2191,34 +2235,52 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
        mobile the same "tap card → scales up, X close button appears,
        reading-entry panel sits flush below the cover" behavior. */
 
-    /* Focused card flies UP out of the orbit and lands just below the
-       hero text ("כל הידע שלך…"), per Tomer's request:
-         "הכרטיס יצא ממקומו באנימציה, יופיע על המסך ממש מתחת למילים".
+    /* Focused card flies UP out of the orbit and lands flush against
+       the hero subtitle ("כל הידע שלך במרחב אחד חי ומתפתח"), per
+       Tomer's request: "טופ הכרטיס במובייל יתחיל ממש בצמוד למלל…".
        Geometry:
-         - Orbit center sits at `calc(200dvh / 3)` ≈ 66.66dvh (see
-           `.library-galaxy` mobile rule above).
-         - The card scales to 70vw wide; a typical 2:3 book cover ends
-           up ≈ 60dvh tall after the scale.
-         - Translating the card up by 18dvh (in viewport units, applied
-           AFTER the scale — leftmost in the transform list means
-           applied LAST in CSS composition order) lands its centre at
-           ≈ 48.66dvh, so the card's top edge sits a hair below the
-           hero subtitle (~22dvh) on common phone heights. The
-           reading-entry overlay child follows because it lives inside
-           the same `.galaxy-card` transform.
+         - The hero strip is content-driven (eyebrow + title +
+           subtitle + paddings), so its bottom edge lands at a near-
+           constant pixel offset (~188px) below the global header on
+           every phone — NOT a fixed dvh ratio. Pixel-anchored target
+           is therefore more reliable than a dvh translate.
+         - `.galaxy-card`'s pre-translate centre sits at 50dvh of the
+           viewport (the orbit container is `top: 50dvh; translate
+           (-50%, -50%)`, and the card itself is `top: 50%` of that
+           container — so the card centre pre-translate = 50dvh).
+         - To put the card's VISIBLE top at `--mobile-focused-top` we
+           need the visible centre at `top + visible_height/2`. The
+           visible height = `--center-card-w * 1.5` (the ~1:1.5
+           `selected.png` aspect). So translateY must shift the
+           centre from 50dvh to (--mobile-focused-top + 0.75 * card_w).
+         - The expression below evaluates dynamically — no per-phone
+           tuning needed. As `--center-card-w` clamps differently on
+           short vs tall vs wide viewports the translateY recomputes
+           so the top edge always lands at `--mobile-focused-top`.
        The existing `transition: transform 600ms …` on `.galaxy-card`
-       drives the animation between orbit position and this new
-       above-orbit resting spot — no JS change required.
+       drives the animation between orbit position and this resting
+       spot — no JS change required.
        Counter-scaled descendants (`.reading-entry-overlay`,
-       `.galaxy-cta`) continue to multiply by `cbw / 70vw` to hold
+       `.galaxy-cta`) multiply by `cbw / --center-card-w` to hold
        their authored size; they're unaffected by the outer
        translateY since translation is uniform, not magnified by
        scale. */
+    /* `--mobile-focused-top` is NOT hardcoded here. The
+       `initFocusedCardAnchor()` script sets it on `.library-root`
+       (viewport Y of `.lh-subtitle`'s bottom) so the focused card
+       top lands FLUSH against the hero subtitle on every viewport,
+       independent of font-clamp variance / theme / DPR. The 168px
+       fallback in the var() below only matters for the brief frame
+       before the script runs. */
     .galaxy-card[data-pos="center"] {
       transform:
-        translateY(-18dvh)
+        translateY(calc(
+          var(--mobile-focused-top, 168px)
+          - 50dvh
+          + 0.75 * var(--center-card-w)
+        ))
         translate(-50%, -50%)
-        scale(calc(70vw / var(--card-base-width)));
+        scale(calc(var(--center-card-w) / var(--card-base-width)));
       opacity: 1;
       z-index: 30;
       cursor: default;
@@ -2300,11 +2362,11 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       opacity: 1;
       pointer-events: auto;
       /* Counter-scale against the focused card's mobile scale
-         (`scale(70vw / var(--card-base-width))`). Without this the
-         pills inherit the card magnification and render ~1.7× too
-         big with oversized font. Multiplying by the inverse keeps
-         the pills at their authored visual size on every phone. */
-      transform: translate(-50%, -50%) scale(calc(var(--card-base-width) / 70vw));
+         (`scale(var(--center-card-w) / var(--card-base-width))`).
+         Without this the pills inherit the card magnification and
+         render oversized. Multiplying by the inverse keeps the pills
+         at their authored visual size on every phone. */
+      transform: translate(-50%, -50%) scale(calc(var(--card-base-width) / var(--center-card-w)));
     }
     /* Mobile-only shrink for the series action pills. The counter-scale
        above keeps them at authored size, but authored is still too tall
@@ -2312,23 +2374,79 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
        mobile). Tighten padding, font and icon dimensions specifically
        inside the mobile block so the pills read as compact chips under
        the focused series card. */
-    .galaxy-cta-series-actions { gap: 0.3rem; }
+    .galaxy-cta-series-actions { gap: 0.4rem; flex-direction: row; }
     .galaxy-cta-series-btn {
-      padding: 0.25rem 0.55rem;
-      font-size: 0.625rem;
-      gap: 0.3rem;
+      padding: 0.35rem 0.7rem 0.35rem 0.35rem;
+      font-size: 0.72rem;
+      gap: 0.4rem;
+      border-radius: 12px;
       letter-spacing: 0;
     }
     .galaxy-cta-series-btn-icon {
+      width: 22px;
+      height: 22px;
+    }
+    .galaxy-cta-series-btn-icon svg {
       width: 12px;
       height: 12px;
     }
+    .galaxy-cta-series-btn-label {
+      font-size: 0.72rem;
+    }
+
+    /* ── Mobile series-mode coverflow override ─────────────────────
+       The desktop coverflow step (clamp(140px, 17vw, 200px)) puts
+       far books well past a phone's viewport edge. Tune the same
+       transform for mobile: tighter step, gentler 3D rotation,
+       quicker depth fade so 5 books fit comfortably in a 360-420px
+       viewport. The base selector wins over the mobile 3-slot rules
+       on specificity; this override just retunes the math without
+       changing the structural pattern.
+
+       Also explicitly suppresses the mobile-slot transform/opacity/
+       z-index/pointer-events on series members — the mobile-slot
+       writer in universe-layout.ts can still tag them during a
+       rotation that fires while series mode is active. */
+    [data-stage-mode="series"] .galaxy-card.is-active-series-member {
+      --series-step: clamp(78px, 22vw, 130px);
+      transform:
+        translate(-50%, -50%)
+        translateX(var(--series-row-x))
+        perspective(900px)
+        rotateY(calc(var(--series-rel) * -16deg * var(--galaxy-dir, 1)))
+        scale(calc(0.98 - var(--series-abs-rel) * 0.14));
+      opacity: calc(1 - var(--series-abs-rel) * 0.34);
+    }
+    /* Position the carousel chevrons closer to the focused card on
+       mobile so they don't drift to the unreachable screen edges. */
+    [data-stage-mode="series"] .series-carousel-nav {
+      width: 40px;
+      height: 40px;
+    }
+    [data-stage-mode="series"] .series-carousel-nav-prev {
+      inset-inline-start: clamp(4px, 2vw, 16px);
+    }
+    [data-stage-mode="series"] .series-carousel-nav-next {
+      inset-inline-end: clamp(4px, 2vw, 16px);
+    }
+    [data-stage-mode="series"] .series-carousel-nav svg {
+      width: 16px;
+      height: 16px;
+    }
+    /* Position pill — slightly smaller padding on mobile, lifted
+       higher so it doesn't collide with the bottom orbit chrome. */
+    [data-stage-mode="series"] .series-carousel-position {
+      font-size: 0.74rem;
+      padding: 0.3rem 0.7rem;
+      inset-block-end: clamp(56px, 9vh, 88px);
+    }
+
     /* Image-based reading-entry panel — mobile equivalent of the
        desktop CTA. The visual base IS `reading-entry-card1.png`. The
        title, subtitle, summary pill and meta row all live INSIDE the
-       panel. FULL counter-scale (cbw/70vw) neutralises the focused
-       card's 70vw/cbw scale so spec px values map 1:1 to visible
-       pixels. */
+       panel. FULL counter-scale (cbw/--center-card-w) neutralises the
+       focused card's --center-card-w/cbw scale so spec px values map
+       1:1 to visible pixels. */
     /* On mobile the centered card keeps `.lc-orbit`'s resting padding
        (~1.125rem bottom). The desktop branch zeroes this for the
        focused state (see `:global(.lc-orbit)` rules in the desktop
@@ -2342,29 +2460,59 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
     .galaxy-card[data-pos="center"] :global(.lc-orbit-artifact) {
       margin-block: 0 !important;
       margin-inline: 0 !important;
+      /* LibraryCard's desktop focused rule applies
+         `transform: scale(1.5)` + `width: calc(100% + 1.5rem)` to the
+         cover artwork, which on top of `.galaxy-card`'s own
+         center-state scale blows the visible cover to ~93vw — exactly
+         the overflow Tomer reported. On mobile the wrapper's
+         `--center-card-w` scale already supplies the focus bump; the
+         artwork itself should sit at 1:1 inside the card, no inline
+         bleed. Override here with `!important` to win against the
+         LibraryCard rule's higher selector specificity. */
+      transform: none !important;
+      width: 100% !important;
     }
 
     .reading-entry-overlay {
       position: absolute;
       left: 50%;
-      /* Glue the panel flush to the cover above. Both PNGs carry their
-         own transparent top/bottom glow that no `top: 100%` can swallow,
-         so we overlap by an amount large enough to consume them both.
-         The value is in pre-scale logical px and gets multiplied by
-         (70vw/cbw) ≈ 1.4 by the parent's focused-state scale, so 90
-         logical px yields ~125 screen px of overlap on a typical phone
-         — enough to bring the visible card borders into hard contact. */
-      top: calc(100% - 90px);
-      width: 92vw;
-      max-width: 390px;
-      /* Height bumped from 190 → 220 so the new summary pill + meta
-         row fit cleanly without clipping at the bottom. */
-      height: 220px;
+      /* Sit DIRECTLY BELOW the cover — no overlap onto its content
+         (Tomer: "כרטיס התחל קריאה לא אמור לדרוס את תוכן כרטיס
+         הספר שמעליו"). But 8px pull-up was too tight — `selected.png`
+         carries transparent padding at its bottom edge, so the
+         visible artwork ends BEFORE the wrapper's `100%` mark and a
+         visible gap appears between the cover's painted bottom and
+         the panel's top.
+         30 logical px (~40 screen px after the wrapper's 1.3× scale)
+         pulls the panel up just enough to land its top edge at the
+         visible artwork's bottom, NOT into the title / author text
+         which sits well above the artwork's bottom edge. If the
+         transparent padding in `selected.png` is ever re-trimmed,
+         this value can come back down. */
+      top: calc(100% - 30px);
+      /* Width is derived from `--center-card-w` so the panel always
+         sits visibly NARROWER than the cover card above it (Tomer:
+         "כפתור המשך קריאה — רוחבו צריך להיות קצר מרוחב הכרטיס").
+         The 18px subtraction leaves a 9px gap on each side so the
+         panel reads as a smaller nested block rather than a chrome
+         layer competing with the card outline. `max-width: none`
+         overrides the previous 390px cap which would otherwise let
+         the panel exceed the card on phones where the card is
+         narrower than 390. Net rendered width = CSS width (parent
+         scale × child counter-scale = 1), so the formula yields
+         exactly `--center-card-w - 18px` on screen. */
+      width: calc(var(--center-card-w) - 18px);
+      max-width: none;
+      /* Height reduced 15% then a further 10% (220 → 187 → 168)
+         per Tomer's tuning passes — the action row + summary pill
+         still render cleanly at this tight budget and the panel
+         reads as a compact nested block under the cover. */
+      height: 168px;
       border-radius: 22px;
       box-sizing: border-box;
       transform:
         translate(-50%, 0)
-        scale(calc(var(--card-base-width) / 70vw));
+        scale(calc(var(--card-base-width) / var(--center-card-w)));
       transform-origin: top center;
       display: block;
       margin: 0;
@@ -2531,7 +2679,13 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       align-items: center;
       justify-content: center;
       gap: 8px;
-      min-width: 170px;
+      /* min-width relaxed from 170 → 130 so the button still fits
+         when the panel is sized off `--center-card-w - 14px` on
+         narrower phones (e.g. 320×568 → card 170px → panel 156px).
+         At 130px + 16px text padding the "המשך קריאה ←" label still
+         renders comfortably without wrapping. */
+      min-width: 130px;
+      max-width: calc(100% - 8px);
       height: 36px;
       padding: 0 18px;
       border-radius: 999px;
@@ -2601,16 +2755,16 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       background: rgba(18, 32, 60, 0.55);
     }
 
-    /* Very small phones (≤360px): tighten the layout so nothing clips. */
+    /* Very small phones (≤360px): tighten the inner content (font
+       sizes, button height) so nothing clips. Overlay width is no
+       longer overridden here — it's derived from `--center-card-w`
+       and naturally shrinks with the card on small phones. */
     @media (max-width: 360px) {
-      .reading-entry-overlay {
-        width: 94vw;
-        height: 208px;
-      }
+      .reading-entry-overlay      { height: 159px; }
       .reading-entry-text         { top: 30%; }
       .reading-entry-chapter      { font-size: 21px; }
       .reading-entry-facts        { font-size: 11px; }
-      .reading-entry-cta          { min-width: 150px; height: 34px; font-size: 12.5px; padding: 0 16px; }
+      .reading-entry-cta          { min-width: 110px; height: 34px; font-size: 12.5px; padding: 0 14px; }
       .reading-entry-summary-pill { font-size: 10.5px; }
     }
     /* Hover is desktop-only per the spec — mobile keeps just the
@@ -2618,7 +2772,7 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
     .reading-entry-overlay:has(.reading-entry-main:active) {
       transform:
         translate(-50%, 0)
-        scale(calc((var(--card-base-width) / 70vw) * 0.985));
+        scale(calc((var(--card-base-width) / var(--center-card-w)) * 0.985));
       filter: brightness(1.04);
     }
 
@@ -3176,42 +3330,214 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
         scale(0.85);
     }
 
-    /* Members of the active series — revealed and laid out in a
-       horizontal carousel centered on the stage. The horizontal
-       offset per card is computed from the index/total custom
-       properties set by the hydrator. */
+    /* Members of the active series — revealed and laid out as a
+       coverflow-style carousel: the focused book sits centred and
+       enlarged, neighbouring books tilt back in 3D with depth fade.
+       The hydrator sets --series-active-index per card (its own
+       position) and --series-focused-index on every member (which
+       index is currently in focus). Clicking a side book updates
+       --series-focused-index, sliding that book into the centre. */
     [data-stage-mode="series"] .galaxy-card.is-active-series-member {
       display: block;
-      --series-step: clamp(195px, 22vw, 230px);
+      --series-step: clamp(140px, 17vw, 200px);
+      --series-rel: calc(
+        var(--series-active-index, 0) - var(--series-focused-index, 0)
+      );
+      /* CSS abs() via max(neg, pos) — works without browser-version
+         gating and keeps the math inline. */
+      --series-abs-rel: max(
+        calc(var(--series-rel) * -1),
+        var(--series-rel)
+      );
       --series-row-x: calc(
-        (var(--series-active-index, 0)
-          - (var(--series-active-total, 1) - 1) / 2)
-        * var(--series-step)
-        * var(--galaxy-dir, 1)
+        var(--series-rel) * var(--series-step) * var(--galaxy-dir, 1)
       );
       transform:
         translate(-50%, -50%)
-        translate(var(--series-row-x), 0)
-        scale(1.12);
-      opacity: 1;
-      /* Series carousel members ride above the depth-sorted orbit
-         (max z 10) so the collapsed "other knowledge" never overlaps. */
-      z-index: 12;
+        translateX(var(--series-row-x))
+        perspective(1200px)
+        rotateY(calc(var(--series-rel) * -22deg * var(--galaxy-dir, 1)))
+        scale(calc(1.12 - var(--series-abs-rel) * 0.12));
+      opacity: calc(1 - var(--series-abs-rel) * 0.28);
+      /* Focused book wins the z-stack so its overlay/CTA sits on top
+         of side cards. z-index 20 sits above the orbit max (10). */
+      z-index: calc(20 - var(--series-abs-rel));
       cursor: pointer;
+      /* Defeat the mobile 3-slot `data-mobile-slot="hidden"` rule
+         which sets `pointer-events: none` and prevents side-book
+         clicks from registering on phones. Selector specificity
+         (0,3,0) wins over the slot rule (0,2,0), but only when the
+         property is explicitly set on our rule. */
+      pointer-events: auto;
+      transition:
+        transform 0.5s cubic-bezier(0.22, 0.61, 0.36, 1),
+        opacity 0.5s ease;
     }
 
-    /* Hover lift on a carousel book — gentle vertical bump only,
-       overrides the default radial-bump hover so cards don't fly
-       off the row. */
+    /* Hover lift on a non-focused carousel book — preserves the
+       depth tilt and just bumps the card up + scales a touch. */
     [data-stage-mode="series"]
       .galaxy-card.is-active-series-member:hover:not([data-pos="center"]),
     [data-stage-mode="series"]
       .galaxy-card.is-active-series-member:focus-visible:not([data-pos="center"]) {
       transform:
         translate(-50%, -50%)
-        translate(var(--series-row-x), -6px)
-        scale(1.16);
-      opacity: 1;
+        translateX(var(--series-row-x))
+        translateY(-6px)
+        perspective(1200px)
+        rotateY(calc(var(--series-rel) * -22deg * var(--galaxy-dir, 1)))
+        scale(calc(1.16 - var(--series-abs-rel) * 0.10));
+      opacity: calc(1 - var(--series-abs-rel) * 0.22);
+    }
+
+    /* ── Series carousel chevrons —
+          Rendered statically in the SSR markup inside the stage
+          (so Astro's scoped CSS naturally matches them — JS-injected
+          nodes silently lose scope-cid attribution). Hidden in
+          universe mode via opacity:0 + pointer-events:none, revealed
+          only while the stage is in series mode. JS owns click +
+          disabled-state updates; CSS owns visibility, position and
+          look. Pearl glass + blur to match the rest of the
+          universe chrome. */
+    .series-carousel-nav {
+      /* Completely out of layout outside series mode — opacity:0
+         alone wasn't enough on phones, the button's backdrop blur
+         and border were still leaving faint "<" marks pinned to
+         the inline-start edge of the stage. display:none removes
+         them from the render tree entirely; visibility:hidden +
+         !important is belt-and-braces in case any later cascade
+         (theme override, autoprefixer artifact, dev-server cache)
+         flips display back. */
+      display: none !important;
+      visibility: hidden;
+      position: absolute;
+      inset-block-start: 50%;
+      width: 48px;
+      height: 48px;
+      place-items: center;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      color: var(--yuval-galaxy-text, #ececea);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.28),
+        0 12px 26px rgba(0, 0, 0, 0.4);
+      cursor: pointer;
+      /* z above the focused carousel book (max 20) so the buttons
+         always sit on top of the coverflow row in series mode. */
+      z-index: 30;
+      transition:
+        transform 0.2s ease,
+        background 0.2s ease,
+        border-color 0.2s ease;
+    }
+    .series-carousel-nav-prev {
+      inset-inline-start: clamp(8px, 3vw, 32px);
+      transform: translateY(-50%);
+    }
+    .series-carousel-nav-next {
+      inset-inline-end: clamp(8px, 3vw, 32px);
+      transform: translateY(-50%);
+    }
+    /* Reveal in series mode — the only state that should expose
+       the carousel-navigation affordance. */
+    [data-stage-mode="series"] .series-carousel-nav {
+      display: grid !important;
+      visibility: visible;
+    }
+    .series-carousel-nav:hover:not(:disabled),
+    .series-carousel-nav:focus-visible:not(:disabled) {
+      background: rgba(255, 255, 255, 0.18);
+      border-color: rgba(255, 255, 255, 0.4);
+      outline: none;
+    }
+    .series-carousel-nav-prev:hover:not(:disabled),
+    .series-carousel-nav-prev:focus-visible:not(:disabled) {
+      transform: translateY(-50%) translateX(calc(var(--galaxy-dir, 1) * -2px));
+    }
+    .series-carousel-nav-next:hover:not(:disabled),
+    .series-carousel-nav-next:focus-visible:not(:disabled) {
+      transform: translateY(-50%) translateX(calc(var(--galaxy-dir, 1) * 2px));
+    }
+    .series-carousel-nav:disabled {
+      opacity: 0.25;
+      cursor: not-allowed;
+    }
+    /* Flip the chevron glyphs in RTL — same trick the
+       .galaxy-orbit-btn uses, so the visual direction always
+       matches the inline-direction of the page. */
+    [dir="rtl"] .series-carousel-nav svg { transform: scaleX(-1); }
+    :global(html:not(.dark)) .series-carousel-nav {
+      background: rgba(255, 253, 249, 0.82);
+      border-color: rgba(34, 52, 92, 0.2);
+      color: var(--yuval-galaxy-text, #1a1f3a);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.7),
+        0 8px 20px rgba(30, 45, 80, 0.18);
+    }
+    :global(html:not(.dark)) .series-carousel-nav:hover:not(:disabled),
+    :global(html:not(.dark)) .series-carousel-nav:focus-visible:not(:disabled) {
+      background: rgba(255, 253, 249, 0.95);
+      border-color: rgba(34, 52, 92, 0.35);
+    }
+
+    /* ── Series carousel position pill —
+          Compact "current / total" indicator anchored below the
+          coverflow row so the user always knows where they are in
+          the series. Hidden in universe mode, revealed only in
+          series mode (same pattern as the chevrons above). */
+    .series-carousel-position {
+      /* display:none keeps the pill fully out of layout outside
+         series mode — opacity:0 alone wasn't enough, the pill's
+         backdrop blur was still leaving a faint "0 / 0" mark
+         visible above the bottom orbit chrome on phones.
+         !important + visibility:hidden as belt-and-braces. */
+      display: none !important;
+      visibility: hidden;
+      position: absolute;
+      inset-block-end: clamp(8px, 3vh, 28px);
+      inset-inline-start: 50%;
+      transform: translateX(-50%);
+      align-items: baseline;
+      gap: 0.35rem;
+      padding: 0.35rem 0.85rem;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      color: var(--yuval-galaxy-text, #ececea);
+      font-size: 0.82rem;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0.02em;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.22),
+        0 8px 18px rgba(0, 0, 0, 0.3);
+      z-index: 30;
+      direction: ltr;
+    }
+    [data-stage-mode="series"] .series-carousel-position {
+      display: inline-flex !important;
+      visibility: visible;
+    }
+    .series-carousel-position-sep {
+      opacity: 0.5;
+      margin-inline: 0.1rem;
+    }
+    [data-series-pos-current] { font-weight: 600; }
+    [data-series-pos-total] {
+      opacity: 0.7;
+      font-weight: 500;
+    }
+    :global(html:not(.dark)) .series-carousel-position {
+      background: rgba(255, 253, 249, 0.82);
+      border-color: rgba(34, 52, 92, 0.2);
+      color: var(--yuval-galaxy-text, #1a1f3a);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.7),
+        0 6px 14px rgba(30, 45, 80, 0.16);
     }
 
     /* ── Other Knowledge capsule —
@@ -3584,20 +3910,25 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       top: var(--focused-card-top, -1rem);
       left: 50%;
       width: auto;
-      /* 50dvh × 2/3 box — Tomer set the focused-card height to exactly
-         half the viewport. The override directly below this block
-         neutralises the inner `scale(1.5)` + `margin-block: 15%` from
-         LibraryCard.astro's focused-state rules, so the visible
-         artwork tracks this box edge-to-edge with no per-card variance
-         from internal PNG padding or art aspect. Every selection
-         therefore opens at the same fixed visible size: 50dvh tall ×
-         33.3dvh wide. */
+      /* Default focused-card box (books, lessons, articles, etc.) —
+         restored to 50dvh × 2/3. Course cards get a larger override
+         further down (see `.galaxy-card[data-pos="center"][data-kind="course"]`)
+         since only courses surface the series action panel. */
       height: 50dvh;
       aspect-ratio: 2 / 3;
       transform: translateX(-50%);
       opacity: 1;
       z-index: 30;
       cursor: default;
+    }
+
+    /* Course-only enlargement —
+       Only the AI Engineering Course capsule (data-kind="course")
+       grows to a larger spotlight on open, so the action panel
+       below it has space to read as the centrepiece it is. Books,
+       lessons and articles keep the default 50dvh size above. */
+    .galaxy-card[data-pos="center"][data-kind="course"] {
+      height: 80dvh;
     }
 
     /* Uniform-size override — neutralise LibraryCard.astro's focused
@@ -4578,62 +4909,209 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
         without any extra logic.
         Only the course card (`data-kind="course"`) ever renders the
         wrapper, so other cards remain unchanged. */
+  /* ── Series action buttons —
+        Two large futuristic capsules under the focused course card.
+        Each is a glass plate with:
+          • a layered prismatic conic-gradient border that drifts on
+            hover (animation pauses to save paint when not interactive);
+          • a circular accent badge wrapping the icon, with its own
+            radial glow that intensifies on hover;
+          • a diagonal shimmer sweep that crosses the surface once
+            per hover/focus;
+          • a soft halo (box-shadow) and a 2px lift on activation.
+        The two buttons are colour-differentiated so they read as
+        distinct actions even at a glance: the toggle uses
+        cyan→purple (knowledge / discovery), the details uses
+        gold→purple (info / metadata). aria-pressed on the toggle
+        intensifies the conic border + halo without changing the
+        layout, so the "open" state reads clearly. */
   .galaxy-cta-series-actions {
     display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
+    flex-direction: row;
+    gap: 0.7rem;
     align-items: stretch;
-    margin-block-start: 0.25rem;
+    justify-content: center;
+    margin-block-start: 0.5rem;
   }
   .galaxy-cta-series-btn {
+    --series-btn-accent: var(--yuval-galaxy-accent-purple, #a78bfa);
+    --series-btn-accent-2: var(--yuval-galaxy-accent-cyan, #22d3ee);
+    position: relative;
     display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.4375rem 0.75rem;
-    border-radius: 999px;
+    gap: 0.7rem;
+    padding: 0.65rem 1.05rem 0.65rem 0.65rem;
+    border-radius: 16px;
     font-family: 'Spectral', 'Cardo', Georgia, serif;
-    font-size: 0.78125rem;
+    font-size: 0.9rem;
     font-weight: 500;
     letter-spacing: 0.01em;
     color: var(--yuval-galaxy-text, #ececea);
-    background: color-mix(in srgb, var(--yuval-galaxy-bg, #00010d) 78%, transparent);
-    border: 1px solid color-mix(in srgb, var(--yuval-galaxy-accent-purple, #a78bfa) 38%, transparent);
+    background:
+      linear-gradient(
+        135deg,
+        color-mix(in srgb, var(--yuval-galaxy-bg, #00010d) 90%, transparent) 0%,
+        color-mix(in srgb, var(--yuval-galaxy-bg, #00010d) 72%, transparent) 100%
+      );
+    border: 1px solid transparent;
     cursor: pointer;
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
-    transition:
-      background-color 180ms ease,
-      border-color 180ms ease,
-      transform 180ms cubic-bezier(0.4, 0, 0.2, 1),
-      box-shadow 180ms ease;
+    backdrop-filter: blur(18px) saturate(140%);
+    -webkit-backdrop-filter: blur(18px) saturate(140%);
+    isolation: isolate;
+    overflow: hidden;
     text-align: start;
     white-space: nowrap;
+    box-shadow:
+      0 8px 20px -10px rgba(0, 0, 0, 0.6),
+      inset 0 1px 0 color-mix(in srgb, white 10%, transparent);
+    transition:
+      transform 280ms cubic-bezier(0.22, 0.61, 0.36, 1),
+      box-shadow 280ms ease,
+      background 280ms ease;
+  }
+  /* Prismatic border — conic gradient projected onto a 1px-thick
+     ring via mask-composite. The "fill" gradient slowly rotates so
+     the border catches light like a hologram edge. */
+  .galaxy-cta-series-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: conic-gradient(
+      from var(--series-btn-spin, 0deg),
+      color-mix(in srgb, var(--series-btn-accent) 80%, transparent) 0%,
+      color-mix(in srgb, var(--series-btn-accent-2) 70%, transparent) 25%,
+      color-mix(in srgb, var(--yuval-galaxy-accent-gold, #f6c560) 55%, transparent) 50%,
+      color-mix(in srgb, var(--series-btn-accent-2) 70%, transparent) 75%,
+      color-mix(in srgb, var(--series-btn-accent) 80%, transparent) 100%
+    );
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+            mask-composite: exclude;
+    pointer-events: none;
+    opacity: 0.7;
+    transition: opacity 280ms ease;
+    z-index: 0;
+  }
+  /* Shimmer sweep — diagonal light slash that crosses the surface
+     once per hover/focus. Sits above the background but below the
+     icon + label (z-index dance below). */
+  .galaxy-cta-series-btn::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(
+      105deg,
+      transparent 30%,
+      color-mix(in srgb, white 22%, transparent) 50%,
+      transparent 70%
+    );
+    transform: translateX(-130%);
+    pointer-events: none;
+    z-index: 1;
+    transition: transform 0.7s cubic-bezier(0.22, 0.61, 0.36, 1);
+  }
+  .galaxy-cta-series-btn > * {
+    position: relative;
+    z-index: 2;
   }
   .galaxy-cta-series-btn:hover,
   .galaxy-cta-series-btn:focus-visible {
     outline: none;
-    transform: translateY(-1px);
-    background: color-mix(in srgb, var(--yuval-galaxy-bg, #00010d) 60%, transparent);
-    border-color: color-mix(in srgb, var(--yuval-galaxy-accent-purple, #a78bfa) 70%, transparent);
+    transform: translateY(-2px);
+    background:
+      linear-gradient(
+        135deg,
+        color-mix(in srgb, var(--yuval-galaxy-bg, #00010d) 78%, transparent) 0%,
+        color-mix(in srgb, var(--series-btn-accent) 14%, var(--yuval-galaxy-bg, #00010d)) 100%
+      );
     box-shadow:
-      0 0 0 1px color-mix(in srgb, var(--yuval-galaxy-accent-purple, #a78bfa) 22%, transparent) inset,
-      0 0 14px -2px color-mix(in srgb, var(--yuval-galaxy-accent-purple, #a78bfa) 45%, transparent);
+      0 14px 32px -8px color-mix(in srgb, var(--series-btn-accent) 55%, transparent),
+      0 0 0 1px color-mix(in srgb, var(--series-btn-accent) 25%, transparent) inset,
+      inset 0 1px 0 color-mix(in srgb, white 18%, transparent);
+  }
+  .galaxy-cta-series-btn:hover::before,
+  .galaxy-cta-series-btn:focus-visible::before {
+    opacity: 1;
+  }
+  .galaxy-cta-series-btn:hover::after,
+  .galaxy-cta-series-btn:focus-visible::after {
+    transform: translateX(130%);
   }
   .galaxy-cta-series-btn[aria-pressed="true"] {
-    background: color-mix(in srgb, var(--yuval-galaxy-accent-purple, #a78bfa) 16%, var(--yuval-galaxy-bg, #00010d));
-    border-color: color-mix(in srgb, var(--yuval-galaxy-accent-purple, #a78bfa) 70%, transparent);
+    background:
+      linear-gradient(
+        135deg,
+        color-mix(in srgb, var(--series-btn-accent) 25%, var(--yuval-galaxy-bg, #00010d)) 0%,
+        color-mix(in srgb, var(--series-btn-accent-2) 18%, var(--yuval-galaxy-bg, #00010d)) 100%
+      );
+    box-shadow:
+      0 10px 28px -8px color-mix(in srgb, var(--series-btn-accent) 60%, transparent),
+      0 0 0 1px color-mix(in srgb, var(--series-btn-accent) 35%, transparent) inset,
+      inset 0 1px 0 color-mix(in srgb, white 22%, transparent);
   }
+  .galaxy-cta-series-btn[aria-pressed="true"]::before {
+    opacity: 1;
+  }
+  /* Icon badge — circular glass medallion with radial glow. */
   .galaxy-cta-series-btn-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 18px;
-    height: 18px;
-    color: var(--yuval-galaxy-accent-purple, #a78bfa);
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    color: var(--series-btn-accent);
+    background:
+      radial-gradient(
+        circle at 30% 30%,
+        color-mix(in srgb, var(--series-btn-accent) 45%, transparent) 0%,
+        color-mix(in srgb, var(--series-btn-accent) 18%, transparent) 55%,
+        transparent 100%
+      );
+    border: 1px solid color-mix(in srgb, var(--series-btn-accent) 50%, transparent);
     flex: 0 0 auto;
+    box-shadow:
+      inset 0 1px 0 color-mix(in srgb, white 22%, transparent),
+      0 0 14px -4px color-mix(in srgb, var(--series-btn-accent) 60%, transparent);
+    transition:
+      transform 280ms cubic-bezier(0.22, 0.61, 0.36, 1),
+      box-shadow 280ms ease;
+  }
+  .galaxy-cta-series-btn-icon svg {
+    width: 16px;
+    height: 16px;
+  }
+  .galaxy-cta-series-btn:hover .galaxy-cta-series-btn-icon,
+  .galaxy-cta-series-btn:focus-visible .galaxy-cta-series-btn-icon {
+    transform: scale(1.1) rotate(-4deg);
+    box-shadow:
+      inset 0 1px 0 color-mix(in srgb, white 32%, transparent),
+      0 0 22px -2px color-mix(in srgb, var(--series-btn-accent) 85%, transparent);
   }
   .galaxy-cta-series-btn-label {
     line-height: 1.1;
+    font-size: 0.92rem;
+    /* Subtle gradient text — same prismatic palette as the border,
+       muted so the label still reads as a label, not a sign. */
+    background: linear-gradient(
+      120deg,
+      var(--yuval-galaxy-text, #ececea) 0%,
+      color-mix(in srgb, var(--series-btn-accent) 35%, var(--yuval-galaxy-text, #ececea)) 100%
+    );
+    -webkit-background-clip: text;
+            background-clip: text;
+    -webkit-text-fill-color: transparent;
+            color: transparent;
+  }
+  /* "Series details" button — gold accent variant so the two
+     buttons read as different at a glance. */
+  .galaxy-cta-series-btn[data-series-action="details"] {
+    --series-btn-accent: var(--yuval-galaxy-accent-gold, #f6c560);
+    --series-btn-accent-2: var(--yuval-galaxy-accent-purple, #a78bfa);
   }
 
   /* ── Local children fan — opens around the focused series capsule ──
@@ -5825,7 +6303,8 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
 
   /**
    * Anchor the focused-card TOP flush against the bottom of the hero
-   * subtitle ("כל הידע שלך במרחב אחד חי ומתפתח").
+   * subtitle ("כל הידע שלך במרחב אחד חי ומתפתח") on BOTH mobile and
+   * desktop.
    *
    * Why measurement: the hero's vertical height is a moving target —
    * `lh-title` uses a `clamp(...)` so it grows with viewport width,
@@ -5835,9 +6314,20 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
    * on others. Reading the subtitle's `getBoundingClientRect().bottom`
    * always returns the correct viewport Y on every breakpoint.
    *
-   * Result is written to `--focused-card-top` on `.library-root`
-   * (inherits down to the stage and the .galaxy-card[data-pos="center"]
-   * rule). 2px hairline keeps the card snug-but-not-touching.
+   * Two output variables, both written to `.library-root` so they
+   * inherit down to `.galaxy-card[data-pos="center"]`:
+   *   - `--focused-card-top` (desktop): galaxy-LOCAL Y. Desktop card
+   *     is `position: fixed`, and `.library-galaxy`'s `transform`
+   *     makes IT the containing block for fixed descendants — so
+   *     `top:` is measured from galaxy's top, not viewport. Compute
+   *     subBottom (viewport) − galaxyTop (viewport).
+   *   - `--mobile-focused-top` (mobile): viewport Y. Mobile card is
+   *     `position: absolute` and its translateY formula
+   *     (`calc(var(--mobile-focused-top) - 50dvh + 0.75*card_w)`)
+   *     anchors the visible top edge AT this viewport Y, so pass
+   *     subBottom directly.
+   * 0px gap on both — card top sits flush against the subtitle's
+   * line-height descender, reading as truly touching.
    * Re-measures on resize + after fonts load so font-swap reflow is
    * caught too.
    */
@@ -5848,15 +6338,12 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       const sub = root.querySelector<HTMLElement>('.lh-subtitle');
       const galaxy = root.querySelector<HTMLElement>('.library-galaxy');
       if (!sub || !galaxy) return;
-      // `.library-galaxy` has `transform: translateY(...)`, which makes
-      // it the containing block for the focused card's `position: fixed`.
-      // So `top:` on the card is measured from the galaxy's top, NOT the
-      // viewport. Convert the subtitle's viewport-Y bottom into the
-      // galaxy's local coordinate space.
       const subBottom = sub.getBoundingClientRect().bottom;
       const galaxyTop = galaxy.getBoundingClientRect().top;
-      const localTop = Math.round(subBottom - galaxyTop + 2);
+      const localTop = Math.round(subBottom - galaxyTop);
+      const viewportTop = Math.round(subBottom);
       root.style.setProperty('--focused-card-top', `${localTop}px`);
+      root.style.setProperty('--mobile-focused-top', `${viewportTop}px`);
     };
     // Defer one frame so the initial layout has settled before measuring.
     requestAnimationFrame(measure);

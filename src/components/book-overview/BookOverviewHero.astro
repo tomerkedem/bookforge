@@ -31,11 +31,13 @@ import type { BookLevel, Chapter, Language } from '../../types/index';
 import type { BookCredits } from '../../utils/book-discovery';
 import { t, type TranslationKey } from '../../i18n';
 import { getLanguageMeta } from '../../utils/language';
-import { getCreditText, creditDataAttr, formatChapterCount } from './utils';
+import { getCreditText, creditDataAttr, formatChapterCount, renderInlineMarkdown } from './utils';
+import BookOverviewProgress from './BookOverviewProgress.astro';
 
 interface Props {
   title: string;
   subtitle: string;
+  description: string;
   coverImage: string;
   credits?: BookCredits;
   chapters: Chapter[];
@@ -49,6 +51,7 @@ interface Props {
 const {
   title,
   subtitle,
+  description,
   coverImage,
   credits,
   chapters,
@@ -72,6 +75,65 @@ const levelKey: TranslationKey | undefined = level
   ? (`library.level.${level}` as TranslationKey)
   : undefined;
 const levelLabel = level && levelKey ? t(levelKey, language) : '';
+
+// Some manifests append per-lesson metadata to the end of the description
+// as bolded "Label: value" lines (e.g. "**מרצה:** ערן סלע", "**תאריך:**
+// 19/05/2026"). Pull them out so they render as proper credits below the
+// title instead of as part of the prose, and so they don't appear twice
+// when the description body is shown.
+function extractInlineMeta(
+  text: string,
+  labelAlternates: string,
+): { value?: string; remaining: string } {
+  // Matches: optional bold open, label, optional colon (in or out of
+  // bold), optional bold close, then the value up to end-of-line. The
+  // colon may sit inside the bold ("**Label:**") or after it
+  // ("**Label**:") — both are common in authored markdown.
+  const re = new RegExp(
+    `\\*\\*\\s*(?:${labelAlternates})\\s*:?\\s*\\*\\*\\s*:?\\s*([^\\n]+)`,
+    'i',
+  );
+  const match = text.match(re);
+  if (!match || !match[1]) return { remaining: text };
+  const value = match[1].trim().replace(/\*+$/, '').trim();
+  const remaining = text.replace(match[0], '').replace(/\n{3,}/g, '\n\n').trim();
+  return { value, remaining };
+}
+
+const extractedLecturerPass = extractInlineMeta(
+  description,
+  'מרצה|Lecturer|Profesor|Profesora',
+);
+const extractedDatePass = extractInlineMeta(
+  extractedLecturerPass.remaining,
+  'תאריך|Date|Fecha',
+);
+const extractedLecturer = extractedLecturerPass.value;
+const extractedDate = extractedDatePass.value;
+const cleanedDescription = extractedDatePass.remaining;
+
+// Description (formerly its own Summary card, now folded into Hero so
+// the page is one card less tall). A description is considered
+// "meaningful" only if at least one paragraph carries 20+ chars after
+// stripping a trailing label colon — that filters out stub manifests
+// like just "תקציר:" / "Summary:" without dropping legitimately short
+// summaries. When nothing meaningful exists the block + TTS are
+// skipped entirely and the Hero stays compact.
+const descriptionParagraphs = cleanedDescription.split(/\n\s*\n/).filter((p) => p.trim());
+const hasDescription = descriptionParagraphs.some((p) => {
+  const cleaned = p.trim().replace(/[:：]\s*$/, '').trim();
+  return cleaned.length >= 20;
+});
+const DESCRIPTION_TRUNCATE_THRESHOLD = 280;
+const descriptionTruncatable = hasDescription && cleanedDescription.length > DESCRIPTION_TRUNCATE_THRESHOLD;
+
+// Lecturer + date can also live in `credits` directly (manifest field).
+// If the description didn't carry them inline, fall back to whatever the
+// data layer provided so a future manifest schema upgrade just works.
+const lecturerFromCredits =
+  credits?.lecturer ? getCreditText(credits.lecturer, language) : undefined;
+const displayLecturer = extractedLecturer || lecturerFromCredits;
+const displayDate = extractedDate;
 ---
 
 <!-- Hidden context for the reading-page bookmarks system. The system's
@@ -84,15 +146,39 @@ const levelLabel = level && levelKey ? t(levelKey, language) : '';
 <section class:list={['boh', isRtl && 'is-rtl']} aria-labelledby="boh-title">
   <div class="boh-card bo-premium-surface">
     <!-- Cover with subtle purple/blue aura behind it (`bo-hero-glow`
-         handles the radial aura via theme.css). -->
+         handles the radial aura via theme.css).
+
+         When the page resolves a real cover URL (from knowledge-cards
+         or book metadata), render the real image. When it falls back
+         to an empty string, render a designed fallback card with the
+         BO palette and the lesson title instead — never the generic
+         dark "No Cover" placeholder, which looks like a missing
+         asset rather than intentional branding. -->
     <figure class="boh-cover-wrap bo-hero-glow">
-      <img
-        src={coverImage}
-        alt={title}
-        loading="lazy"
-        decoding="async"
-        class="book-cover-img boh-cover"
-      />
+      {coverImage ? (
+        <img
+          src={coverImage}
+          alt={title}
+          loading="lazy"
+          decoding="async"
+          class="book-cover-img boh-cover"
+        />
+      ) : (
+        <div class="boh-cover boh-cover-fallback" role="img" aria-label={title}>
+          <span class="boh-cover-fallback-glow" aria-hidden="true"></span>
+          <span class="boh-cover-fallback-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                d="M4 5.5A1.5 1.5 0 0 1 5.5 4H10a3 3 0 0 1 2 .8A3 3 0 0 1 14 4h4.5A1.5 1.5 0 0 1 20 5.5V18a1 1 0 0 1-1 1h-5a2 2 0 0 0-2 2 2 2 0 0 0-2-2H5a1 1 0 0 1-1-1V5.5z" />
+              <path stroke-linecap="round" stroke-width="1.5" d="M12 6v15" />
+            </svg>
+          </span>
+          {level && levelKey && (
+            <span class="boh-cover-fallback-cat" data-i18n={levelKey}>{levelLabel}</span>
+          )}
+          <span class="boh-cover-fallback-title">{title}</span>
+        </div>
+      )}
     </figure>
 
     <div class="boh-content">
@@ -108,23 +194,90 @@ const levelLabel = level && levelKey ? t(levelKey, language) : '';
 
       {subtitle && <p class="boh-subtitle">{subtitle}</p>}
 
-      {credits && (
-        <p class="boh-credits">
-          {credits.type === 'lecture_summary' ? (
-            <>
-              <span class="boh-credits-label">{t('book.lecturer', language)}:</span>{' '}
-              <span data-credit-localized={creditDataAttr(credits.lecturer)}>{getCreditText(credits.lecturer, language)}</span>
-              <span class="boh-credits-sep" aria-hidden="true"> · </span>
-              <span class="boh-credits-label">{t('book.editedBy', language)}:</span>{' '}
-              <span data-credit-localized={creditDataAttr(credits.editor)}>{getCreditText(credits.editor, language)}</span>
-            </>
-          ) : (
-            <>
+      {(credits?.author || credits?.editor || displayLecturer || displayDate) && (
+        <div class="boh-credits">
+          {credits?.author && (
+            <p class="boh-credits-line">
               <span class="boh-credits-label">{t('book.by', language)}</span>{' '}
               <span data-credit-localized={creditDataAttr(credits.author)}>{getCreditText(credits.author, language)}</span>
-            </>
+            </p>
           )}
-        </p>
+          {displayLecturer && (
+            <p class="boh-credits-line">
+              <span class="boh-credits-label">{t('book.lecturer', language)}:</span>{' '}
+              {credits?.lecturer && !extractedLecturer ? (
+                <span data-credit-localized={creditDataAttr(credits.lecturer)}>{displayLecturer}</span>
+              ) : (
+                <span>{displayLecturer}</span>
+              )}
+            </p>
+          )}
+          {credits?.type === 'lecture_summary' && credits.editor && (
+            <p class="boh-credits-line">
+              <span class="boh-credits-label">{t('book.editedBy', language)}:</span>{' '}
+              <span data-credit-localized={creditDataAttr(credits.editor)}>{getCreditText(credits.editor, language)}</span>
+            </p>
+          )}
+          {displayDate && (
+            <p class="boh-credits-line">
+              <span class="boh-credits-label">{t('book.date', language)}:</span>{' '}
+              <span>{displayDate}</span>
+            </p>
+          )}
+        </div>
+      )}
+
+      {hasDescription && (
+        <div class="boh-description">
+          <div class="boh-description-row">
+            <!-- `.chapter-content` is the contract the TTS engine
+                 reads from (initTextToSpeech looks for paragraph
+                 nodes inside this class). The truncate state is
+                 applied on the same node so collapsed text is still
+                 readable by the TTS pipeline — the engine reads the
+                 full DOM text, only the visual is clipped. -->
+            <div
+              class:list={['boh-description-body', 'chapter-content']}
+              data-truncatable={descriptionTruncatable ? 'true' : undefined}
+              data-collapsed={descriptionTruncatable ? 'true' : undefined}
+            >
+              {descriptionParagraphs.map((para) => (
+                <p class="boh-description-para" set:html={renderInlineMarkdown(para.trim())} />
+              ))}
+            </div>
+            <!-- TTS control. The page-level boot script in
+                 src/pages/books/[slug].astro still looks for
+                 `#tts-inline-trigger`, so keeping the id + classes
+                 here means the engine attaches without any wiring
+                 change at the page level. The icon-only square
+                 matches the BO palette; the global gold pill style
+                 in [slug].astro is overridden by `.boh-tts` below. -->
+            <button
+              id="tts-inline-trigger"
+              class="boh-tts tts-inline-btn"
+              type="button"
+              aria-label={t('lessonSummary.summary.readAloud', language)}
+              aria-pressed="false"
+              data-i18n-aria-label="lessonSummary.summary.readAloud"
+            >
+              <span class="tts-inline-icon" aria-hidden="true"></span>
+              <span class="tts-inline-label sr-only" data-i18n="lessonSummary.summary.readAloud">
+                {t('lessonSummary.summary.readAloud', language)}
+              </span>
+            </button>
+          </div>
+          {descriptionTruncatable && (
+            <button
+              type="button"
+              class="boh-description-toggle"
+              data-boh-description-toggle
+              data-i18n="bookOverview.readMore"
+              aria-expanded="false"
+            >
+              {t('bookOverview.readMore', language)}
+            </button>
+          )}
+        </div>
       )}
 
       <!-- Meta row: chapter count · reading time · languages · level (if any) -->
@@ -164,9 +317,15 @@ const levelLabel = level && levelKey ? t(levelKey, language) : '';
         )}
       </ul>
 
-      <!-- CTAs + bookmark. Bookmark sits last in DOM so RTL flexes
-           it to the visual-left end of the row, after the secondary
-           CTA. -->
+      <!-- Actions row: CTA · bookmark · inline progress.
+           DOM order is intentional: CTA → bookmark → progress.
+           Flex layout in RTL produces visual order [CTA][bookmark]
+           [progress] reading right-to-left; in LTR the same order
+           reads left-to-right. The Progress component takes the
+           remaining inline space (flex: 1) so the bar grows into the
+           gap left of the bookmark and never wraps to its own line
+           on desktop. On narrow viewports `flex-wrap` lets it drop
+           below the CTA without ever leaving the Hero card. -->
       <div class="boh-actions">
         <a
           href={startHref}
@@ -195,6 +354,13 @@ const levelLabel = level && levelKey ? t(levelKey, language) : '';
             />
           </svg>
         </button>
+        <BookOverviewProgress
+          chapters={chapters}
+          slug={slug}
+          language={language}
+          isRtl={isRtl}
+          variant="inline"
+        />
       </div>
     </div>
   </div>
@@ -291,9 +457,44 @@ const levelLabel = level && levelKey ? t(levelKey, language) : '';
     });
   }
 
+  // ── Description read-more toggle ──────────────────────────────────
+  // Flips `data-collapsed` on the sibling .boh-description-body and
+  // swaps the button's `data-i18n` key so the global language-changed
+  // handler keeps the label in sync. Mirrors the pattern that used to
+  // live in BookOverviewSummary.
+  const DESC_COLLAPSED_KEY: TranslationKey = 'bookOverview.readMore';
+  const DESC_EXPANDED_KEY: TranslationKey = 'bookOverview.showLess';
+
+  function bindDescriptionToggle(): void {
+    const buttons = document.querySelectorAll<HTMLButtonElement>(
+      '[data-boh-description-toggle]',
+    );
+    buttons.forEach((btn) => {
+      if (btn.dataset.bound === '1') return;
+      btn.dataset.bound = '1';
+      btn.addEventListener('click', () => {
+        const container = btn.closest('.boh-description');
+        if (!container) return;
+        const body = container.querySelector<HTMLElement>('.boh-description-body');
+        if (!body) return;
+
+        const isCollapsed = body.dataset.collapsed === 'true';
+        const next = !isCollapsed;
+
+        body.dataset.collapsed = next ? 'true' : 'false';
+        btn.setAttribute('aria-expanded', next ? 'false' : 'true');
+        btn.dataset.i18n = next ? DESC_COLLAPSED_KEY : DESC_EXPANDED_KEY;
+
+        const lang = resolveLanguage(document.documentElement.lang);
+        btn.textContent = t(btn.dataset.i18n as TranslationKey, lang);
+      });
+    });
+  }
+
   function boot(): void {
     updatePrimaryCta();
     bindBookmarkTrigger();
+    bindDescriptionToggle();
   }
 
   if (document.readyState === 'loading') {
@@ -333,8 +534,8 @@ const levelLabel = level && levelKey ? t(levelKey, language) : '';
   .boh-card {
     display: grid;
     grid-template-columns: 1fr;
-    gap: 0.85rem;
-    padding: 0.75rem 1rem;
+    gap: 0.75rem;
+    padding: 0.6rem 0.95rem;
     border-radius: 16px;
     color: var(--bo-text-primary);
     overflow: hidden;
@@ -365,12 +566,12 @@ const levelLabel = level && levelKey ? t(levelKey, language) : '';
   }
 
   @media (min-width: 640px) {
-    .boh-card { padding: 0.95rem 1.25rem; gap: 1.1rem; }
+    .boh-card { padding: 0.75rem 1.1rem; gap: 0.95rem; }
   }
 
   @container (min-width: 720px) {
     .boh-card {
-      grid-template-columns: minmax(130px, 150px) minmax(0, 1fr);
+      grid-template-columns: minmax(110px, 128px) minmax(0, 1fr);
       align-items: center;
     }
   }
@@ -384,7 +585,7 @@ const levelLabel = level && levelKey ? t(levelKey, language) : '';
 
   .boh-cover {
     width: 100%;
-    max-width: 150px;
+    max-width: 128px;
     height: auto;
     border-radius: 10px;
     background: transparent;
@@ -409,7 +610,114 @@ const levelLabel = level && levelKey ? t(levelKey, language) : '';
 
   @container (min-width: 720px) {
     .boh-cover-wrap { justify-content: flex-start; }
-    .boh-cover { max-width: 140px; }
+    .boh-cover { max-width: 118px; }
+  }
+
+  /* ── Fallback cover ──────────────────────────────────────────
+     Rendered when no real artwork is available for the lesson.
+     A designed mini-card on the BO palette rather than the generic
+     dark "No Cover" SVG. The 2:3 ratio matches a book cover. Theme-
+     aware via --bo-* tokens — pearl in day, navy in night. */
+  .boh-cover-fallback {
+    aspect-ratio: 2 / 3;
+    width: 100%;
+    max-width: 150px;
+    border-radius: 10px;
+    padding: 0.85rem 0.85rem 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.45rem;
+    position: relative;
+    overflow: hidden;
+    background:
+      linear-gradient(
+        160deg,
+        color-mix(in srgb, var(--bo-purple) 14%, var(--bo-surface)) 0%,
+        var(--bo-surface) 55%,
+        color-mix(in srgb, var(--bo-cyan) 10%, var(--bo-surface)) 100%
+      );
+    color: var(--bo-text-primary);
+    isolation: isolate;
+  }
+  @container (min-width: 720px) {
+    .boh-cover-fallback { max-width: 140px; }
+  }
+
+  /* Soft accent glow behind the icon, anchored to the upper-inline-end
+     so it reads as a "spine highlight" without dominating. */
+  .boh-cover-fallback-glow {
+    position: absolute;
+    inset-block-start: -20%;
+    inset-inline-end: -20%;
+    width: 70%;
+    height: 70%;
+    border-radius: 50%;
+    background: radial-gradient(
+      closest-side,
+      color-mix(in srgb, var(--bo-violet) 22%, transparent),
+      transparent 70%
+    );
+    filter: blur(8px);
+    pointer-events: none;
+    z-index: -1;
+  }
+  :global(.dark) .boh-cover-fallback-glow {
+    background: radial-gradient(
+      closest-side,
+      color-mix(in srgb, var(--bo-violet) 32%, transparent),
+      transparent 70%
+    );
+  }
+
+  /* Book glyph at the top — same icon as the Summary heading icon so
+     the page reads as one design language. */
+  .boh-cover-fallback-icon {
+    inline-size: 1.6rem;
+    block-size: 1.6rem;
+    border-radius: 7px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--bo-violet);
+    background: var(--bo-purple-soft);
+    border: 1px solid var(--bo-border);
+  }
+  .boh-cover-fallback-icon svg {
+    inline-size: 0.95rem;
+    block-size: 0.95rem;
+  }
+
+  /* Optional level/category line — muted accent above the title. */
+  .boh-cover-fallback-cat {
+    font-family: 'Assistant', system-ui, sans-serif;
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--bo-violet);
+    line-height: 1.1;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Title sits at the inline-start, wrapping naturally. Caps at 3 lines
+     with ellipsis so long lesson titles never blow the cover height. */
+  .boh-cover-fallback-title {
+    margin-block-start: auto;
+    font-family: 'Assistant', system-ui, sans-serif;
+    font-size: 0.78rem;
+    font-weight: 600;
+    line-height: 1.25;
+    color: var(--bo-text-primary);
+    letter-spacing: -0.005em;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    text-wrap: balance;
   }
 
   /* ── Content column ──────────────────────────────────────────── */
@@ -424,7 +732,7 @@ const levelLabel = level && levelKey ? t(levelKey, language) : '';
     font-family: 'Assistant', system-ui, sans-serif;
     display: flex;
     flex-direction: column;
-    gap: 0.4rem;
+    gap: 0.3rem;
     min-width: 0;
     text-align: start;
     position: relative;
@@ -514,7 +822,7 @@ const levelLabel = level && levelKey ? t(levelKey, language) : '';
     margin: 0;
     font-family: 'Assistant', system-ui, sans-serif;
     font-weight: 600;
-    font-size: clamp(1.2rem, 1.55vw, 1.55rem);
+    font-size: clamp(1.1rem, 1.4vw, 1.4rem);
     line-height: 1.15;
     letter-spacing: -0.01em;
     color: var(--bo-text-primary);
@@ -534,10 +842,22 @@ const levelLabel = level && levelKey ? t(levelKey, language) : '';
     color: var(--bo-text-secondary);
   }
 
+  /* Credits stacks vertically now — one line per piece of metadata
+     (author / lecturer / editor / date). Each line keeps the italic
+     muted treatment from the original single-line markup; only the
+     label tokens (e.g. "מאת:") stay upright at the secondary tone so
+     the eye can scan label→value cleanly. */
   .boh-credits {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.05rem;
+  }
+  .boh-credits-line {
     margin: 0;
     font-family: 'Assistant', system-ui, sans-serif !important;
     font-size: 0.85rem;
+    line-height: 1.4;
     color: var(--bo-text-muted);
     font-style: italic;
   }
@@ -548,18 +868,170 @@ const levelLabel = level && levelKey ? t(levelKey, language) : '';
   }
   .boh-credits-sep { opacity: 0.55; }
 
+  /* ── Description (former Summary card content, folded into Hero) ──
+     Sits between credits and the meta row. The inner row is a flex
+     layout so the TTS button sits at the inline-end while the text
+     occupies the rest of the width. Collapsed state clamps to 3 lines
+     with a soft mask; the read-more toggle below expands in place. */
+  .boh-description {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    margin-block-start: 0.05rem;
+  }
+  .boh-description-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  .boh-description-body {
+    flex: 1 1 auto;
+    min-inline-size: 0;
+    color: var(--bo-text-secondary);
+    font-family: 'Assistant', system-ui, sans-serif !important;
+    font-size: clamp(0.85rem, 1.05vw, 0.93rem);
+    line-height: 1.55;
+    letter-spacing: 0.003em;
+  }
+  .boh-description-para {
+    margin: 0;
+  }
+  .boh-description-para + .boh-description-para {
+    margin-block-start: 0.45rem;
+  }
+  .boh-description-body :global(strong) {
+    color: var(--bo-text-primary);
+    font-weight: 600;
+  }
+  .boh-description-body :global(em) {
+    color: var(--bo-text-primary);
+    font-style: italic;
+  }
+  .boh-description-body :global(code) {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.92em;
+    padding: 0.08em 0.35em;
+    border-radius: 5px;
+    background: var(--bo-surface-elevated);
+    border: 1px solid var(--bo-border);
+    color: var(--bo-cyan);
+  }
+  .boh-description-body[data-truncatable='true'][data-collapsed='true'] {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    -webkit-mask-image: linear-gradient(180deg, #000 78%, transparent 100%);
+    mask-image: linear-gradient(180deg, #000 78%, transparent 100%);
+  }
+  .boh-description-body[data-truncatable='true'][data-collapsed='false'] {
+    display: block;
+    overflow: visible;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+
+  .boh-description-toggle {
+    margin-block-start: 0.15rem;
+    padding: 0.2rem 0;
+    background: transparent;
+    border: 0;
+    color: var(--bo-cyan);
+    font: inherit;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    border-block-end: 1px dashed color-mix(in srgb, var(--bo-cyan) 45%, transparent);
+    align-self: flex-start;
+    transition: color 160ms ease, border-color 160ms ease;
+  }
+  .boh-description-toggle:hover {
+    color: var(--bo-text-primary);
+    border-block-end-color: var(--bo-cyan);
+  }
+  .boh-description-toggle:focus-visible {
+    outline: 2px solid var(--bo-focus-ring);
+    outline-offset: 3px;
+    border-block-end-color: transparent;
+  }
+
+  /* TTS button — overrides the global gold pill (.tts-inline-btn from
+     [slug].astro) with the icon-only square in the BO palette. Same
+     pattern Summary used (.bos-tts), just sized down for Hero density. */
+  .boh-tts.tts-inline-btn {
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border-radius: 7px;
+    background: transparent;
+    border: 1px solid var(--bo-border);
+    color: var(--bo-text-muted);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    cursor: pointer;
+    opacity: 0.75;
+    box-shadow: none;
+    align-self: flex-start;
+    flex-shrink: 0;
+    transition:
+      opacity 160ms ease,
+      color 160ms ease,
+      border-color 160ms ease,
+      background-color 160ms ease;
+  }
+  .boh-tts.tts-inline-btn:hover {
+    opacity: 1;
+    color: var(--bo-cyan);
+    border-color: var(--bo-cyan);
+    background: transparent;
+    transform: none;
+    filter: none;
+    box-shadow: none;
+  }
+  .boh-tts.tts-inline-btn:focus-visible {
+    outline: 2px solid var(--bo-focus-ring);
+    outline-offset: 2px;
+  }
+  .boh-tts.tts-inline-btn.is-active {
+    opacity: 1;
+    color: var(--bo-cyan);
+    border-color: var(--bo-cyan);
+    background: var(--bo-cyan-soft);
+    box-shadow: var(--bo-glow-cyan);
+  }
+  .boh-tts.tts-inline-btn .tts-inline-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+  }
+  .boh-tts.tts-inline-btn .tts-inline-icon svg {
+    width: 16px;
+    height: 16px;
+  }
+  .boh-tts.tts-inline-btn .tts-inline-label { display: none; }
+  /* Suppress the global gold pulse-wave rings (`::before` / `::after`
+     on `.tts-inline-btn.is-active`) — cyan glow above is enough. */
+  .boh-tts.tts-inline-btn::before,
+  .boh-tts.tts-inline-btn::after {
+    display: none !important;
+  }
+
   /* ── Meta row ────────────────────────────────────────────────── */
   .boh-meta {
     list-style: none;
-    margin: 0.1rem 0 0;
-    padding: 0.4rem 0;
+    margin: 0;
+    padding: 0.3rem 0;
     border-block-start: 1px solid var(--bo-border);
     border-block-end: 1px solid var(--bo-border);
     display: flex;
     flex-wrap: wrap;
-    gap: 0.4rem 1.1rem;
+    gap: 0.35rem 1rem;
     font-family: 'Assistant', system-ui, sans-serif !important;
-    font-size: 0.78rem;
+    font-size: 0.76rem;
     color: var(--bo-text-secondary);
   }
   .boh-meta-item,
@@ -581,13 +1053,13 @@ const levelLabel = level && levelKey ? t(levelKey, language) : '';
     color: var(--bo-violet);
   }
 
-  /* ── CTAs ────────────────────────────────────────────────────── */
+  /* ── CTAs + inline progress ─────────────────────────────────── */
   .boh-actions {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: 0.55rem;
-    margin-block-start: 0.15rem;
+    margin-block-start: 0;
   }
 
   .boh-cta {

@@ -115,12 +115,15 @@ export function initStageLayout(stage: HTMLElement): void {
   }
 
   function updateMobileSlots(): void {
-    // Read every card up-front so we can wipe slot attrs on a
+    // Read every card up-front so we can wipe slot attrs / vars on a
     // resize-up to desktop without depending on the visible filter.
     const allCards = stage.querySelectorAll<HTMLElement>('[data-galaxy-card]');
 
     if (!mqMobileSlot.matches) {
-      allCards.forEach((c) => { delete c.dataset.mobileSlot; });
+      allCards.forEach((c) => {
+        delete c.dataset.mobileSlot;
+        c.style.removeProperty('--mobile-carousel-rel');
+      });
       return;
     }
 
@@ -139,6 +142,7 @@ export function initStageLayout(stage: HTMLElement): void {
 
     if (visibleCards.length === 1) {
       visibleCards[0].dataset.mobileSlot = 'center';
+      visibleCards[0].style.setProperty('--mobile-carousel-rel', '0');
       setPositionIndicator(1, 1);
       return;
     }
@@ -146,7 +150,14 @@ export function initStageLayout(stage: HTMLElement): void {
     // Effective angle = base angle + cumulative rotation + 20°. The
     // +20° mirrors the mobile CSS `--orbit-active-angle` offset in
     // index.astro that aligns one station to exactly 270°.
-    type AngleEntry = { card: HTMLElement; eff: number; distFromTop: number };
+    type AngleEntry = {
+      card: HTMLElement;
+      eff: number;
+      distFromTop: number;
+      /** Signed delta from centre, in degrees, wrapped to [-180, 180].
+       *  Filled in after the centre is picked. */
+      signedDelta?: number;
+    };
     const angles: AngleEntry[] = visibleCards.map((card) => {
       const raw = card.style.getPropertyValue('--orbit-angle').trim();
       const angle = parseFloat(raw) || 0;
@@ -165,33 +176,44 @@ export function initStageLayout(stage: HTMLElement): void {
     );
     const center = sortedByDist[0];
     center.card.dataset.mobileSlot = 'center';
+    center.card.style.setProperty('--mobile-carousel-rel', '0');
 
-    // Find clockwise (next: positive signed delta from centre) and
-    // counter-clockwise (prev: negative signed delta) neighbours.
-    // Signed delta is wrapped to [-180, 180] so wrap-around past
-    // 360° is handled correctly.
-    let next: AngleEntry | null = null;
-    let prev: AngleEntry | null = null;
-    let nextDelta = 360;
-    let prevDelta = 360;
-
+    // Compute signed angular delta from centre for every other card,
+    // then assign a coverflow rel index based on rank order on each
+    // side. CSS reads `--mobile-carousel-rel` to lay every visible
+    // card out as one continuous coverflow row.
+    const others: Array<AngleEntry & { signedDelta: number }> = [];
     for (const cd of angles) {
       if (cd === center) continue;
       let delta = cd.eff - center.eff;
       if (delta > 180) delta -= 360;
       else if (delta < -180) delta += 360;
-
-      if (delta > 0 && delta < nextDelta) {
-        nextDelta = delta;
-        next = cd;
-      } else if (delta < 0 && -delta < prevDelta) {
-        prevDelta = -delta;
-        prev = cd;
-      }
+      cd.signedDelta = delta;
+      others.push(cd as AngleEntry & { signedDelta: number });
     }
 
-    if (next) next.card.dataset.mobileSlot = 'next';
-    if (prev) prev.card.dataset.mobileSlot = 'prev';
+    // Clockwise siblings (positive delta) → rel +1, +2, …
+    const positives = others
+      .filter((d) => d.signedDelta > 0)
+      .sort((a, b) => a.signedDelta - b.signedDelta);
+    positives.forEach((d, i) => {
+      d.card.style.setProperty('--mobile-carousel-rel', String(i + 1));
+    });
+
+    // Counter-clockwise siblings (negative delta) → rel -1, -2, …
+    const negatives = others
+      .filter((d) => d.signedDelta < 0)
+      .sort((a, b) => b.signedDelta - a.signedDelta);
+    negatives.forEach((d, i) => {
+      d.card.style.setProperty('--mobile-carousel-rel', String(-(i + 1)));
+    });
+
+    // Keep data-mobile-slot writes for the immediate prev/next so any
+    // legacy CSS / tests that read them still pass. The coverflow CSS
+    // doesn't depend on these — `--mobile-carousel-rel` drives the
+    // visual now.
+    if (positives.length > 0) positives[0].card.dataset.mobileSlot = 'next';
+    if (negatives.length > 0) negatives[0].card.dataset.mobileSlot = 'prev';
 
     // Position indicator. visibleCards is in DOM/source order, which
     // equals catalog order from SSR, so the centred card's index there

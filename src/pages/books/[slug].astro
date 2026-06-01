@@ -2,14 +2,13 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Breadcrumbs from '../../components/Breadcrumbs.astro';
 import BookOverviewHero from '../../components/book-overview/BookOverviewHero.astro';
-import BookOverviewProgress from '../../components/book-overview/BookOverviewProgress.astro';
-import BookOverviewSummary from '../../components/book-overview/BookOverviewSummary.astro';
 import BookOverviewLearn from '../../components/book-overview/BookOverviewLearn.astro';
 import BookOverviewChapters from '../../components/book-overview/BookOverviewChapters.astro';
 import { getLocalizedText } from '../../components/book-overview/utils';
 import type { Language } from '../../types/index';
 import { SOURCE_LANGUAGE, getLanguageDirection, isValidLanguage, resolveContextLanguage } from '../../utils/language';
 import { discoverAllBooks } from '../../utils/book-discovery';
+import { getKnowledgeCardAssets } from '../../utils/library/knowledge-cards';
 
 interface Props {
   language?: Language;
@@ -59,12 +58,30 @@ const requestedLanguage =
 const language = resolveContextLanguage(requestedLanguage, availableLanguages) as Language;
 const isRtl = getLanguageDirection(language) === 'rtl';
 
+// Prefer the real artwork from src/assets/knowledge-cards/<slug>/front.png
+// over the bookData.coverImage placeholder. book-discovery.ts only looks
+// for public/<slug>/assets/cover.* or public/covers/<slug>.* and falls
+// back to /covers/placeholder.svg — those files don't exist in this repo,
+// so every Book Overview was rendering the dark placeholder.
+//
+// The reading page (read/[book]/[chapter].astro:172-181) already follows
+// this fallback chain; doing the same here keeps the two screens
+// visually in sync. When both sources miss, `coverImage` is an empty
+// string and the Hero renders its designed fallback card.
+const knowledgeCard = getKnowledgeCardAssets(slug ?? '');
+const PLACEHOLDER_PATH = '/covers/placeholder.svg';
+const realCoverImage =
+  knowledgeCard?.front ??
+  (bookData.coverImage && bookData.coverImage !== PLACEHOLDER_PATH
+    ? bookData.coverImage
+    : '');
+
 const book = {
   slug: bookData.slug,
   titles: bookData.titles ?? {},
   subtitles: bookData.subtitles ?? {},
   descriptions: bookData.descriptions ?? {},
-  coverImage: bookData.coverImage,
+  coverImage: realCoverImage,
   dominantColor: bookData.dominantColor,
   chapters: bookData.chapters ?? [],
   credits: bookData.credits,
@@ -88,8 +105,8 @@ const description = getLocalizedText(book.descriptions, language);
     class:list={[
       'min-h-screen',
       'bo-page-bg',
-      'pt-2',
-      'sm:pt-3',
+      'pt-1',
+      'sm:pt-1.5',
       'pb-12',
       'sm:pb-16',
       'lg:pb-20',
@@ -133,6 +150,31 @@ const description = getLocalizedText(book.descriptions, language);
         That's the standard tradeoff of using CSS order; acceptable
         because Chapters is a secondary nav rail on this page.
       -->
+      <!--
+        Layout strategy:
+        - Mobile / Tablet (default): stacked. Content column FIRST
+          (Summary → Hero → Learn), Lesson Path LAST. The Summary is
+          the page's primary content on small screens, so it must
+          appear above the chapter list — otherwise the chapter rail
+          would push the lesson summary far below the fold on a long
+          book.
+        - Desktop (lg+): 2 columns side-by-side
+          * Chapters column (smaller, ~1fr) — DOM-first so RTL flexbox
+            puts it on the right edge (reading start), LTR on the left.
+          * Content column (larger, ~2.5fr) — Summary → Hero → Learn.
+
+        Visual reordering is done with CSS `order` (Tailwind utilities)
+        so DOM source order stays optimal for desktop RTL/LTR. Below lg
+        the order is flipped:
+            content (order-1) → chapters (order-2)
+        At lg+ both go back to `order-none` (= 0) and the grid columns
+        themselves arrange the layout.
+
+        Note: visual order ≠ tab order. Screen-reader / keyboard users
+        on mobile will still traverse Chapters first → Content second.
+        That's the standard tradeoff of using CSS order; acceptable
+        because Chapters is a secondary nav rail on this page.
+      -->
       <div
         class:list={[
           'grid',
@@ -142,9 +184,9 @@ const description = getLocalizedText(book.descriptions, language);
           'sm:gap-8',
           'lg:gap-10',
           'xl:gap-14',
-          'mt-8',
-          'sm:mt-10',
-          'lg:mt-12',
+          'mt-2',
+          'sm:mt-2',
+          'lg:mt-3',
           'mb-6',
           'sm:mb-8',
           'items-start',
@@ -165,13 +207,15 @@ const description = getLocalizedText(book.descriptions, language);
           />
         </div>
 
-        <!-- Content column: hero card + summary.
+        <!-- Content column: hero (now carries the description inline)
+             followed by Learn.
              order-1 on small/tablet → renders ABOVE Lesson Path.
              lg:order-none → desktop falls back to DOM order (second). -->
         <div class:list={['order-1', 'lg:order-none', isRtl && 'text-right']}>
           <BookOverviewHero
             title={title}
             subtitle={subtitle}
+            description={description}
             coverImage={book.coverImage}
             credits={book.credits}
             chapters={book.chapters}
@@ -181,23 +225,6 @@ const description = getLocalizedText(book.descriptions, language);
             language={language}
             isRtl={isRtl}
           />
-
-          <div class="mt-6 sm:mt-8">
-            <BookOverviewProgress
-              chapters={book.chapters}
-              slug={slug}
-              language={language}
-              isRtl={isRtl}
-            />
-          </div>
-
-          <div class="mt-6 sm:mt-8">
-            <BookOverviewSummary
-              description={description}
-              subtitle={subtitle}
-              language={language}
-            />
-          </div>
 
           <div class="mt-6 sm:mt-8">
             <BookOverviewLearn

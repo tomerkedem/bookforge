@@ -142,7 +142,7 @@ function chapterMinutes(chapter: Chapter): number {
             <span class="boch-content">
               <span class="boch-content-main">
                 <span class="boch-num" aria-hidden="true">{numberLabel}</span>
-                <h3 class="boch-title">{chapterTitle}</h3>
+                <h3 class="boch-title" dir={isRtl ? 'rtl' : 'ltr'}>{chapterTitle}</h3>
               </span>
               {(minutes > 0 || locked) && (
                 <span class="boch-content-meta" aria-hidden="true">
@@ -793,22 +793,49 @@ function chapterMinutes(chapter: Chapter): number {
     /* Sticky stays on; the card is the height-bound element. */
   }
 
+  /* ── Compact-full variant tokens ──────────────────────────────
+     The dot-center distance describes how far the dot's optical
+     center sits from a row's inline-start edge:
+       row.padding-inline-start + dot.inline-size / 2
+       desktop:  10px + 11px = 21px
+       mobile:    7px + 11px = 18px
+     The timeline line ::before is anchored to this value (minus 0.5px
+     to center its 1px stroke), so dots and line share an axis in
+     every viewport and direction. */
+  .boch.is-compact-full {
+    --boch-dot-center: 21px;
+  }
+
   .boch.is-compact-full .boch-card {
-    padding: 12px 14px;
-    max-block-size: calc(100vh - 220px);
-    /* No internal scroll inside the card (per spec). */
-    overflow: visible;
+    padding: 14px 14px 12px;
+    /* Mobile/tablet default: grow with content. The lg-and-up rule
+       below pins the card to a near-viewport height so it reads as a
+       real sidebar that almost touches the page floor. The card
+       itself never scrolls — its inner list does (see .boch-list
+       desktop rule). */
+    overflow: hidden;
     display: flex;
     flex-direction: column;
-    /* Secondary navigation: softer surface and lighter border, no
-       elevation shadow. Summary is the focal element on this page —
-       the timeline supports it rather than competing with it. */
-    background: color-mix(in srgb, var(--lesson-path-panel-bg) 70%, transparent);
+    /* Solid panel surface with a hair-thin shadow so the panel reads
+       as a separate piece of glass — not a wash that bleeds into the
+       page. Day mode pearl sits clearly on the pearl page background;
+       night mode navy sits clearly on the navy page. The previous
+       `color-mix(70%)` + opacity 0.94 made the panel disappear into
+       the day-mode pearl bg. */
+    background: var(--lesson-path-panel-bg);
     border-color: var(--lesson-path-panel-border);
-    box-shadow: none;
-    opacity: 0.94;
-    transition: opacity 200ms ease, border-color 200ms ease;
+    box-shadow: var(--bo-shadow-sm);
+    transition: border-color 200ms ease;
   }
+  /* Desktop card height is now driven by the page-level grid layout:
+     `.bo-area-chapters` (in src/pages/books/[slug].astro) is the cell
+     in grid row 2, sharing the row with the Hero card. CSS Grid's
+     default `align-items: stretch` makes both items match the row's
+     intrinsic height (=Hero's content height), so the chapters card's
+     bottom line aligns with Hero's bottom line without measurement.
+     The flex chain in [slug].astro fills the cell down to .boch-card;
+     the .boch-list rule (further down) owns the internal scroll for
+     books whose chapter rhythm exceeds the Hero-determined row. */
   .boch.is-compact-full .boch-card:hover {
     border-color: var(--lesson-path-panel-border-hover);
   }
@@ -825,6 +852,8 @@ function chapterMinutes(chapter: Chapter): number {
   .boch.is-compact-full .boch-heading-row {
     margin: 0 0 0.6rem 0;
     gap: 0.5rem;
+    /* Stays at the card top while the list scrolls beneath it. */
+    flex-shrink: 0;
   }
   .boch.is-compact-full .boch-heading-icon {
     inline-size: 1.65rem;
@@ -839,9 +868,9 @@ function chapterMinutes(chapter: Chapter): number {
   }
 
   .boch.is-compact-full .boch-list {
-    /* Rows get spaced via the gap (per spec) — the timeline line is
-       redrawn so it bridges the gap cleanly. */
-    gap: 6px;
+    /* Tighter rhythm — 4px gap between rows lets the timeline read
+       as a more continuous spine. */
+    gap: 4px;
     /* Override the default's max-block-size + scroll on lg breakpoints. */
     max-block-size: none;
     overflow: visible;
@@ -849,18 +878,38 @@ function chapterMinutes(chapter: Chapter): number {
   }
   @media (min-width: 1024px) {
     .boch.is-compact-full .boch-list {
+      /* The card has a fixed near-viewport height (rule above), so the
+         list takes the remaining flex slot below the heading and owns
+         the internal scroll. `min-block-size: 0` is required for a
+         flex child to actually shrink and scroll instead of overflowing
+         the card. `scrollbar-gutter: stable` reserves the scrollbar
+         lane so the timeline column doesn't shift when it appears. */
+      flex: 1 1 auto;
+      min-block-size: 0;
       max-block-size: none;
-      overflow: visible;
-      padding-inline-end: 0;
+      overflow-y: auto;
+      overflow-x: hidden;
+      scrollbar-gutter: stable;
+      padding-inline-end: 0.25rem;
     }
   }
 
-  /* Timeline line — desaturated slate per spec. Extends past the row
-     into the gap so adjacent dots stay visually connected. */
+  /* Timeline line — slightly more present than before so the journey
+     reads as a connected path, not a list of disconnected dots.
+     The line ::before is a child of <li>, so its inline-start is
+     measured from the <li>'s edge. The <li> sits flush against the
+     <ol> (no padding), and the <li>'s inner .boch-row carries the
+     padding-inline-start. The line must therefore sit at:
+         row.padding-inline-start + dot.inline-size / 2
+     which is exactly --boch-dot-center. The base .boch-item::before
+     up the file used a constant `calc(0.75rem - 0.5px)` that ignored
+     the row's padding, which is why the line drifted to the inline-
+     start of the dot instead of through its center. */
   .boch.is-compact-full .boch-item::before {
-    background: var(--lesson-path-timeline);
-    /* Bridge the 6px gap above this row so the line is continuous. */
-    inset-block-start: -6px;
+    background: color-mix(in srgb, var(--bo-text-muted) 26%, transparent);
+    /* Bridge the 4px gap above this row so the line is continuous. */
+    inset-block-start: -4px;
+    inset-inline-start: calc(var(--boch-dot-center) - 0.5px);
   }
   .boch.is-compact-full .boch-item:first-child::before {
     inset-block-start: 50%;
@@ -871,11 +920,12 @@ function chapterMinutes(chapter: Chapter): number {
 
   /* ── Row — compact rhythm ─────────────────────────────────────── */
   .boch.is-compact-full .boch-row {
-    /* Dot column matches new node size (~30px); rest is title. */
-    grid-template-columns: 30px minmax(0, 1fr);
-    gap: 0.6rem;
-    padding: 10px 12px 14px;
-    border-radius: 10px;
+    /* Dot column shrank from 30px to 22px — smaller, more refined,
+       reads as a learning waypoint instead of a radio button. */
+    grid-template-columns: 22px minmax(0, 1fr);
+    gap: 0.65rem;
+    padding: 8px 10px 12px;
+    border-radius: 8px;
     border-color: transparent;
   }
   .boch.is-compact-full .boch-row:hover {
@@ -885,55 +935,101 @@ function chapterMinutes(chapter: Chapter): number {
 
   /* ── Node (circle) — default ─────────────────────────────────── */
   .boch.is-compact-full .boch-dot {
-    inline-size: 30px;
-    block-size: 30px;
-    background: transparent;
-    border: 1px solid var(--lesson-path-timeline);
+    inline-size: 22px;
+    block-size: 22px;
+    background: var(--lesson-path-panel-bg);
+    border: 1.5px solid color-mix(in srgb, var(--bo-text-muted) 28%, transparent);
     color: var(--lesson-path-muted-icon);
   }
 
   .boch.is-compact-full .boch-content {
-    gap: 0.25rem;
+    gap: 0.2rem;
   }
+  /* Title and number flow together as one line, with the duration
+     pushed to the inline-end of the meta row so visual hierarchy
+     reads as: [number] [title…] [duration]. */
   .boch.is-compact-full .boch-content-main {
-    gap: 0.45rem;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: baseline;
+    gap: 0.5rem;
   }
+  /* Small number badge — fixed-width tabular numerals so the column
+     stays optically aligned across rows regardless of the digit. */
   .boch.is-compact-full .boch-num {
-    font-size: 0.72rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: var(--lesson-path-num);
+    font-variant-numeric: tabular-nums;
   }
+  /* Title — clamp to 1 line with ellipsis. Long mixed-script titles
+     (Hebrew + English) no longer reflow the row height; the dot stays
+     on the same baseline as the title.
+
+     Direction: the inline `dir` attribute on the <h3> (rtl/ltr from
+     isRtl) pins the paragraph direction to the UI language. CSS then
+     uses:
+       text-align: start;        respects the pinned direction (right
+                                 in RTL, left in LTR)
+       direction: inherit;       takes the value from the dir attr above
+       unicode-bidi: isolate;    isolates the bidi runs INSIDE the title
+                                 so an English word doesn't drag the
+                                 whole line to the LTR side
+     Earlier we used `unicode-bidi: plaintext`, which derives the
+     paragraph direction from the FIRST strong character — so a Hebrew
+     UI showed titles starting with "Pandas AI", "NumPy", "CLI" etc.
+     glued to the visual left edge of the row instead of the Hebrew
+     reading start. `isolate` keeps the embedding direction explicit. */
   .boch.is-compact-full .boch-title {
-    font-size: clamp(0.82rem, 0.9vw, 0.95rem);
+    font-size: clamp(0.82rem, 0.9vw, 0.92rem);
+    font-weight: 500;
     line-height: 1.35;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
     -webkit-line-clamp: 1;
+    text-align: start;
+    direction: inherit;
+    unicode-bidi: isolate;
+    min-inline-size: 0;
   }
   .boch.is-compact-full .boch-content-meta {
     font-size: 0.68rem;
+    color: var(--lesson-path-text-muted);
   }
   .boch.is-compact-full .boch-progress {
-    inset-inline: 12px;
-    inset-block-end: 6px;
+    inset-inline: 10px;
+    inset-block-end: 5px;
     block-size: 2px;
   }
 
-  /* ── Status: CURRENT — calm violet/blue tint per spec ────────── */
+  /* ── Status: CURRENT — calm violet tint with a clear active ring.
+     The dot now carries an outer accent ring (3px stroke) so the
+     active waypoint reads from across the panel, while the row
+     background stays soft so it doesn't compete with the Summary. */
   .boch.is-compact-full .boch-row[data-read-status='current'] {
     background: var(--lesson-path-item-active-bg);
     border: 1px solid var(--lesson-path-item-active-border);
-    border-radius: 12px;
+    border-radius: 10px;
   }
   .boch.is-compact-full .boch-row[data-read-status='current'] .boch-dot {
-    background: var(--lesson-path-accent-soft);
-    border-color: var(--lesson-path-item-active-border);
-    color: var(--lesson-path-text-primary);
-    /* Reduced halo — chapters are secondary on the BO page, so the
-       active row stays identifiable without pulling focus from
-       the Summary. */
+    background: var(--lesson-path-accent);
+    border-color: var(--lesson-path-accent);
+    color: var(--lesson-path-panel-bg);
+    /* Outer halo — readable on both day pearl and night navy. */
     box-shadow:
-      0 0 0 1px var(--lesson-path-item-active-ring),
-      0 3px 10px var(--lesson-path-accent-glow);
+      0 0 0 3px var(--lesson-path-item-active-ring),
+      0 2px 8px var(--lesson-path-accent-glow);
   }
   .boch.is-compact-full .boch-row[data-read-status='current'] .boch-dot::after {
-    border-inline-start-color: var(--lesson-path-accent);
+    border-inline-start-color: var(--lesson-path-panel-bg);
+  }
+  .boch.is-compact-full .boch-row[data-read-status='current'] .boch-title {
+    color: var(--lesson-path-text-primary);
+    font-weight: 600;
+  }
+  .boch.is-compact-full .boch-row[data-read-status='current'] .boch-num {
+    color: var(--lesson-path-num-active);
   }
 
   /* ── Status: COMPLETED — green per spec (NOT cyan) ───────────── */
@@ -976,22 +1072,41 @@ function chapterMinutes(chapter: Chapter): number {
     color: var(--lesson-path-muted-icon);
   }
 
-  /* ── Mobile guard ─────────────────────────────────────────────
-     Below 1024px the boch panel is no longer in a side-by-side
-     layout; the page stacks it under the Hero. Loosen the sticky
-     cap so the whole list scrolls naturally, and shrink the row
-     padding a hair to keep the column compact. */
+  /* ── Mobile / tablet guard ───────────────────────────────────
+     Below 1024px the boch panel no longer sits beside the content
+     column — the page stacks it AFTER Learn (order: 2). Loosen the
+     sticky cap so the whole list expands and contains every chapter,
+     and tighten rows so the rail doesn't dominate the small viewport.
+
+     --boch-dot-center is re-pinned to the mobile row padding here:
+         row.padding-inline-start (9px) + dot.inline-size / 2 (11px) = 20px
+     so the timeline stays centered through the dots in this density too. */
   @media (max-width: 1023px) {
+    .boch.is-compact-full {
+      --boch-dot-center: 20px;
+    }
     .boch.is-compact-full .boch-card {
       max-block-size: none;
-      opacity: 1;
+      overflow-y: visible;
+      padding: 12px 12px 10px;
     }
     .boch.is-compact-full .boch-row {
-      padding: 9px 10px 13px;
+      padding: 7px 9px 11px;
+    }
+    .boch.is-compact-full .boch-list {
+      gap: 3px;
     }
     .boch.is-compact-full .boch-progress {
-      inset-inline: 10px;
-      inset-block-end: 5px;
+      inset-inline: 9px;
+      inset-block-end: 4px;
+    }
+    /* Slightly tighter active state on small screens so the row
+       doesn't visibly stand out above its neighbors at a phone
+       reading distance. */
+    .boch.is-compact-full .boch-row[data-read-status='current'] .boch-dot {
+      box-shadow:
+        0 0 0 2px var(--lesson-path-item-active-ring),
+        0 2px 6px var(--lesson-path-accent-glow);
     }
   }
 
