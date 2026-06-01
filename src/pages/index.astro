@@ -1515,24 +1515,18 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
         scale(calc(0.98 - var(--series-abs-rel) * 0.14));
       opacity: calc(1 - var(--series-abs-rel) * 0.34);
     }
-    [data-stage-mode="series"] .series-carousel-nav {
-      width: 40px;
-      height: 40px;
-    }
-    [data-stage-mode="series"] .series-carousel-nav-prev {
-      inset-inline-start: clamp(4px, 2vw, 16px);
-    }
-    [data-stage-mode="series"] .series-carousel-nav-next {
-      inset-inline-end: clamp(4px, 2vw, 16px);
-    }
-    [data-stage-mode="series"] .series-carousel-nav svg {
-      width: 16px;
-      height: 16px;
-    }
-    [data-stage-mode="series"] .series-carousel-position {
-      font-size: 0.74rem;
-      padding: 0.3rem 0.7rem;
-      inset-block-end: clamp(56px, 9vh, 88px);
+    /* Series carousel chevrons + position indicator are a desktop-only
+       affordance. On mobile the focus carousel already exposes left/right
+       focus via swipe + the bottom rotate chevrons, so the side chrome is
+       redundant and was visually leaking through the cards. Selector
+       includes `.library-galaxy` to bump specificity above the desktop
+       reveal rule (0,2,0) — without it source order would let the desktop
+       rule win since it appears later in the file. */
+    .library-galaxy .series-carousel-nav,
+    .library-galaxy .series-carousel-position,
+    .library-galaxy[data-stage-mode="series"] .series-carousel-nav,
+    .library-galaxy[data-stage-mode="series"] .series-carousel-position {
+      display: none !important;
     }
 
     /* Mirror desktop's focused-state padding reset so the cover artwork
