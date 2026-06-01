@@ -654,6 +654,27 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
         any DOM position. */}
     {showOrbitControls && (
       <div class="galaxy-mobile-nav" data-galaxy-mobile-nav>
+        {/* Mobile DOM order: dots first, arrow row second. With the
+            wrapper's column flex this puts the dots VISUALLY ABOVE the
+            arrows, sitting right under the carousel cards.
+
+            Pagination dots — universe-layout.ts toggles [data-active]
+            inside setPositionIndicator() so the active dot stays in
+            lockstep with the counter and the focused carousel slot. */}
+        <div
+          class="galaxy-position-dots"
+          data-galaxy-position-dots
+          aria-hidden="true"
+        >
+          {orbitItems.map((_, i) => (
+            <span
+              class="galaxy-position-dot"
+              data-galaxy-position-dot
+              data-index={i}
+            ></span>
+          ))}
+        </div>
+
         <div class="galaxy-orbit-controls" aria-hidden="false">
           <button
             type="button"
@@ -683,23 +704,6 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
             data-direction="next"
             aria-label={t('library.galaxy.rotateNext', language)}
           ><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
-        </div>
-
-        {/* Pagination dots — universe-layout.ts toggles [data-active]
-            inside setPositionIndicator() so the active dot stays in
-            lockstep with the counter and the focused carousel slot. */}
-        <div
-          class="galaxy-position-dots"
-          data-galaxy-position-dots
-          aria-hidden="true"
-        >
-          {orbitItems.map((_, i) => (
-            <span
-              class="galaxy-position-dot"
-              data-galaxy-position-dot
-              data-index={i}
-            ></span>
-          ))}
         </div>
       </div>
     )}
@@ -1285,24 +1289,30 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       -webkit-backface-visibility: hidden;
     }
 
-    /* Mobile nav wrapper — a compact floating layer pinned to the
-       bottom of the viewport, below the carousel cards.
+    /* Mobile nav wrapper — anchored to JUST BELOW the carousel cards
+       (not the viewport bottom) so additional info cards can stack
+       underneath later. The carousel container is `top: 50dvh`
+       translate(-50%, -50%) with `min-height: clamp(440px, 95vw, 640px)`
+       — its visual bottom on common phones lands around 75-80dvh, so
+       `top: 78dvh` puts the nav directly under the visible card edge
+       on every device size without overlap.
 
-       !important on `display` and `position` is defensive: the default
-       desktop rule (`display: block`) sits earlier in the file but at
-       the same specificity, so any tooling that ever reorders CSS (or
-       a stale-cache scenario) could let it win and drop the wrapper
-       back into normal flow — which is exactly what the user reported
-       in the previous iteration ("arrows above the card"). Forcing it
-       here makes the positioning robust to ordering. */
+       Visual stacking inside the wrapper (top→bottom):
+         row 1  dots
+         row 2  arrow rail  [prev]   counter   [next]
+
+       !important on `display` / `position` is defensive — see the
+       commit history for the prior "arrows above the card" regression
+       caused by `display: contents` winning the cascade. */
     .galaxy-mobile-nav {
       display: flex !important;
       position: fixed !important;
-      inset-block-end: calc(env(safe-area-inset-bottom, 0px) + 8px);
+      top: 78dvh;
+      inset-block-end: auto;
       inset-inline: 0;
       flex-direction: column;
       align-items: center;
-      gap: 6px;
+      gap: 10px;
       pointer-events: none;
       z-index: 40;
     }
@@ -1349,9 +1359,10 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       margin-inline: 0.05rem;
     }
 
-    /* Pagination dots — small, calm, centered, directly under the arrow
-       row. Active dot stretches to a rounded pill in the Yuval accent
-       blue. */
+    /* Pagination dots — small, calm, centered. Sits ABOVE the arrow
+       rail (markup order: dots first, arrows second; flex column
+       puts the first child on top). Active dot stretches to a rounded
+       pill in the Yuval accent blue. */
     .galaxy-position-dots {
       display: inline-flex !important;
       position: static;
@@ -1442,24 +1453,27 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       -webkit-user-drag: none;
     }
 
-    /* Mobile arrow row inside .galaxy-mobile-nav — sits BELOW the
-       carousel cards. Layout: [prev btn] [counter] [next btn]. The
-       wrapper handles fixed positioning; this row only handles inline
-       arrangement and resets every desktop-pill style. */
+    /* Mobile arrow rail — spans the full viewport width with the prev
+       button anchored to the LEFT edge, the next button to the RIGHT
+       edge, and the counter centered between them. `justify-content:
+       space-between` distributes naturally because both buttons share
+       the same fixed width (44px), which places the counter at exact
+       optical centre. The row resets every desktop-pill style so the
+       wrapper's positioning fully owns layout on mobile. */
     .galaxy-orbit-controls {
       position: static !important;
       inset: auto !important;
       bottom: auto !important;
       top: auto;
       margin: 0;
-      width: auto;
-      max-width: calc(100vw - 28px);
-      display: inline-flex;
+      width: 100%;
+      max-width: none;
+      display: flex;
       flex-direction: row;
-      justify-content: center;
+      justify-content: space-between;
       align-items: center;
-      gap: 10px;
-      padding: 0;
+      gap: 8px;
+      padding: 0 16px;
       border-radius: 0;
       background: transparent;
       border: 0;
