@@ -657,39 +657,14 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
                         real HTML over the image so it stays crisp,
                         translatable and accessible. */}
                     <span class="reading-entry-asset" aria-hidden="true"></span>
-                    {/* Live content stack — redesigned for a clear visual
-                        hierarchy:
-                          1. CHAPTER  — the focal headline ("פרק 1").
-                          2. PROGRESS — thin animated bar + tiny %, driven by
-                             the same hydrator that previously updated the
-                             "X% הושלם" chip.
-                          3. FACTS    — quiet inline strip ("11 פרקים · 113
-                             דק קריאה") with middot separators, no chips.
-                          4. ACTIONS  — a luminous primary CTA pill carrying
-                             the "המשך קריאה" label (decorative; the actual
-                             click target is `.reading-entry-main` above), plus
-                             a small ghost "תקציר הספר" secondary link.
-
-                        All hydration data attributes (`data-cc-primary-label`,
-                        `data-cc-chapter-label`, `data-cc-meta-progress`, etc.)
-                        are preserved on their new hosts so the existing
-                        `hydrateCenterCardExtras` continues to work without
-                        changes. The progress bar's width is driven by a new
-                        `--re-progress` CSS var that the hydrator sets in the
-                        same pass it updates the % label. */}
-                    {/* Live content stack — stripped down to ONLY the two
-                        actions at Tomer's request: primary "Continue
-                        reading" CTA + tiny "Book summary" secondary link.
-                        The chapter headline, progress bar, and facts strip
-                        were removed because the orbit card above already
-                        shows the book identity; this panel is purely the
-                        action surface now.
-
-                        Hydration hooks that lived on the removed rows
-                        (`[data-cc-chapter-label]`, `[data-cc-meta-progress]`)
-                        are gone too — the existing hydrator's `querySelector`
-                        calls null-check and no-op when they're missing, so
-                        no JS change is required. */}
+                    {/* Live content stack — ONLY the two actions: a primary
+                        "Continue reading" CTA + a tiny "Book summary"
+                        secondary link. The orbit card above already shows the
+                        book identity, so this panel is purely the action
+                        surface. The CTA label carries `data-cc-primary-label`
+                        + `data-continue-template`; `hydrateCenterCardExtras`
+                        swaps it from "התחל קריאה" to "המשך · פרק N" when
+                        localStorage has progress for the slug. */}
                     <div class="reading-entry-text">
                       <div class="reading-entry-actions">
                         {/* Primary CTA — visually anchors the action. The
@@ -733,12 +708,11 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
                     </div>
                   </div>
                 )}
-                {/* `.galaxy-cta` slot is now only rendered for series
-                    capsules — the open-orb (`.galaxy-cta-open`) was
-                    superseded by `.reading-entry-overlay`, and the X
-                    close button was retired in favour of backdrop-tap
-                    and Esc-key closing. Books / lessons / articles
-                    therefore emit no `.galaxy-cta` markup at all. */}
+                {/* `.galaxy-cta` slot is only rendered for series capsules;
+                    it hosts the "Show items" / "Details" action pills. Books,
+                    lessons and articles emit no `.galaxy-cta` markup at all —
+                    their reading-entry overlay above already carries the
+                    primary action. */}
                 {kind === 'course' && (
                   <div class="galaxy-cta">
                     <div class="galaxy-cta-series-actions" data-series-action-panel>
@@ -1262,29 +1236,7 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
     opacity: 0.10;
   }
 
-  /* Center-card secondary link + metadata — authored in light-on-dark
-     colors that vanish on the ivory scene. Repaint them in navy/slate
-     so they stay readable directly beneath the focused book card. */
-  :global(html:not(.dark)) .cc-secondary-link {
-    color: #46556f;
-    text-decoration-color: rgba(34, 52, 92, 0.32);
-  }
-  :global(html:not(.dark)) .cc-secondary-link:hover,
-  :global(html:not(.dark)) .cc-secondary-link:focus-visible {
-    color: #16223c;
-    text-decoration-color: rgba(34, 52, 92, 0.70);
-  }
-  :global(html:not(.dark)) .cc-secondary-link:focus-visible {
-    box-shadow: 0 0 0 2px rgba(34, 52, 92, 0.40);
-  }
-  /* The chips now live INSIDE the dark image panel, so they read the
-     same in both themes — no light-mode chip override needed. The
-     standalone extras wrapper, section label and secondary link are
-     all display:none in the new image-panel design, so their
-     light-mode rules above are dead but kept for back-compat in case
-     a future theme un-hides them.
-
-     Reading-entry image-based CTA focus ring — the dark neon double
+  /* Reading-entry image-based CTA focus ring — the dark neon double
      glow is too loud on the bright day scene. Soften to a calm navy
      hairline that traces the image's actual rounded-rect shape. */
   :global(html:not(.dark)) .reading-entry-overlay:focus-visible .reading-entry-asset {
@@ -2324,17 +2276,6 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       }
     }
 
-    /* On mobile we drop the open-orb + X-close cluster — Tomer asked to
-       remove the X next to the focused card. Closing is handled by
-       tapping outside the card / tapping another orbit station. The
-       `.galaxy-cta` wrapper itself stays visible so its only remaining
-       contents — the series action pills (Show items / Details) — can
-       sit at the bottom of the focused series card on mobile too. */
-    .galaxy-cta-open,
-    .galaxy-cta-open-label,
-    .galaxy-cta-close {
-      display: none !important;
-    }
     /* Mobile placement for the series action pills — mirrors the desktop
        rules at the bottom of this stylesheet so the wrapper has the same
        positioning context on every viewport. Lifted into the mobile block
@@ -2594,78 +2535,6 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
         'Heebo', 'Inter', system-ui, -apple-system,
         'Segoe UI', 'Noto Sans Hebrew', sans-serif;
     }
-    .reading-entry-chapter {
-      font-size: 23px;
-      font-weight: 800;
-      line-height: 1.05;
-      letter-spacing: -0.01em;
-      color: rgba(255, 255, 255, 0.98);
-      text-shadow:
-        0 0 12px rgba(120, 200, 255, 0.32),
-        0 2px 4px rgba(0, 0, 0, 0.55);
-      margin: 0;
-      max-width: 100%;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-    .reading-entry-progress {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      width: 100%;
-    }
-    .reading-entry-progress-track {
-      flex: 1 1 auto;
-      position: relative;
-      height: 4px;
-      border-radius: 999px;
-      background: rgba(255, 255, 255, 0.12);
-      overflow: hidden;
-      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.35);
-    }
-    .reading-entry-progress-fill {
-      display: block;
-      width: var(--re-progress, 0%);
-      height: 100%;
-      border-radius: 999px;
-      background: linear-gradient(90deg, #b8e6ff 0%, #22d3ee 60%, #0ea5e9 100%);
-      box-shadow:
-        0 0 6px rgba(34, 211, 238, 0.55),
-        0 0 2px rgba(184, 230, 255, 0.85);
-      transition: width 480ms cubic-bezier(0.22, 1, 0.36, 1);
-    }
-    .reading-entry-progress-pct {
-      font-size: 10.5px;
-      font-weight: 700;
-      letter-spacing: 0.04em;
-      color: rgba(170, 230, 255, 0.92);
-      white-space: nowrap;
-      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
-      min-width: 32px;
-      text-align: end;
-    }
-    .reading-entry-facts {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      flex-wrap: wrap;
-      gap: 0;
-      font-size: 11.5px;
-      font-weight: 500;
-      letter-spacing: 0.01em;
-      color: rgba(220, 235, 250, 0.62);
-      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
-      line-height: 1.2;
-    }
-    .reading-entry-fact {
-      white-space: nowrap;
-    }
-    .reading-entry-fact + .reading-entry-fact::before {
-      content: '·';
-      margin: 0 6px;
-      opacity: 0.65;
-    }
     .reading-entry-actions {
       display: flex;
       flex-direction: column;
@@ -2762,8 +2631,6 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
     @media (max-width: 360px) {
       .reading-entry-overlay      { height: 159px; }
       .reading-entry-text         { top: 30%; }
-      .reading-entry-chapter      { font-size: 21px; }
-      .reading-entry-facts        { font-size: 11px; }
       .reading-entry-cta          { min-width: 110px; height: 34px; font-size: 12.5px; padding: 0 14px; }
       .reading-entry-summary-pill { font-size: 10.5px; }
     }
@@ -2776,15 +2643,6 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       filter: brightness(1.04);
     }
 
-    /* Standalone extras wrapper, secondary link and legacy meta-row
-       classes are retired in this design — the meta strip is now
-       `.reading-entry-facts` (styled above). The classes still appear
-       in the DOM as dead-cohabitant hooks; nothing paints. */
-    .center-card-extras,
-    .cc-secondary-link,
-    .cc-meta-label {
-      display: none;
-    }
   }
 
   /* Small-screen baseline for the orbit scene's vertical offset. The
@@ -4049,222 +3907,6 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       opacity: 1;
       pointer-events: auto;
     }
-    /* ── Knowledge activation orb ─────────────────────────────────────
-          Compact circular CTA that replaces the previous pill — feels
-          native to the holographic knowledge-card universe rather than
-          a generic web button. Layered structure:
-            .galaxy-cta-open        — the orb body (translucent glass)
-            .galaxy-cta-open-core   — inner radial light
-            .galaxy-cta-open-ring   — outer dashed ring (rotates on hover)
-            .galaxy-cta-open-icon   — the open/access glyph
-            .galaxy-cta-open-label  — hover/focus tooltip
-          Real <a> element with `aria-label`, so keyboard + screen-reader
-          paths work exactly like the previous button (Enter/Space follow
-          the link, focus-visible draws the same activated state). */
-    .galaxy-cta-open {
-      position: relative;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 64px;
-      height: 64px;
-      border-radius: 50%;
-      color: var(--yuval-galaxy-accent, #5eead4);
-      cursor: pointer;
-      text-decoration: none;
-      /* Translucent glass body — inner glow rooted on the accent,
-         fading into the page background colour at the edges. The
-         core layer (::core span below) handles the brighter centre. */
-      background:
-        radial-gradient(
-          circle at 50% 38%,
-          color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 24%, transparent) 0%,
-          color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 8%, transparent) 55%,
-          transparent 100%
-        ),
-        color-mix(in srgb, var(--yuval-galaxy-bg, #00010d) 55%, transparent);
-      border: 1px solid color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 60%, transparent);
-      box-shadow:
-        0 0 0 1px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 18%, transparent) inset,
-        0 0 6px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 50%, transparent) inset,
-        0 0 18px -2px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 35%, transparent);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-      transition:
-        transform 220ms cubic-bezier(0.4, 0, 0.2, 1),
-        box-shadow 220ms cubic-bezier(0.4, 0, 0.2, 1),
-        border-color 220ms cubic-bezier(0.4, 0, 0.2, 1);
-      /* Subtle continuous breathing — the orb feels alive even at rest. */
-      animation: galaxy-cta-open-pulse 3.6s ease-in-out infinite;
-    }
-    @keyframes galaxy-cta-open-pulse {
-      0%, 100% {
-        box-shadow:
-          0 0 0 1px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 18%, transparent) inset,
-          0 0 6px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 50%, transparent) inset,
-          0 0 18px -2px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 35%, transparent);
-      }
-      50% {
-        box-shadow:
-          0 0 0 1px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 26%, transparent) inset,
-          0 0 8px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 60%, transparent) inset,
-          0 0 24px -2px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 45%, transparent);
-      }
-    }
-    /* Inner core highlight — small luminous spot toward the upper-left
-       of the orb, like a glass marble's reflected light source. */
-    .galaxy-cta-open-core {
-      position: absolute;
-      inset: 18%;
-      border-radius: 50%;
-      background: radial-gradient(
-        circle at 38% 30%,
-        color-mix(in srgb, white 35%, transparent) 0%,
-        color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 22%, transparent) 28%,
-        transparent 70%
-      );
-      pointer-events: none;
-    }
-    /* Outer dashed ring — sits just outside the orb. Rotates slowly
-       on hover/focus; static + slightly dimmer at rest. */
-    .galaxy-cta-open-ring {
-      position: absolute;
-      inset: -5px;
-      border-radius: 50%;
-      border: 1px dashed
-        color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 45%, transparent);
-      opacity: 0.7;
-      pointer-events: none;
-      transition: opacity 220ms ease;
-    }
-    @keyframes galaxy-cta-open-ring-rotate {
-      from { transform: rotate(0deg); }
-      to   { transform: rotate(360deg); }
-    }
-    /* Open/access glyph — chevron into the inline-end direction. RTL
-       mirroring is handled below so "→" stays reading-flow forward. */
-    .galaxy-cta-open-icon {
-      position: relative;
-      width: 22px;
-      height: 22px;
-      z-index: 1;
-      filter: drop-shadow(
-        0 0 6px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 65%, transparent));
-      transition: opacity 180ms ease;
-    }
-    [dir="rtl"] .galaxy-cta-open-icon { transform: scaleX(-1); }
-
-    /* Hover label — floats to the PHYSICAL RIGHT of the orb,
-       vertically centered on the orb. Physical `left` + `top` (not
-       `inset-inline-*`) so the side stays the same in both RTL and
-       LTR — the user explicitly asked for visual-right. The 4px
-       inward initial translation gives a small slide-in entry. */
-    .galaxy-cta-open-label {
-      position: absolute;
-      top: 50%;
-      left: calc(100% + 0.5rem);
-      bottom: auto;
-      right: auto;
-      inset-block-start: auto;
-      inset-block-end: auto;
-      inset-inline-start: auto;
-      inset-inline-end: auto;
-      transform: translateY(-50%) translateX(-4px);
-      padding: 0.25rem 0.625rem;
-      border-radius: 999px;
-      font-family: 'Assistant', system-ui, sans-serif;
-      font-size: 0.78125rem;
-      font-weight: 500;
-      letter-spacing: 0.01em;
-      color: var(--yuval-galaxy-text, #ececea);
-      background: color-mix(in srgb, var(--yuval-galaxy-bg, #00010d) 82%, transparent);
-      border: 1px solid color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 28%, transparent);
-      backdrop-filter: blur(6px);
-      -webkit-backdrop-filter: blur(6px);
-      white-space: nowrap;
-      pointer-events: none;
-      opacity: 0;
-      transition:
-        opacity 180ms ease,
-        transform 220ms cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    .galaxy-cta-open:hover,
-    .galaxy-cta-open:focus-visible {
-      transform: translateY(-2px);
-      border-color: color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 80%, transparent);
-      box-shadow:
-        0 0 0 1px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 30%, transparent) inset,
-        0 0 8px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 70%, transparent) inset,
-        0 0 28px -2px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 55%, transparent),
-        0 0 14px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 35%, transparent);
-      outline: none;
-      /* Pause the rest pulse — hover/focus drives its own glow now. */
-      animation-play-state: paused;
-    }
-    .galaxy-cta-open:hover .galaxy-cta-open-ring,
-    .galaxy-cta-open:focus-visible .galaxy-cta-open-ring {
-      opacity: 1;
-      animation: galaxy-cta-open-ring-rotate 12s linear infinite;
-    }
-    /* Icon stays visible on hover — the label is its own bubble
-       above the orb now, no swap needed. */
-    .galaxy-cta-open:hover .galaxy-cta-open-label,
-    .galaxy-cta-open:focus-visible .galaxy-cta-open-label {
-      opacity: 1;
-      transform: translateY(-50%) translateX(0);
-    }
-    .galaxy-cta-open:active {
-      transform: translateY(0);
-      transition-duration: 80ms;
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .galaxy-cta-open,
-      .galaxy-cta-open-icon,
-      .galaxy-cta-open-label,
-      .galaxy-cta-open-ring { transition: none; animation: none; }
-      .galaxy-cta-open:hover .galaxy-cta-open-ring,
-      .galaxy-cta-open:focus-visible .galaxy-cta-open-ring { animation: none; }
-    }
-    .galaxy-cta-close {
-      width: 28px;
-      height: 28px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 50%;
-      font-size: 1.125rem;
-      line-height: 1;
-      color: var(--yuval-galaxy-text-muted);
-      background: var(--yuval-galaxy-surface-muted);
-      border: 1px solid var(--yuval-galaxy-border);
-      cursor: pointer;
-      padding: 0;
-      transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
-    }
-    .galaxy-cta-close:hover,
-    .galaxy-cta-close:focus-visible {
-      color: var(--yuval-galaxy-text);
-      background: var(--yuval-galaxy-card-surface-hover);
-      border-color: var(--yuval-galaxy-border-strong);
-      outline: none;
-    }
-
-    /* ── Reading-entry overlay (phase 1) ─────────────────────────────
-       Internal premium panel that appears ONLY when the card is
-       centered (`[data-pos="center"]`). Sits absolutely over the card
-       surface, between the LibraryCard art and the close button.
-       Routing is not wired yet — the click handler in
-       `initReadingEntry()` (see the page script block) logs slug + href.
-
-       The original side open orb (`.galaxy-cta-open`) is hidden via
-       the `display: none` rule below; the underlying <a href> is left
-       in the DOM so we keep the link target for future use. */
-    .galaxy-cta-open {
-      display: none !important;
-    }
-
     /* ── Reading-entry overlay: in-card image-based premium panel ──────
        The entry control sits INSIDE the centered book card (not below
        it). The visual is a textless PNG asset; all visible text is
@@ -4432,82 +4074,7 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
         'Segoe UI', 'Noto Sans Hebrew', sans-serif;
     }
 
-    /* ── 1. Chapter headline — the focal element ─────────────────── */
-    .reading-entry-chapter {
-      font-size: 26px;
-      font-weight: 800;
-      line-height: 1.05;
-      letter-spacing: -0.01em;
-      white-space: nowrap;
-      color: rgba(255, 255, 255, 0.98);
-      text-shadow:
-        0 0 14px rgba(120, 200, 255, 0.35),
-        0 2px 6px rgba(0, 0, 0, 0.55);
-      margin: 0;
-    }
-
-    /* ── 2. Progress row — thin animated bar + tiny % label ──────── */
-    .reading-entry-progress {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      width: 100%;
-    }
-    .reading-entry-progress-track {
-      flex: 1 1 auto;
-      position: relative;
-      height: 4px;
-      border-radius: 999px;
-      background: rgba(255, 255, 255, 0.12);
-      overflow: hidden;
-      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.35);
-    }
-    .reading-entry-progress-fill {
-      display: block;
-      width: var(--re-progress, 0%);
-      height: 100%;
-      border-radius: 999px;
-      background: linear-gradient(90deg, #b8e6ff 0%, #22d3ee 60%, #0ea5e9 100%);
-      box-shadow:
-        0 0 8px rgba(34, 211, 238, 0.55),
-        0 0 2px rgba(184, 230, 255, 0.85);
-      transition: width 480ms cubic-bezier(0.22, 1, 0.36, 1);
-    }
-    .reading-entry-progress-pct {
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.04em;
-      color: rgba(170, 230, 255, 0.92);
-      white-space: nowrap;
-      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
-      min-width: 36px;
-      text-align: end;
-    }
-
-    /* ── 3. Facts strip — quiet inline text, middot separators ──── */
-    .reading-entry-facts {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      flex-wrap: wrap;
-      gap: 0;
-      font-size: 12.5px;
-      font-weight: 500;
-      letter-spacing: 0.01em;
-      color: rgba(220, 235, 250, 0.62);
-      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
-      line-height: 1.2;
-    }
-    .reading-entry-fact {
-      white-space: nowrap;
-    }
-    .reading-entry-fact + .reading-entry-fact::before {
-      content: '·';
-      margin: 0 8px;
-      opacity: 0.65;
-    }
-
-    /* ── 4. Action row — primary CTA + ghost secondary ──────────── */
+    /* ── Action row — primary CTA + ghost secondary ──────────── */
     .reading-entry-actions {
       display: flex;
       flex-direction: column;
@@ -4670,24 +4237,6 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
         filter: none;
       }
     }
-
-    /* The standalone `.center-card-extras` wrapper was retired — the
-       meta row now lives INSIDE the reading-entry panel itself. The
-       wrapper, secondary link and section label are still defined in
-       the DOM/CSS only as dead cohabitants of the panel block; both
-       are pinned to display:none below so they never paint. */
-    .center-card-extras,
-    .cc-secondary-link,
-    .cc-meta-label {
-      display: none;
-    }
-
-    /* Legacy `.cc-meta` / `.cc-meta-item` chip styling retired with the
-       redesign — the meta row is now `.reading-entry-facts` (quiet
-       inline text + middots, styled higher up). The classes still
-       appear in the DOM as dead-cohabitant hooks (the hydrator queries
-       `[data-cc-meta-progress]`, kept on the new % label inside the
-       progress bar) but no painted ruleset remains. */
 
     /* ── Reading-entry confirmation ─────────────────────────────────
        Minimal confirmation transition for the reading-button click.
@@ -6175,24 +5724,13 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
    * entries from localStorage (same key scheme used by
    * `hydrateOrbitProgress` in universe-layout.ts:
    *   `yuval_reading_progress_{slug}_ch{N}` with a `.percentage` field)
-   * and patches two pieces of the centered-card SSR markup:
-   *
-   *   1. The primary pill's label span (`[data-cc-primary-label]`)
-   *      gets swapped from the SSR default "כניסה לקריאה" to
-   *      "המשך · פרק N" — using the localized template carried on
-   *      `data-continue-template` — when stored progress identifies a
-   *      "current chapter". Current chapter = highest chapter index
-   *      with any percentage > 0, capped at chapterCount. When every
-   *      chapter is already 100%, we fall back to chapterCount itself
-   *      so the label still reads "המשך · פרק <last>" instead of
-   *      reverting to the start-of-book copy.
-   *
-   *   2. The metadata row's progress span (`[data-cc-meta-progress]`)
-   *      is ALWAYS rendered (SSR ships "0% הושלם") so the chip row
-   *      stays symmetric. The hydrator overwrites the value with the
-   *      real average whenever localStorage has progress entries —
-   *      including a real 0 — so it reflects actual state instead of
-   *      a stale SSR default.
+   * and patches the primary pill's label span (`[data-cc-primary-label]`)
+   * + the reading-entry link's href/aria-label so they point at the
+   * user's actual reading position. Current chapter = highest chapter
+   * index with any percentage > 0, capped at chapterCount. When every
+   * chapter is already 100%, we fall back to chapterCount itself so the
+   * label still reads "המשך · פרק <last>" instead of reverting to the
+   * start-of-book copy.
    *
    * Read-only against localStorage; never writes. Safe to run before
    * or after `hydrateOrbitProgress` (independent data fields).
@@ -6211,19 +5749,14 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       const total = Number(progressBar?.dataset.chapterCount || '0');
       if (!total || total <= 0) return;
 
-      let sum = 0;
-      let entries = 0;
       let highestWithProgress = 0;
       for (let i = 1; i <= total; i++) {
         const raw = localStorage.getItem(`yuval_reading_progress_${slug}_ch${i}`);
         if (!raw) continue;
         try {
           const parsed = JSON.parse(raw);
-          if (typeof parsed.percentage === 'number') {
-            const pct = parsed.percentage;
-            sum += pct;
-            entries += 1;
-            if (pct > 0) highestWithProgress = i;
+          if (typeof parsed.percentage === 'number' && parsed.percentage > 0) {
+            highestWithProgress = i;
           }
         } catch {
           // Corrupt entry → skip silently, matches hydrateOrbitProgress.
@@ -6260,43 +5793,6 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
             pill.setAttribute('aria-label', ariaTmpl.replace('__N__', String(highestWithProgress)));
           }
         }
-      }
-
-      // Chapter subtitle below the main CTA label ("פרק N"). SSR ships
-      // "פרק 1"; when stored progress identifies a higher chapter, swap
-      // it in. Independent of the primary label patch above so that a
-      // brand-new book still reads "פרק 1" instead of going blank.
-      const chapterEl = card.querySelector<HTMLElement>('[data-cc-chapter-label]');
-      const chapterTmpl = chapterEl?.dataset.chapterTemplate;
-      if (chapterEl && chapterTmpl && highestWithProgress > 0) {
-        chapterEl.textContent = chapterTmpl.replace('__N__', String(highestWithProgress));
-      }
-
-      // Patch the progress label + bar. Sum/total (not sum/entries)
-      // mirrors hydrateOrbitProgress so a 50%-read single chapter in
-      // a 10-chapter book reads as 5%, not 50% — consistent with the
-      // existing orbit progress bar's interpretation. We rewrite even
-      // when entries === 0 / avg === 0 so a brand-new book continues
-      // to read "0%" instead of producing a stale value if SSR ever
-      // changes its default.
-      //
-      // Two surfaces are updated together so the bar and the label
-      // can never disagree:
-      //   - `[data-cc-meta-progress]`     → the tiny "X%" text label.
-      //   - `--re-progress` on `.reading-entry-text` → drives the
-      //     `.reading-entry-progress-fill` width via CSS var. The
-      //     redesigned panel uses an animated bar instead of a chip,
-      //     and width: var(--re-progress) keeps the CSS source-of-
-      //     truth co-located with the rest of the panel's styling.
-      const avg = entries > 0 ? Math.round(sum / total) : 0;
-      const progEl = card.querySelector<HTMLElement>('[data-cc-meta-progress]');
-      const tmpl = progEl?.dataset.progressTemplate;
-      if (progEl && tmpl) {
-        progEl.textContent = tmpl.replace('__N__', String(avg));
-      }
-      const textEl = card.querySelector<HTMLElement>('.reading-entry-text');
-      if (textEl) {
-        textEl.style.setProperty('--re-progress', `${avg}%`);
       }
     });
   }

@@ -325,7 +325,7 @@ export function initStageLayout(stage: HTMLElement): void {
     // Drags that start on a control element should NOT hijack the
     // control's own click semantics.
     if (target.closest(
-      '[data-galaxy-cta-open], [data-galaxy-cta-close], [data-galaxy-rotate], [data-galaxy-backdrop]',
+      '[data-galaxy-rotate], [data-galaxy-backdrop]',
     )) return;
     // The orbit card is an <a>, and anchors + images are draggable by
     // default. Without preventDefault here the browser starts its
@@ -375,8 +375,7 @@ export function initStageLayout(stage: HTMLElement): void {
   stage.addEventListener('pointercancel', () => endDrag(false));
 
   // Card click — capture phase so we beat the inner <a>'s native
-  // navigation. We preventDefault unless the click came from the Open
-  // CTA (which carries [data-galaxy-cta-open]).
+  // navigation.
   //
   // The series-mode module also registers a capture-phase click on
   // the same stage — and was registered FIRST by the orchestrator, so
@@ -400,9 +399,6 @@ export function initStageLayout(stage: HTMLElement): void {
       return;
     }
 
-    // Open CTA — let it navigate.
-    if (target.closest('[data-galaxy-cta-open]')) return;
-
     // Reading-entry overlay. The overlay lives INSIDE a centered
     // card, so the card-click branch below would otherwise interpret
     // a click on it as "card is centered → close center" and run
@@ -423,13 +419,6 @@ export function initStageLayout(stage: HTMLElement): void {
     // native <a href> take over keeps modifier-click and right-click
     // behavior intact.
     if (target.closest('[data-cc-secondary-link]')) return;
-
-    // Close button.
-    if (target.closest('[data-galaxy-cta-close]')) {
-      e.preventDefault();
-      closeCenter();
-      return;
-    }
 
     // Backdrop.
     if (target.closest('[data-galaxy-backdrop]')) {
@@ -457,8 +446,9 @@ export function initStageLayout(stage: HTMLElement): void {
     e.preventDefault();
     if (card.dataset.pos === 'center') {
       // Click on card body while focused = close (acts as a second
-      // tap to dismiss the spotlight). The Open CTA is the only way
-      // to actually navigate.
+      // tap to dismiss the spotlight). The reading-entry overlay's
+      // `[data-reading-entry]` link is the navigation path (bailed
+      // out above before this branch).
       closeCenter();
     } else {
       openCenter(card);
