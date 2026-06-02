@@ -264,3 +264,31 @@ data-es={chapter.title_en}
 ```
 
 **כלל:** בכל קומפוננט שמשתמש ב-data-he/data-en/data-es, לוודא שכל שפה מקבלת את הערך שלה עם fallback.
+
+### 2026-06-02
+**משתני CSS מותאמי-מובייל שהוגדרו רק בבלוק הדסקטופ = טרנספורם שבור בשקט.**
+הבעיה: בקרוסלת הסדרה במובייל (`index.astro`), כלל החברים `[data-stage-mode="series"] .galaxy-card.is-active-series-member`
+השתמש ב-`--series-rel` / `--series-abs-rel` / `--series-row-x` בתוך `transform`, אבל שלושת המשתנים הוגדרו
+**רק** בכלל המקביל שבתוך `@media (min-width:1024px)`. בערכי מובייל הם היו undefined, ה-`calc()` הפך לא תקין,
+כל הצהרת ה-`transform` נזרקה, וכל השיעורים נערמו במרכז. נראה כמו "הכפתור לא עושה כלום".
+
+**הפתרון:** להגדיר את המשתנים הנגזרים גם בכלל המובייל (לא להסתמך על ירושה מכלל בבלוק media אחר —
+media query מגדיר את כל ההצהרות בכלל, כולל הצהרות `--custom-prop`).
+
+**כלל:** אם כלל ב-`@media` משתמש ב-`var(--x)` בתוך `transform`/`calc`, ודא ש-`--x` מוגדר בכלל שחל **באותו** breakpoint.
+custom property לא "זולג" מבלוק media אחר.
+
+### 2026-06-02
+**שני מסלולי series-mode מקבילים — חובה לתאם דגלי-DOM ביניהם.**
+הרקע: יש שתי דרכים להיכנס ל"מצב סדרה" באורביט:
+1. `enterSeriesMode(name)` ב-`universe-series-mode.ts` — מבוסס שם (`data-series-member`), מזריע `--series-focused-index`, מזריק כרטיס יציאה "Other Knowledge".
+2. `applyCourseFilter(card)` ב-`universe-series-actions.ts` — מבוסס `data-series-id` (חזק, עובד בלי מטא-דאטה), אבל **לא** עושה את כל מה שהמסלול הראשון עושה.
+
+הבאג: כפתור "הצג ספרי הסדרה" קורא ל-`applyCourseFilter`, שמסיר `data-pos` מכרטיס הקורס ידנית **בלי** `closeCenter()`.
+לכן `data-focus-hidden` נשאר על הניווט התחתון במובייל → החצים (שכבר מחווטים לדפדף בין החברים) נשארו מוסתרים → "כלום לא קורה".
+
+**הפתרון:** כש-`applyCourseFilter` נכנס/יוצא ממצב סדרה, לתאם ידנית את דגלי הניווט התחתון
+(`delete focusHidden`, `set/delete seriesMode`). כללי `.is-muted`/`.is-active-series-capsule` קיימים היו רק בדסקטופ — להוסיף גם למובייל.
+
+**כלל:** כשמודול A משכפל מצב שמודול B מנהל (focus/series), כל מעבר מצב חייב לתאם את **כל** הדגלים המשותפים,
+אחרת מצב "תקוע למחצה" — חלק מה-UI חושב שהכרטיס פתוח וחלק חושב שלא.

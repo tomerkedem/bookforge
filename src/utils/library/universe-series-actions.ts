@@ -206,6 +206,11 @@ export function initSeriesActions(
   // across nested function boundaries.
   const fan: HTMLElement = fanEl;
   const drawerEls = getDrawerEls();
+  // Mobile carousel chrome (bottom rotate arrows + counter + dots). It
+  // lives OUTSIDE the stage as a fixed sibling. The filtered-series
+  // carousel reuses its rotate arrows to page between members, so we
+  // toggle its focus-hidden / series-mode flags here.
+  const mobileNav = document.querySelector<HTMLElement>('[data-galaxy-mobile-nav]');
 
   /** Active series slug while a children fan is open; `null` otherwise. */
   let activeChildrenSlug: string | null = null;
@@ -426,6 +431,19 @@ export function initSeriesActions(
       });
     stage.dataset.stageMode = 'series';
     setToggleButtonState(card, true);
+
+    // The course card was opened (data-pos="center") before this click,
+    // which hid the bottom nav via `data-focus-hidden` (set by the layout
+    // module's openCenter). The filtered carousel NEEDS those rotate
+    // arrows — series-mode.ts pages between members when they're tapped —
+    // so bring the nav back and flag series-mode chrome (exit chip on,
+    // orbit counter/dots off). Without clearing focus-hidden the lessons
+    // fan out but the user has nothing to page them with, which read as
+    // "the button does nothing" on mobile.
+    if (mobileNav) {
+      delete mobileNav.dataset.focusHidden;
+      mobileNav.dataset.seriesMode = 'true';
+    }
   }
 
   function clearCourseFilter(): void {
@@ -441,6 +459,7 @@ export function initSeriesActions(
     });
     delete stage.dataset.stageMode;
     delete stage.dataset.activeSeries;
+    if (mobileNav) delete mobileNav.dataset.seriesMode;
     // Reset every toggle button back to its "show" state.
     stage
       .querySelectorAll<HTMLElement>('[data-series-action="toggle-items"]')
@@ -584,6 +603,17 @@ export function initSeriesActions(
   document.addEventListener('click', () => clearCourseFilter());
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') clearCourseFilter();
+  });
+
+  // Explicit mobile exit chip — discoverable "back to everything" in the
+  // bottom nav (the document-click dismissal above is hard to hit on a
+  // full-screen phone stage). stopPropagation is cosmetic: the bubble
+  // listener above would also clear, but clearCourseFilter is idempotent.
+  const seriesExitBtn = mobileNav?.querySelector<HTMLElement>('[data-series-exit]');
+  seriesExitBtn?.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    clearCourseFilter();
   });
 
   // ── Drawer dismissal ─────────────────────────────────────────────────

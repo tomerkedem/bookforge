@@ -102,6 +102,15 @@ export function initSeriesMode(
   const posTotalEl = stage.querySelector<HTMLElement>(
     '[data-series-pos-total]',
   );
+  // Mobile bottom-nav series counter ("3 / 6"). It lives OUTSIDE the
+  // stage (the fixed mobile nav sibling), so it's looked up on document
+  // and mirrors the same focused/total values as the desktop pill above.
+  const mobilePosCurrentEl = document.querySelector<HTMLElement>(
+    '[data-series-mobile-pos-current]',
+  );
+  const mobilePosTotalEl = document.querySelector<HTMLElement>(
+    '[data-series-mobile-pos-total]',
+  );
 
   function refreshCarouselState(): void {
     const members = getActiveMembers();
@@ -116,11 +125,19 @@ export function initSeriesMode(
       carouselNextBtn.disabled = atEnd;
       carouselNextBtn.setAttribute('aria-disabled', String(atEnd));
     }
+    const currentText = String(members.length === 0 ? 0 : focused + 1);
+    const totalText = String(members.length);
     if (posCurrentEl) {
-      posCurrentEl.textContent = String(members.length === 0 ? 0 : focused + 1);
+      posCurrentEl.textContent = currentText;
     }
     if (posTotalEl) {
-      posTotalEl.textContent = String(members.length);
+      posTotalEl.textContent = totalText;
+    }
+    if (mobilePosCurrentEl) {
+      mobilePosCurrentEl.textContent = currentText;
+    }
+    if (mobilePosTotalEl) {
+      mobilePosTotalEl.textContent = totalText;
     }
   }
 
