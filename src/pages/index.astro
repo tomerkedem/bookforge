@@ -744,6 +744,23 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
             aria-label={t('library.galaxy.rotateNext', language)}
           ><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
         </div>
+
+        {/* Exit chip for the mobile filtered-series carousel. Hidden by
+            default; revealed only while the bottom nav carries
+            [data-series-mode] (set by applyCourseFilter in
+            universe-series-actions.ts). Tapping it calls clearCourseFilter
+            to return to the full universe — a discoverable alternative to
+            the document-click dismissal, which is hard to hit on a
+            full-screen phone stage. */}
+        <button
+          type="button"
+          class="galaxy-series-exit"
+          data-series-exit
+          aria-label={t('library.series.actions.hideItems', language)}
+        >
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+          <span>{t('library.series.actions.hideItems', language)}</span>
+        </button>
       </div>
     )}
 
@@ -1145,6 +1162,10 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
 
   .galaxy-position-indicator { display: none; }
   .galaxy-position-dots { display: none; }
+  /* Mobile filtered-series exit chip — hidden everywhere by default;
+     revealed only by the mobile [data-series-mode] rule in the
+     max-width:1023px block. Keeps it off desktop entirely. */
+  .galaxy-series-exit { display: none; }
   /* The mobile-nav wrapper is a plain block on desktop — its only
      mobile-visible children (counter + dots) are display:none, and the
      inner `.galaxy-orbit-controls` is `position: fixed` via the desktop
@@ -1155,6 +1176,17 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
   .galaxy-mobile-nav { display: block; }
 
   @media (max-width: 1023px) {
+    /* The global header is 64px (h-16); the shared dashboard offset is 72px,
+       which on phones left an ~8px shortfall at the bottom where the body
+       background showed through below the scene image (invisible in dark
+       mode, a pale strip in light mode). On mobile the stage is a fixed,
+       viewport-centered composition, so we can safely reclaim the full
+       height below the real 64px header and let the scene image reach the
+       true viewport bottom. Desktop is unchanged. */
+    .library-root {
+      height: calc(100dvh - 64px);
+    }
+
     :global(.lb-area-hero .lh) {
       padding: 1rem 0.5rem 0.75rem;
       background-color: transparent;
@@ -1813,6 +1845,24 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
 
     [data-stage-mode="series"] .galaxy-card.is-active-series-member {
       --series-step: clamp(78px, 22vw, 130px);
+      /* These three derive the coverflow position from the member's
+         index. They MUST be defined here: the desktop rule that also
+         defines them is gated behind @media (min-width:1024px), so at
+         mobile widths they were undefined — which made the transform
+         below invalid and collapsed every lesson onto the centre (the
+         root cause of "show series books does nothing" on mobile).
+         --series-active-index / --series-focused-index are set per-member
+         by applyCourseFilter + the series-mode observer. */
+      --series-rel: calc(
+        var(--series-active-index, 0) - var(--series-focused-index, 0)
+      );
+      --series-abs-rel: max(
+        calc(var(--series-rel) * -1),
+        var(--series-rel)
+      );
+      --series-row-x: calc(
+        var(--series-rel) * var(--series-step) * var(--galaxy-dir, 1)
+      );
       transform:
         translate(-50%, -50%)
         translateX(var(--series-row-x))
@@ -1820,7 +1870,68 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
         rotateY(calc(var(--series-rel) * -16deg * var(--galaxy-dir, 1)))
         scale(calc(0.98 - var(--series-abs-rel) * 0.14));
       opacity: calc(1 - var(--series-abs-rel) * 0.34);
+      /* Depth-sort by series distance so the focused lesson sits on top.
+         Without this, members keep the orbit coverflow z-index (based on
+         their orbit slot, not their series slot) and a neighbour can paint
+         over the centred lesson. */
+      z-index: calc(100 - var(--series-abs-rel, 0));
     }
+    /* Filtered-series carousel (mobile): everything that is NOT an active
+       member collapses out of the way so the lessons read as a clean
+       coverflow. Desktop already hides these (rules in the ≥1024px block);
+       the mobile block never had them, so the muted orbit + the course
+       capsule were leaking through behind the lessons. */
+    .library-galaxy[data-stage-mode="series"] .galaxy-card.is-muted,
+    .library-galaxy[data-stage-mode="series"] .galaxy-card.is-active-series-capsule {
+      opacity: 0 !important;
+      pointer-events: none !important;
+    }
+
+    /* Mobile exit chip — only while the bottom nav is flagged series-mode
+       by applyCourseFilter. In that state the orbit counter + dots track
+       the wrong (orbit) set, so they hide and the chip takes their row. */
+    .galaxy-mobile-nav[data-series-mode] .galaxy-position-indicator,
+    .galaxy-mobile-nav[data-series-mode] .galaxy-position-dots {
+      display: none !important;
+    }
+    .galaxy-mobile-nav[data-series-mode] .galaxy-series-exit {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-block-start: 4px;
+      pointer-events: auto;
+      padding: 7px 15px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      letter-spacing: 0.01em;
+      color: rgba(236, 236, 234, 0.92);
+      background: color-mix(in srgb, var(--yuval-galaxy-bg, #00010d) 72%, transparent);
+      border: 1px solid color-mix(in srgb, white 16%, transparent);
+      backdrop-filter: blur(14px) saturate(140%);
+      -webkit-backdrop-filter: blur(14px) saturate(140%);
+      box-shadow:
+        0 8px 20px -10px rgba(0, 0, 0, 0.6),
+        inset 0 1px 0 color-mix(in srgb, white 12%, transparent);
+      cursor: pointer;
+      transition: transform 0.15s ease, background 0.15s ease;
+    }
+    .galaxy-mobile-nav[data-series-mode] .galaxy-series-exit svg {
+      flex: 0 0 auto;
+      opacity: 0.85;
+    }
+    .galaxy-mobile-nav[data-series-mode] .galaxy-series-exit:active {
+      transform: scale(0.96);
+    }
+    :global(html:not(.dark)) .galaxy-mobile-nav[data-series-mode] .galaxy-series-exit {
+      color: rgba(22, 34, 60, 0.88);
+      background: rgba(255, 255, 255, 0.86);
+      border-color: rgba(34, 52, 92, 0.14);
+      box-shadow:
+        0 6px 16px -8px rgba(30, 45, 80, 0.24),
+        inset 0 1px 0 rgba(255, 255, 255, 0.7);
+    }
+
     /* Series carousel chevrons + position indicator are a desktop-only
        affordance. On mobile the focus carousel already exposes left/right
        focus via swipe + the bottom rotate chevrons, so the side chrome is
