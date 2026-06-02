@@ -6,6 +6,8 @@ import KnowledgeAtlas from '../components/library/KnowledgeAtlas.astro';
 import ContinueLearningCard from '../components/library/ContinueLearningCard.astro';
 import LibraryCard from '../components/library/LibraryCard.astro';
 import LibraryQuickActions from '../components/library/LibraryQuickActions.astro';
+import MobileKnowledgeSpace from '../components/library/MobileKnowledgeSpace.astro';
+import MobileAllItemsSheet from '../components/library/MobileAllItemsSheet.astro';
 
 import type { Language } from '../types/index';
 import type { LibraryItem } from '../types/library';
@@ -126,6 +128,28 @@ const atlasItems = orbitItems.map(({ item, kind }) => ({
   subtitle: getItemSummary(item, language),
   typeLabel: t(getItemTypeLabelKey(item.type), language),
 }));
+
+// Mobile "Knowledge Space" summary card + all-items bottom sheet.
+// Same orbit set the carousel/Atlas use, projected to the sheet's shape.
+// A safe href becomes a real link; otherwise href is '' and the row
+// focuses the carousel via [data-library-focus] (no invented URL).
+const mobileCatalogItems = orbitItems.map(({ item, kind }) => ({
+  slug: item.slug,
+  kind,
+  group: (kind === 'book' ? 'books' : 'courses') as 'books' | 'courses' | 'articles',
+  title: getItemTitle(item, language),
+  subtitle: getItemSummary(item, language),
+  typeLabel: t(getItemTypeLabelKey(item.type), language),
+  href: isSafeLibraryHref(item.href) ? item.href : '',
+  thumb: resolveOrbitArtifact(item)?.front ?? '',
+}));
+
+// Summary-card counts — identical source to the desktop Knowledge Core
+// (LibraryStatsPanel): total = readable, per-type = byType. Never hardcoded.
+const ksTotal = stats.readable;
+const ksBooks = stats.byType['book'] ?? 0;
+const ksCourses = stats.byType['course'] ?? 0;
+const ksArticles = stats.byType['article'] ?? 0;
 
 const isLesson =
   continueItem?.type === 'course_lesson' && Boolean(continueItem?.courseSlug);
@@ -642,6 +666,18 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
     {/* Full-screen "all items" view, opened by the Knowledge Core widget.
         Selecting an item bridges back via [data-library-focus]. */}
     <KnowledgeAtlas items={atlasItems} language={language} />
+
+    {/* Mobile-only (≤1023px): "Knowledge Space" summary card anchored to the
+        free bottom zone below the carousel, plus its all-items bottom sheet.
+        Desktop equivalents are the Knowledge Core widget + KnowledgeAtlas. */}
+    <MobileKnowledgeSpace
+      language={language}
+      total={ksTotal}
+      books={ksBooks}
+      courses={ksCourses}
+      articles={ksArticles}
+    />
+    <MobileAllItemsSheet items={mobileCatalogItems} language={language} />
 
     {/* Mobile carousel navigation. A single wrapper hosts every nav
         element so the bottom row stays cohesive and never overlaps the
@@ -1618,6 +1654,16 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
     }
     [dir="rtl"] .galaxy-orbit-btn svg { transform: scaleX(-1); }
 
+    /* Course cards open larger than books/lessons on mobile — the
+       series capsule is the centrepiece and earns more spotlight, and
+       the glass action dock beneath it needs the extra room (mirrors
+       the desktop course-only 80dvh enlargement). Only --center-card-w
+       is bumped; the focused-card scale, the dock width and the dock
+       anchor all derive from it, so cover + dock grow in lockstep. */
+    .galaxy-card[data-kind="course"] {
+      --center-card-w: min(74vw, 40dvh);
+    }
+
     /* Focused mobile card flies up so its visible top lands flush with
        the hero subtitle bottom. `--mobile-focused-top` is set by
        initFocusedCardAnchor() at runtime (the 168px fallback is only
@@ -1668,48 +1714,101 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       }
     }
 
+    /* Series action dock (mobile) — a glass panel anchored directly
+       below the opened course cover, holding the two series actions
+       stacked vertically. It mirrors the book card's reading-entry
+       panel anchoring (top:100% of the card box + counter-scale) so the
+       dock hangs from the visible cover bottom and reads as part of the
+       focused-card composition instead of two bare pills floating over
+       the neighbour cards. The opened state hides the bottom nav
+       (data-focus-hidden), so the dock owns the space below the cover.
+       transform-origin top-center keeps it width-locked to the cover
+       regardless of the card-grow scale. */
     .galaxy-cta {
       position: absolute;
-      top: 66%;
+      top: calc(100% - 28px);
       left: 50%;
       bottom: auto;
       right: auto;
-      transform: translate(-50%, -50%);
+      width: calc(var(--center-card-w) - 8px);
+      max-width: none;
+      box-sizing: border-box;
+      /* Counter-scale against the focused card's --center-card-w/cbw
+         scale so the dock renders at its authored size, width-locked to
+         the visible cover. */
+      transform:
+        translate(-50%, 0)
+        scale(calc(var(--card-base-width) / var(--center-card-w)));
+      transform-origin: top center;
       display: flex;
       flex-direction: column;
-      gap: 0.5rem;
-      justify-content: center;
-      align-items: center;
+      gap: 0;
+      align-items: stretch;
+      justify-content: flex-start;
       opacity: 0;
       pointer-events: none;
-      transition: opacity 0.25s ease 0.15s;
-      z-index: 2;
+      transition: opacity 0.25s ease 0.1s;
+      z-index: 62;
     }
     .galaxy-card[data-pos="center"] .galaxy-cta {
       opacity: 1;
       pointer-events: auto;
-      /* Counter-scale against the focused card's --center-card-w/cbw
-         scale so pills render at their authored size. */
-      transform: translate(-50%, -50%) scale(calc(var(--card-base-width) / var(--center-card-w)));
     }
-    .galaxy-cta-series-actions { gap: 0.4rem; flex-direction: row; }
-    .galaxy-cta-series-btn {
-      padding: 0.35rem 0.7rem 0.35rem 0.35rem;
-      font-size: 0.72rem;
-      gap: 0.4rem;
-      border-radius: 12px;
+
+    /* The action list IS the glass dock surface. Prefixed with
+       [data-pos="center"] so it outranks the global (0,1,0) base rule
+       further down the file, which is non-media and would otherwise win
+       on source order at mobile widths. */
+    .galaxy-card[data-pos="center"] .galaxy-cta-series-actions {
+      flex-direction: column;
+      gap: 0.45rem;
+      align-items: stretch;
+      margin: 0;
+      padding: 0.6rem;
+      border-radius: 18px;
+      background:
+        linear-gradient(
+          180deg,
+          color-mix(in srgb, var(--yuval-galaxy-bg, #00010d) 60%, transparent) 0%,
+          color-mix(in srgb, var(--yuval-galaxy-bg, #00010d) 82%, transparent) 100%
+        );
+      border: 1px solid color-mix(in srgb, white 12%, transparent);
+      backdrop-filter: blur(16px) saturate(140%);
+      -webkit-backdrop-filter: blur(16px) saturate(140%);
+      box-shadow:
+        0 18px 44px -18px rgba(0, 0, 0, 0.72),
+        inset 0 1px 0 color-mix(in srgb, white 14%, transparent);
+    }
+    :global(html:not(.dark)) .galaxy-card[data-pos="center"] .galaxy-cta-series-actions {
+      background:
+        linear-gradient(
+          180deg,
+          rgba(255, 255, 255, 0.84) 0%,
+          rgba(255, 255, 255, 0.66) 100%);
+      border-color: rgba(34, 52, 92, 0.14);
+      box-shadow:
+        0 18px 40px -18px rgba(30, 45, 80, 0.30),
+        inset 0 1px 0 rgba(255, 255, 255, 0.7);
+    }
+    .galaxy-card[data-pos="center"] .galaxy-cta-series-btn {
+      width: 100%;
+      justify-content: flex-start;
+      padding: 0.55rem 0.8rem;
+      font-size: 0.82rem;
+      gap: 0.6rem;
+      border-radius: 13px;
       letter-spacing: 0;
     }
-    .galaxy-cta-series-btn-icon {
-      width: 22px;
-      height: 22px;
+    .galaxy-card[data-pos="center"] .galaxy-cta-series-btn-icon {
+      width: 28px;
+      height: 28px;
     }
-    .galaxy-cta-series-btn-icon svg {
-      width: 12px;
-      height: 12px;
+    .galaxy-card[data-pos="center"] .galaxy-cta-series-btn-icon svg {
+      width: 14px;
+      height: 14px;
     }
-    .galaxy-cta-series-btn-label {
-      font-size: 0.72rem;
+    .galaxy-card[data-pos="center"] .galaxy-cta-series-btn-label {
+      font-size: 0.82rem;
     }
 
     [data-stage-mode="series"] .galaxy-card.is-active-series-member {

@@ -1,0 +1,864 @@
+---
+/**
+ * MobileAllItemsSheet — mobile-only "all items" bottom sheet.
+ * ────────────────────────────────────────────────────────────────────────────
+ * Opened by the MobileKnowledgeSpace card's CTA (`[data-mobile-allitems-open]`).
+ * A native-feeling bottom sheet (not a centered modal) that lists every
+ * catalog item in a list view (default) or a 2-column grid view, with type
+ * filter chips and a search box.
+ *
+ * This is the phone counterpart of the desktop KnowledgeAtlas overlay; both
+ * are hidden on the other form factor. Item data is derived in index.astro
+ * from the same orbit set the carousel/Atlas use — no new data source, no
+ * invented URLs. A row with a safe href is a real `<a>` (navigates to the
+ * item page); a row without one (e.g. a series capsule, no /series route)
+ * is a `<button>` that closes the sheet and lets universe-layout focus the
+ * matching carousel station via its existing `[data-library-focus]` listener.
+ *
+ * Theme via `--yuval-galaxy-*` tokens (intentional dark + light, not an
+ * invert). RTL/LTR follow the page `dir`; logical properties only.
+ * Accessibility: role=dialog, aria-modal, aria-labelledby, focus trap,
+ * focus return, ESC + backdrop close, body scroll lock, reduced motion.
+ */
+import type { Language } from '../../types/index';
+import { t } from '../../i18n';
+import { getLanguageDirection } from '../../utils/language';
+
+export interface MobileSheetItem {
+  slug: string;
+  /** Orbit kind — drives the fallback glyph + filter group. */
+  kind: 'book' | 'lesson' | 'course';
+  /** Filter group: book→books, lesson/course→courses. */
+  group: 'books' | 'courses' | 'articles';
+  title: string;
+  subtitle: string;
+  /** Localized type badge (`library.itemType.*`). */
+  typeLabel: string;
+  /** Safe destination href, or '' when the item is not directly navigable. */
+  href: string;
+  /** Thumbnail URL (front.png / placeholder), or '' for the glyph fallback. */
+  thumb: string;
+}
+
+interface Props {
+  items: MobileSheetItem[];
+  language: Language;
+}
+
+const { items, language } = Astro.props;
+const direction = getLanguageDirection(language);
+
+const chips: Array<{ id: string; labelKey: string }> = [
+  { id: 'all',      labelKey: 'knowledgeSpace.filterAll' },
+  { id: 'books',    labelKey: 'knowledgeSpace.filterBooks' },
+  { id: 'courses',  labelKey: 'knowledgeSpace.filterCourses' },
+  { id: 'articles', labelKey: 'knowledgeSpace.filterArticles' },
+];
+
+const rows = items.map((it) => ({
+  ...it,
+  /* Lowercased haystack for case-insensitive search (title + subtitle +
+     type + kind). Hebrew text searches naturally — toLowerCase is a no-op
+     on Hebrew and substring matching works as expected. */
+  search: `${it.title} ${it.subtitle} ${it.typeLabel} ${it.kind}`.toLowerCase(),
+}));
+---
+
+<div class="mas" data-mobile-allitems hidden aria-hidden="true">
+  <div class="mas__backdrop" data-mas-backdrop aria-hidden="true"></div>
+
+  <div
+    class="mas__sheet"
+    data-mas-sheet
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="mas-title"
+    dir={direction}
+    tabindex="-1"
+  >
+    {/* Drag handle (visual only). */}
+    <div class="mas__handle" aria-hidden="true"></div>
+
+    <header class="mas__header">
+      <div class="mas__heading">
+        <span class="mas__heading-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="2.6"></circle>
+            <ellipse cx="12" cy="12" rx="10" ry="4.3"></ellipse>
+            <ellipse cx="12" cy="12" rx="10" ry="4.3" transform="rotate(60 12 12)"></ellipse>
+          </svg>
+        </span>
+        <h2 id="mas-title" class="mas__title">{t('knowledgeSpace.allItemsTitle', language)}</h2>
+      </div>
+      <button
+        type="button"
+        class="mas__close"
+        data-mas-close
+        aria-label={t('knowledgeSpace.close', language)}
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M6 6l12 12M18 6L6 18"></path>
+        </svg>
+      </button>
+    </header>
+
+    {/* Search */}
+    <div class="mas__search">
+      <span class="mas__search-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="7"></circle>
+          <path d="m21 21-4.3-4.3"></path>
+        </svg>
+      </span>
+      <input
+        type="search"
+        class="mas__search-input"
+        data-mas-search
+        placeholder={t('knowledgeSpace.searchPlaceholder', language)}
+        aria-label={t('knowledgeSpace.searchPlaceholder', language)}
+        autocomplete="off"
+        autocapitalize="off"
+        spellcheck="false"
+        enterkeyhint="search"
+      />
+    </div>
+
+    {/* Filter chips */}
+    <div class="mas__chips" role="group" aria-label={t('knowledgeSpace.allItemsTitle', language)}>
+      {chips.map((chip) => (
+        <button
+          type="button"
+          class:list={['mas__chip', { 'is-active': chip.id === 'all' }]}
+          data-mas-filter={chip.id}
+          aria-pressed={chip.id === 'all' ? 'true' : 'false'}
+        >
+          {t(chip.labelKey, language)}
+        </button>
+      ))}
+    </div>
+
+    {/* Scrollable list/grid body */}
+    <div class="mas__body" data-mas-body>
+      <div class="mas__list" data-mas-list data-view="list">
+        {rows.map((it) => {
+          const El = it.href ? 'a' : 'button';
+          // Conditional <a>/<button> attributes. Cast on spread so the prop
+          // union doesn't trip Astro's intrinsic-attribute checker.
+          const linkProps = it.href
+            ? { href: it.href }
+            : { type: 'button', 'data-library-focus': it.slug };
+          return (
+            <El
+              class="mas__row"
+              data-mas-item
+              data-mas-group={it.group}
+              data-mas-search={it.search}
+              {...(linkProps as unknown as Record<string, string>)}
+            >
+              <span class="mas__thumb" data-kind={it.kind}>
+                {it.thumb ? (
+                  <img src={it.thumb} alt="" loading="lazy" decoding="async" />
+                ) : (
+                  <span class="mas__thumb-glyph" aria-hidden="true">
+                    {it.kind === 'book' && (
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                      </svg>
+                    )}
+                    {it.kind === 'course' && (
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21.5 9 12 4 2.5 9 12 14l9.5-5Z"></path>
+                        <path d="M6 11v5.4c0 1.4 2.7 2.6 6 2.6s6-1.2 6-2.6V11"></path>
+                        <path d="M21.5 9v5.4"></path>
+                      </svg>
+                    )}
+                    {it.kind === 'lesson' && (
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M7 3h7l5 5v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"></path>
+                        <path d="M14 3v5h5"></path>
+                        <path d="M9.5 14.5 11 16l3.5-3.5"></path>
+                      </svg>
+                    )}
+                  </span>
+                )}
+              </span>
+
+              <span class="mas__row-body">
+                <span class="mas__row-type">{it.typeLabel}</span>
+                <span class="mas__row-title">{it.title}</span>
+                {it.subtitle && <span class="mas__row-sub">{it.subtitle}</span>}
+              </span>
+
+              <span class="mas__chevron" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+              </span>
+            </El>
+          );
+        })}
+      </div>
+
+      <p class="mas__empty" data-mas-empty hidden>
+        {t('knowledgeSpace.noResults', language)}
+      </p>
+    </div>
+
+    {/* Bottom segmented control: list / grid */}
+    <div class="mas__segment" role="group" aria-label={t('knowledgeSpace.listView', language)}>
+      <button
+        type="button"
+        class="mas__seg-btn is-active"
+        data-mas-view="list"
+        aria-pressed="true"
+      >
+        <span class="mas__seg-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="8" y1="6" x2="20" y2="6"></line>
+            <line x1="8" y1="12" x2="20" y2="12"></line>
+            <line x1="8" y1="18" x2="20" y2="18"></line>
+            <circle cx="4" cy="6" r="1"></circle>
+            <circle cx="4" cy="12" r="1"></circle>
+            <circle cx="4" cy="18" r="1"></circle>
+          </svg>
+        </span>
+        <span class="mas__seg-label">{t('knowledgeSpace.listView', language)}</span>
+      </button>
+      <button
+        type="button"
+        class="mas__seg-btn"
+        data-mas-view="grid"
+        aria-pressed="false"
+      >
+        <span class="mas__seg-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7.5" height="7.5" rx="1.5"></rect>
+            <rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"></rect>
+            <rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"></rect>
+            <rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5"></rect>
+          </svg>
+        </span>
+        <span class="mas__seg-label">{t('knowledgeSpace.gridView', language)}</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* ═══════════════════════════════════════════════════════════════════
+     MOBILE-ONLY. The desktop KnowledgeAtlas already covers this role.
+     ═══════════════════════════════════════════════════════════════════ */
+  @media (min-width: 1024px) {
+    .mas { display: none !important; }
+  }
+
+  .mas[hidden] { display: none; }
+
+  .mas {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    isolation: isolate;
+  }
+
+  /* ── Backdrop ────────────────────────────────────────────────────────── */
+  .mas__backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(4, 6, 16, 0.62);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    opacity: 0;
+    transition: opacity 300ms ease;
+  }
+  :global(html:not(.dark)) .mas__backdrop {
+    background: rgba(20, 30, 50, 0.42);
+  }
+  .mas[data-mas-open] .mas__backdrop { opacity: 1; }
+
+  /* ── Sheet ───────────────────────────────────────────────────────────── */
+  .mas__sheet {
+    position: relative;
+    width: 100%;
+    max-width: 34rem;
+    height: 92dvh;
+    max-height: 92dvh;
+    display: flex;
+    flex-direction: column;
+    padding: 0.5rem 0 max(env(safe-area-inset-bottom, 0px), 0.5rem);
+    border-start-start-radius: 22px;
+    border-start-end-radius: 22px;
+    background:
+      radial-gradient(ellipse 90% 40% at 50% 0%,
+        color-mix(in srgb, var(--yuval-galaxy-accent-cyan) 10%, transparent) 0%, transparent 60%),
+      var(--yuval-galaxy-surface-elevated);
+    border: 1px solid var(--yuval-galaxy-border-strong);
+    border-block-end: 0;
+    box-shadow:
+      inset 0 1px 0 var(--yuval-galaxy-border-glow, rgba(255, 255, 255, 0.14)),
+      0 -10px 40px -10px rgba(2, 6, 20, 0.6);
+    backdrop-filter: blur(calc(var(--yuval-galaxy-card-blur, 16px) + 8px)) saturate(120%);
+    -webkit-backdrop-filter: blur(calc(var(--yuval-galaxy-card-blur, 16px) + 8px)) saturate(120%);
+    color: var(--yuval-galaxy-text);
+    transform: translateY(100%);
+    transition: transform 380ms var(--yuval-galaxy-ease-out, cubic-bezier(0.22, 1, 0.36, 1));
+  }
+  :global(html:not(.dark)) .mas__sheet {
+    background:
+      radial-gradient(ellipse 90% 40% at 50% 0%,
+        rgba(210, 235, 255, 0.5) 0%, transparent 64%),
+      linear-gradient(180deg,
+        rgba(255, 255, 255, 0.97) 0%,
+        rgba(247, 250, 255, 0.95) 100%);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.9),
+      0 -10px 40px -12px rgba(30, 45, 80, 0.28);
+  }
+  .mas[data-mas-open] .mas__sheet { transform: translateY(0); }
+  .mas__sheet:focus-visible { outline: none; }
+
+  /* ── Drag handle ─────────────────────────────────────────────────────── */
+  .mas__handle {
+    flex-shrink: 0;
+    width: 40px;
+    height: 4px;
+    margin: 0.375rem auto 0.5rem;
+    border-radius: 999px;
+    background: var(--yuval-galaxy-border-strong);
+  }
+
+  /* ── Header ──────────────────────────────────────────────────────────── */
+  .mas__header {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0 1rem 0.625rem;
+  }
+  .mas__heading {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .mas__heading-icon {
+    display: inline-flex;
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    color: var(--yuval-galaxy-accent-cyan);
+  }
+  .mas__heading-icon svg { width: 100%; height: 100%; }
+  .mas__title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.2;
+    color: var(--yuval-galaxy-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .mas__close {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    margin: 0;
+    padding: 0;
+    color: var(--yuval-galaxy-text-muted);
+    background: var(--yuval-galaxy-surface-muted);
+    border: 1px solid var(--yuval-galaxy-border);
+    border-radius: 11px;
+    cursor: pointer;
+    transition: color 180ms ease, background-color 180ms ease;
+  }
+  .mas__close svg { width: 17px; height: 17px; }
+  .mas__close:hover {
+    color: var(--yuval-galaxy-text);
+    background: var(--yuval-galaxy-surface);
+  }
+  .mas__close:focus-visible {
+    outline: 2px solid var(--yuval-galaxy-accent-cyan);
+    outline-offset: 2px;
+  }
+
+  /* ── Search ──────────────────────────────────────────────────────────── */
+  .mas__search {
+    flex-shrink: 0;
+    position: relative;
+    display: flex;
+    align-items: center;
+    margin: 0 1rem 0.625rem;
+  }
+  .mas__search-icon {
+    position: absolute;
+    inset-inline-start: 12px;
+    width: 16px;
+    height: 16px;
+    color: var(--yuval-galaxy-text-soft);
+    pointer-events: none;
+  }
+  .mas__search-icon svg { width: 100%; height: 100%; }
+  .mas__search-input {
+    width: 100%;
+    appearance: none;
+    -webkit-appearance: none;
+    padding: 11px 14px;
+    padding-inline-start: 36px;
+    font: inherit;
+    font-size: 0.875rem;
+    color: var(--yuval-galaxy-text);
+    background: var(--yuval-galaxy-surface-muted);
+    border: 1px solid var(--yuval-galaxy-border);
+    border-radius: 12px;
+    transition: border-color 200ms ease, box-shadow 200ms ease;
+  }
+  .mas__search-input::placeholder { color: var(--yuval-galaxy-text-soft); }
+  .mas__search-input:focus-visible {
+    outline: none;
+    border-color: var(--yuval-galaxy-accent-cyan);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--yuval-galaxy-accent-cyan) 20%, transparent);
+  }
+  .mas__search-input::-webkit-search-cancel-button { -webkit-appearance: none; appearance: none; }
+
+  /* ── Filter chips ────────────────────────────────────────────────────── */
+  .mas__chips {
+    flex-shrink: 0;
+    display: flex;
+    gap: 7px;
+    padding: 0 1rem 0.625rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .mas__chips::-webkit-scrollbar { display: none; }
+  .mas__chip {
+    flex-shrink: 0;
+    margin: 0;
+    padding: 6px 14px;
+    font: inherit;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--yuval-galaxy-text-muted);
+    background: var(--yuval-galaxy-surface-muted);
+    border: 1px solid var(--yuval-galaxy-border);
+    border-radius: 999px;
+    cursor: pointer;
+    transition: color 180ms ease, background-color 180ms ease, border-color 180ms ease;
+  }
+  .mas__chip.is-active {
+    color: var(--yuval-galaxy-text-inverse, #0a0f24);
+    background: var(--yuval-galaxy-accent-cyan);
+    border-color: transparent;
+  }
+  .mas__chip:focus-visible {
+    outline: 2px solid var(--yuval-galaxy-accent-cyan);
+    outline-offset: 2px;
+  }
+
+  /* ── Body (scroll area) ──────────────────────────────────────────────── */
+  .mas__body {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    padding: 2px 1rem 1rem;
+    scrollbar-width: thin;
+  }
+
+  /* ── List ────────────────────────────────────────────────────────────── */
+  .mas__list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  /* ── Row (shared by <a> and <button>) ────────────────────────────────── */
+  .mas__row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    min-height: 72px;
+    margin: 0;
+    padding: 0.625rem 0.75rem;
+    text-align: start;
+    text-decoration: none;
+    font: inherit;
+    color: var(--yuval-galaxy-text);
+    background: var(--yuval-galaxy-card-surface);
+    border: 1px solid var(--yuval-galaxy-card-border);
+    border-radius: 14px;
+    cursor: pointer;
+    transition: border-color 180ms ease, background-color 180ms ease, transform 180ms ease;
+  }
+  .mas__row:hover {
+    border-color: var(--yuval-galaxy-border-strong);
+    background: var(--yuval-galaxy-surface-elevated);
+  }
+  .mas__row:active { transform: scale(0.99); }
+  .mas__row:focus-visible {
+    outline: 2px solid var(--yuval-galaxy-accent-cyan);
+    outline-offset: 2px;
+  }
+  .mas__row[hidden] { display: none; }
+
+  /* Thumbnail / glyph tile. */
+  .mas__thumb {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 56px;
+    border-radius: 9px;
+    overflow: hidden;
+    background: var(--yuval-galaxy-surface-muted);
+    border: 1px solid var(--yuval-galaxy-border);
+  }
+  .mas__thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .mas__thumb[data-kind="book"]   { --mas-accent: var(--yuval-galaxy-type-book); }
+  .mas__thumb[data-kind="course"] { --mas-accent: var(--yuval-galaxy-type-course); }
+  .mas__thumb[data-kind="lesson"] { --mas-accent: var(--yuval-galaxy-type-course); }
+  .mas__thumb-glyph {
+    display: inline-flex;
+    width: 22px;
+    height: 22px;
+    color: var(--mas-accent, var(--yuval-galaxy-text-soft));
+  }
+  .mas__thumb-glyph svg { width: 100%; height: 100%; }
+
+  .mas__row-body {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .mas__row-type {
+    font-size: 0.625rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--yuval-galaxy-accent-cyan);
+  }
+  .mas__row-title {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    line-height: 1.25;
+    color: var(--yuval-galaxy-text);
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
+    overflow: hidden;
+  }
+  .mas__row-sub {
+    font-size: 0.8125rem;
+    line-height: 1.3;
+    color: var(--yuval-galaxy-text-muted);
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
+    overflow: hidden;
+  }
+
+  .mas__chevron {
+    flex-shrink: 0;
+    display: inline-flex;
+    width: 18px;
+    height: 18px;
+    color: var(--yuval-galaxy-text-soft);
+  }
+  .mas__chevron svg { width: 100%; height: 100%; }
+  /* Chevron points "forward" per direction. */
+  :global([dir="rtl"]) .mas__chevron { transform: scaleX(-1); }
+
+  /* ── Grid view ───────────────────────────────────────────────────────── */
+  .mas__list[data-view="grid"] {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  /* Very narrow screens fall back to a single column. */
+  @media (max-width: 359px) {
+    .mas__list[data-view="grid"] { grid-template-columns: 1fr; }
+  }
+  .mas__list[data-view="grid"] .mas__row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+    min-height: 0;
+    padding: 0.75rem;
+  }
+  .mas__list[data-view="grid"] .mas__thumb {
+    width: 100%;
+    height: 96px;
+  }
+  .mas__list[data-view="grid"] .mas__row-title {
+    -webkit-line-clamp: 2;
+  }
+  .mas__list[data-view="grid"] .mas__row-sub { display: none; }
+  .mas__list[data-view="grid"] .mas__chevron { display: none; }
+
+  /* ── Empty state ─────────────────────────────────────────────────────── */
+  .mas__empty {
+    margin: 0;
+    padding: 48px 16px;
+    text-align: center;
+    font-size: 0.875rem;
+    color: var(--yuval-galaxy-text-soft);
+  }
+  .mas__empty[hidden] { display: none; }
+
+  /* ── Bottom segmented control ────────────────────────────────────────── */
+  .mas__segment {
+    flex-shrink: 0;
+    display: flex;
+    gap: 4px;
+    margin: 0 1rem;
+    padding: 4px;
+    background: var(--yuval-galaxy-surface-muted);
+    border: 1px solid var(--yuval-galaxy-border);
+    border-radius: 13px;
+  }
+  .mas__seg-btn {
+    flex: 1 1 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4375rem;
+    min-height: 40px;
+    margin: 0;
+    padding: 0.4375rem 0.5rem;
+    font: inherit;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--yuval-galaxy-text-muted);
+    background: transparent;
+    border: 0;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: color 180ms ease, background-color 180ms ease, box-shadow 180ms ease;
+  }
+  .mas__seg-btn.is-active {
+    color: var(--yuval-galaxy-text);
+    background: var(--yuval-galaxy-surface-elevated);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+  }
+  :global(html:not(.dark)) .mas__seg-btn.is-active {
+    box-shadow: 0 1px 3px rgba(30, 45, 80, 0.12);
+  }
+  .mas__seg-btn:focus-visible {
+    outline: 2px solid var(--yuval-galaxy-accent-cyan);
+    outline-offset: 2px;
+  }
+  .mas__seg-icon {
+    display: inline-flex;
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+  }
+  .mas__seg-icon svg { width: 100%; height: 100%; }
+
+  /* ── Reduced motion ──────────────────────────────────────────────────── */
+  @media (prefers-reduced-motion: reduce) {
+    .mas__backdrop,
+    .mas__sheet { transition: none !important; }
+    .mas__row,
+    .mas__chip,
+    .mas__seg-btn,
+    .mas__close { transition: none !important; }
+    .mas__row:active { transform: none; }
+  }
+</style>
+
+<script>
+  /**
+   * MobileAllItemsSheet — open / close / filter / search / view-toggle /
+   * focus-trap. Opened by any `[data-mobile-allitems-open]` trigger (the
+   * MobileKnowledgeSpace CTA). Item navigation: rows that are <a> navigate
+   * natively (we only release the scroll lock first); rows that are
+   * <button data-library-focus> close the sheet and let universe-layout
+   * focus the matching carousel station via its own delegated listener.
+   */
+  function initMobileAllItemsSheet(): void {
+    const rootEl = document.querySelector<HTMLElement>('[data-mobile-allitems]');
+    if (!rootEl || rootEl.dataset.masReady === 'true') return;
+    rootEl.dataset.masReady = 'true';
+    const root: HTMLElement = rootEl;
+
+    const sheetEl = root.querySelector<HTMLElement>('[data-mas-sheet]');
+    if (!sheetEl) return;
+    const sheet: HTMLElement = sheetEl;
+
+    const backdrop = root.querySelector<HTMLElement>('[data-mas-backdrop]');
+    const closeBtn = root.querySelector<HTMLButtonElement>('[data-mas-close]');
+    const searchInput = root.querySelector<HTMLInputElement>('[data-mas-search]');
+    const emptyEl = root.querySelector<HTMLElement>('[data-mas-empty]');
+    const listEl = root.querySelector<HTMLElement>('[data-mas-list]');
+    const chips = Array.from(root.querySelectorAll<HTMLButtonElement>('[data-mas-filter]'));
+    const viewBtns = Array.from(root.querySelectorAll<HTMLButtonElement>('[data-mas-view]'));
+    const rows = Array.from(root.querySelectorAll<HTMLElement>('[data-mas-item]'));
+
+    let activeFilter = 'all';
+    let lastTrigger: HTMLElement | null = null;
+    let isOpen = false;
+
+    function lockScroll(): void { document.body.style.overflow = 'hidden'; }
+    function unlockScroll(): void { document.body.style.overflow = ''; }
+
+    function refresh(): void {
+      const query = (searchInput?.value ?? '').trim().toLowerCase();
+      let visible = 0;
+      rows.forEach((row) => {
+        const matchesFilter =
+          activeFilter === 'all' || row.dataset.masGroup === activeFilter;
+        const matchesSearch =
+          query === '' || (row.dataset.masSearch ?? '').includes(query);
+        const show = matchesFilter && matchesSearch;
+        row.hidden = !show;
+        if (show) visible += 1;
+      });
+      if (emptyEl) emptyEl.hidden = visible > 0;
+    }
+
+    function setFilter(id: string): void {
+      activeFilter = id;
+      chips.forEach((chip) => {
+        const on = chip.dataset.masFilter === id;
+        chip.setAttribute('aria-pressed', on ? 'true' : 'false');
+        chip.classList.toggle('is-active', on);
+      });
+      refresh();
+    }
+
+    function setView(view: string): void {
+      if (listEl) listEl.dataset.view = view;
+      viewBtns.forEach((btn) => {
+        const on = btn.dataset.masView === view;
+        btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+        btn.classList.toggle('is-active', on);
+      });
+    }
+
+    function open(trigger: HTMLElement | null): void {
+      // Desktop guard: the desktop KnowledgeAtlas owns this role.
+      if (window.matchMedia('(min-width: 1024px)').matches) return;
+      if (isOpen) return;
+      isOpen = true;
+      lastTrigger = trigger;
+      root.hidden = false;
+      root.setAttribute('aria-hidden', 'false');
+      lockScroll();
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => { root.dataset.masOpen = 'true'; });
+      });
+      window.setTimeout(() => {
+        (searchInput ?? closeBtn ?? sheet)?.focus();
+      }, 90);
+    }
+
+    function close(returnFocus = true): void {
+      if (!isOpen) return;
+      isOpen = false;
+      delete root.dataset.masOpen;
+      root.setAttribute('aria-hidden', 'true');
+      unlockScroll();
+      let done = false;
+      const finish = (): void => {
+        if (done) return;
+        done = true;
+        root.hidden = true;
+      };
+      sheet.addEventListener('transitionend', finish, { once: true });
+      window.setTimeout(finish, 460);
+      if (returnFocus) lastTrigger?.focus();
+      lastTrigger = null;
+    }
+
+    function trapFocus(e: KeyboardEvent): void {
+      const focusables = Array.from(
+        sheet.querySelectorAll<HTMLElement>(
+          'a[href], button, input, [tabindex]:not([tabindex="-1"])',
+        ),
+      ).filter((el) => !el.hidden && el.offsetParent !== null);
+      if (focusables.length === 0) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+
+    // ── Open trigger ──
+    document.addEventListener('click', (e) => {
+      if (!root.isConnected) return;
+      const trigger = (e.target as Element | null)
+        ?.closest<HTMLElement>('[data-mobile-allitems-open]');
+      if (trigger) {
+        e.preventDefault();
+        open(trigger);
+      }
+    });
+
+    // ── Close: backdrop, close button, Escape ──
+    backdrop?.addEventListener('click', () => close());
+    closeBtn?.addEventListener('click', () => close());
+    document.addEventListener('keydown', (e) => {
+      if (!root.isConnected || !isOpen) return;
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        close();
+      } else if (e.key === 'Tab') {
+        trapFocus(e);
+      }
+    });
+
+    // ── Filters / search / view ──
+    chips.forEach((chip) => {
+      chip.addEventListener('click', () => setFilter(chip.dataset.masFilter ?? 'all'));
+    });
+    searchInput?.addEventListener('input', refresh);
+    viewBtns.forEach((btn) => {
+      btn.addEventListener('click', () => setView(btn.dataset.masView ?? 'list'));
+    });
+
+    // ── Row activation ──
+    rows.forEach((row) => {
+      row.addEventListener('click', () => {
+        if (row.tagName === 'A') {
+          // Native navigation follows; just release the lock and hide the
+          // sheet without stealing focus back to the trigger.
+          unlockScroll();
+          close(false);
+        } else {
+          // Series capsule etc. — universe-layout focuses the carousel via
+          // its own [data-library-focus] listener on this same click.
+          close(false);
+        }
+      });
+    });
+
+    refresh();
+  }
+
+  initMobileAllItemsSheet();
+  document.addEventListener('astro:page-load', initMobileAllItemsSheet);
+</script>
