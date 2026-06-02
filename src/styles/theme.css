@@ -35,7 +35,7 @@ html {
   --yuval-bg-secondary: #ede8df;
   --yuval-surface: #FFFFFF;               /* cards, header, sidebars */
   --yuval-header-bg: rgba(255, 255, 255, 0.95);
-  --yuval-reading-bg: #F7F7F7;
+  --yuval-reading-bg: #FAF8F1;
 
   /* ── Text ── */
   --yuval-text: #1F1F1F;
@@ -2109,18 +2109,23 @@ a, button {
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   BOOK OVERVIEW — modern dark AI-learning palette
+   BOOK OVERVIEW — premium AI-learning palette (day + night)
    ───────────────────────────────────────────────────────────────
    Scoped tokens under the `--bo-*` namespace. Used by the Book
    Overview page (src/pages/books/[slug].astro and the components
-   under src/components/book-overview/) to swap from the platform's
-   warm neutral chrome to a deep navy surface with purple/blue/cyan
-   accents.
+   under src/components/book-overview/) plus the Lesson Path panel
+   (BookOverviewChapters.astro).
 
-   The palette is dark by design and does NOT track the global
-   light/dark toggle — the Book Overview is always rendered in this
-   AI-learning skin to read as a "study session" surface distinct
-   from the reading view (which keeps the warm reading palette).
+   Both modes are defined here. `:root` carries the DAY values and
+   `.dark` overrides for NIGHT. The .dark scope is set by the
+   platform's existing theme mechanism — Book Overview now follows
+   the global light/dark toggle exactly like the rest of Yuval.
+
+   Day mode — warm white pearl surface, deep navy text, soft indigo/
+   violet/cyan accents. Premium and calm; no neon, no heavy drops.
+
+   Night mode — deep navy surface, off-white text, restrained violet/
+   cyan glow. Premium and modern; not flat black, not OLED-stark.
 
    Gold (--yuval-gold-*) is reserved for the Yuval brand mark only.
    Do not use --yuval-gold-* for buttons, progress, borders, active
@@ -2128,68 +2133,143 @@ a, button {
    use --bo-* tokens below.
    ═══════════════════════════════════════════════════════════════ */
 :root {
-  /* ── Surfaces ────────────────────────────────────────────────
-     Three-tier depth: page → surface → elevated. The 6-luminance
-     spread keeps cards readable on the dark page without harsh
-     borders, mirroring how the reading view layers reading-bg →
-     bg → surface but in cool tones. */
+  /* ── Surfaces — warm pearl tier ─────────────────────────────
+     page → surface → elevated, ~5-luminance spread. Pearl is
+     intentionally not pure white: a 4-point step off #FFFFFF
+     keeps the page from feeling sterile under long reading. */
+  --bo-bg:               #F5F1E6;   /* page bg, warm pearl */
+  --bo-surface:          #FBF9F2;   /* cards (slightly lighter than page) */
+  --bo-surface-elevated: #FFFFFF;   /* hover/active fill on cards */
+
+  /* ── Borders — slate at very low alpha on warm white ───────── */
+  --bo-border:           rgba(15, 23, 42, 0.08);
+  --bo-border-strong:    rgba(15, 23, 42, 0.16);
+  --bo-border-accent:    rgba(79, 70, 229, 0.35);   /* indigo */
+
+  /* ── Text — deep navy on pearl. Contrast ratios on #FBF9F2:
+        primary   #0F172A → ~17:1  AAA
+        secondary #475569 →  ~8:1  AAA
+        muted     #64748B →  ~5:1  AA */
+  --bo-text-primary:     #0F172A;
+  --bo-text-secondary:   #475569;
+  --bo-text-muted:       #64748B;
+
+  /* ── Primary accents — slightly deeper than night for contrast
+        on light. Purple is the headline accent (level badges, CTA
+        root, active states). Indigo owns focus + links. Cyan and
+        blue close the spectrum for progress + secondary highlights. */
+  --bo-purple:           #6D28D9;   /* violet-700 */
+  --bo-violet:           #7C3AED;   /* violet-600 */
+  --bo-blue:             #2563EB;   /* blue-600 */
+  --bo-cyan:             #0891B2;   /* cyan-600 (readable on pearl) */
+  --bo-indigo:           #4F46E5;   /* indigo-600 */
+
+  /* Tinted variants for hover/active fills. Lower alpha than night
+     because a light surface amplifies tints — the same 0.16 reads
+     as a chunky wash on pearl. */
+  --bo-purple-soft:      rgba(109, 40, 217, 0.10);
+  --bo-violet-soft:      rgba(124, 58, 237, 0.10);
+  --bo-blue-soft:        rgba(37, 99, 235, 0.08);
+  --bo-cyan-soft:        rgba(8, 145, 178, 0.10);
+
+  /* Success — green for "completed" state on Lesson Path / chapter
+     rows. green-700 on day stays AA against the soft fill behind it. */
+  --bo-success:          #15803D;
+  --bo-success-soft:     rgba(21, 128, 61, 0.10);
+  --bo-success-border:   rgba(21, 128, 61, 0.35);
+
+  /* Focus ring — indigo. Visible on pearl and accessible. */
+  --bo-focus-ring:       #4F46E5;
+
+  /* ── Gradients ──────────────────────────────────────────────
+     Use the deeper day accents so the gradient reads on the warm
+     surface without bleaching out at the cyan stop. */
+  --bo-grad-cta:
+    linear-gradient(135deg, #6D28D9 0%, #4F46E5 45%, #0891B2 100%);
+  --bo-grad-progress:
+    linear-gradient(90deg, #7C3AED 0%, #2563EB 55%, #0891B2 100%);
+  --bo-grad-progress-rtl:
+    linear-gradient(270deg, #7C3AED 0%, #2563EB 55%, #0891B2 100%);
+
+  /* ── Shadows — soft slate drops, no heavy black ──────────── */
+  --bo-shadow-sm:
+    0 1px 2px rgba(15, 23, 42, 0.06),
+    0 0 0 1px rgba(15, 23, 42, 0.04);
+  --bo-shadow-md:
+    0 8px 22px -12px rgba(15, 23, 42, 0.12),
+    0 2px 6px -2px rgba(79, 70, 229, 0.05),
+    0 0 0 1px rgba(15, 23, 42, 0.05);
+  --bo-shadow-lg:
+    0 24px 56px -24px rgba(15, 23, 42, 0.16),
+    0 8px 18px -10px rgba(79, 70, 229, 0.08),
+    0 0 0 1px rgba(15, 23, 42, 0.06);
+  --bo-glow-cyan:        0 0 18px rgba(8, 145, 178, 0.10);
+  --bo-glow-purple:      0 0 18px rgba(109, 40, 217, 0.12);
+
+  /* ── Texture layers ───────────────────────────────────────── */
+  --bo-haze:
+    radial-gradient(60% 45% at 12% 0%,  rgba(109, 40, 217, 0.05), transparent 70%),
+    radial-gradient(55% 40% at 88% 8%,  rgba(8, 145, 178, 0.04),  transparent 75%),
+    radial-gradient(80% 60% at 50% 100%, rgba(37, 99, 235, 0.03), transparent 70%);
+  --bo-hero-aura:
+    radial-gradient(closest-side, rgba(109, 40, 217, 0.14), transparent 70%);
+
+  /* ── Page background gradient — consumed by .bo-page-bg.
+        Day uses a warm pearl wash, slightly cooler at the bottom. */
+  --bo-page-bg:          #F5F1E6;
+  --bo-page-bg-gradient:
+    linear-gradient(180deg,
+      #FAF7EE 0%,
+      #F5F1E6 45%,
+      #F1ECE0 80%,
+      #ECE6D8 100%
+    );
+}
+
+.dark {
+  /* ── Surfaces — deep navy tier ──────────────────────────────
+     page → surface → elevated. Slight teal-charcoal lean on the
+     card so it reads as "deep water" against the page. */
   --bo-bg:               #05080D;
-  /* Card base — very dark teal-charcoal. Slight blue-green lean reads
-     as "deep water" against the warmer charcoal page bg. */
   --bo-surface:          #0C1416;
   --bo-surface-elevated: #0F1A1D;
 
-  /* ── Borders ────────────────────────────────────────────────
-     Cool slate with very low alpha so card outlines read as a hair-
-     thin line rather than a hard frame. Use directly or with adjusted
-     alpha for hover/active states. */
+  /* ── Borders — cool slate, low alpha ──────────────────────── */
   --bo-border:           rgba(148, 163, 184, 0.14);
   --bo-border-strong:    rgba(148, 163, 184, 0.28);
   --bo-border-accent:    rgba(124, 58, 237, 0.45);
 
-  /* ── Text ──────────────────────────────────────────────────── */
+  /* ── Text — off white + cool gray ─────────────────────────── */
   --bo-text-primary:     #F8FAFC;
   --bo-text-secondary:   #CBD5E1;
   --bo-text-muted:       #94A3B8;
 
-  /* ── Primary accents ────────────────────────────────────────
-     Purple is the headline accent (level badges, primary CTA root,
-     active states). Violet is the warmer mid-tone used by gradients
-     to bridge purple → blue. Blue + cyan close the spectrum and own
-     the progress fill / link / focus-ring tones. */
+  /* ── Primary accents — brighter for dark surfaces ─────────── */
   --bo-purple:           #7C3AED;
   --bo-violet:           #8B5CF6;
   --bo-blue:             #3B82F6;
   --bo-cyan:             #22D3EE;
   --bo-indigo:           #6366F1;
 
-  /* Tinted variants for hover/active fills (translucent so they read
-     as "the accent at lower energy" against the dark surface). */
   --bo-purple-soft:      rgba(124, 58, 237, 0.16);
   --bo-violet-soft:      rgba(139, 92, 246, 0.16);
   --bo-blue-soft:        rgba(59, 130, 246, 0.16);
   --bo-cyan-soft:        rgba(34, 211, 238, 0.16);
 
-  /* Focus ring — single cyan so the Book Overview reads as one
-     interactive system. Avoid the platform gold here. */
+  --bo-success:          #22C55E;
+  --bo-success-soft:     rgba(34, 197, 94, 0.14);
+  --bo-success-border:   rgba(34, 197, 94, 0.45);
+
   --bo-focus-ring:       #22D3EE;
 
-  /* ── Gradients ──────────────────────────────────────────────
-     Reusable; reference via var() rather than redefining inline. */
   --bo-grad-cta:
     linear-gradient(135deg, #7C3AED 0%, #6366F1 45%, #22D3EE 100%);
   --bo-grad-progress:
     linear-gradient(90deg, #7C3AED 0%, #3B82F6 55%, #22D3EE 100%);
-
-  /* Direction-aware progress gradient. Components can swap to this
-     in RTL contexts so the brighter end aligns with the reading
-     direction's leading edge. */
   --bo-grad-progress-rtl:
     linear-gradient(270deg, #7C3AED 0%, #3B82F6 55%, #22D3EE 100%);
 
-  /* ── Shadows ────────────────────────────────────────────────
-     Cool-tinted instead of pure black so layered cards still feel
-     "lit" by the surrounding accent atmosphere. */
+  /* ── Shadows — cool-tinted to read as "lit" not black ─────── */
   --bo-shadow-sm:
     0 1px 2px rgba(2, 6, 23, 0.6),
     0 0 0 1px rgba(148, 163, 184, 0.06);
@@ -2204,14 +2284,23 @@ a, button {
   --bo-glow-cyan:        0 0 24px rgba(34, 211, 238, 0.18);
   --bo-glow-purple:      0 0 24px rgba(124, 58, 237, 0.22);
 
-  /* ── Texture layers (consumed by .bo-page-bg / .bo-hero-glow) ──
-     Defined as tokens so a single tweak reshapes the whole page. */
+  /* ── Texture layers ───────────────────────────────────────── */
   --bo-haze:
     radial-gradient(60% 45% at 12% 0%,  rgba(124, 58, 237, 0.10), transparent 70%),
     radial-gradient(55% 40% at 88% 8%,  rgba(34, 211, 238, 0.06),  transparent 75%),
     radial-gradient(80% 60% at 50% 100%, rgba(59, 130, 246, 0.05), transparent 70%);
   --bo-hero-aura:
     radial-gradient(closest-side, rgba(124, 58, 237, 0.28), transparent 70%);
+
+  /* ── Page background gradient — current night recipe ─────── */
+  --bo-page-bg:          #0d0d0d;
+  --bo-page-bg-gradient:
+    linear-gradient(180deg,
+      #0d0d0d 0%,
+      #0c0d0f 40%,
+      #0a0c12 75%,
+      #080a10 100%
+    );
 }
 
 /* ── Texture utility classes ──────────────────────────────────────
@@ -2219,26 +2308,18 @@ a, button {
    the haze / hero glow without forcing every component to know about
    the texture stack. */
 
-/* Page-level dark glass. Apply on the page's outermost wrapper.
-   Background composition (top → bottom):
-   1. A subtle purple-tinted radial accent near the top, kept low alpha
-      so it reads as ambient rather than a glow.
-   2. A vertical linear gradient: warm charcoal at the top, holding
-      most of the page, then easing into a warm steel-blue toward the
-      bottom — gives the impression of a deep room lit by cool lamps
-      below the fold. The warm tones (slight red lean in the charcoal,
-      slight purple lean in the blue) keep the surface from feeling
-      sterile while staying calmly dark. */
+/* Page-level glass. Apply on the page's outermost wrapper. Both
+   themes share this rule — the actual background tone comes from
+   --bo-page-bg + --bo-page-bg-gradient, which switch automatically
+   under `.dark`.
+
+   Day  — soft pearl wash, slightly cooler toward the bottom.
+   Night — warm charcoal at the top, easing to steel-blue below the
+           fold, mimicking a deep room lit by cool lamps. */
 .bo-page-bg {
   position: relative;
-  background-color: #0d0d0d;
-  background-image: linear-gradient(
-    180deg,
-    #0d0d0d 0%,
-    #0c0d0f 40%,
-    #0a0c12 75%,
-    #080a10 100%
-  );
+  background-color: var(--bo-page-bg);
+  background-image: var(--bo-page-bg-gradient);
   background-attachment: fixed;
   color: var(--bo-text-primary);
 }
@@ -2288,17 +2369,17 @@ a, button {
   position: relative;
   /* Flat fill — single solid color across the whole card, no
      gradients, radials, or grain. Keeps every pixel of the surface
-     at the same tone so the cards read as deep matte rather than
-     lit-from-anywhere. */
+     at the same tone so the cards read as deep matte (night) or
+     calm pearl glass (day) rather than lit-from-anywhere. */
   background: var(--bo-surface);
-  border: 1px solid rgba(148, 163, 184, 0.13);
-  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.34);
-  transition: border-color 200ms ease;
+  border: 1px solid var(--bo-border);
+  box-shadow: var(--bo-shadow-md);
+  transition: border-color 200ms ease, box-shadow 200ms ease;
 }
 
 .bo-premium-surface:hover,
 .bo-premium-surface:focus-within {
-  border-color: rgba(148, 163, 184, 0.22);
+  border-color: var(--bo-border-strong);
 }
 
 @media (prefers-reduced-motion: reduce) {

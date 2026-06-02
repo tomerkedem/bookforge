@@ -445,7 +445,7 @@
    byte untouched.
 
    Palette intent: warm-ivory observatory daylight — bright, premium,
-   scientific, calm. Tuned against knowledge-observatory-day-bg.png.
+   scientific, calm. Tuned against ai_researcher_workspace_day_bg.webp.
    Components consume semantic tokens (Dependency Inversion), so this one
    block re-themes the header, panels, controls and glows coherently.
    ─────────────────────────────────────────────────────────────────────────── */

@@ -34,6 +34,13 @@ interface Props {
    */
   showSearch?: boolean;
   /**
+   * Forwarded to Header. When true, the compact mobile/tablet search
+   * icon button is rendered in the controls rail. Only LibraryLayout
+   * opts in — the Core Search panel that this button opens lives on
+   * the /library page.
+   */
+  showCoreSearchTrigger?: boolean;
+  /**
    * Forwarded to Header. Opts the page into the new circular
    * LanguageGlobeSelector. Defaults to false — every existing route
    * keeps the legacy selector until explicitly opted in.
@@ -53,6 +60,7 @@ const {
   showLanguageToggle = true,
   showQuote = true,
   showSearch = false,
+  showCoreSearchTrigger = false,
   useGlobeLanguageSelector = true,
   class: className,
 } = Astro.props;
@@ -224,6 +232,7 @@ const isDev = import.meta.env.DEV;
         showLanguageToggle={showLanguageToggle}
         showQuote={showQuote}
         showSearch={showSearch}
+        showCoreSearchTrigger={showCoreSearchTrigger}
         useGlobeLanguageSelector={useGlobeLanguageSelector}
       />
     )}

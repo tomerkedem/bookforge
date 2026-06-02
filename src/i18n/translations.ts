@@ -115,6 +115,34 @@ export const translations: Translations = {
   'bookOverview.whatYouWillLearn':  { he: 'מה תלמדו',                            en: 'What you will learn',                     es: 'Lo que aprenderás' },
   'bookOverview.listenSummary':     { he: 'האזן לסיכום',                         en: 'Listen to summary',                       es: 'Escuchar resumen' },
 
+  // ── Lesson Summary — center summary card ───────────────────────────────────
+  // Used by BookOverviewSummary on the lesson summary page. The titles
+  // are intentionally framed as "lesson summary" rather than the older
+  // "book summary" to reinforce that this screen is the entry to a
+  // single lesson's content.
+  'lessonSummary.summary.title':         { he: 'תקציר',                       en: 'Summary',                          es: 'Resumen' },
+  'lessonSummary.summary.subtitle':      { he: 'עיקרי הדברים לפני הקריאה',     en: 'Key points before reading',        es: 'Puntos clave antes de leer' },
+  'lessonSummary.summary.emptyState':    { he: 'אין כרגע תקציר זמין לפרק הזה.', en: 'No summary is available for this chapter yet.', es: 'Aún no hay un resumen disponible para este capítulo.' },
+  'lessonSummary.summary.readAloud':     { he: 'הקראת התקציר',                en: 'Read summary aloud',              es: 'Leer resumen en voz alta' },
+  'lessonSummary.summary.keyTakeaways':  { he: 'נקודות מפתח',                  en: 'Key takeaways',                   es: 'Puntos clave' },
+
+  // ── Lesson Summary — right "Lesson Path" panel ─────────────────────────────
+  // Used by BookOverviewChapters (the right-rail chapters menu on the book
+  // landing / lesson summary page). Strings frame the panel as a learning
+  // journey rather than a flat chapter list. Reused state labels (completed,
+  // active, locked, upcoming) live here so the screen reader story stays
+  // consistent across the rail and any future tooltips.
+  'lessonSummary.lessonPath.title':            { he: 'תוכן העניינים',          en: 'Table of contents',     es: 'Índice' },
+  'lessonSummary.lessonPath.currentLesson':    { he: 'פרק נוכחי',              en: 'Current chapter',       es: 'Capítulo actual' },
+  'lessonSummary.lessonPath.chapterAriaLabel': { he: 'פרק {{n}}: {{title}}',  en: 'Chapter {{n}}: {{title}}', es: 'Capítulo {{n}}: {{title}}' },
+  'lessonSummary.lessonPath.completed':        { he: 'הושלם',                 en: 'Completed',             es: 'Completado' },
+  'lessonSummary.lessonPath.active':           { he: 'פעיל',                  en: 'Active',                es: 'Activo' },
+  'lessonSummary.lessonPath.locked':           { he: 'נעול',                  en: 'Locked',                es: 'Bloqueado' },
+  'lessonSummary.lessonPath.upcoming':         { he: 'בהמשך',                  en: 'Upcoming',              es: 'Próximamente' },
+  'lessonSummary.lessonPath.durationMinutes':  { he: '{{n}} ד׳',              en: '{{n}} min',             es: '{{n}} min' },
+  'lessonSummary.lessonPath.startChapter':     { he: 'התחל פרק',               en: 'Start chapter',         es: 'Iniciar capítulo' },
+  'lessonSummary.lessonPath.continueChapter':  { he: 'המשך פרק',               en: 'Continue chapter',      es: 'Continuar capítulo' },
+
   // ── Courses (learning) section ──────────────────────────────────────────────
   'courses.title':         { he: 'למידה מקורסים',    en: 'Learning from Courses', es: 'Aprendizaje de cursos' },
   'courses.subtitle':      { he: 'סיכומי שיעורים בתהליך', en: 'Lecture summaries in progress', es: 'Resúmenes de clases en curso' },
@@ -161,6 +189,7 @@ export const translations: Translations = {
   'book.lecturer':         { he: 'מרצה',         en: 'Lecturer',         es: 'Instructor' },
   'book.editedBy':         { he: 'סיכום ועריכה', en: 'Summarized and edited by', es: 'Resumido y editado por' },
   'book.by':               { he: 'מאת:',          en: 'By:',              es: 'Por:' },
+  'book.date':             { he: 'תאריך',         en: 'Date',             es: 'Fecha' },
 
   // ── Header ─────────────────────────────────────────────────────────────────
   'header.skipToContent':  { he: 'דלג לתוכן',       en: 'Skip to content',  es: 'Saltar al contenido' },
@@ -199,12 +228,6 @@ export const translations: Translations = {
     en: 'Available languages',
     es: 'Idiomas disponibles',
   },
-  'header.themeTooltip': {
-    he: 'החלף ערכת נושא',
-    en: 'Toggle theme',
-    es: 'Cambiar tema',
-  },
-
   // ── Breadcrumbs ─────────────────────────────────────────────────────────────
   'breadcrumb.books':      { he: 'ספרים',          en: 'Books',            es: 'Libros' },
 
@@ -568,12 +591,22 @@ export const translations: Translations = {
   // subtitle. Used by the redesigned premium glass action panel below
   // the focused card.
   'library.readingEntry.continueReadingShort': { he: 'המשך קריאה', en: 'Continue reading', es: 'Continuar leyendo' },
+  // SSR default for books that have NEVER been opened (no localStorage
+  // progress entries). The hydrator in index.astro flips this to
+  // `continueReadingShort` (or the chapter-aware "המשך · פרק N") the
+  // moment any chapter has progress > 0.
+  'library.readingEntry.startReadingShort':    { he: 'התחל קריאה', en: 'Start reading',   es: 'Empezar a leer' },
   'library.readingEntry.chapterN':              { he: 'פרק {{n}}', en: 'Chapter {{n}}',    es: 'Capítulo {{n}}' },
 
   // ── library.centerCard.* — quiet secondary link + metadata row that
   //    sit BELOW the existing reading-entry pill on the focused card.
   //    The primary glowing pill itself is unchanged.
   'library.centerCard.bookSummaryLink': { he: 'מה יש בספר?',          en: 'What is in this book?',          es: '¿Qué hay en este libro?' },
+  // Secondary glass pill that sits inside the reading-entry panel
+  // below the "המשך קריאה / פרק X" title row. Opens the book summary
+  // page ({item.href}), not the reader.
+  'library.centerCard.bookSummaryPill': { he: 'תקציר הספר',          en: 'Book summary',                   es: 'Resumen del libro' },
+  'library.centerCard.bookSummaryPillAria': { he: 'פתח את תקציר הספר', en: 'Open the book summary',          es: 'Abrir el resumen del libro' },
   'library.centerCard.metaMinutes':     { he: '{{n}} דק׳ קריאה',     en: '{{n}} min read',                 es: '{{n}} min de lectura' },
   'library.centerCard.metaProgress':    { he: '{{n}}% הושלם',         en: '{{n}}% completed',               es: '{{n}}% completado' },
   // Section label that sits above the three glass meta capsules in the
@@ -632,6 +665,18 @@ export const translations: Translations = {
   'admin.global.importConfirm':          { he: 'פעולה זו תחליף את כל המטא העריכתית הנוכחית ב-{{items}} פריטים ו-{{series}} סדרות מהקובץ. להמשיך?', en: 'This will replace all current editorial metadata with {{items}} items and {{series}} series from the file. Continue?', es: 'Esto reemplazará todos los metadatos editoriales actuales con {{items}} elementos y {{series}} series del archivo. ¿Continuar?' },
   'admin.toast.editorialImported':       { he: 'יובאו: {{items}} פריטים, {{series}} סדרות',                                    en: 'Imported {{items}} items, {{series}} series',                                es: 'Importado: {{items}} elementos, {{series}} series' },
   'admin.toast.editorialImportInvalid':  { he: 'קובץ לא תקין: {{reason}}',                                                     en: 'Invalid file: {{reason}}',                                                   es: 'Archivo no válido: {{reason}}' },
+  'admin.global.catalogNoticeTitle':     { he: 'אופן הפרסום של הספרייה',                                                       en: 'How library publishing works',                                              es: 'Cómo se publica la biblioteca' },
+  'admin.global.catalogNoticeDescription':{ he: 'שינויים ב-Admin חיים בזיכרון בלבד עד שמייצאים אותם. רענון או סגירה של הלשונית מאפסים אותם. כדי לפרסם — ייצא catalog.json, החלף את src/data/library/catalog.json ועשה build.', en: 'Admin changes live in memory only until you export them. A refresh or closing the tab discards them. To publish: Export catalog.json, replace src/data/library/catalog.json, and build.', es: 'Los cambios del Admin viven solo en memoria hasta exportarlos. Una recarga o cerrar la pestaña los descarta. Para publicar: exporta catalog.json, reemplaza src/data/library/catalog.json y construye.' },
+  'admin.global.exportCatalogTitle':     { he: 'ייצוא קטלוג ספרייה',                                                          en: 'Export library catalog',                                                    es: 'Exportar catálogo de biblioteca' },
+  'admin.global.exportCatalogDescription':{ he: 'הורדה של קטלוג מאוחד שמשלב את catalog.json הקיים עם טיוטות ה-Admin.',         en: 'Download a unified catalog that merges the existing catalog.json with current Admin drafts.', es: 'Descarga un catálogo unificado que fusiona el catalog.json existente con los borradores del Admin.' },
+  'admin.global.exportCatalogButton':    { he: 'ייצא catalog.json',                                                            en: 'Export catalog.json',                                                       es: 'Exportar catalog.json' },
+  'admin.global.importCatalogTitle':     { he: 'ייבוא קטלוג ספרייה',                                                          en: 'Import library catalog',                                                    es: 'Importar catálogo de biblioteca' },
+  'admin.global.importCatalogDescription':{ he: 'טעינה של catalog.json לטיוטות Admin. החלפה מלאה. לא משנה את הקובץ ב-src/data.', en: 'Load a catalog.json into the Admin drafts. Replace-mode. Does not touch the file in src/data.', es: 'Carga un catalog.json en los borradores del Admin. Modo reemplazo. No toca el archivo en src/data.' },
+  'admin.global.importCatalogButton':    { he: 'ייבא catalog.json',                                                            en: 'Import catalog.json',                                                       es: 'Importar catalog.json' },
+  'admin.global.catalogImportConfirm':   { he: 'פעולה זו תחליף את כל הטיוטות ב-{{count}} פריטים מהקובץ. להמשיך?',              en: 'This will replace all current drafts with {{count}} items from the file. Continue?', es: 'Esto reemplazará todos los borradores actuales con {{count}} elementos del archivo. ¿Continuar?' },
+  'admin.toast.catalogExported':         { he: 'יוצא: {{count}} פריטים ב-catalog.json',                                       en: 'Exported {{count}} items to catalog.json',                                  es: 'Exportado: {{count}} elementos a catalog.json' },
+  'admin.toast.catalogImported':         { he: 'יובאו: {{count}} פריטים מ-catalog.json',                                      en: 'Imported {{count}} items from catalog.json',                                es: 'Importado: {{count}} elementos de catalog.json' },
+  'admin.toast.catalogImportInvalid':    { he: 'קובץ catalog.json לא תקין: {{reason}}',                                       en: 'Invalid catalog.json: {{reason}}',                                          es: 'catalog.json no válido: {{reason}}' },
 
   'admin.drawer.eyebrow':                { he: 'עריכת מטא-דאטה',     en: 'Edit metadata',           es: 'Editar metadatos' },
   'admin.drawer.close':                  { he: 'סגירת עורך',         en: 'Close editor',            es: 'Cerrar editor' },
@@ -992,6 +1037,30 @@ export const translations: Translations = {
   'library.atlas.count':             { he: '{{n}} פריטים',           en: '{{n}} items',                es: '{{n}} elementos' },
   'library.atlas.empty':             { he: 'לא נמצאו פריטים תואמים',  en: 'No matching items found',     es: 'No se encontraron elementos' },
 
+  // ── knowledgeSpace.* — mobile "Knowledge Space" summary card + all-items
+  //    bottom sheet. Mobile-only surface; the desktop equivalent is the
+  //    Knowledge Core widget + Knowledge Atlas overlay (both hidden ≤1023px).
+  //    es mirrors en where Tomer did not supply a Spanish string.
+  'knowledgeSpace.title':            { he: 'מרחב הידע שלך',           en: 'Your Knowledge Space',          es: 'Tu espacio de conocimiento' },
+  // "{{n}} connected items" — total line on the summary card.
+  'knowledgeSpace.totalItems':       { he: '{{n}} פריטים מחוברים',    en: '{{n}} connected items',         es: '{{n}} elementos conectados' },
+  'knowledgeSpace.connectedItems':   { he: 'פריטים מחוברים',          en: 'connected items',               es: 'elementos conectados' },
+  'knowledgeSpace.books':            { he: 'ספרים',                   en: 'Books',                         es: 'Libros' },
+  'knowledgeSpace.courses':          { he: 'קורסים',                  en: 'Courses',                       es: 'Cursos' },
+  'knowledgeSpace.articles':         { he: 'מאמרים',                  en: 'Articles',                      es: 'Artículos' },
+  'knowledgeSpace.viewAll':          { he: 'צפה בכל הפריטים',         en: 'View all items',                es: 'Ver todos los elementos' },
+  'knowledgeSpace.allItemsTitle':    { he: 'כל הפריטים במרחב הידע',   en: 'All items in your knowledge space', es: 'Todos los elementos de tu espacio de conocimiento' },
+  'knowledgeSpace.searchPlaceholder':{ he: 'חפש פריטים...',           en: 'Search items...',               es: 'Buscar elementos...' },
+  'knowledgeSpace.filterAll':        { he: 'הכל',                     en: 'All',                           es: 'Todo' },
+  'knowledgeSpace.filterBooks':      { he: 'ספרים',                   en: 'Books',                         es: 'Libros' },
+  'knowledgeSpace.filterCourses':    { he: 'קורסים',                  en: 'Courses',                       es: 'Cursos' },
+  'knowledgeSpace.filterArticles':   { he: 'מאמרים',                  en: 'Articles',                      es: 'Artículos' },
+  'knowledgeSpace.listView':         { he: 'תצוגת רשימה',             en: 'List view',                     es: 'Vista de lista' },
+  'knowledgeSpace.gridView':         { he: 'תצוגת כרטיסים',           en: 'Grid view',                     es: 'Vista de cuadrícula' },
+  'knowledgeSpace.close':            { he: 'סגור',                    en: 'Close',                         es: 'Cerrar' },
+  'knowledgeSpace.openItem':         { he: 'פתח',                     en: 'Open',                          es: 'Abrir' },
+  'knowledgeSpace.noResults':        { he: 'לא נמצאו פריטים',         en: 'No items found',                es: 'No se encontraron elementos' },
+
   // ── library.recommendation.* — recommendation strip ────────────────────────
   'library.recommendation.forYou':            { he: 'מומלץ עבורך',                       en: 'Recommended for you',                 es: 'Recomendado para ti' },
   'library.recommendation.basedOnYourLibrary':{ he: 'על בסיס הספרייה שלך',               en: 'Based on your library',                es: 'Basado en tu biblioteca' },
@@ -1017,6 +1086,17 @@ export const translations: Translations = {
   'library.search.noResults':     { he: 'לא נמצאו תוצאות',             en: 'No results',                  es: 'Sin resultados' },
   'library.search.tryAnother':    { he: 'נסה חיפוש אחר',               en: 'Try another search',          es: 'Prueba otra búsqueda' },
   'library.search.clear':         { he: 'נקה חיפוש',                   en: 'Clear search',                es: 'Limpiar búsqueda' },
+
+  // ── library.coreSearch.* — mobile Core Search Mode ─────────────────────────
+  // Tap-the-core search affordance: a small luminous trigger anchored at
+  // the visual centre of the galaxy expands into a glass input. Typing
+  // pulls matching orbit cards inward and fades non-matches outward.
+  'library.coreSearch.hint':           { he: 'הקש על הליבה כדי לחפש',      en: 'Tap the Core to search',      es: 'Toca el núcleo para buscar' },
+  'library.coreSearch.placeholder':    { he: 'חפש במרחב הידע',              en: 'Search the knowledge space',  es: 'Buscar en el espacio de conocimiento' },
+  'library.coreSearch.openAria':       { he: 'פתח חיפוש דרך הליבה',         en: 'Open core search',            es: 'Abrir búsqueda del núcleo' },
+  'library.coreSearch.closeAria':      { he: 'סגור חיפוש',                  en: 'Close search',                es: 'Cerrar búsqueda' },
+  'library.coreSearch.clearAria':      { he: 'נקה טקסט חיפוש',              en: 'Clear search text',           es: 'Limpiar texto de búsqueda' },
+  'library.coreSearch.noMatches':      { he: 'אין פריטים תואמים',           en: 'No matching items',           es: 'No hay elementos coincidentes' },
 
   // ── library.empty.* — empty states per content kind ────────────────────────
   'library.empty.items':       { he: 'עדיין אין פריטים. תכנים שעוברים עיבוד ב-BookForge יופיעו כאן ברגע שיהיו מוכנים.', en: 'No items yet. Content processed by BookForge will appear here once it is ready.',                  es: 'Aún no hay elementos. Los contenidos procesados por BookForge aparecerán aquí en cuanto estén listos.' },

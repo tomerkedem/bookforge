@@ -30,9 +30,19 @@ interface Props {
   slug: string;
   language: Language;
   isRtl: boolean;
+  /**
+   * "card"   — default standalone card. Used when the section is
+   *            rendered on its own row in the page flow.
+   * "inline" — strips the card chrome (no surface, no border, no
+   *            shadow, no padding-block) so the section can sit as a
+   *            footer inside another card (e.g. the Hero). All
+   *            selectors and data attributes are preserved so the
+   *            hydration script keeps working without changes.
+   */
+  variant?: 'card' | 'inline';
 }
 
-const { chapters, slug, language, isRtl } = Astro.props;
+const { chapters, slug, language, isRtl, variant = 'card' } = Astro.props;
 
 // Strip down to what the client script needs (id + titles). Keeps the
 // inline JSON small even on long books.
@@ -42,12 +52,15 @@ const chaptersData = JSON.stringify(
 ---
 
 <section
-  class:list={['bop', isRtl && 'is-rtl']}
+  class:list={['bop', isRtl && 'is-rtl', variant === 'inline' && 'is-inline']}
   aria-label={t('bookOverview.notStarted', language)}
   data-book-slug={slug}
   data-chapters={chaptersData}
 >
-  <div class="bop-card bo-premium-surface" data-bop-state="empty">
+  <div
+    class:list={['bop-card', variant !== 'inline' && 'bo-premium-surface']}
+    data-bop-state="empty"
+  >
     <!-- LEFT: label + percentage -->
     <div class="bop-left">
       <span class="bop-label" data-i18n="reading.leftDock.progress">
@@ -301,11 +314,17 @@ const chaptersData = JSON.stringify(
     padding: 0.55rem 0.9rem;
     border-radius: 12px;
     color: var(--bo-text-primary);
-    /* De-emphasize: this is a status strip, not a card. */
-    background: rgba(15, 23, 42, 0.35);
+    /* De-emphasize: this is a status strip, not a card. The 92%
+       opacity on var(--bo-surface) creates a faint step-down from
+       the surrounding Summary/Hero cards in both themes — pearl
+       glass goes slightly transparent over the page on day, navy
+       glass goes slightly transparent over the page on night. No
+       hardcoded overlay color so the strip never inverts contrast
+       between modes. */
+    background: color-mix(in srgb, var(--bo-surface) 92%, transparent);
     border-color: var(--bo-border);
     box-shadow: none;
-    opacity: 0.92;
+    opacity: 0.95;
   }
 
   /* Three columns once the card has the room. The bar takes the bulk
@@ -369,7 +388,10 @@ const chaptersData = JSON.stringify(
     position: relative;
     height: 4px;
     border-radius: 999px;
-    background: rgba(148, 163, 184, 0.08);
+    /* Track from --bo-text-muted at low alpha — readable on both
+       pearl (slate on warm white) and navy (slate on dark), no
+       per-theme conditional needed. */
+    background: color-mix(in srgb, var(--bo-text-muted) 18%, transparent);
     overflow: hidden;
   }
   .bop-bar-fill {
@@ -440,5 +462,87 @@ const chaptersData = JSON.stringify(
     .bop-current {
       transition: none;
     }
+  }
+
+  /* ════════════════════════════════════════════════════════════════
+     INLINE VARIANT — sits as a flex item inside the Hero actions row.
+     Strips the card surface and folds the previous 3-column grid into
+     a single horizontal lockup:
+         [label] [pct] [bar───────]
+     The current-chapter / completed line is hidden in this density
+     because (a) the Hero CTA already targets the current chapter and
+     (b) any second line would force the action row to wrap and grow
+     vertically. Selectors and data attributes are unchanged so the
+     hydration script keeps working without edits.
+     ════════════════════════════════════════════════════════════════ */
+  .bop.is-inline {
+    /* Take the remaining row width inside .boh-actions so the bar
+       grows to fill whatever space is left after CTA + bookmark. */
+    flex: 1 1 140px;
+    min-inline-size: 0;
+    display: flex;
+    align-items: center;
+  }
+  .bop.is-inline .bop-card {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    width: 100%;
+    min-inline-size: 0;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    opacity: 1;
+    padding: 0;
+    border-radius: 0;
+    /* Wipe the desktop grid override from the card-mode @media block
+       above — the inline variant is flex, not grid. */
+    grid-template-columns: none;
+  }
+  /* Label cluster stays inline with the bar, no column-stacking. */
+  .bop.is-inline .bop-left {
+    flex: 0 0 auto;
+    flex-direction: row;
+    align-items: baseline;
+    gap: 0.3rem;
+    line-height: 1;
+  }
+  .bop.is-inline .bop-label {
+    font-size: 0.6rem;
+    letter-spacing: 0.06em;
+  }
+  .bop.is-inline .bop-pct {
+    font-size: 0.78rem;
+    font-family: 'Assistant', system-ui, sans-serif;
+    font-weight: 600;
+  }
+  /* Center column hosts the bar; takes the remaining width.
+     `flex-direction: row` overrides the base style's `column` so the
+     bar grows along the inline axis (its width) instead of stretching
+     vertically into a 3px-tall column with zero width. */
+  .bop.is-inline .bop-center {
+    flex: 1 1 0;
+    min-inline-size: 40px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+  }
+  .bop.is-inline .bop-empty {
+    /* No room for the italic empty hint in this density — the 0%
+       label + 0% bar already communicate the same state. */
+    display: none;
+  }
+  .bop.is-inline .bop-bar {
+    flex: 1 1 0;
+    /* Explicit width fallback so the bar fills the row even in
+       browsers that haven't resolved the flex sizing pass yet. */
+    width: 100%;
+    min-inline-size: 40px;
+    block-size: 3px;
+  }
+  /* Current-chapter / completed-count line is dropped from inline
+     mode. The Hero's CTA covers "continue from chapter N" already. */
+  .bop.is-inline .bop-right {
+    display: none;
   }
 </style>

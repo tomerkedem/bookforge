@@ -83,6 +83,12 @@
       "course": "ai-engineering",
       "lessonNumber": 5,
       "category": "ai-systems"
+    },
+    "Lesson-6-Rag": {
+      "contentType": "course_lesson",
+      "course": "ai-engineering",
+      "lessonNumber": 6,
+      "category": "ai-systems"
     }
   }
 }

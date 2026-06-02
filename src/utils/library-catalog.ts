@@ -23,8 +23,12 @@ import type {
 import { libraryMockCatalog } from '../data/library-mock';
 import { getRealLibraryItems } from './library-adapter';
 import { isReadableLibraryItem } from './library-display';
-import { getAdminSeriesLibraryItems } from './library/admin-series';
-import { getKnowledgeCardAssets } from './library/knowledge-cards';
+import {
+  getCatalogItems,
+  mergeDiscoveredWithCatalog,
+  filterVisibleCatalogItems,
+} from './library/library-catalog-store';
+import { libraryCatalogItemToLibraryItem } from '../types/library-catalog';
 
 // ── Source ──────────────────────────────────────────────────────────────────
 
@@ -38,133 +42,59 @@ export function getMockLibraryCatalog(): LibraryCatalog {
   return libraryMockCatalog;
 }
 
-// ── Manual series overlay ───────────────────────────────────────────────────
-// BookForge does not yet emit series entities (the pipeline produces
-// books and course lessons; series are an organizing layer above
-// them). To let the /library orbit surface a series capsule today
-// without inventing a fake book, we keep a tiny, explicit list of
-// manually-authored series items here and merge them on top of
-// whatever source `getLibraryItems()` returns.
-//
-// Removing this entire block (the constant + the merge call below) is
-// the one-step undo when BookForge starts producing series natively.
-// No other consumer of `getLibraryItems()` knows about the overlay,
-// because everything downstream operates on the unified `LibraryItem`
-// shape.
-//
-// Constraints carried from the product spec:
-//   - status: 'new'             (no manifest behind it yet)
-//   - sourceKind: 'manual'      (truthful provenance)
-//   - href: '/series/...'       (intentionally NOT in
-//                                isSafeLibraryHref's allow-list, so
-//                                LibraryCard renders it as a disabled
-//                                <article> and library.astro hides
-//                                its galaxy-cta-open chevron)
-const MANUAL_SERIES_ITEMS: LibraryItem[] = [
-  {
-    id: 'ai-engineering-series',
-    slug: 'ai-engineering-series',
-    type: 'series',
-    status: 'new',
-    sourceKind: 'manual',
-    titles:    { en: 'EI Engineering Course' },
-    summaries: { en: 'A structured AI Engineering learning series' },
-    author:    { en: 'Tomer Kedem' },
-    categoryKey: 'ai-engineering',
-    // Mirrors the real AI Engineering course's seriesId so the manual
-    // capsule and the auto-generated lesson items share one orbital
-    // identity. The linked-glow handler in /library matches by this
-    // value to pulse every lesson when the capsule is hovered.
-    seriesId: 'course-ai-engineering',
-    languages: ['en'],
-    createdAt: '2026-05-09T00:00:00.000Z',
-    updatedAt: '2026-05-09T00:00:00.000Z',
-    href: '/series/ai-engineering-series',
-  },
-];
-
-/**
- * Append manual series overlay entries onto a base catalog. Dedupes
- * on `slug` (case-insensitive) so the manual list never produces a
- * duplicate when the underlying source already owns the slug — this
- * is the forward-compat hook for the day BookForge emits a real
- * `ai-engineering-series` item from its own pipeline; the manual
- * entry will silently drop out then.
- */
-function withManualSeries(base: LibraryItem[]): LibraryItem[] {
-  if (MANUAL_SERIES_ITEMS.length === 0) return base;
-  const taken = new Set(base.map((it) => it.slug.toLowerCase()));
-  const additions = MANUAL_SERIES_ITEMS.filter(
-    (it) => !taken.has(it.slug.toLowerCase()),
-  );
-  return additions.length === 0 ? base : [...base, ...additions];
-}
-
-// ── Admin series overlay ────────────────────────────────────────────
-// The /admin "ניהול סדרות" section persists series records to
-// `localStorage` (`yuval_series_metadata`). This overlay projects
-// those records onto the public LibraryItem shape so admin edits flow
-// straight into `/library` once the page hydrates.
-//
-// At SSR / build time `localStorage` does not exist, so
-// `getAdminSeriesLibraryItems` returns `[]` and this overlay is a
-// no-op — the SSR catalog continues to use the manual seed for
-// `ai-engineering-series`. On the client (e.g. in the page-level
-// hydrator at `src/scripts/library/admin-series-hydrator.ts`) the
-// same overlay returns the admin records, so the pipeline is
-// consistent across both sides.
-//
-// Dedupe runs against the merged slug set so admin records never
-// duplicate the manual seed (the admin's `assetFolder` field
-// resolves to the same `ai-engineering-series` slug used by the
-// manual entry — when both exist, the manual seed wins at SSR and
-// the client-side hydrator overrides only the visible label, never
-// the orbit station identity).
-
-function withAdminSeriesOverlay(base: LibraryItem[]): LibraryItem[] {
-  // SSR-safe predicate: `getKnowledgeCardAssets` works at SSR (Vite
-  // glob discovery is build-time), so the artifact gate runs in both
-  // environments without surprises.
-  const hasOrbitArtifact = (slug: string): boolean =>
-    getKnowledgeCardAssets(slug) !== undefined;
-  const adminItems = getAdminSeriesLibraryItems(hasOrbitArtifact);
-  if (adminItems.length === 0) return base;
-  const taken = new Set(base.map((it) => it.slug.toLowerCase()));
-  const additions = adminItems.filter(
-    (it) => !taken.has(it.slug.toLowerCase()),
-  );
-  return additions.length === 0 ? base : [...base, ...additions];
-}
-
 /**
  * Primary source-of-truth for /library at build time.
  *
- * Returns real BookForge-discovered items when output/ contains content,
- * otherwise falls back to mock data (so unit tests / CI without an
- * output/ folder still get a populated catalog).
+ * Phase 7 — there is no longer any client-side overlay. The catalog
+ * store is the ONLY editorial source; the browser does not contribute
+ * any state that affects what the public library renders.
  *
- * Mock data is NEVER mixed with real data: it's all-or-nothing. This
- * keeps the on-screen counts honest — once Tomer has any real content,
- * the dashboard reflects only that, not made-up clean-code or legacy
- * placeholders.
+ * Pipeline:
+ *   1. `getRealLibraryItems()` — pipeline-discovered books, lessons,
+ *      synthetic courses. Returns `[]` when `output/` is empty.
+ *   2. `mergeDiscoveredWithCatalog(base)` — overlays editorial fields
+ *      from `src/data/library/catalog.json` onto discovered items by
+ *      slug AND appends catalog-only entries (series capsules that
+ *      the pipeline cannot emit, e.g. `ai-engineering-series`). Also
+ *      applies the SSR overlays from `output/_editorial.json`: file
+ *      ContentMetadata, file SeriesMetadata, orbit artifact probe,
+ *      series → child visibility cascade.
+ *   3. `filterVisibleCatalogItems` — drops anything declared hidden
+ *      so the renderer never paints a card that would have to be
+ *      removed later. No first-paint flash.
+ *   4. `libraryCatalogItemToLibraryItem` — projects the unified
+ *      records back onto the legacy `LibraryItem` shape so the page
+ *      and side panels render unchanged.
  *
- * The manual-series overlay (see `MANUAL_SERIES_ITEMS` above) is the
- * single, explicit exception to the all-or-nothing rule — it carries
- * organizing entities the pipeline can't yet emit. The overlay applies
- * to BOTH the real and the mock branch so unit tests see the same
- * shape as production.
+ * Fallback rules:
+ *   - `real.length > 0`         → real + catalog overlay.
+ *   - real empty, catalog>0     → catalog-only items.
+ *   - real empty, catalog empty → mock catalog (CI / fresh checkout).
+ *   Mock data is NEVER mixed with real data — last-resort only.
  */
 export function getLibraryItems(): LibraryItem[] {
   const real = getRealLibraryItems();
-  const base = real.length > 0 ? real : getMockLibraryItems();
-  // Layered overlays — order matters:
-  //   1. `withManualSeries` — hardcoded baseline series the pipeline
-  //      cannot yet emit. Visible at SSR, so the orbit never appears
-  //      empty for the seeded entries.
-  //   2. `withAdminSeriesOverlay` — admin-edited series projected
-  //      from `yuval_series_metadata`. SSR-empty, client-populated.
-  //      Dedupes against (1) by slug.
-  return withAdminSeriesOverlay(withManualSeries(base));
+
+  if (real.length > 0) {
+    const merged = mergeDiscoveredWithCatalog(real);
+    return filterVisibleCatalogItems(merged).map(libraryCatalogItemToLibraryItem);
+  }
+
+  const catalogOnly = getCatalogItems();
+  if (catalogOnly.length > 0) {
+    // No real content but the catalog has seeds. Run through the
+    // merge with an empty discovered list so the SSR overlays
+    // (file metadata, artifact probe, cascade) apply identically
+    // to this branch — otherwise a series capsule with no artifact
+    // could leak onto the orbit when output/ is empty.
+    const merged = mergeDiscoveredWithCatalog([]);
+    return filterVisibleCatalogItems(merged).map(libraryCatalogItemToLibraryItem);
+  }
+
+  // CI / fresh checkout fallback — pure mock data. The mock catalog
+  // already declares what's visible, so we don't run the SSR
+  // visibility pipeline over it.
+  return getMockLibraryItems();
 }
 
 // ── Lookup ──────────────────────────────────────────────────────────────────

@@ -133,25 +133,6 @@ const orbitAuthor = showOrbitArtifact
 const showOrbitVisual = variant === 'orbit' && !artifact;
 const showOrbitFooter = variant === 'orbit';
 
-// Course-lesson cards labelled with "Lesson N" carry more identity than
-// the generic type label "Course lesson", which would otherwise be
-// identical across every lesson card on the orbit and read as repetition.
-const isLessonBadge =
-  variant === 'orbit' && item.type === 'course_lesson' && !!item.orderInSeries;
-const orbitTypeLabel = isLessonBadge
-  ? t('courses.lessonNumber', language, { n: item.orderInSeries! })
-  : typeLabel;
-// Split "Lesson 3" / "שיעור 3" / "Clase 3" into the word prefix and the
-// number so the prefix can be hidden on mobile (per Tomer's request:
-// "on series cards on mobile, don't write the word 'שיעור' — number only").
-// The split is whitespace-based and works for all three supported
-// translations. If the split fails (locale that doesn't use a separating
-// space), we render the full label as a single span.
-const lessonNumberStr = isLessonBadge ? String(item.orderInSeries) : '';
-const lessonWordPrefix = isLessonBadge && lessonNumberStr
-  ? orbitTypeLabel.replace(new RegExp(`\\s*${lessonNumberStr}\\s*$`), '').trim()
-  : '';
-
 // Count line: structural chapter count when known, reading-minutes
 // fallback otherwise. The card always has SOMETHING under the title —
 // never a blank row.
@@ -259,17 +240,6 @@ const extraTopics = topics.length - topicChips.length;
         </span>
       </span>
     )}
-    {showOrbitArtifact && (
-      <p class="lc-orbit-corner-badge">
-        {isLessonBadge && lessonWordPrefix ? (
-          <span>
-            <span class="lc-badge-word">{lessonWordPrefix}&nbsp;</span><span class="lc-badge-number">{lessonNumberStr}</span>
-          </span>
-        ) : (
-          <span>{orbitTypeLabel}</span>
-        )}
-      </p>
-    )}
     {showOrbitArtifact && !omitOrbitCaption && orbitSubtitle && (
       <p class="lc-orbit-subtitle">{orbitSubtitle}</p>
     )}
@@ -285,33 +255,15 @@ const extraTopics = topics.length - topicChips.length;
             Legacy left/right/selected faces are optional — when a
             folder ships only `front.png`, all four <img> tags resolve
             to the same URL and the card renders as a single static
-            face without breaking the markup.
-            The front face is wrapped in a <picture> so phone-sized
-            viewports pick up the optional `front-mobile.png` variant
-            (carousel-only — the selected face below always renders
-            the canonical `front.png` for the focused / opened state).
-            `picture { display: contents }` keeps the wrapper layout-
-            transparent so the existing CSS that targets the inner
-            `<img>` keeps working unchanged. The inline `onerror`
-            handles the runtime fallback when `front-mobile.png` is
-            present at build time but fails to load at runtime: it
-            strips the `<source>` and re-points the `<img>` at the
-            desktop `front.png` carried in `data-front-desktop`. */}
-        <picture>
-          {artifact.frontMobile && (
-            <source media="(max-width: 1023px)" srcset={artifact.frontMobile} />
-          )}
-          <img
-            class="lc-orbit-artifact-face lc-orbit-artifact-face-front"
-            src={artifact.front}
-            alt=""
-            loading="lazy"
-            decoding="async"
-            draggable={false}
-            data-front-desktop={artifact.front}
-            onerror="this.onerror=null;var p=this.parentElement;if(p){var s=p.querySelector('source');if(s)s.remove();}this.src=this.dataset.frontDesktop;"
-          />
-        </picture>
+            face without breaking the markup. */}
+        <img
+          class="lc-orbit-artifact-face lc-orbit-artifact-face-front"
+          src={artifact.front}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          draggable={false}
+        />
         <img
           class="lc-orbit-artifact-face lc-orbit-artifact-face-left"
           src={artifact.left ?? artifact.front}
@@ -365,7 +317,7 @@ const extraTopics = topics.length - topicChips.length;
     )}
     {showOrbitFooter && (
       <div class="lc-orbit-footer">
-        <p class="lc-orbit-typebadge"><span>{orbitTypeLabel}</span></p>
+        <p class="lc-orbit-typebadge"><span>{typeLabel}</span></p>
         {orbitCount && <p class="lc-orbit-count">{orbitCount}</p>}
         <div
           class="lc-orbit-progress"
@@ -450,17 +402,6 @@ const extraTopics = topics.length - topicChips.length;
         </span>
       </span>
     )}
-    {showOrbitArtifact && (
-      <p class="lc-orbit-corner-badge">
-        {isLessonBadge && lessonWordPrefix ? (
-          <span>
-            <span class="lc-badge-word">{lessonWordPrefix}&nbsp;</span><span class="lc-badge-number">{lessonNumberStr}</span>
-          </span>
-        ) : (
-          <span>{orbitTypeLabel}</span>
-        )}
-      </p>
-    )}
     {showOrbitArtifact && !omitOrbitCaption && orbitSubtitle && (
       <p class="lc-orbit-subtitle">{orbitSubtitle}</p>
     )}
@@ -476,33 +417,15 @@ const extraTopics = topics.length - topicChips.length;
             Legacy left/right/selected faces are optional — when a
             folder ships only `front.png`, all four <img> tags resolve
             to the same URL and the card renders as a single static
-            face without breaking the markup.
-            The front face is wrapped in a <picture> so phone-sized
-            viewports pick up the optional `front-mobile.png` variant
-            (carousel-only — the selected face below always renders
-            the canonical `front.png` for the focused / opened state).
-            `picture { display: contents }` keeps the wrapper layout-
-            transparent so the existing CSS that targets the inner
-            `<img>` keeps working unchanged. The inline `onerror`
-            handles the runtime fallback when `front-mobile.png` is
-            present at build time but fails to load at runtime: it
-            strips the `<source>` and re-points the `<img>` at the
-            desktop `front.png` carried in `data-front-desktop`. */}
-        <picture>
-          {artifact.frontMobile && (
-            <source media="(max-width: 1023px)" srcset={artifact.frontMobile} />
-          )}
-          <img
-            class="lc-orbit-artifact-face lc-orbit-artifact-face-front"
-            src={artifact.front}
-            alt=""
-            loading="lazy"
-            decoding="async"
-            draggable={false}
-            data-front-desktop={artifact.front}
-            onerror="this.onerror=null;var p=this.parentElement;if(p){var s=p.querySelector('source');if(s)s.remove();}this.src=this.dataset.frontDesktop;"
-          />
-        </picture>
+            face without breaking the markup. */}
+        <img
+          class="lc-orbit-artifact-face lc-orbit-artifact-face-front"
+          src={artifact.front}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          draggable={false}
+        />
         <img
           class="lc-orbit-artifact-face lc-orbit-artifact-face-left"
           src={artifact.left ?? artifact.front}
@@ -556,7 +479,7 @@ const extraTopics = topics.length - topicChips.length;
     )}
     {showOrbitFooter && (
       <div class="lc-orbit-footer">
-        <p class="lc-orbit-typebadge"><span>{orbitTypeLabel}</span></p>
+        <p class="lc-orbit-typebadge"><span>{typeLabel}</span></p>
         {orbitCount && <p class="lc-orbit-count">{orbitCount}</p>}
         <div
           class="lc-orbit-progress"
@@ -926,15 +849,6 @@ const extraTopics = topics.length - topicChips.length;
        in real time. */
     transition: opacity 540ms cubic-bezier(0.4, 0, 0.2, 1);
   }
-  /* The front face is wrapped in <picture> so phone viewports can pick
-     up `front-mobile.png` via a `<source media>` rule. `display: contents`
-     makes the wrapper layout-transparent: the inner <img> behaves
-     exactly as a direct child of `.lc-orbit-artifact`, so every existing
-     rule that targets `.lc-orbit-artifact-face-front` keeps working
-     without change. */
-  .lc-orbit-artifact > picture {
-    display: contents;
-  }
   .lc-orbit-artifact-face-front {
     /* In flow — defines the artifact's natural box dimensions. */
     position: relative;
@@ -1283,133 +1197,9 @@ const extraTopics = topics.length - topicChips.length;
     display: none;
   }
 
-  /* In artifact mode, the type pill is also moved to the corner badge
-     above the artwork (see `.lc-orbit-corner-badge` below). Hide the
-     in-footer copy so the same label doesn't appear twice. */
+  /* In artifact mode, the type pill is suppressed — the artwork itself
+     carries the card's identity. */
   .lc-orbit.lc-has-artifact .lc-orbit-typebadge {
-    display: none;
-  }
-
-  /* ── Corner badge — book / lesson category label ─────────────────
-        Floats over the artwork at the top edge, with its horizontal
-        position driven by the card's live orbit side:
-          card on the visual-RIGHT arc (side-x → +1) → badge slides LEFT
-          card on the visual-LEFT arc  (side-x → -1) → badge slides RIGHT
-          card at the top/bottom apex  (side-x ≈  0) → badge stays CENTERED
-        The slide tracks rotation in lockstep with the artifact face
-        cross-fade because both read the same `--side-x` from the
-        wrapper. Uses `--card-accent` so books stay gold and lessons
-        cyan, and a darkened backdrop so the chip stays legible across
-        any colour in the artwork below. */
-  /* Corner badge is intentionally suppressed in artifact mode — the
-     PNG carries enough identity on its own and the badge competed
-     with the artwork at every orbit position. The element still
-     renders so SSR / hydration / future styling don't see a missing
-     node. */
-  .lc-orbit-corner-badge {
-    display: none;
-    position: absolute;
-    inset-block-start: 0.625rem;
-    /* PHYSICAL `left` (not `inset-inline-start`) — combined with a
-       physical `translateX(-50%)`, this centers correctly in BOTH
-       LTR and RTL. Mixing logical positioning with a physical
-       transform-percentage was the bug that made the badge land
-       off-center on Hebrew pages. */
-    left: 50%;
-    /* Slide proportional to the card's own inline size (`cqi`):
-         |side-x| ≤ 1, shift = 22% of card width.
-       At a 190 px orbit card that is ≈ 42 px — far enough to lean
-       the badge clearly toward the opposite side of the artwork
-       without ever pushing the chip past the card's inline edge,
-       even for the longer Hebrew labels (e.g. "שיעור 3"). The clamp
-       on side-x is defensive — `cos × dir` is naturally bounded to
-       [-1, +1], but the clamp guarantees the slide can never overshoot. */
-    transform: translateX(
-      calc(-50% - clamp(-1, var(--side-x, 0), 1) * 22cqi));
-    transform-origin: center;
-    z-index: 2;
-    margin: 0;
-    padding: 0;
-    line-height: 1;
-    pointer-events: none;
-    /* Visibility tracks the front-face opacity formula: shown at the
-       orbit's top / bottom (where front.png is the visible face),
-       faded out on the visual-left and visual-right arcs (where
-       left.png or right.png show). Same deadband + crossband the
-       faces use, so the badge cross-fades with the artwork it labels. */
-    opacity: clamp(0,
-      calc((var(--front-deadband) + var(--cross-band) - abs(var(--side-x, 0)))
-        / var(--cross-band)),
-      1);
-    /* Slide AND fade match the orbit transform timing so badge,
-       artifact, and card all glide together when chevron rotation
-       runs. Killed during pointer drag (rule below). */
-    transition:
-      transform 540ms cubic-bezier(0.4, 0, 0.2, 1),
-      opacity   540ms cubic-bezier(0.4, 0, 0.2, 1);
-  }
-  /* Kill the slide transition while the user is actively dragging the
-     orbit so the badge tracks the cursor in real time, mirroring the
-     artifact-face rule. */
-  :global(.library-galaxy[data-galaxy-dragging]) .lc-orbit-corner-badge {
-    transition: none;
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .lc-orbit-corner-badge { transition: none; }
-  }
-
-  /* ── Lesson-number corner badge (course_lesson cards only) ──────
-        Series cards carry an extra need that book cards do not: a
-        glance-readable lesson number, because the artwork alone can't
-        always tell "Lesson 3" from "Lesson 7". For these cards we
-        re-enable the badge that artifact mode normally hides, center
-        it horizontally over the artwork and drop the rotation-aware
-        slide + fade — the badge stays visible at all orbit positions
-        since the lesson identity is exactly what we want readable at
-        every angle.
-        Scope: orbit + artifact + course_lesson. Books and other types
-        keep the original hidden behaviour. */
-  .lc-orbit.lc-has-artifact.lc-type-course-lesson .lc-orbit-corner-badge {
-    display: block;
-    /* Cancel the cosine-slide transform from the base rule and re-center
-       symmetrically. `left: 50%` + `translateX(-50%)` is direction-safe
-       (the 50%/-50% pair is mirror-symmetric, so it lands in the middle
-       of the card in both LTR and RTL without language branching). */
-    left: 50%;
-    transform: translateX(-50%);
-    /* Sit just at the artwork's top edge — high enough to clear the
-       round lesson icon baked into the cover PNG, but inside the card
-       silhouette rather than floating above it. */
-    inset-block-start: 0.125rem;
-    opacity: 1;
-  }
-  /* Pure-white label on lesson cards — the colored chip already carries
-     the type accent through its background/border, and a white number on
-     top reads sharper across every artwork hue than an accent-colored
-     number would. */
-  .lc-orbit.lc-has-artifact.lc-type-course-lesson .lc-orbit-corner-badge > span {
-    color: #fff;
-  }
-
-  /* Mobile-only: hide the lesson corner badge entirely. The mobile
-     cover artwork (`front-mobile.png`) bakes in its own lesson identity
-     (number + title), so the floating numeral overlay is redundant and
-     reads as visual noise on top of the artwork. Desktop keeps the
-     "Lesson N" badge — its smaller artwork still benefits from it. On
-     focused-zoom the badge is hidden in both viewports by the rule
-     below. */
-  @media (max-width: 1023px) {
-    .lc-orbit.lc-has-artifact.lc-type-course-lesson .lc-orbit-corner-badge {
-      display: none;
-    }
-  }
-
-  /* Focused state still suppresses the badge — the centered card has
-     its own header layout, and the lesson identity reads from the
-     enlarged artwork. Specificity: `[data-pos]` attr + 3 classes
-     beats the reveal rule above (3 classes), so the hide wins
-     without `!important`. */
-  :global(.galaxy-card[data-pos="center"]) .lc-orbit.lc-has-artifact.lc-type-course-lesson .lc-orbit-corner-badge {
     display: none;
   }
 
@@ -1450,10 +1240,6 @@ const extraTopics = topics.length - topicChips.length;
     box-shadow: none;
     background: none;
     border-color: transparent;
-  }
-  /* Hide the corner category badge — focused state has its own header. */
-  :global(.galaxy-card[data-pos="center"]) .lc-orbit-corner-badge {
-    display: none;
   }
   /* Hide the bottom scrim — text is no longer overlaying the artwork. */
   :global(.galaxy-card[data-pos="center"]) .lc-orbit.lc-has-artifact::before {
@@ -1536,35 +1322,6 @@ const extraTopics = topics.length - topicChips.length;
      the focused presentation. */
   :global(.galaxy-card[data-pos="center"]) .lc-orbit.lc-has-artifact .lc-orbit-footer {
     display: none;
-  }
-  .lc-orbit-corner-badge > span {
-    display: inline-block;
-    font-size: 0.6875rem;
-    font-weight: 600;
-    letter-spacing: 0.04em;
-    padding: 0.1875rem 0.625rem;
-    border-radius: 999px;
-    color: var(--card-accent);
-    background-color: color-mix(
-      in srgb,
-      var(--yuval-galaxy-bg, #00010d) 65%,
-      color-mix(in srgb, var(--card-accent) 22%, transparent)
-    );
-    border: 1px solid color-mix(in srgb, var(--card-accent) 50%, transparent);
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
-    box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.5);
-  }
-  /* Day-mode lesson badge — the dark-mode recipe (a pale tinted chip +
-     a hard black drop shadow) washed the white lesson numeral out and
-     read as a dark-mode leftover on the bright ivory observatory. In
-     light mode the chip becomes a solid accent fill so the white
-     number stays crisp, with a soft blue-gray shadow that matches the
-     orbit cards and rotate pill. Scoped to light mode; dark unchanged. */
-  :global(html:not(.dark)) .lc-orbit-corner-badge > span {
-    background-color: var(--card-accent);
-    border-color: color-mix(in srgb, var(--card-accent) 65%, #ffffff);
-    box-shadow: 0 2px 6px -2px rgba(30, 45, 80, 0.28);
   }
 
   .lc-header {

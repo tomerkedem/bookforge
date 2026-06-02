@@ -1,0 +1,449 @@
+---
+/**
+ * MobileKnowledgeSpace — mobile-only "Knowledge Space" summary card.
+ * ────────────────────────────────────────────────────────────────────────────
+ * A compact premium glass card that sits below the mobile carousel. It is the
+ * phone counterpart of the desktop Knowledge Core widget (LibraryStatsPanel),
+ * which is `display:none` ≤1023px. The card surfaces the four real catalog
+ * counts (total / books / courses / articles) and a single CTA that opens the
+ * all-items bottom sheet (MobileAllItemsSheet).
+ *
+ * Counts are passed in from index.astro and originate from
+ * `getLibraryStats(getLibraryItems())` — the same source the desktop
+ * Knowledge Core uses. Nothing here is hardcoded; the card updates
+ * automatically when catalog/output data changes.
+ *
+ * Theme: dark/light come entirely from the global `--yuval-galaxy-*`
+ * tokens. RTL/LTR follow the page `dir`; logical properties only.
+ *
+ * The CTA carries `data-mobile-allitems-open`; the bottom sheet's own
+ * script listens for clicks on that selector. No event bus, no coupling.
+ */
+import type { Language } from '../../types/index';
+import { t } from '../../i18n';
+import { getLanguageDirection } from '../../utils/language';
+
+interface Props {
+  language: Language;
+  /** stats.readable — the count of openable items (matches Knowledge Core). */
+  total: number;
+  /** stats.byType['book'] — never hardcoded. */
+  books: number;
+  /** stats.byType['course']. */
+  courses: number;
+  /** stats.byType['article']. */
+  articles: number;
+}
+
+const { language, total, books, courses, articles } = Astro.props;
+const direction = getLanguageDirection(language);
+
+/* The three stat cells. `count` is the real per-type figure; labels are i18n.
+   Rendered even at 0 so the card composition stays stable. */
+const cells: Array<{ key: 'books' | 'courses' | 'articles'; count: number; labelKey: string }> = [
+  { key: 'books',    count: books,    labelKey: 'knowledgeSpace.books' },
+  { key: 'courses',  count: courses,  labelKey: 'knowledgeSpace.courses' },
+  { key: 'articles', count: articles, labelKey: 'knowledgeSpace.articles' },
+];
+---
+
+<section
+  class="mks"
+  dir={direction}
+  aria-label={t('knowledgeSpace.title', language)}
+>
+  <header class="mks__header">
+    <span class="mks__icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="2.6"></circle>
+        <ellipse cx="12" cy="12" rx="10" ry="4.3"></ellipse>
+        <ellipse cx="12" cy="12" rx="10" ry="4.3" transform="rotate(60 12 12)"></ellipse>
+      </svg>
+    </span>
+    <h2 class="mks__title">{t('knowledgeSpace.title', language)}</h2>
+  </header>
+
+  <div class="mks__body">
+    {/* Large total on one side. */}
+    <div class="mks__total">
+      <span class="mks__total-num">{total}</span>
+      <span class="mks__total-label">{t('knowledgeSpace.connectedItems', language)}</span>
+    </div>
+
+    {/* Three compact stat cells. */}
+    <div class="mks__cells" role="group" aria-label={t('knowledgeSpace.title', language)}>
+      {cells.map((c) => (
+        <div class="mks__cell" data-type={c.key}>
+          <span class="mks__cell-icon" aria-hidden="true">
+            {c.key === 'books' && (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 7v14"></path>
+                <path d="M3 18a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"></path>
+              </svg>
+            )}
+            {c.key === 'courses' && (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21.5 9 12 4 2.5 9 12 14l9.5-5Z"></path>
+                <path d="M6 11v5.4c0 1.4 2.7 2.6 6 2.6s6-1.2 6-2.6V11"></path>
+                <path d="M21.5 9v5.4"></path>
+              </svg>
+            )}
+            {c.key === 'articles' && (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 20h9"></path>
+                <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"></path>
+              </svg>
+            )}
+          </span>
+          <span class="mks__cell-num">{c.count}</span>
+          <span class="mks__cell-label">{t(c.labelKey, language)}</span>
+        </div>
+      ))}
+    </div>
+  </div>
+
+  <button
+    type="button"
+    class="mks__cta"
+    data-mobile-allitems-open
+    aria-haspopup="dialog"
+  >
+    <span class="mks__cta-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="7.5" height="7.5" rx="1.5"></rect>
+        <rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"></rect>
+        <rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"></rect>
+        <rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5"></rect>
+      </svg>
+    </span>
+    <span class="mks__cta-label">{t('knowledgeSpace.viewAll', language)}</span>
+    <span class="mks__cta-arrow" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M5 12h14"></path>
+        <path d="M13 6l6 6-6 6"></path>
+      </svg>
+    </span>
+  </button>
+</section>
+
+<style>
+  /* ═══════════════════════════════════════════════════════════════════
+     MOBILE-ONLY. On desktop the Knowledge Core widget already covers
+     this role, so the card is fully hidden ≥1024px.
+     ═══════════════════════════════════════════════════════════════════ */
+  .mks { display: none; }
+
+  @media (max-width: 1023px) {
+    .mks {
+      /* Anchored to the free bottom zone of the cinematic mobile screen,
+         below the fixed carousel + its nav rail. The carousel and nav are
+         position:fixed; this card joins them as a bottom strip. */
+      position: fixed;
+      inset-inline: 0;
+      inset-block-end: max(env(safe-area-inset-bottom, 0px), 0.5rem);
+      z-index: 35;
+
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+
+      /* calc(100% - safe horizontal padding); capped to the mobile content
+         width so it never stretches edge-to-edge on tablets. */
+      width: calc(100% - 1.5rem);
+      max-width: 28rem;
+      margin-inline: auto;
+      padding: 0.875rem 1rem 1rem;
+      box-sizing: border-box;
+
+      border: 1px solid rgba(255, 255, 255, 0.10);
+      border-radius: var(--yuval-galaxy-panel-radius, 20px);
+      /* Holographic AI glass: twin cyan/purple corner blooms + a top-down
+         sheen floating over a deep, low-opacity navy tint so the galaxy
+         behind reads through. The luminous edge is the ::after ring. */
+      background:
+        radial-gradient(ellipse 62% 86% at 6% -8%,
+          color-mix(in srgb, var(--yuval-galaxy-accent-cyan) 26%, transparent) 0%, transparent 56%),
+        radial-gradient(ellipse 62% 92% at 104% -6%,
+          color-mix(in srgb, var(--yuval-galaxy-accent-purple) 24%, transparent) 0%, transparent 60%),
+        linear-gradient(180deg,
+          rgba(255, 255, 255, 0.08) 0%,
+          rgba(255, 255, 255, 0.02) 44%,
+          rgba(255, 255, 255, 0) 100%),
+        rgba(10, 14, 30, 0.50);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.26),
+        inset 0 0 40px rgba(90, 150, 235, 0.09),
+        0 0 34px -14px color-mix(in srgb, var(--yuval-galaxy-accent-cyan) 60%, transparent),
+        0 18px 46px -12px rgba(2, 6, 20, 0.66);
+      backdrop-filter: blur(calc(var(--yuval-galaxy-card-blur, 14px) + 16px)) saturate(150%);
+      -webkit-backdrop-filter: blur(calc(var(--yuval-galaxy-card-blur, 14px) + 16px)) saturate(150%);
+      color: var(--yuval-galaxy-text);
+      isolation: isolate;
+    }
+  }
+
+  /* Luminous gradient edge — a 1px cyan→purple ring drawn with the
+     mask-composite border trick. Pure light, sits on the frame only. */
+  .mks::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    pointer-events: none;
+    background: linear-gradient(
+      135deg,
+      var(--yuval-galaxy-accent-cyan) 0%,
+      color-mix(in srgb, var(--yuval-galaxy-accent-cyan) 30%, transparent) 32%,
+      transparent 52%,
+      color-mix(in srgb, var(--yuval-galaxy-accent-purple) 30%, transparent) 70%,
+      var(--yuval-galaxy-accent-purple) 100%);
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    mask-composite: exclude;
+    opacity: 0.85;
+    animation: mks-edge-pulse 5.5s ease-in-out infinite;
+  }
+  @keyframes mks-edge-pulse {
+    0%, 100% { opacity: 0.6; }
+    50%      { opacity: 1; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .mks::after { animation: none; opacity: 0.85; }
+  }
+
+  /* Diagonal glass glint sweeping the top-left corner — pure light, no
+     hit-testing. Adds the high-end "polished glass" read. */
+  .mks::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    pointer-events: none;
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.16) 0%,
+      rgba(255, 255, 255, 0.04) 16%,
+      transparent 38%);
+    -webkit-mask-image: linear-gradient(135deg, #000 0%, transparent 46%);
+    mask-image: linear-gradient(135deg, #000 0%, transparent 46%);
+    opacity: 0.7;
+  }
+  :global(html:not(.dark)) .mks::before { opacity: 0.9; }
+
+  /* Light mode: frosted ice glass with the same twin cyan/purple AI blooms,
+     kept airy so the bright stage glows through. */
+  :global(html:not(.dark)) .mks {
+    border-color: rgba(255, 255, 255, 0.75);
+    background:
+      radial-gradient(ellipse 62% 86% at 6% -8%, rgba(34, 211, 238, 0.20) 0%, transparent 56%),
+      radial-gradient(ellipse 62% 92% at 104% -6%, rgba(167, 139, 250, 0.20) 0%, transparent 60%),
+      linear-gradient(180deg,
+        rgba(255, 255, 255, 0.66) 0%,
+        rgba(255, 255, 255, 0.40) 100%);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.95),
+      inset 0 0 30px rgba(150, 200, 245, 0.16),
+      0 0 28px -14px rgba(14, 116, 144, 0.4),
+      0 16px 38px -14px rgba(30, 45, 80, 0.18);
+  }
+  :global(html:not(.dark)) .mks::after { opacity: 0.5; }
+
+  /* ── Header ──────────────────────────────────────────────────────────── */
+  .mks__header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .mks__icon {
+    display: inline-flex;
+    width: 19px;
+    height: 19px;
+    flex-shrink: 0;
+    color: var(--yuval-galaxy-accent-cyan);
+    filter: drop-shadow(0 0 6px color-mix(in srgb, var(--yuval-galaxy-accent-cyan) 60%, transparent));
+  }
+  .mks__icon svg { width: 100%; height: 100%; }
+  .mks__title {
+    margin: 0;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    line-height: 1.2;
+    color: var(--yuval-galaxy-text);
+  }
+
+  /* ── Body: big total + three cells ───────────────────────────────────── */
+  .mks__body {
+    display: flex;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  .mks__total {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    padding-inline-end: 0.75rem;
+    border-inline-end: 1px solid var(--yuval-galaxy-border);
+    min-width: 4.5rem;
+  }
+  .mks__total-num {
+    font-size: 2.5rem;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.03em;
+    /* Luminous cyan→purple gradient numerals — the card's focal AI accent. */
+    background: linear-gradient(
+      135deg,
+      var(--yuval-galaxy-accent-cyan) 0%,
+      var(--yuval-galaxy-accent-purple) 100%);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0 14px color-mix(in srgb, var(--yuval-galaxy-accent-cyan) 35%, transparent));
+  }
+  .mks__total-label {
+    margin-block-start: 0.25rem;
+    font-size: 0.6875rem;
+    line-height: 1.2;
+    color: var(--yuval-galaxy-text-soft);
+  }
+
+  .mks__cells {
+    flex: 1 1 auto;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.4375rem;
+    min-width: 0;
+  }
+  .mks__cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3125rem;
+    padding: 0.6875rem 0.25rem 0.625rem;
+    /* Per-accent glass module: a soft accent bloom at the top fading into a
+       faint frosted fill, with an accent-tinted hairline border. */
+    border: 1px solid color-mix(in srgb, var(--mks-accent) 24%, rgba(255, 255, 255, 0.10));
+    border-radius: 13px;
+    background:
+      radial-gradient(ellipse 100% 64% at 50% 0%,
+        color-mix(in srgb, var(--mks-accent) 18%, transparent) 0%, transparent 72%),
+      rgba(255, 255, 255, 0.035);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.12),
+      0 0 16px -10px color-mix(in srgb, var(--mks-accent) 80%, transparent);
+  }
+  :global(html:not(.dark)) .mks__cell {
+    border-color: color-mix(in srgb, var(--mks-accent) 30%, rgba(255, 255, 255, 0.6));
+    background:
+      radial-gradient(ellipse 100% 64% at 50% 0%,
+        color-mix(in srgb, var(--mks-accent) 14%, transparent) 0%, transparent 72%),
+      rgba(255, 255, 255, 0.55);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.85),
+      0 0 16px -11px color-mix(in srgb, var(--mks-accent) 80%, transparent);
+  }
+  /* Accent per cell, matching the approved card design (distinct from the
+     orbit type tokens): Books blue/purple, Courses cyan/blue, Articles
+     orange/gold. Each token already ships a softer light-mode value. */
+  .mks__cell[data-type="books"]    { --mks-accent: var(--yuval-galaxy-accent-purple); }
+  .mks__cell[data-type="courses"]  { --mks-accent: var(--yuval-galaxy-accent-cyan); }
+  .mks__cell[data-type="articles"] { --mks-accent: var(--yuval-galaxy-type-book); }
+  /* Glowing accent tile holding the icon. */
+  .mks__cell-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
+    color: var(--mks-accent, var(--yuval-galaxy-text-soft));
+    background: color-mix(in srgb, var(--mks-accent) 15%, transparent);
+    border: 1px solid color-mix(in srgb, var(--mks-accent) 34%, transparent);
+    box-shadow:
+      inset 0 0 12px -4px color-mix(in srgb, var(--mks-accent) 55%, transparent),
+      0 0 14px -5px color-mix(in srgb, var(--mks-accent) 55%, transparent);
+  }
+  .mks__cell-icon svg { width: 18px; height: 18px; }
+  .mks__cell-num {
+    font-size: 1.125rem;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--yuval-galaxy-text);
+  }
+  .mks__cell-label {
+    font-size: 0.625rem;
+    line-height: 1.1;
+    color: var(--yuval-galaxy-text-soft);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+
+  /* ── CTA ─────────────────────────────────────────────────────────────── */
+  .mks__cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    width: 100%;
+    min-height: 46px;
+    padding: 0.625rem 1rem;
+    font: inherit;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--yuval-galaxy-text-inverse, #fff);
+    background: linear-gradient(
+      135deg,
+      var(--yuval-galaxy-accent-cyan) 0%,
+      var(--yuval-galaxy-accent-purple) 100%);
+    border: 0;
+    border-radius: 13px;
+    cursor: pointer;
+    box-shadow: 0 6px 18px -6px color-mix(in srgb, var(--yuval-galaxy-accent-cyan) 55%, transparent);
+    transition:
+      transform var(--yuval-galaxy-motion-normal, 220ms) var(--yuval-galaxy-ease-out, ease),
+      box-shadow var(--yuval-galaxy-motion-normal, 220ms) var(--yuval-galaxy-ease-out, ease);
+  }
+  .mks__cta:hover {
+    box-shadow: 0 8px 22px -6px color-mix(in srgb, var(--yuval-galaxy-accent-cyan) 65%, transparent);
+  }
+  .mks__cta:active { transform: translateY(1px); }
+  .mks__cta:focus-visible {
+    outline: 2px solid var(--yuval-galaxy-accent-cyan);
+    outline-offset: 3px;
+  }
+  .mks__cta-icon {
+    display: inline-flex;
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+  }
+  .mks__cta-icon svg { width: 100%; height: 100%; }
+  .mks__cta-arrow {
+    display: inline-flex;
+    width: 17px;
+    height: 17px;
+    flex-shrink: 0;
+  }
+  .mks__cta-arrow svg { width: 100%; height: 100%; }
+  /* Arrow points "forward" in both directions. */
+  :global([dir="rtl"]) .mks__cta-arrow { transform: scaleX(-1); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .mks__cta { transition: none !important; }
+    .mks__cta:active { transform: none; }
+  }
+</style>

@@ -479,7 +479,7 @@ const items: LibraryItem[] = [
     href: '/articles/broken-article',
   },
 
-  // 19. Series — EI Engineering Course
+  // 19. Series — AI Engineering Course
   // Registered as a LibraryItem of type 'series' so the knowledge-card
   // discovery (src/utils/library/knowledge-cards.ts) can match the
   // folder `src/assets/knowledge-cards/ai-engineering-series/` to a
@@ -495,7 +495,7 @@ const items: LibraryItem[] = [
     status: 'new',
     sourceKind: 'manual',
     titles: {
-      en: 'EI Engineering Course',
+      en: 'AI Engineering Course',
     },
     summaries: {
       en: 'A structured AI Engineering learning series',

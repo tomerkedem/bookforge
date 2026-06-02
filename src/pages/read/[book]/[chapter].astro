@@ -170,14 +170,14 @@ const language = resolveContextLanguage(SOURCE_LANGUAGE, langs) as Language;
       return a[language] ?? a[SOURCE_LANGUAGE] ?? Object.values(a).find(Boolean) ?? '';
     })()}
     coverImage={(() => {
-      // Prefer the same `front-mobile.png` (with `front.png` as
-      // fallback) that the library carousel uses — it's the real
-      // book artwork on disk under `src/assets/knowledge-cards/<slug>/`,
-      // whereas `bookData.coverImage` from book-discovery looks for
+      // Prefer the same `front.png` that the library carousel uses —
+      // it's the real book artwork on disk under
+      // `src/assets/knowledge-cards/<slug>/`, whereas
+      // `bookData.coverImage` from book-discovery looks for
       // `public/<slug>/assets/cover.png` and silently falls back to
       // `/covers/placeholder.svg` when that file isn't there.
       const kc = getKnowledgeCardAssets(book);
-      return kc?.frontMobile || kc?.front || bookData.coverImage || '';
+      return kc?.front || bookData.coverImage || '';
     })()}
     chapterCount={chapters.length}
   />

@@ -136,6 +136,27 @@ export interface SeriesMetadata {
 }
 
 /**
+ * Resolve the canonical public slug for a `SeriesMetadata` record.
+ * The asset-folder field (when set by the editor) is the explicit
+ * mapping; otherwise we fall back to a slugified name. Empty result
+ * means the record cannot be referenced as a series and should be
+ * treated as ineligible by callers.
+ *
+ * Mirrors the slugify rule used in `slugifySeriesName` but without
+ * the hex-hashed Hebrew fallback — for asset-folder purposes only
+ * ASCII slugs match a real directory under
+ * `src/assets/knowledge-cards/<slug>/`.
+ */
+export function slugFromSeries(meta: SeriesMetadata): string {
+  const explicit = meta.assetFolder?.trim();
+  if (explicit && explicit.length > 0) return explicit;
+  return (meta.name ?? '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+/**
  * Deterministic slug for a series name, used as the asset-folder name
  * under `src/assets/knowledge-cards/<slug>/` when the user has not set
  * a custom `assetFolder` for the series. Kept intentionally aggressive

@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "description": "Editorial source of truth for the Yuval /library page. See src/utils/library/library-catalog-store.ts for the read API. Records here override editorial fields on discovered pipeline items (matched by slug) and contribute standalone entries for entities the pipeline cannot emit yet (e.g. series capsules). Derived fields (href, readingMinutes, wordCount, chapterCount, relatedIds, topics, resolved frontImage) are never authored here — they come from the pipeline and the asset discovery. Schema: see LibraryCatalogItem in src/types/library-catalog.ts.",
+  "items": [
+    {
+      "id": "ai-engineering-series",
+      "slug": "ai-engineering-series",
+      "type": "series",
+      "status": "draft",
+      "sourceKind": "manual_seed",
+      "title": { "en": "AI Engineering Course" },
+      "description": { "en": "A structured AI Engineering learning series" },
+      "author": { "en": "Tomer Kedem" },
+      "categoryKey": "ai-engineering",
+      "seriesId": "course-ai-engineering",
+      "languages": ["en"],
+      "visibility": {
+        "showInLibrary": true,
+        "showInUniverse": true,
+        "showInOrbit": true,
+        "showInAtlas": true,
+        "showInContinueLearning": false
+      },
+      "assetFolder": "ai-engineering-series",
+      "href": "/series/ai-engineering-series",
+      "createdAt": "2026-05-09T00:00:00.000Z",
+      "updatedAt": "2026-05-09T00:00:00.000Z"
+    }
+  ]
+}

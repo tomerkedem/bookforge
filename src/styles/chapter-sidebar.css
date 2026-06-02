@@ -605,26 +605,39 @@ body.sidebar-collapsed .usb-custom-thumb.is-active {
      surface rather than being punctuated by cool-gray / mint-green
      rectangles. State (completed / locked) is conveyed by border
      color and number-circle styling, not by tinted card surfaces.
-     Active card keeps its blue gradient so it still pops as the
-     reader's current location. */
+     Active card uses a warm cream-white gradient (mirroring the
+     library light header) — the outline + halo on
+     .usb-chapter-active .usb-card are overridden to warm gold further
+     down in this file so the three states form a coherent palette:
+        locked/unread  → parchment cream  (untouched)
+        completed      → sage green       (done — recedes)
+        active         → warm gold        (now — illuminated bookmark)
+     The gold echoes the book icon in the header and reads as an
+     editorial highlight, not a cool UI selection. */
   --sidebar-bg:                  #F3EEE0;
   --color-card-bg-completed:     #F3EEE0;
   --color-card-bg-locked:        #F3EEE0;
-  --color-card-bg-active:        linear-gradient(135deg, #DBEAFE, #BFDBFE);
+  --color-card-bg-active:        linear-gradient(135deg, #FFFEFA, #FAF8F1);
   --color-card-border-completed: #BBF7D0;
   --color-card-border-locked:    #e2e8f0;
-  --color-card-border-active:    #2563EB;
+  /* Active-state accents shifted from cool blue → warm gold. Pairs
+     with the new three-state palette (parchment / sage / gold).
+     Title text stays deep navy for max legibility on the cream card;
+     subtitle goes warm taupe; border + accent ring switch to matte
+     gold so every active surface signals "now reading" in the same
+     hue family. */
+  --color-card-border-active:    #B8923F;
   --color-circle-bg:             #f1f5f9;
   --color-circle-border-locked:  #9ca3af;
   --color-text-accent:           #2563EB;
   --color-text-completed:        #059669;
   --color-text-active:           #0a1828;
-  --color-text-active-subtitle:  #1D4ED8;
+  --color-text-active-subtitle:  #8B7355;
   --color-text-locked:           #64748b;
   --color-text-in-progress:      #1D4ED8;
   --color-text-tertiary:         #cbd5e1;
   --color-completion-green:      #10b981;
-  --color-active-accent:         #2563EB;
+  --color-active-accent:         #B8923F;
 
   /* Step 2 chapters-pipe glass — light-mode parallels.
      Same hue strategy as dark mode: cool grays (gray-400/200/500)
@@ -2981,15 +2994,37 @@ body.sidebar-collapsed .usb-custom-thumb.is-active {
   transition: box-shadow 0.3s ease-out;
 }
 
-/* Light-mode lift — softer + cooler. Same tight 2-layer profile,
-   tuned with the lighter blue alphas. The codebase uses
-   `:root:not(.dark)` (not `[data-theme="light"]`) for light
-   targeting — matched here. */
+/* Light-mode lift — warm gold "illuminated bookmark". The previous
+   cool blue outline + halo clashed with the new warm-cream palette
+   (locked = parchment, completed = sage, active = gold). Gold
+   communicates "now reading / valuable / current location" without
+   the cold tech-UI feel a blue accent carries. The wider halo lifts
+   the card just enough to read as the timeline's focal point. */
 :root:not(.dark) .usb-chapter-active .usb-card {
-  outline-color: rgba(37, 99, 235, 0.4);
+  outline-color: rgba(184, 146, 63, 0.55);
   box-shadow:
-    0 0 0 1px rgba(37, 99, 235, 0.2),
-    0 2px 10px rgba(37, 99, 235, 0.15);
+    0 0 0 1px rgba(184, 146, 63, 0.30),
+    0 2px 10px rgba(184, 146, 63, 0.22),
+    0 8px 24px -10px rgba(184, 146, 63, 0.35);
+}
+
+/* Active node circle (the "01" badge) — base rule paints it cyan-blue
+   which strands a cool spot on the otherwise warm gold card in light
+   mode. Repaint it as polished gold (deeper amber → bright gold) with
+   a parchment ring offset, matching the card's gold accent system. */
+:root:not(.dark) .usb-chapter-active .usb-node {
+  background: linear-gradient(135deg, #D4AF55, #B8923F);
+  box-shadow:
+    0 0 0 3px var(--sidebar-bg),
+    0 0 0 4px var(--color-active-accent),
+    0 0 12px rgba(184, 146, 63, 0.50);
+}
+
+/* Number inside the gold circle — deep umber for crisp contrast on
+   the polished gold instead of the base near-black tuned for the
+   cyan fill. */
+:root:not(.dark) .usb-chapter-active .usb-node-number {
+  color: #3A2708;
 }
 
 /* ─────────────────────────────────────────────────────────────────
@@ -3234,47 +3269,49 @@ body.sidebar-collapsed .usb-custom-thumb.is-active {
      4. Title uses a 5-stop saturated gold gradient with darker
         anchors so the wordmark reads as engraved metal, not
         muddy brown. */
+/* Soft sage fill — communicates "completed" via a quiet green that
+   mirrors the green checkmark on the card. The previous treatment was
+   an ornate 5-stop gold gradient with amber halo that read as a
+   trophy; it competed visually with the active chapter and felt heavy
+   inside the new warm-cream palette. Sage recedes into the timeline
+   instead — universal "done = green" pattern. Solid fill (no
+   gradient) per Tomer's request for a uniform tone. */
 :root:not(.dark) .usb-chapter-completed:not(.usb-chapter-active) .usb-card {
-  background: linear-gradient(
-    135deg,
-    #fdf8e8 0%,
-    #f7e7be 30%,
-    #fbf2d4 55%,
-    #f7e7be 80%,
-    #fdf8e8 100%
-  );
-  border: 1px solid rgba(184, 146, 63, 0.55);
+  background: #E8EDDD;
+  border: 1px solid rgba(140, 168, 116, 0.35);
   box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.5),
-    inset 0 1px 0 rgba(255, 255, 255, 1),
-    inset 0 -1px 0 rgba(139, 115, 85, 0.22),
-    0 1px 3px rgba(184, 146, 63, 0.20),
-    0 6px 20px -8px rgba(184, 146, 63, 0.35);
+    inset 0 1px 0 rgba(255, 255, 255, 0.45),
+    inset 0 -1px 0 rgba(100, 130, 86, 0.10),
+    0 1px 3px rgba(100, 130, 86, 0.10),
+    0 4px 14px -8px rgba(100, 130, 86, 0.20);
 }
 
 :root:not(.dark) .usb-chapter-completed:not(.usb-chapter-active):hover .usb-card {
-  border-color: rgba(184, 146, 63, 0.85);
+  border-color: rgba(140, 168, 116, 0.60);
   box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.6),
-    inset 0 1px 0 rgba(255, 255, 255, 1),
-    inset 0 -1px 0 rgba(139, 115, 85, 0.25),
-    0 2px 6px rgba(184, 146, 63, 0.30),
-    0 10px 28px -8px rgba(184, 146, 63, 0.55);
+    inset 0 1px 0 rgba(255, 255, 255, 0.65),
+    inset 0 -1px 0 rgba(100, 130, 86, 0.12),
+    0 2px 5px rgba(100, 130, 86, 0.14),
+    0 8px 20px -8px rgba(100, 130, 86, 0.32);
 }
 
+/* Title — deep forest/sage gradient, same engraved-metal richness
+   as before but in the green family that now owns this state. Pure
+   gold-on-sage clashed; this keeps a subtle gradient depth while
+   harmonizing with the sage card. */
 :root:not(.dark) .usb-chapter-completed:not(.usb-chapter-active) .usb-card-title-text {
   background: linear-gradient(
     135deg,
-    #6b4d1f 0%,
-    #b8923f 28%,
-    #d4af37 50%,
-    #8b6f3a 75%,
-    #6b4d1f 100%
+    #2F4528 0%,
+    #4A6340 30%,
+    #5C7A50 50%,
+    #4A6340 75%,
+    #2F4528 100%
   );
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  color: #6b4d1f;
+  color: #2F4528;
   font-weight: 600;
   letter-spacing: 0.005em;
 }
@@ -3294,56 +3331,56 @@ body.sidebar-collapsed .usb-custom-thumb.is-active {
        midpoint so the wordmark survives the added visual gravity
    The blue outline + blue glow from the generic active rule
    (line ~2790) are explicitly overridden — gold all the way down. */
+/* Active + completed — the "I'm currently re-reading a chapter I
+   already finished" case. The previous ornate 7-stop gold plaque was
+   a celebration; with the new three-state palette in place it has to
+   communicate TWO things cleanly without competing with itself:
+     surface (sage)   → "you've read this"
+     halo (gold)      → "you're reading it now"
+   Solid sage matches the completed-only background exactly so the
+   "done" identity is preserved; the warm-gold outline + multi-layer
+   gold glow is the same one the active-only card uses, so the
+   "currently focused" identity is preserved. Two independent visual
+   channels, no compromise on either. */
 :root:not(.dark) .usb-chapter-active.usb-chapter-completed .usb-card {
-  background: linear-gradient(
-    135deg,
-    #fdf8e8 0%,
-    #f7e7be 18%,
-    #fff8d6 45%,
-    #fffbe6 50%,
-    #fff8d6 55%,
-    #f7e7be 82%,
-    #fdf8e8 100%
-  );
-  border: 1px solid rgba(184, 146, 63, 0.72);
-  outline: none;
+  background: #E8EDDD;
+  border: 1px solid rgba(184, 146, 63, 0.55);
+  outline-color: rgba(184, 146, 63, 0.55);
   box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.65),
-    inset 0 1px 0 rgba(255, 255, 255, 1),
-    inset 0 -1px 0 rgba(139, 115, 85, 0.30),
-    0 0 0 1px rgba(212, 175, 55, 0.20),
-    0 2px 6px rgba(184, 146, 63, 0.28),
-    0 8px 28px -6px rgba(212, 175, 55, 0.45),
-    0 0 32px rgba(255, 220, 130, 0.25);
+    inset 0 1px 0 rgba(255, 255, 255, 0.45),
+    inset 0 -1px 0 rgba(100, 130, 86, 0.10),
+    0 0 0 1px rgba(184, 146, 63, 0.30),
+    0 2px 10px rgba(184, 146, 63, 0.22),
+    0 8px 24px -10px rgba(184, 146, 63, 0.35);
 }
 
-/* Title — same metallic gold idea as the completed-only rule, but
-   anchors deepen to #5e4516 and the midpoint brightens to #e3c460
-   so the engraved-on-illuminated-plaque feel survives the brighter
-   bg. font-weight bumped 600 -> 700 for the same reason. */
+/* Title — deep forest-sage gradient, same engraved-metal idea as
+   the completed-only state but in the green family so it harmonizes
+   with the sage card. font-weight 700 keeps the active-state weight
+   bump so a re-read chapter still pops over the inactive completed
+   ones. */
 :root:not(.dark) .usb-chapter-active.usb-chapter-completed .usb-card-title-text {
   background: linear-gradient(
     135deg,
-    #5e4516 0%,
-    #b8923f 25%,
-    #e3c460 50%,
-    #b8923f 75%,
-    #5e4516 100%
+    #2F4528 0%,
+    #4A6340 30%,
+    #5C7A50 50%,
+    #4A6340 75%,
+    #2F4528 100%
   );
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  color: #5e4516;
+  color: #2F4528;
   font-weight: 700;
   letter-spacing: 0.01em;
 }
 
-/* Meta + time — warm deep brown that sits on the cream-gold plaque
-   rather than the slate inherited from the generic active rule
-   (--color-text-active-subtitle), which read out-of-palette here. */
+/* Meta + time — warm forest-green that sits on the sage card cleanly
+   rather than the deep umber the previous gold plaque used. */
 :root:not(.dark) .usb-chapter-active.usb-chapter-completed .usb-card-meta,
 :root:not(.dark) .usb-chapter-active.usb-chapter-completed .usb-card-time {
-  color: #6b4d1f;
+  color: #4A6340;
 }
 
 /* Hover overrides for light mode. */

@@ -28,12 +28,13 @@ interface Props {
 const { description, subtitle, language } = Astro.props;
 
 const paragraphs = description.split(/\n\s*\n/).filter((p) => p.trim());
+const hasSummary = paragraphs.length > 0;
 
 // Threshold tuned to "fits in a card without forcing a scroll" — roughly
 // 4–5 lines of body text on a typical desktop column. Below this we
 // render fully and skip the toggle.
 const TRUNCATE_THRESHOLD = 500;
-const truncatable = description.length > TRUNCATE_THRESHOLD;
+const truncatable = hasSummary && description.length > TRUNCATE_THRESHOLD;
 ---
 
 <section class="bos" aria-labelledby="bos-title">
@@ -46,9 +47,11 @@ const truncatable = description.length > TRUNCATE_THRESHOLD;
           <path stroke-linecap="round" stroke-width="1.7" d="M12 6v15" />
         </svg>
       </span>
-      <h2 id="bos-title" class="bos-heading" data-i18n="bookOverview.bookSummary">
-        {t('bookOverview.bookSummary', language)}
-      </h2>
+      <div class="bos-heading-text">
+        <h2 id="bos-title" class="bos-heading" data-i18n="lessonSummary.summary.title">
+          {t('lessonSummary.summary.title', language)}
+        </h2>
+      </div>
 
       <!-- TTS control. Reuses the existing inline-trigger contract:
            the page-level boot script in src/pages/books/[slug].astro
@@ -56,32 +59,42 @@ const truncatable = description.length > TRUNCATE_THRESHOLD;
            initTextToSpeech(signal, { trigger: 'inline', inlineEl }).
            The script reads paragraphs from `.chapter-content` (added
            below) and writes the icon into `.tts-inline-icon`, toggling
-           an `is-active` class for the playing/paused state. -->
+           an `is-active` class for the playing/paused state.
+
+           The visible label is hidden via .sr-only — the icon-only
+           square fits the BO palette better than a labeled gold pill. */ -->
       <button
         id="tts-inline-trigger"
         class="bos-tts tts-inline-btn"
         type="button"
-        aria-label={t('bookOverview.listenSummary', language)}
+        aria-label={t('lessonSummary.summary.readAloud', language)}
         aria-pressed="false"
-        data-i18n-aria-label="bookOverview.listenSummary"
+        data-i18n-aria-label="lessonSummary.summary.readAloud"
+        hidden={!hasSummary}
       >
         <span class="tts-inline-icon" aria-hidden="true"></span>
-        <span class="tts-inline-label sr-only" data-i18n="bookOverview.listenSummary">
-          {t('bookOverview.listenSummary', language)}
+        <span class="tts-inline-label sr-only" data-i18n="lessonSummary.summary.readAloud">
+          {t('lessonSummary.summary.readAloud', language)}
         </span>
       </button>
     </header>
 
-    <div
-      class:list={['bos-content', 'chapter-content']}
-      data-truncatable={truncatable ? 'true' : undefined}
-      data-collapsed={truncatable ? 'true' : undefined}
-    >
-      {subtitle && <p class="sr-only">{subtitle}</p>}
-      {paragraphs.map((para) => (
-        <p class="bos-para" set:html={renderInlineMarkdown(para.trim())} />
-      ))}
-    </div>
+    {hasSummary ? (
+      <div
+        class:list={['bos-content', 'chapter-content']}
+        data-truncatable={truncatable ? 'true' : undefined}
+        data-collapsed={truncatable ? 'true' : undefined}
+      >
+        {subtitle && <p class="sr-only">{subtitle}</p>}
+        {paragraphs.map((para) => (
+          <p class="bos-para" set:html={renderInlineMarkdown(para.trim())} />
+        ))}
+      </div>
+    ) : (
+      <div class="bos-empty" role="status" data-i18n="lessonSummary.summary.emptyState">
+        {t('lessonSummary.summary.emptyState', language)}
+      </div>
+    )}
 
     {truncatable && (
       <button
@@ -145,23 +158,48 @@ const truncatable = description.length > TRUNCATE_THRESHOLD;
 <style>
   /* Surface (background, border, shadow, grain) comes from
      `.bo-premium-surface` in theme.css. The Summary is the page's
-     primary focus — generous padding, soft purple/blue ambient glow
-     behind the card, and stronger shadow give it visible weight over
-     the compact Hero above and the timeline at the side. */
+     primary focus — generous padding, a calm ambient haze behind the
+     card, and a deeper shadow give it visible weight over the
+     compact Hero above and the timeline at the side. */
   .bos {
     position: relative;
   }
+  /* Ambient haze. Uses the global --bo-haze token so the strength
+     swaps with theme: very faint (alpha ≤0.05) on pearl in day mode,
+     richer (alpha ≤0.10) on navy in night mode. The 14px blur softens
+     the radial edges either way. */
   .bos::before {
     content: '';
     position: absolute;
     inset: -2.5rem;
     z-index: 0;
     pointer-events: none;
-    background:
-      radial-gradient(60% 55% at 30% 20%, rgba(124, 58, 237, 0.18), transparent 70%),
-      radial-gradient(55% 50% at 75% 85%, rgba(59, 130, 246, 0.16), transparent 72%);
+    background: var(--bo-haze);
     filter: blur(14px);
-    opacity: 0.9;
+    opacity: 0.85;
+  }
+  /* Optical-only top accent strip — same purple→cyan ribbon as the
+     Hero card, lighter so it reads as a quiet header cue and not as
+     decoration. */
+  .bos-card::after {
+    content: '';
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline: 0;
+    height: 2px;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      var(--bo-purple) 30%,
+      var(--bo-cyan) 70%,
+      transparent 100%
+    );
+    opacity: 0.5;
+    pointer-events: none;
+    border-radius: 18px 18px 0 0;
+  }
+  :global(.dark) .bos-card::after {
+    opacity: 0.55;
   }
   .bos-card {
     position: relative;
@@ -169,10 +207,13 @@ const truncatable = description.length > TRUNCATE_THRESHOLD;
     border-radius: 18px;
     padding: 1.75rem 1.85rem;
     color: var(--bo-text-primary);
+    /* Themed depth — --bo-shadow-lg switches automatically. The
+       inset highlight worked only against a dark surface, so it's
+       gone; the shadow + border now carry the depth in both modes. */
     box-shadow:
-      0 24px 60px -22px rgba(2, 6, 23, 0.7),
-      0 0 0 1px var(--bo-border-strong),
-      inset 0 1px 0 rgba(255, 255, 255, 0.04);
+      var(--bo-shadow-lg),
+      0 0 0 1px var(--bo-border-strong);
+    overflow: hidden;
   }
   @media (min-width: 640px) {
     .bos-card {
@@ -186,24 +227,29 @@ const truncatable = description.length > TRUNCATE_THRESHOLD;
   }
 
   /* ── Heading row ──────────────────────────────────────────────── */
-  /* Three slots: icon · heading · TTS. The heading uses
-     margin-inline-end:auto to push the TTS control to the inline-end
-     edge, so [icon][heading]…………[tts] reads in both LTR and RTL. */
+  /* Three slots: icon · heading-text (title + subtitle) · TTS. The
+     heading-text uses margin-inline-end:auto to push the TTS control
+     to the inline-end edge — reads [icon][title/subtitle]……[tts] in
+     both LTR and RTL via flex + logical margins. */
   .bos-heading-row {
     display: flex;
-    align-items: center;
-    gap: 0.65rem;
-    margin: 0 0 0.85rem 0;
+    align-items: flex-start;
+    gap: 0.75rem;
+    margin: 0 0 1.1rem 0;
   }
-  .bos-heading {
+  .bos-heading-text {
     margin-inline-end: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    min-inline-size: 0;
   }
 
   .bos-icon {
-    inline-size: 2rem;
-    block-size: 2rem;
+    inline-size: 2.25rem;
+    block-size: 2.25rem;
     flex-shrink: 0;
-    border-radius: 8px;
+    border-radius: 10px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -212,8 +258,8 @@ const truncatable = description.length > TRUNCATE_THRESHOLD;
     border: 1px solid var(--bo-border);
   }
   .bos-icon svg {
-    inline-size: 1.05rem;
-    block-size: 1.05rem;
+    inline-size: 1.1rem;
+    block-size: 1.1rem;
   }
 
   .bos-heading {
@@ -222,6 +268,7 @@ const truncatable = description.length > TRUNCATE_THRESHOLD;
     font-weight: 600;
     font-size: 1.35rem;
     letter-spacing: 0.01em;
+    line-height: 1.25;
     color: var(--bo-text-primary);
   }
   @media (min-width: 1024px) {
@@ -304,14 +351,13 @@ const truncatable = description.length > TRUNCATE_THRESHOLD;
   }
 
   /* ── Body content ─────────────────────────────────────────────
-     Reader-grade rhythm: line-height 1.85, generous paragraph gaps,
-     comfortable measure. The max-width caps the line length around
-     the editorial sweet spot so paragraphs stay readable even when the
-     card itself is wide. Color comes from the card-level base so
-     individual paragraphs don't need to repeat it. */
+     Reader-grade rhythm: line-height 1.85, generous paragraph gaps.
+     The body is allowed to span the full card width so the Summary
+     uses its panel real estate instead of sitting in a narrow column.
+     Generous card padding (1.75rem → 3rem at lg) keeps comfortable
+     breathing room without an inline-size cap. */
   .bos-content {
     color: var(--bo-text-secondary);
-    max-inline-size: 68ch;
   }
   .bos-para {
     margin: 0;
@@ -366,7 +412,9 @@ const truncatable = description.length > TRUNCATE_THRESHOLD;
 
   /* ── Toggle ────────────────────────────────────────────────────
      Tertiary link-style affordance, cyan accent. Lower visual weight
-     than Hero's primary CTA — this is "expand", not "act". */
+     than Hero's primary CTA — this is "expand", not "act". The dashed
+     border-end uses color-mix on the themed --bo-cyan so day and
+     night each get their own correct cyan tone. */
   .bos-toggle {
     margin-block-start: 0.85rem;
     padding: 0.3rem 0;
@@ -377,7 +425,7 @@ const truncatable = description.length > TRUNCATE_THRESHOLD;
     font-size: 0.9rem;
     font-weight: 500;
     cursor: pointer;
-    border-block-end: 1px dashed rgba(34, 211, 238, 0.45);
+    border-block-end: 1px dashed color-mix(in srgb, var(--bo-cyan) 45%, transparent);
     transition: color 160ms ease, border-color 160ms ease;
   }
   .bos-toggle:hover {
@@ -388,6 +436,25 @@ const truncatable = description.length > TRUNCATE_THRESHOLD;
     outline: 2px solid var(--bo-focus-ring);
     outline-offset: 3px;
     border-block-end-color: transparent;
+  }
+
+  /* ── Empty state ──────────────────────────────────────────────
+     Quiet single-line message rendered when no summary content is
+     available for this lesson. Uses text-muted so it never reads as
+     real content — and a subtle dashed border on a flat surface so
+     the eye registers "placeholder, not data". */
+  .bos-empty {
+    margin: 0.25rem 0 0;
+    padding: 1.25rem 1.5rem;
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--bo-text-muted) 6%, transparent);
+    border: 1px dashed var(--bo-border-strong);
+    color: var(--bo-text-muted);
+    font-family: 'Assistant', system-ui, sans-serif;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    font-style: italic;
+    text-align: center;
   }
 
   @media (prefers-reduced-motion: reduce) {

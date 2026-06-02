@@ -59,6 +59,147 @@ export function initSeriesMode(
   const { slugSet, seriesAvailable, labels, isHidden } = state;
 
   let activeSeriesName: string | null = null;
+  // Coverflow carousel state is DOM-derived so this module's
+  // chevrons / drag / click-to-focus work whether series mode was
+  // entered through enterSeriesMode (clicking a series capsule) or
+  // through applyCourseFilter in universe-series-actions.ts
+  // (clicking the "Show series items" button on a focused course
+  // card). Both paths add `.is-active-series-member` to the
+  // relevant orbit cards and set `data-stage-mode="series"` on the
+  // stage — that's our contract. The focused index lives on the
+  // stage's dataset so it survives across calls and across modules.
+  function getActiveMembers(): HTMLElement[] {
+    if (stage.dataset.stageMode !== 'series') return [];
+    return Array.from(
+      stage.querySelectorAll<HTMLElement>(
+        '.galaxy-card.is-active-series-member',
+      ),
+    );
+  }
+  function getFocusedMemberIndex(membersLen: number): number {
+    if (membersLen <= 0) return 0;
+    const raw = stage.dataset.seriesFocusedIndex;
+    const n = Number(raw);
+    if (Number.isFinite(n)) {
+      return Math.max(0, Math.min(membersLen - 1, n));
+    }
+    // First entry — start in the middle so the carousel reads as
+    // visually balanced rather than pushed against one edge.
+    return Math.floor((membersLen - 1) / 2);
+  }
+  // Carousel chrome rendered statically in the SSR HTML (see
+  // index.astro inside .library-galaxy). Looked up once on init;
+  // CSS handles show/hide via [data-stage-mode="series"].
+  const carouselPrevBtn = stage.querySelector<HTMLButtonElement>(
+    '[data-series-carousel-nav="prev"]',
+  );
+  const carouselNextBtn = stage.querySelector<HTMLButtonElement>(
+    '[data-series-carousel-nav="next"]',
+  );
+  const posCurrentEl = stage.querySelector<HTMLElement>(
+    '[data-series-pos-current]',
+  );
+  const posTotalEl = stage.querySelector<HTMLElement>(
+    '[data-series-pos-total]',
+  );
+  // Mobile bottom-nav series counter ("3 / 6"). It lives OUTSIDE the
+  // stage (the fixed mobile nav sibling), so it's looked up on document
+  // and mirrors the same focused/total values as the desktop pill above.
+  const mobilePosCurrentEl = document.querySelector<HTMLElement>(
+    '[data-series-mobile-pos-current]',
+  );
+  const mobilePosTotalEl = document.querySelector<HTMLElement>(
+    '[data-series-mobile-pos-total]',
+  );
+
+  function refreshCarouselState(): void {
+    const members = getActiveMembers();
+    const focused = getFocusedMemberIndex(members.length);
+    if (carouselPrevBtn) {
+      const atStart = focused <= 0 || members.length === 0;
+      carouselPrevBtn.disabled = atStart;
+      carouselPrevBtn.setAttribute('aria-disabled', String(atStart));
+    }
+    if (carouselNextBtn) {
+      const atEnd = focused >= members.length - 1 || members.length === 0;
+      carouselNextBtn.disabled = atEnd;
+      carouselNextBtn.setAttribute('aria-disabled', String(atEnd));
+    }
+    const currentText = String(members.length === 0 ? 0 : focused + 1);
+    const totalText = String(members.length);
+    if (posCurrentEl) {
+      posCurrentEl.textContent = currentText;
+    }
+    if (posTotalEl) {
+      posTotalEl.textContent = totalText;
+    }
+    if (mobilePosCurrentEl) {
+      mobilePosCurrentEl.textContent = currentText;
+    }
+    if (mobilePosTotalEl) {
+      mobilePosTotalEl.textContent = totalText;
+    }
+  }
+
+  function setFocusedMemberIndex(idx: number): void {
+    const members = getActiveMembers();
+    if (!members.length) return;
+    const clamped = Math.max(0, Math.min(members.length - 1, idx));
+    stage.dataset.seriesFocusedIndex = String(clamped);
+    members.forEach(card => {
+      card.style.setProperty('--series-focused-index', String(clamped));
+    });
+    refreshCarouselState();
+  }
+
+  // Direct click handlers on the chevron buttons — not delegated
+  // through the stage's capture-phase click listener below, so the
+  // click path is independent of any other module's listener order.
+  function onChevronClick(direction: -1 | 1): (e: MouseEvent) => void {
+    return (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (stage.dataset.stageMode !== 'series') return;
+      const members = getActiveMembers();
+      if (!members.length) return;
+      const current = getFocusedMemberIndex(members.length);
+      setFocusedMemberIndex(current + direction);
+    };
+  }
+  carouselPrevBtn?.addEventListener('click', onChevronClick(-1));
+  carouselNextBtn?.addEventListener('click', onChevronClick(1));
+
+  // Observe stage attribute changes so the chrome (chevron disabled
+  // states, position pill) refreshes whenever series mode is
+  // entered/exited by ANY module. Without this, applyCourseFilter
+  // in universe-series-actions.ts would activate series mode and
+  // populate members but leave our pill showing stale "1 / 0".
+  const stateObserver = new MutationObserver(() => {
+    if (stage.dataset.stageMode === 'series') {
+      // First entry from another module: seed the focused index
+      // and apply --series-focused-index to every member.
+      const members = getActiveMembers();
+      if (members.length > 0 && stage.dataset.seriesFocusedIndex === undefined) {
+        const initial = Math.floor((members.length - 1) / 2);
+        stage.dataset.seriesFocusedIndex = String(initial);
+        members.forEach(card => {
+          card.style.setProperty('--series-focused-index', String(initial));
+        });
+      }
+    } else {
+      // Series mode just exited — clear the persisted focus so the
+      // next entry recomputes the middle index from scratch.
+      delete stage.dataset.seriesFocusedIndex;
+    }
+    refreshCarouselState();
+  });
+  stateObserver.observe(stage, {
+    attributes: true,
+    attributeFilter: ['data-stage-mode'],
+  });
+  // Initial sync in case the stage already entered series mode
+  // before this module finished wiring (rare but cheap to handle).
+  refreshCarouselState();
 
   function enterSeriesMode(seriesName: string): void {
     if (activeSeriesName === seriesName) return;
@@ -76,10 +217,16 @@ export function initSeriesMode(
       ),
     );
     const totalMembers = members.length;
+    // Initial focused index = middle of the row, so a series of any
+    // size opens visually balanced around the stage centre. Stored
+    // on the stage dataset so getFocusedMemberIndex() picks it up.
+    const initialFocus = Math.max(0, Math.floor((totalMembers - 1) / 2));
+    stage.dataset.seriesFocusedIndex = String(initialFocus);
     members.forEach((card, i) => {
       card.classList.add('is-active-series-member');
       card.style.setProperty('--series-active-index', String(i));
       card.style.setProperty('--series-active-total', String(totalMembers));
+      card.style.setProperty('--series-focused-index', String(initialFocus));
     });
 
     // Hide the active series's own capsule — its books are now shown
@@ -119,11 +266,28 @@ export function initSeriesMode(
 
     stage.dataset.stageMode = 'series';
     stage.dataset.activeSeries = seriesName;
+
+    // Carousel chrome (chevrons + position pill) refreshes itself via
+    // the MutationObserver above watching `data-stage-mode`. CSS
+    // shows them automatically via the same attribute, so there's
+    // nothing else to do here.
   }
 
   function exitSeriesMode(): void {
     if (!activeSeriesName) return;
     activeSeriesName = null;
+
+    // Reset disabled state on the SSR chevrons so they're ready for
+    // the next series-mode entry (CSS hides them automatically when
+    // [data-stage-mode="series"] disappears below).
+    if (carouselPrevBtn) {
+      carouselPrevBtn.disabled = false;
+      carouselPrevBtn.removeAttribute('aria-disabled');
+    }
+    if (carouselNextBtn) {
+      carouselNextBtn.disabled = false;
+      carouselNextBtn.removeAttribute('aria-disabled');
+    }
 
     // Fade out Other Knowledge and remove after transition.
     const ok = stage.querySelector<HTMLElement>(
@@ -150,6 +314,7 @@ export function initSeriesMode(
         card.classList.remove('is-active-series-member');
         card.style.removeProperty('--series-active-index');
         card.style.removeProperty('--series-active-total');
+        card.style.removeProperty('--series-focused-index');
       });
     stage
       .querySelectorAll<HTMLElement>('.is-active-series-capsule')
@@ -194,9 +359,193 @@ export function initSeriesMode(
         exitSeriesMode();
         return;
       }
+
+      // Carousel chevrons handle clicks via direct listeners attached
+      // at init time (see onChevronClick above). Defensive bail-out
+      // here so a stray bubble-phase click on a chevron isn't
+      // interpreted as a card click further down.
+      if (target.closest<HTMLButtonElement>('[data-series-carousel-nav]')) {
+        return;
+      }
+
+      // In series mode, intercept the orbit's rotate chevrons so they
+      // advance the carousel's focused book instead of rotating the
+      // (now-invisible) outer orbit. Without this the chevrons would
+      // silently spin the muted background and leave the universe in
+      // an unexpected rotation after exit.
+      if (stage.dataset.stageMode === 'series') {
+        const rotateBtn = target.closest<HTMLButtonElement>(
+          '[data-galaxy-rotate]',
+        );
+        if (rotateBtn) {
+          e.preventDefault();
+          e.stopImmediatePropagation();
+          const members = getActiveMembers();
+          const current = getFocusedMemberIndex(members.length);
+          const delta = rotateBtn.dataset.direction === 'prev' ? -1 : 1;
+          setFocusedMemberIndex(current + delta);
+          return;
+        }
+      }
+
+      // Coverflow click-to-focus: a tap on a non-focused carousel
+      // book rotates it into the centre slot instead of opening the
+      // spotlight. The focused (centre) book falls through to the
+      // layout module's openCenter for the existing spotlight UX.
+      const seriesMember = target.closest<HTMLElement>(
+        '.galaxy-card.is-active-series-member',
+      );
+      if (seriesMember && stage.dataset.stageMode === 'series') {
+        const idxRaw = seriesMember.style.getPropertyValue(
+          '--series-active-index',
+        );
+        const idx = Number(idxRaw);
+        const members = getActiveMembers();
+        const current = getFocusedMemberIndex(members.length);
+        if (
+          Number.isFinite(idx) &&
+          idx !== current &&
+          seriesMember.dataset.pos !== 'center'
+        ) {
+          e.preventDefault();
+          e.stopImmediatePropagation();
+          setFocusedMemberIndex(idx);
+          return;
+        }
+      }
     },
     true,
   );
+
+  // Rotate-chevron interception at the document level — the orbit
+  // controls live OUTSIDE the stage subtree (pinned to the viewport
+  // bottom), so the stage-scoped handler above can't catch them.
+  // universe-series-mode is initialised BEFORE universe-layout by the
+  // orchestrator, so registering a capture-phase listener here means
+  // ours fires first; stopImmediatePropagation prevents the layout
+  // module's document-level handler from also running rotateOrbit.
+  // In series mode the chevrons advance the carousel; outside series
+  // mode this listener is a pure no-op.
+  document.addEventListener(
+    'click',
+    e => {
+      if (stage.dataset.stageMode !== 'series') return;
+      const target = e.target as Element | null;
+      if (!target) return;
+      const rotateBtn = target.closest<HTMLButtonElement>(
+        '[data-galaxy-rotate]',
+      );
+      if (!rotateBtn) return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      const members = getActiveMembers();
+      const current = getFocusedMemberIndex(members.length);
+      const delta = rotateBtn.dataset.direction === 'prev' ? -1 : 1;
+      setFocusedMemberIndex(current + delta);
+    },
+    true,
+  );
+
+  // ── Drag-to-navigate ─────────────────────────────────────────────
+  // In series mode, dragging horizontally on the stage advances the
+  // carousel. Registered in capture phase BEFORE the layout module's
+  // own pointerdown (which is bubble-phase and would otherwise start
+  // an orbit-rotation drag on the muted background). On a real drag
+  // we also swallow the trailing click so click-to-focus doesn't
+  // double-trigger. Outside series mode the handler is a no-op.
+  const DRAG_NAV_THRESHOLD = 6;
+  const DRAG_NAV_PIXELS_PER_STEP = 120;
+  let dragNav: {
+    pointerId: number;
+    startX: number;
+    startFocus: number;
+    moved: boolean;
+  } | null = null;
+
+  stage.addEventListener(
+    'pointerdown',
+    e => {
+      if (stage.dataset.stageMode !== 'series') return;
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      const target = e.target as Element | null;
+      if (!target) return;
+      // Skip drag start on the carousel chevrons, the Other Knowledge
+      // pill, the position indicator, the rotate buttons and the
+      // series-capsule capsule itself — they all have explicit click
+      // semantics and should not be hijacked by drag.
+      if (
+        target.closest(
+          '[data-series-carousel-nav], ' +
+          '[data-series-carousel-position], ' +
+          '[data-galaxy-rotate], ' +
+          '.galaxy-card[data-role="other-knowledge"]',
+        )
+      ) {
+        return;
+      }
+      // Take ownership of the gesture so the layout module's
+      // pointerdown (bubble-phase) never starts an orbit drag.
+      e.stopImmediatePropagation();
+      e.preventDefault();
+      const members = getActiveMembers();
+      dragNav = {
+        pointerId: e.pointerId,
+        startX: e.clientX,
+        startFocus: getFocusedMemberIndex(members.length),
+        moved: false,
+      };
+    },
+    true,
+  );
+
+  stage.addEventListener(
+    'pointermove',
+    e => {
+      if (!dragNav || e.pointerId !== dragNav.pointerId) return;
+      const dx = e.clientX - dragNav.startX;
+      if (!dragNav.moved) {
+        if (Math.abs(dx) < DRAG_NAV_THRESHOLD) return;
+        dragNav.moved = true;
+        try { stage.setPointerCapture(dragNav.pointerId); } catch { /* noop */ }
+      }
+      // In LTR a drag right (dx > 0) should reveal the previous book
+      // (decrease focus). RTL flips the X axis via --galaxy-dir, so
+      // we mirror input here too.
+      const dirSign =
+        stage.style.getPropertyValue('--galaxy-dir').trim() === '-1' ? -1 : 1;
+      const advance = (-dx * dirSign) / DRAG_NAV_PIXELS_PER_STEP;
+      const targetIdx = Math.round(dragNav.startFocus + advance);
+      const members = getActiveMembers();
+      const current = getFocusedMemberIndex(members.length);
+      if (targetIdx !== current) {
+        setFocusedMemberIndex(targetIdx);
+      }
+    },
+    true,
+  );
+
+  function endDragNav(e: PointerEvent): void {
+    if (!dragNav || e.pointerId !== dragNav.pointerId) return;
+    const wasMoved = dragNav.moved;
+    const pid = dragNav.pointerId;
+    dragNav = null;
+    if (stage.hasPointerCapture(pid)) {
+      try { stage.releasePointerCapture(pid); } catch { /* noop */ }
+    }
+    // Suppress the click that follows a real drag so click-to-focus
+    // doesn't accidentally jump to whatever card sits under the
+    // cursor at pointerup. Capture + once so we only eat the very
+    // next click and don't leave a dangling listener.
+    if (wasMoved) {
+      const swallow = (ev: Event): void => {
+        ev.preventDefault();
+        ev.stopImmediatePropagation();
+      };
+      stage.addEventListener('click', swallow, { once: true, capture: true });
+    }
+  }
+  stage.addEventListener('pointerup', endDragNav, true);
+  stage.addEventListener('pointercancel', endDragNav, true);
 
   // Keyboard activation for role="button" capsules. Enter dispatches a
   // synthetic click on most elements; Space does not, so handle both.

@@ -1,6 +1,32 @@
 # tasks/todo.md
 
-## משימה נוכחית - הצמדת בר הקריאה ל-header
+## משימה נוכחית — כרטיס "מרחב הידע" + bottom sheet "כל הפריטים" (מובייל)
+
+### ממצאי Phase 1 (בדיקת ארכיטקטורה)
+- מקור אמת לפריטים: `getLibraryItems()` → `getLibraryStats(items)` ב-`src/utils/library-catalog.ts` (build-time, מתעדכן לבד).
+- ספירות קיימות: `stats.readable` + `stats.byType['book'|'course'|'article']`. ה-Knowledge Core (`LibraryStatsPanel.astro`) כבר משתמש בדיוק בזה → לשקף, לא להמציא.
+- קיים שווה-ערך דסקטופ: `KnowledgeAtlas.astro` (overlay "כל הפריטים") + Knowledge Core. שניהם `display:none` ≤1023px → במובייל אין כלום. לכן הרכיבים החדשים = מובייל-בלבד.
+- i18n: `src/i18n/translations.ts` (מפה שטוחה he/en/es), `t()` + `data-i18n*`. להוסיף `knowledgeSpace.*`.
+- תמה: `html.dark` / `html:not(.dark)`, טוקנים `--yuval-galaxy-*` ב-`src/styles/galaxy.css`. כיוון לפי `getLanguageDirection`.
+- תמונות ממוזערות: `getKnowledgeCardAssetsOrPlaceholder(slug)` → `{ front }`.
+
+### תוכנית (מובייל בלבד, דסקטופ לא נוגעים)
+- [ ] P2: גזירת `mobileCatalogItems` ב-index.astro מהנתונים הקיימים (slug, kind, title, subtitle, typeLabel, href, thumb). ספירות מ-`stats`.
+- [ ] P3: מפתחות i18n `knowledgeSpace.*`.
+- [ ] P4: רכיב `MobileKnowledgeSpace.astro` — כרטיס סיכום מתחת לקרוסלה.
+- [ ] P5/P6: רכיב `MobileAllItemsSheet.astro` — bottom sheet (רשימה ברירת מחדל + כרטיסים, פילטרים, חיפוש, a11y).
+- [ ] P7: עיצוב light/dark דרך טוקנים.
+- [ ] P8: אימות RTL/LTR.
+- [ ] P9: קרוסלה ללא שינוי — להרכיב כ-siblings.
+- [ ] P10: צ'קליסט בדיקות.
+
+### אילוצים נשמרים
+- אין ספירות קשיחות. אין מחרוזות עברית קשיחות במרקאפ/סקריפט.
+- מובייל בלבד. פיזיקת הקרוסלה/גדלים/active לא נוגעים.
+
+---
+
+## משימה ישנה - הצמדת בר הקריאה ל-header
 
 - אבחון: ב-`/read/[book]/[chapter]` שורת המטא, ה-breadcrumbs וכותרת הפרק יושבים כחלקים נפרדים בתוך התוכן, עם רווח מה-header, והם נעלמים בגלילה.
 - פעולה: לעטוף אותם כ-stack sticky אחד, להצמיד אותו מתחת ל-header הגלובלי, להרחיב אותו לרוחב אזור הקריאה, ולהשאיר את כותרת הפרק גלויה בזמן גלילה.
