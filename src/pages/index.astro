@@ -1620,7 +1620,7 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
         translate(-50%, -50%)
         scale(calc(var(--center-card-w) / var(--card-base-width)));
       opacity: 1;
-      z-index: 30;
+      z-index: 50;
       cursor: default;
     }
 
@@ -1756,7 +1756,7 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       opacity: 0;
       visibility: hidden;
       pointer-events: none;
-      z-index: 30;
+      z-index: 60;
       transition:
         transform 180ms ease,
         filter 180ms ease,
@@ -1767,6 +1767,7 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       opacity: 1;
       visibility: visible;
       pointer-events: auto;
+      z-index: 60;
       transition:
         transform 180ms ease,
         filter 180ms ease,
@@ -2722,7 +2723,7 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       aspect-ratio: 2 / 3;
       transform: translateX(-50%);
       opacity: 1;
-      z-index: 30;
+      z-index: 50;
       cursor: default;
     }
 
@@ -2927,7 +2928,7 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       opacity: 0;
       visibility: hidden;
       pointer-events: none;
-      z-index: 30;
+      z-index: 60;
       transition:
         transform 180ms ease,
         filter 180ms ease,
@@ -2938,6 +2939,7 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       opacity: 1;
       visibility: visible;
       pointer-events: auto;
+      z-index: 60;
       transition:
         transform 180ms ease,
         filter 180ms ease,
