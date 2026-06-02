@@ -709,6 +709,23 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
           <span data-galaxy-position-total>{orbitItems.length}</span>
         </div>
 
+        {/* Series-carousel counter ("3 / 6"). Hidden by default; shown
+            only while the bottom nav carries [data-series-mode]. The orbit
+            counter above tracks the wrong (orbit) set in series mode and
+            is hidden then, so this takes its place. universe-series-mode.ts
+            refreshCarouselState() writes the live position into the two
+            spans below. */}
+        <div
+          class="galaxy-series-position"
+          data-galaxy-series-position
+          role="status"
+          aria-live="polite"
+        >
+          <span data-series-mobile-pos-current>1</span>
+          <span class="galaxy-position-sep" aria-hidden="true">/</span>
+          <span data-series-mobile-pos-total>0</span>
+        </div>
+
         <div class="galaxy-orbit-controls" aria-hidden="false">
           <button
             type="button"
@@ -845,6 +862,15 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       object-fit: unset;
       object-position: unset;
       transform: none;
+    }
+  }
+
+  /* Night (dark) on mobile only: nudge the book/core scene image up a little
+     so it sits higher behind the lifted carousel. Base is translateY(50px);
+     this raises it ~30px. Day image and desktop are untouched. */
+  @media (max-width: 1023px) {
+    :global(html.dark) .knowledge-scene-background img.knowledge-scene-img--night {
+      transform: translateY(20px);
     }
   }
 
@@ -1166,6 +1192,9 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
      revealed only by the mobile [data-series-mode] rule in the
      max-width:1023px block. Keeps it off desktop entirely. */
   .galaxy-series-exit { display: none; }
+  /* Mobile filtered-series counter ("3 / 6") — same default-off contract
+     as the exit chip; the mobile [data-series-mode] rule reveals it. */
+  .galaxy-series-position { display: none; }
   /* The mobile-nav wrapper is a plain block on desktop — its only
      mobile-visible children (counter + dots) are display:none, and the
      inner `.galaxy-orbit-controls` is `position: fixed` via the desktop
@@ -1896,6 +1925,33 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
     .galaxy-mobile-nav[data-series-mode] .galaxy-position-indicator,
     .galaxy-mobile-nav[data-series-mode] .galaxy-position-dots {
       display: none !important;
+    }
+    /* Series counter takes the orbit counter's row + styling so the
+       "3 / 6" reads identically to the orbit's "1 / 11". */
+    .galaxy-mobile-nav[data-series-mode] .galaxy-series-position {
+      display: inline-flex;
+      align-items: baseline;
+      gap: 0.2rem;
+      margin: 0 0 2px;
+      color: rgba(255, 255, 255, 0.82);
+      font-size: 0.6875rem;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      font-variant-numeric: tabular-nums;
+      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.55);
+      pointer-events: none;
+      line-height: 1;
+    }
+    .galaxy-mobile-nav[data-series-mode] .galaxy-series-position [data-series-mobile-pos-current] {
+      color: rgba(255, 255, 255, 0.98);
+      font-weight: 600;
+    }
+    :global(html:not(.dark)) .galaxy-mobile-nav[data-series-mode] .galaxy-series-position {
+      color: rgba(22, 34, 60, 0.66);
+      text-shadow: none;
+    }
+    :global(html:not(.dark)) .galaxy-mobile-nav[data-series-mode] .galaxy-series-position [data-series-mobile-pos-current] {
+      color: rgba(22, 34, 60, 0.92);
     }
     .galaxy-mobile-nav[data-series-mode] .galaxy-series-exit {
       display: inline-flex;
