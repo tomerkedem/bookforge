@@ -1037,6 +1037,30 @@ export const translations: Translations = {
   'library.atlas.count':             { he: '{{n}} פריטים',           en: '{{n}} items',                es: '{{n}} elementos' },
   'library.atlas.empty':             { he: 'לא נמצאו פריטים תואמים',  en: 'No matching items found',     es: 'No se encontraron elementos' },
 
+  // ── knowledgeSpace.* — mobile "Knowledge Space" summary card + all-items
+  //    bottom sheet. Mobile-only surface; the desktop equivalent is the
+  //    Knowledge Core widget + Knowledge Atlas overlay (both hidden ≤1023px).
+  //    es mirrors en where Tomer did not supply a Spanish string.
+  'knowledgeSpace.title':            { he: 'מרחב הידע שלך',           en: 'Your Knowledge Space',          es: 'Tu espacio de conocimiento' },
+  // "{{n}} connected items" — total line on the summary card.
+  'knowledgeSpace.totalItems':       { he: '{{n}} פריטים מחוברים',    en: '{{n}} connected items',         es: '{{n}} elementos conectados' },
+  'knowledgeSpace.connectedItems':   { he: 'פריטים מחוברים',          en: 'connected items',               es: 'elementos conectados' },
+  'knowledgeSpace.books':            { he: 'ספרים',                   en: 'Books',                         es: 'Libros' },
+  'knowledgeSpace.courses':          { he: 'קורסים',                  en: 'Courses',                       es: 'Cursos' },
+  'knowledgeSpace.articles':         { he: 'מאמרים',                  en: 'Articles',                      es: 'Artículos' },
+  'knowledgeSpace.viewAll':          { he: 'צפה בכל הפריטים',         en: 'View all items',                es: 'Ver todos los elementos' },
+  'knowledgeSpace.allItemsTitle':    { he: 'כל הפריטים במרחב הידע',   en: 'All items in your knowledge space', es: 'Todos los elementos de tu espacio de conocimiento' },
+  'knowledgeSpace.searchPlaceholder':{ he: 'חפש פריטים...',           en: 'Search items...',               es: 'Buscar elementos...' },
+  'knowledgeSpace.filterAll':        { he: 'הכל',                     en: 'All',                           es: 'Todo' },
+  'knowledgeSpace.filterBooks':      { he: 'ספרים',                   en: 'Books',                         es: 'Libros' },
+  'knowledgeSpace.filterCourses':    { he: 'קורסים',                  en: 'Courses',                       es: 'Cursos' },
+  'knowledgeSpace.filterArticles':   { he: 'מאמרים',                  en: 'Articles',                      es: 'Artículos' },
+  'knowledgeSpace.listView':         { he: 'תצוגת רשימה',             en: 'List view',                     es: 'Vista de lista' },
+  'knowledgeSpace.gridView':         { he: 'תצוגת כרטיסים',           en: 'Grid view',                     es: 'Vista de cuadrícula' },
+  'knowledgeSpace.close':            { he: 'סגור',                    en: 'Close',                         es: 'Cerrar' },
+  'knowledgeSpace.openItem':         { he: 'פתח',                     en: 'Open',                          es: 'Abrir' },
+  'knowledgeSpace.noResults':        { he: 'לא נמצאו פריטים',         en: 'No items found',                es: 'No se encontraron elementos' },
+
   // ── library.recommendation.* — recommendation strip ────────────────────────
   'library.recommendation.forYou':            { he: 'מומלץ עבורך',                       en: 'Recommended for you',                 es: 'Recomendado para ti' },
   'library.recommendation.basedOnYourLibrary':{ he: 'על בסיס הספרייה שלך',               en: 'Based on your library',                es: 'Basado en tu biblioteca' },
