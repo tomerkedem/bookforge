@@ -155,36 +155,67 @@ const cells: Array<{ key: 'books' | 'courses' | 'articles'; count: number; label
       padding: 0.875rem 1rem 1rem;
       box-sizing: border-box;
 
-      border: 1px solid var(--yuval-galaxy-border-strong);
+      border: 1px solid rgba(255, 255, 255, 0.14);
       border-radius: var(--yuval-galaxy-panel-radius, 20px);
+      /* Premium translucent glass: a faint top-down sheen + a soft cyan
+         bloom at the head, floating over a low-opacity navy tint so the
+         galaxy behind reads through. */
       background:
+        linear-gradient(180deg,
+          rgba(255, 255, 255, 0.07) 0%,
+          rgba(255, 255, 255, 0.018) 42%,
+          rgba(255, 255, 255, 0) 100%),
         radial-gradient(ellipse 120% 80% at 50% 0%,
-          color-mix(in srgb, var(--yuval-galaxy-accent-cyan) 8%, transparent) 0%,
-          transparent 70%),
-        var(--yuval-galaxy-surface);
+          color-mix(in srgb, var(--yuval-galaxy-accent-cyan) 14%, transparent) 0%,
+          transparent 66%),
+        rgba(12, 16, 34, 0.52);
       box-shadow:
-        inset 0 1px 0 var(--yuval-galaxy-border-glow, rgba(255, 255, 255, 0.12)),
-        0 -2px 24px -8px color-mix(in srgb, var(--yuval-galaxy-accent-cyan) 22%, transparent),
-        0 12px 32px -10px rgba(2, 6, 20, 0.45);
-      backdrop-filter: blur(calc(var(--yuval-galaxy-card-blur, 14px) + 4px)) saturate(116%);
-      -webkit-backdrop-filter: blur(calc(var(--yuval-galaxy-card-blur, 14px) + 4px)) saturate(116%);
+        inset 0 1px 0 rgba(255, 255, 255, 0.24),
+        inset 0 0 32px rgba(90, 150, 235, 0.07),
+        0 -2px 28px -10px color-mix(in srgb, var(--yuval-galaxy-accent-cyan) 30%, transparent),
+        0 18px 44px -12px rgba(2, 6, 20, 0.62);
+      backdrop-filter: blur(calc(var(--yuval-galaxy-card-blur, 14px) + 12px)) saturate(140%);
+      -webkit-backdrop-filter: blur(calc(var(--yuval-galaxy-card-blur, 14px) + 12px)) saturate(140%);
       color: var(--yuval-galaxy-text);
       isolation: isolate;
     }
   }
 
-  /* Light mode: airier, ice-blue glass rather than a simple invert. */
+  /* Diagonal glass glint sweeping the top-left corner — pure light, no
+     hit-testing. Adds the high-end "polished glass" read. */
+  .mks::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    pointer-events: none;
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.16) 0%,
+      rgba(255, 255, 255, 0.04) 16%,
+      transparent 38%);
+    -webkit-mask-image: linear-gradient(135deg, #000 0%, transparent 46%);
+    mask-image: linear-gradient(135deg, #000 0%, transparent 46%);
+    opacity: 0.7;
+  }
+  :global(html:not(.dark)) .mks::before { opacity: 0.9; }
+
+  /* Light mode: frosted ice-blue glass — translucent, not a flat white
+     panel, so the bright stage glows through softly. */
   :global(html:not(.dark)) .mks {
+    border-color: rgba(255, 255, 255, 0.7);
     background:
-      radial-gradient(ellipse 120% 80% at 50% 0%,
-        rgba(210, 235, 255, 0.55) 0%, transparent 72%),
       linear-gradient(180deg,
-        rgba(255, 255, 255, 0.92) 0%,
-        rgba(245, 250, 255, 0.88) 100%);
+        rgba(255, 255, 255, 0.62) 0%,
+        rgba(255, 255, 255, 0.34) 100%),
+      radial-gradient(ellipse 120% 80% at 50% 0%,
+        rgba(205, 232, 255, 0.55) 0%, transparent 72%);
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.85),
-      0 -2px 20px -10px rgba(14, 116, 144, 0.20),
-      0 12px 30px -12px rgba(30, 45, 80, 0.16);
+      inset 0 1px 0 rgba(255, 255, 255, 0.95),
+      inset 0 0 26px rgba(150, 200, 245, 0.12),
+      0 -2px 22px -10px rgba(14, 116, 144, 0.18),
+      0 16px 38px -14px rgba(30, 45, 80, 0.18);
   }
 
   /* ── Header ──────────────────────────────────────────────────────────── */
@@ -254,9 +285,17 @@ const cells: Array<{ key: 'books' | 'courses' | 'articles'; count: number; label
     justify-content: center;
     gap: 0.1875rem;
     padding: 0.625rem 0.25rem;
-    border: 1px solid var(--yuval-galaxy-border);
+    /* Inner glass tiles — faint translucent fill + a top highlight so each
+       cell reads as a small frosted pane inside the card. */
+    border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 12px;
-    background: var(--yuval-galaxy-surface-muted);
+    background: rgba(255, 255, 255, 0.045);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.10);
+  }
+  :global(html:not(.dark)) .mks__cell {
+    border-color: rgba(255, 255, 255, 0.65);
+    background: rgba(255, 255, 255, 0.42);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
   }
   /* Accent per cell, matching the approved card design (distinct from the
      orbit type tokens): Books blue/purple, Courses cyan/blue, Articles
