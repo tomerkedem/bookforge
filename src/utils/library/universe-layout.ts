@@ -43,6 +43,13 @@ import { cssEscape } from './universe-angle-utils';
 export function initStageLayout(stage: HTMLElement): void {
   // Card currently in center.
   let focused: HTMLElement | null = null;
+  // Mobile carousel chrome (slide counter + pagination dots + rotate
+  // rail). It is a `position: fixed` sibling OUTSIDE the stage, so it
+  // can't be pushed below the focused card by z-index alone. We hide it
+  // while a card is open and restore it on close (Tomer's request).
+  const mobileNav = document.querySelector<HTMLElement>(
+    '[data-galaxy-mobile-nav]',
+  );
   // Cumulative orbit rotation (deg). Each rotate-orbit click bumps this
   // by ±360°/N where N is the live card count. CSS reads this off the
   // stage as --orbit-rotation and animates every card.
@@ -54,6 +61,7 @@ export function initStageLayout(stage: HTMLElement): void {
     focused = card;
     card.dataset.pos = 'center';
     stage.dataset.galaxyFocused = 'true';
+    if (mobileNav) mobileNav.dataset.focusHidden = 'true';
   }
 
   function closeCenter() {
@@ -64,6 +72,7 @@ export function initStageLayout(stage: HTMLElement): void {
     delete focused.dataset.pos;
     focused = null;
     delete stage.dataset.galaxyFocused;
+    if (mobileNav) delete mobileNav.dataset.focusHidden;
   }
 
   function getStep(): number {

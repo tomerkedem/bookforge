@@ -1330,6 +1330,20 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       gap: 0;
       pointer-events: none;
       z-index: 40;
+      transition: opacity 0.2s ease, visibility 0s linear 0s;
+    }
+
+    /* While a card is selected the nav is a fixed sibling OUTSIDE the
+       stage, so it paints over the focused card's reading-entry panel
+       and can't be pushed under it by z-index. JS sets data-focus-hidden
+       on open and clears it on close, so the carousel chrome (counter +
+       dots + rotate rail) fades out under the open card and returns when
+       it closes. */
+    .galaxy-mobile-nav[data-focus-hidden] {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: opacity 0.2s ease, visibility 0s linear 0.2s;
     }
 
     /* Slide-counter ("1 / 11") — small text, glued right above the
@@ -1620,21 +1634,28 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
         translate(-50%, -50%)
         scale(calc(var(--center-card-w) / var(--card-base-width)));
       opacity: 1;
-      z-index: 50;
+      /* Must sit ABOVE the coverflow neighbours. The mobile coverflow
+         rule gives every card `z-index: calc(100 - abs-rel)`, so the
+         immediate neighbours land at 99/98. Anything lower here (it was
+         50) lets those neighbours paint OVER the focused card — its
+         opaque cover PNG gets covered by the card behind it, which read
+         as "the selected card is transparent". 101 keeps the focused
+         card on top of the whole field while the neighbours still peek
+         at the sides, exactly like the desktop focus state. */
+      z-index: 101;
       cursor: default;
     }
 
-    /* Uses the `scale` property (not `transform: scale`) so it composes
-       with the cos/sin transform above without recomputing coordinates. */
+    /* Mobile: no focus dimming. Tomer wants the carousel left exactly
+       as it is when a card is selected — the neighbours keep their
+       resting coverflow opacity/scale. The focused card simply rises
+       above them via z-index (set above), so it reads fully opaque
+       without the rest of the field having to recede. No opacity
+       override here lets the base coverflow opacity stand. */
     .library-galaxy[data-galaxy-focused]
       .galaxy-card:not([data-pos="center"]) {
-      filter: blur(2px) saturate(0.85);
-      opacity: 0.42;
-      scale: 0.9;
-      transition:
-        filter 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-        opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-        scale 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      filter: none;
+      scale: 1;
     }
 
     @media (prefers-reduced-motion: reduce) {
