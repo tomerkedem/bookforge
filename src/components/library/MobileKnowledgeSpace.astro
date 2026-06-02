@@ -155,30 +155,66 @@ const cells: Array<{ key: 'books' | 'courses' | 'articles'; count: number; label
       padding: 0.875rem 1rem 1rem;
       box-sizing: border-box;
 
-      border: 1px solid rgba(255, 255, 255, 0.14);
+      border: 1px solid rgba(255, 255, 255, 0.10);
       border-radius: var(--yuval-galaxy-panel-radius, 20px);
-      /* Premium translucent glass: a faint top-down sheen + a soft cyan
-         bloom at the head, floating over a low-opacity navy tint so the
-         galaxy behind reads through. */
+      /* Holographic AI glass: twin cyan/purple corner blooms + a top-down
+         sheen floating over a deep, low-opacity navy tint so the galaxy
+         behind reads through. The luminous edge is the ::after ring. */
       background:
+        radial-gradient(ellipse 62% 86% at 6% -8%,
+          color-mix(in srgb, var(--yuval-galaxy-accent-cyan) 26%, transparent) 0%, transparent 56%),
+        radial-gradient(ellipse 62% 92% at 104% -6%,
+          color-mix(in srgb, var(--yuval-galaxy-accent-purple) 24%, transparent) 0%, transparent 60%),
         linear-gradient(180deg,
-          rgba(255, 255, 255, 0.07) 0%,
-          rgba(255, 255, 255, 0.018) 42%,
+          rgba(255, 255, 255, 0.08) 0%,
+          rgba(255, 255, 255, 0.02) 44%,
           rgba(255, 255, 255, 0) 100%),
-        radial-gradient(ellipse 120% 80% at 50% 0%,
-          color-mix(in srgb, var(--yuval-galaxy-accent-cyan) 14%, transparent) 0%,
-          transparent 66%),
-        rgba(12, 16, 34, 0.52);
+        rgba(10, 14, 30, 0.50);
       box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.24),
-        inset 0 0 32px rgba(90, 150, 235, 0.07),
-        0 -2px 28px -10px color-mix(in srgb, var(--yuval-galaxy-accent-cyan) 30%, transparent),
-        0 18px 44px -12px rgba(2, 6, 20, 0.62);
-      backdrop-filter: blur(calc(var(--yuval-galaxy-card-blur, 14px) + 12px)) saturate(140%);
-      -webkit-backdrop-filter: blur(calc(var(--yuval-galaxy-card-blur, 14px) + 12px)) saturate(140%);
+        inset 0 1px 0 rgba(255, 255, 255, 0.26),
+        inset 0 0 40px rgba(90, 150, 235, 0.09),
+        0 0 34px -14px color-mix(in srgb, var(--yuval-galaxy-accent-cyan) 60%, transparent),
+        0 18px 46px -12px rgba(2, 6, 20, 0.66);
+      backdrop-filter: blur(calc(var(--yuval-galaxy-card-blur, 14px) + 16px)) saturate(150%);
+      -webkit-backdrop-filter: blur(calc(var(--yuval-galaxy-card-blur, 14px) + 16px)) saturate(150%);
       color: var(--yuval-galaxy-text);
       isolation: isolate;
     }
+  }
+
+  /* Luminous gradient edge — a 1px cyan→purple ring drawn with the
+     mask-composite border trick. Pure light, sits on the frame only. */
+  .mks::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    pointer-events: none;
+    background: linear-gradient(
+      135deg,
+      var(--yuval-galaxy-accent-cyan) 0%,
+      color-mix(in srgb, var(--yuval-galaxy-accent-cyan) 30%, transparent) 32%,
+      transparent 52%,
+      color-mix(in srgb, var(--yuval-galaxy-accent-purple) 30%, transparent) 70%,
+      var(--yuval-galaxy-accent-purple) 100%);
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    mask-composite: exclude;
+    opacity: 0.85;
+    animation: mks-edge-pulse 5.5s ease-in-out infinite;
+  }
+  @keyframes mks-edge-pulse {
+    0%, 100% { opacity: 0.6; }
+    50%      { opacity: 1; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .mks::after { animation: none; opacity: 0.85; }
   }
 
   /* Diagonal glass glint sweeping the top-left corner — pure light, no
@@ -201,22 +237,23 @@ const cells: Array<{ key: 'books' | 'courses' | 'articles'; count: number; label
   }
   :global(html:not(.dark)) .mks::before { opacity: 0.9; }
 
-  /* Light mode: frosted ice-blue glass — translucent, not a flat white
-     panel, so the bright stage glows through softly. */
+  /* Light mode: frosted ice glass with the same twin cyan/purple AI blooms,
+     kept airy so the bright stage glows through. */
   :global(html:not(.dark)) .mks {
-    border-color: rgba(255, 255, 255, 0.7);
+    border-color: rgba(255, 255, 255, 0.75);
     background:
+      radial-gradient(ellipse 62% 86% at 6% -8%, rgba(34, 211, 238, 0.20) 0%, transparent 56%),
+      radial-gradient(ellipse 62% 92% at 104% -6%, rgba(167, 139, 250, 0.20) 0%, transparent 60%),
       linear-gradient(180deg,
-        rgba(255, 255, 255, 0.62) 0%,
-        rgba(255, 255, 255, 0.34) 100%),
-      radial-gradient(ellipse 120% 80% at 50% 0%,
-        rgba(205, 232, 255, 0.55) 0%, transparent 72%);
+        rgba(255, 255, 255, 0.66) 0%,
+        rgba(255, 255, 255, 0.40) 100%);
     box-shadow:
       inset 0 1px 0 rgba(255, 255, 255, 0.95),
-      inset 0 0 26px rgba(150, 200, 245, 0.12),
-      0 -2px 22px -10px rgba(14, 116, 144, 0.18),
+      inset 0 0 30px rgba(150, 200, 245, 0.16),
+      0 0 28px -14px rgba(14, 116, 144, 0.4),
       0 16px 38px -14px rgba(30, 45, 80, 0.18);
   }
+  :global(html:not(.dark)) .mks::after { opacity: 0.5; }
 
   /* ── Header ──────────────────────────────────────────────────────────── */
   .mks__header {
@@ -226,10 +263,11 @@ const cells: Array<{ key: 'books' | 'courses' | 'articles'; count: number; label
   }
   .mks__icon {
     display: inline-flex;
-    width: 18px;
-    height: 18px;
+    width: 19px;
+    height: 19px;
     flex-shrink: 0;
     color: var(--yuval-galaxy-accent-cyan);
+    filter: drop-shadow(0 0 6px color-mix(in srgb, var(--yuval-galaxy-accent-cyan) 60%, transparent));
   }
   .mks__icon svg { width: 100%; height: 100%; }
   .mks__title {
@@ -258,11 +296,20 @@ const cells: Array<{ key: 'books' | 'courses' | 'articles'; count: number; label
     min-width: 4.5rem;
   }
   .mks__total-num {
-    font-size: 2.25rem;
-    font-weight: 700;
+    font-size: 2.5rem;
+    font-weight: 800;
     line-height: 1;
-    letter-spacing: -0.02em;
-    color: var(--yuval-galaxy-text);
+    letter-spacing: -0.03em;
+    /* Luminous cyan→purple gradient numerals — the card's focal AI accent. */
+    background: linear-gradient(
+      135deg,
+      var(--yuval-galaxy-accent-cyan) 0%,
+      var(--yuval-galaxy-accent-purple) 100%);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0 14px color-mix(in srgb, var(--yuval-galaxy-accent-cyan) 35%, transparent));
   }
   .mks__total-label {
     margin-block-start: 0.25rem;
@@ -283,19 +330,29 @@ const cells: Array<{ key: 'books' | 'courses' | 'articles'; count: number; label
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 0.1875rem;
-    padding: 0.625rem 0.25rem;
-    /* Inner glass tiles — faint translucent fill + a top highlight so each
-       cell reads as a small frosted pane inside the card. */
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 12px;
-    background: rgba(255, 255, 255, 0.045);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.10);
+    gap: 0.3125rem;
+    padding: 0.6875rem 0.25rem 0.625rem;
+    /* Per-accent glass module: a soft accent bloom at the top fading into a
+       faint frosted fill, with an accent-tinted hairline border. */
+    border: 1px solid color-mix(in srgb, var(--mks-accent) 24%, rgba(255, 255, 255, 0.10));
+    border-radius: 13px;
+    background:
+      radial-gradient(ellipse 100% 64% at 50% 0%,
+        color-mix(in srgb, var(--mks-accent) 18%, transparent) 0%, transparent 72%),
+      rgba(255, 255, 255, 0.035);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.12),
+      0 0 16px -10px color-mix(in srgb, var(--mks-accent) 80%, transparent);
   }
   :global(html:not(.dark)) .mks__cell {
-    border-color: rgba(255, 255, 255, 0.65);
-    background: rgba(255, 255, 255, 0.42);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    border-color: color-mix(in srgb, var(--mks-accent) 30%, rgba(255, 255, 255, 0.6));
+    background:
+      radial-gradient(ellipse 100% 64% at 50% 0%,
+        color-mix(in srgb, var(--mks-accent) 14%, transparent) 0%, transparent 72%),
+      rgba(255, 255, 255, 0.55);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.85),
+      0 0 16px -11px color-mix(in srgb, var(--mks-accent) 80%, transparent);
   }
   /* Accent per cell, matching the approved card design (distinct from the
      orbit type tokens): Books blue/purple, Courses cyan/blue, Articles
@@ -303,21 +360,27 @@ const cells: Array<{ key: 'books' | 'courses' | 'articles'; count: number; label
   .mks__cell[data-type="books"]    { --mks-accent: var(--yuval-galaxy-accent-purple); }
   .mks__cell[data-type="courses"]  { --mks-accent: var(--yuval-galaxy-accent-cyan); }
   .mks__cell[data-type="articles"] { --mks-accent: var(--yuval-galaxy-type-book); }
+  /* Glowing accent tile holding the icon. */
   .mks__cell-icon {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 22px;
-    height: 22px;
-    margin-block-end: 0.0625rem;
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
     color: var(--mks-accent, var(--yuval-galaxy-text-soft));
+    background: color-mix(in srgb, var(--mks-accent) 15%, transparent);
+    border: 1px solid color-mix(in srgb, var(--mks-accent) 34%, transparent);
+    box-shadow:
+      inset 0 0 12px -4px color-mix(in srgb, var(--mks-accent) 55%, transparent),
+      0 0 14px -5px color-mix(in srgb, var(--mks-accent) 55%, transparent);
   }
-  .mks__cell-icon svg { width: 100%; height: 100%; }
+  .mks__cell-icon svg { width: 18px; height: 18px; }
   .mks__cell-num {
-    font-size: 1.0625rem;
-    font-weight: 600;
+    font-size: 1.125rem;
+    font-weight: 700;
     line-height: 1;
-    color: var(--mks-accent, var(--yuval-galaxy-text));
+    color: var(--yuval-galaxy-text);
   }
   .mks__cell-label {
     font-size: 0.625rem;
