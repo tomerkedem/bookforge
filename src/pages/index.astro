@@ -1244,7 +1244,10 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
 
     .library-galaxy {
       position: fixed;
-      top: 50dvh;
+      /* Lift the whole orbit composition up 60px on mobile so the carousel
+         and the new Knowledge Space card at the bottom aren't cramped. The
+         nav rail below references this same baseline and is shifted to match. */
+      top: calc(50dvh - 60px);
       left: 50%;
       transform: translate(-50%, -50%);
       display: block;
@@ -1390,7 +1393,7 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
          of the side cards (no breathing room). The 0px offset matches
          the side-card half-height math; the row visually touches the
          card edge. Tomer asked for "as snug as possible". */
-      top: calc(50dvh + clamp(163px, 46vw, 230px) - 30px);
+      top: calc(50dvh + clamp(163px, 46vw, 230px) - 90px);
       inset-block-end: auto;
       inset-inline: 0;
       flex-direction: column;
