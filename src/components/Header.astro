@@ -212,19 +212,6 @@ const searchAriaLabel = t('header.searchAriaLabel', language);
           uses `flex-row-reverse` to keep this controls group on the
           page's inline-end side). The visual reading is always
           [Language Globe] [Theme] with Theme at the far right. */}
-      {showLanguageToggle && (
-        useGlobeLanguageSelector ? (
-          <LanguageGlobeSelector
-            activeLanguage={language}
-            availableLanguages={effectiveLanguages}
-          />
-        ) : (
-          <LanguageSelector
-            languages={effectiveLanguages}
-            current={language}
-          />
-        )
-      )}
       {showCoreSearchTrigger && (
         <button
           type="button"
@@ -242,6 +229,19 @@ const searchAriaLabel = t('header.searchAriaLabel', language);
             </svg>
           </span>
         </button>
+      )}
+      {showLanguageToggle && (
+        useGlobeLanguageSelector ? (
+          <LanguageGlobeSelector
+            activeLanguage={language}
+            availableLanguages={effectiveLanguages}
+          />
+        ) : (
+          <LanguageSelector
+            languages={effectiveLanguages}
+            current={language}
+          />
+        )
       )}
       <ThemeToggle />
     </div>
