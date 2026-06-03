@@ -12,6 +12,15 @@ html {
   scrollbar-gutter: stable;
 }
 
+/* The /library dashboard locks scrolling (`overflow: hidden` on the page
+   root) and is a full-bleed cosmic stage. The stable gutter above would
+   otherwise reserve a ~10px track at the inline-end edge with nothing
+   painted in it — a dark strip on the right in both day and night. The
+   page never scrolls, so reclaim the gutter here for true full-bleed. */
+html:has(.library-dark-showcase) {
+  scrollbar-gutter: auto;
+}
+
 /* Respect the OS-level reduced-motion preference across the whole app.
    Readers with vestibular sensitivity (or simply long reading sessions
    where the pulsing TOC dot and conic-gradient glows grow tiring) can
