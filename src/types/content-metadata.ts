@@ -15,11 +15,20 @@
  *
  * The existing `ContentType` exported from book-discovery.ts is a
  * structural classification ('book' | 'course_lesson'). The editorial
- * type below is a presentation classification and is named
- * `ContentItemType` to avoid the collision.
+ * type below is a presentation classification named `ContentItemType`
+ * to avoid the collision — but the two share the `course_lesson` value
+ * on purpose: when the editor classifies an item as a course lesson in
+ * /admin, that decision must round-trip to catalog.json with the same
+ * canonical value the pipeline uses, so the library and stats never have
+ * to re-guess a lesson from a folder name or slug.
+ *
+ * `contentType` is the ONE canonical classification field. The
+ * catalog.json `type` is derived from it via a single explicit mapping
+ * (`contentTypeToCatalogType` in types/library-catalog.ts) — there is no
+ * second internal source of truth for an item's kind.
  */
 
-export type ContentItemType = 'book' | 'course' | 'article';
+export type ContentItemType = 'book' | 'course' | 'article' | 'course_lesson';
 
 export type VisualMode = 'card' | 'hidden';
 
@@ -31,6 +40,26 @@ export interface ContentMetadata {
   seriesName: string;
   isVisibleInUniverse: boolean;
   visualMode: VisualMode;
+  /**
+   * Course linkage — meaningful ONLY when `contentType === 'course_lesson'`.
+   * `courseSlug` is the slug of the parent course (e.g. 'ai-engineering');
+   * the admin UI offers a select of existing courses so this always points
+   * at a real course. `lessonNumber` is the 1-based position of the lesson
+   * inside that course, stored as a number. Both are `undefined` for
+   * non-lesson items.
+   *
+   * `courseSlug` is the STABLE slug of the parent course/capsule item
+   * (e.g. 'ai-engineering-series') chosen from a select of existing
+   * course/capsule items — never the visible label, never `seriesName`.
+   * `lessonNumber` is the lesson's identity (its 1-based number).
+   * `orderInCourse` is the editorial "Order in course" input; it defaults
+   * to `lessonNumber` and persists to the catalog as `orderInSeries` (a
+   * course IS a series, so there is no separate catalog `orderInCourse`).
+   * All three are `undefined` for non-lesson items.
+   */
+  courseSlug?: string;
+  lessonNumber?: number;
+  orderInCourse?: number;
 }
 
 export interface ContentMetadataStore {

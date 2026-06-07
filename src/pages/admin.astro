@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { discoverAllBooks } from '../utils/book-discovery';
+import { getCatalogItems } from '../utils/library/library-catalog-store';
 import { getKnowledgeCardAssets } from '../utils/library/knowledge-cards';
 import type { Language } from '../types/index';
 import {
@@ -43,6 +44,41 @@ const language: Language = (urlLang && isValidLanguage(urlLang))
   : DEFAULT_LANGUAGE;
 const isRtl = getLanguageDirection(language) === 'rtl';
 
+// Courses offered in the lesson-classification select. Sourced from the
+// existing course / capsule items in catalog.json (type 'series' or
+// 'course'), so a saved lesson links to a real item by its STABLE slug
+// (e.g. 'ai-engineering-series') — never a free-typed slug, never a
+// visible text label. Title prefers the active language.
+const availableCourses = getCatalogItems()
+  .filter((c) => c.type === 'series' || c.type === 'course')
+  .map((c) => ({
+    slug: c.slug,
+    title: pickLocalized(c.title as Record<string, string>, language) || c.slug,
+  }));
+
+// Discovered classification per slug, emitted to the client so the admin
+// metadata store can be SEEDED with each item's REAL kind. Two reasons:
+//   1. The editor sees the truth — a pipeline course-lesson opens as
+//      "lesson" with its course + number, not the default "book".
+//   2. Safety — without this, saving a discovered lesson (whose modal
+//      would otherwise default to "book") would materialize a book record
+//      in catalog.json and, via the new `type` overlay, flip the lesson
+//      to a book. Seeding keeps contentType correct so the round-trip is
+//      lossless. catalog.json still overrides this seed when it has a
+//      record for the slug.
+const discoveredClassification: Record<string, {
+  contentType: 'book' | 'course' | 'article' | 'course_lesson';
+  courseSlug?: string;
+  lessonNumber?: number;
+}> = {};
+for (const b of books) {
+  discoveredClassification[b.slug] = {
+    contentType: b.contentType,
+    ...(b.courseSlug ? { courseSlug: b.courseSlug } : {}),
+    ...(typeof b.lessonNumber === 'number' ? { lessonNumber: b.lessonNumber } : {}),
+  };
+}
+
 // Pre-translate strings that are emitted into client-side data-attrs
 // or DOM-built nodes. Toast templates keep their {{n}}/{{slug}} markers
 // — the script does the substitution at runtime so a single key serves
@@ -62,6 +98,8 @@ const i18nBundle = {
   toastDeleteFailed: t('admin.toast.deleteFailed', language),
   toastNetworkError: t('admin.toast.networkError', language),
   toastMetadataSaved:t('admin.toast.metadataSaved', language),
+  toastCatalogSaveFailed: t('admin.toast.catalogSaveFailed', language),
+  toastCourseRequired: t('admin.toast.courseRequired', language),
   toastEditorialExportedTpl: t('admin.toast.editorialExported', language),
   toastEditorialImportedTpl: t('admin.toast.editorialImported', language),
   toastEditorialImportInvalidTpl: t('admin.toast.editorialImportInvalid', language),
@@ -142,6 +180,7 @@ const i18nBundle = {
   cellNoCategory:    t('admin.cell.noCategory', language),
   optionBook:        t('admin.option.book', language),
   optionCourse:      t('admin.option.course', language),
+  optionLesson:      t('admin.option.lesson', language),
   optionArticle:     t('admin.option.article', language),
   // Cover upload — toasts are rendered from the script after the
   // POST /api/upload-cover round-trip. Templates use {{title}} for
@@ -169,6 +208,7 @@ const i18nBundle = {
     lang={language}
     dir={isRtl ? 'rtl' : 'ltr'}
     data-i18n-bundle={JSON.stringify(i18nBundle)}
+    data-discovered-classification={JSON.stringify(discoveredClassification)}
   >
     <div class="kcc-wrap">
       <header class="kcc-header">
@@ -314,14 +354,18 @@ const i18nBundle = {
                             <path d="M12 20h9"></path>
                             <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
                           </svg>
-                          <span class="edit-btn-label">{t('admin.action.editMetadata', language)}</span>
                         </button>
                         <button
                           class="clean-btn"
                           data-slug={book.slug}
+                          aria-label={t('admin.action.cleanDataTitle', language)}
                           title={t('admin.action.cleanDataTitle', language)}
                         >
-                          {t('admin.action.cleanData', language)}
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"></path>
+                            <path d="M22 21H7"></path>
+                            <path d="m5 11 9 9"></path>
+                          </svg>
                         </button>
                         <button
                           class="delete-btn"
@@ -337,7 +381,6 @@ const i18nBundle = {
                             <path d="M14 11v6"></path>
                             <path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"></path>
                           </svg>
-                          <span class="delete-btn-label">{t('admin.action.delete', language)}</span>
                         </button>
                       </div>
                     </td>
@@ -534,8 +577,54 @@ const i18nBundle = {
             <select class="meta-select" name="contentType">
               <option value="book">{t('admin.option.book', language)}</option>
               <option value="course">{t('admin.option.course', language)}</option>
+              <option value="course_lesson">{t('admin.option.lesson', language)}</option>
               <option value="article">{t('admin.option.article', language)}</option>
             </select>
+          </label>
+
+          {/* Course-lesson linkage — shown only when contentType is
+              "lesson". The course is a SELECT of real pipeline courses
+              (never a free slug) so a saved lesson always points at an
+              existing course; lessonNumber is its 1-based position. */}
+          <label class="meta-field" data-lesson-field hidden>
+            <span class="meta-label">{t('admin.field.courseSlug', language)}</span>
+            <select class="meta-select" name="courseSlug">
+              <option value="">{t('admin.field.courseSlugNone', language)}</option>
+              {availableCourses.map((c) => (
+                <option value={c.slug}>{c.title}</option>
+              ))}
+            </select>
+            <span class="meta-hint">{t('admin.field.courseSlugHint', language)}</span>
+          </label>
+
+          <label class="meta-field" data-lesson-field hidden>
+            <span class="meta-label">{t('admin.field.lessonNumber', language)}</span>
+            <input
+              class="meta-input"
+              type="number"
+              name="lessonNumber"
+              min="1"
+              step="1"
+              inputmode="numeric"
+              placeholder="—"
+            />
+            <span class="meta-hint">{t('admin.field.lessonNumberHint', language)}</span>
+          </label>
+
+          {/* Order in course — defaults to the lesson number; only stored
+              separately when the editor overrides the sort position. */}
+          <label class="meta-field" data-lesson-field hidden>
+            <span class="meta-label">{t('admin.field.orderInCourse', language)}</span>
+            <input
+              class="meta-input"
+              type="number"
+              name="orderInCourse"
+              min="1"
+              step="1"
+              inputmode="numeric"
+              placeholder="—"
+            />
+            <span class="meta-hint">{t('admin.field.orderInCourseHint', language)}</span>
           </label>
 
           <label class="meta-field">
@@ -548,7 +637,10 @@ const i18nBundle = {
             />
           </label>
 
-          <label class="meta-field">
+          {/* Series name is book-series membership only. For a lesson the
+              parent course is the stable courseSlug above, so this field is
+              hidden (not the lesson's course relationship). */}
+          <label class="meta-field" data-lesson-hide>
             <span class="meta-label">{t('admin.field.seriesName', language)}</span>
             <input
               class="meta-input"
@@ -1114,11 +1206,10 @@ const i18nBundle = {
   .cover-uploader .cover-thumb--empty + .cover-uploader-overlay {
     opacity: 1;
   }
-  /* Actions column needs to fit all three buttons in Hebrew without
-     overflowing into the chapters column. Measured worst case:
-     "עריכת מטא-דאטה" + icon (~165px) + 6px gap + "ניקוי נתונים"
-     (~115px) + 6px gap + "מחיקה" + icon (~85px) ≈ 380px. */
-  .col-actions     { width: 380px; }
+  /* Actions column fits three icon-only square buttons (edit, clean,
+     delete). Worst case: 3 × 32px + 2 × 6px gap = 108px, plus cell
+     padding. Kept a little roomy for breathing space. */
+  .col-actions     { width: 140px; }
 
   /* ── Title cell stack ────────────────────────────────────
      The first column shows ONLY book title and subtitle. Slug,
@@ -1287,6 +1378,38 @@ const i18nBundle = {
     border-color: var(--kcc-gold-rim);
   }
 
+  /* Row action only: icon-only square, aligned with edit + delete.
+     Scoped to .book-actions so the global text variants
+     (.clean-btn--global) keep their padded text layout. */
+  .book-actions .clean-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 7px;
+    width: 32px;
+    height: 32px;
+    transition:
+      background 160ms cubic-bezier(0.4, 0, 0.2, 1),
+      color 160ms cubic-bezier(0.4, 0, 0.2, 1),
+      border-color 160ms cubic-bezier(0.4, 0, 0.2, 1),
+      box-shadow 160ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .book-actions .clean-btn svg {
+    flex-shrink: 0;
+    opacity: 0.85;
+  }
+
+  .book-actions .clean-btn:hover svg {
+    opacity: 1;
+  }
+
+  .book-actions .clean-btn:focus-visible {
+    outline: none;
+    border-color: var(--kcc-gold-rim);
+    box-shadow: 0 0 0 3px rgba(201, 169, 110, 0.18);
+  }
+
   /* Edit metadata — PRIMARY safe action.
      The most prominent of the three row actions: gold-tinted fill +
      gold rim signal "this is the everyday editorial control", while
@@ -1294,8 +1417,12 @@ const i18nBundle = {
   .edit-btn {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    padding: 7px 14px;
+    justify-content: center;
+    /* Icon-only: square footprint keeps the actions column compact while
+       staying a comfortable tap target on touch screens. */
+    padding: 7px;
+    width: 32px;
+    height: 32px;
     border-radius: 8px;
     border: 1px solid var(--kcc-gold-rim);
     background: rgba(201, 169, 110, 0.14);
@@ -1337,21 +1464,22 @@ const i18nBundle = {
   .delete-btn {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    padding: 7px 12px;
+    justify-content: center;
+    /* Icon-only square, aligned with edit + clean. Stays a quiet ghost
+       at rest — the destructive signal only appears on hover/focus. */
+    padding: 7px;
+    width: 32px;
+    height: 32px;
     border-radius: 8px;
     border: 1px solid transparent;
     background: transparent;
     color: var(--kcc-text-muted);
-    font-size: 0.78rem;
-    font-weight: 500;
     cursor: pointer;
-    white-space: nowrap;
-    letter-spacing: 0.01em;
     transition:
       background 160ms cubic-bezier(0.4, 0, 0.2, 1),
       color 160ms cubic-bezier(0.4, 0, 0.2, 1),
-      border-color 160ms cubic-bezier(0.4, 0, 0.2, 1);
+      border-color 160ms cubic-bezier(0.4, 0, 0.2, 1),
+      box-shadow 160ms cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .delete-btn svg {
@@ -1367,6 +1495,13 @@ const i18nBundle = {
 
   .delete-btn:hover svg {
     opacity: 1;
+  }
+
+  .delete-btn:focus-visible {
+    outline: none;
+    color: #f87171;
+    border-color: rgba(220, 38, 38, 0.5);
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.18);
   }
 
   /* ── Global card ─────────────────────────────────────────── */
@@ -2368,11 +2503,6 @@ const i18nBundle = {
     .kcc-td {
       padding: 12px 12px;
     }
-
-    .delete-btn-label,
-    .edit-btn-label {
-      display: none;
-    }
   }
 
   @media (max-width: 640px) {
@@ -2453,6 +2583,8 @@ const i18nBundle = {
     toastDeleteFailed: string;
     toastNetworkError: string;
     toastMetadataSaved: string;
+    toastCatalogSaveFailed: string;
+    toastCourseRequired: string;
     toastEditorialExportedTpl: string;
     toastEditorialImportedTpl: string;
     toastEditorialImportInvalidTpl: string;
@@ -2518,6 +2650,7 @@ const i18nBundle = {
     cellNoCategory: string;
     optionBook: string;
     optionCourse: string;
+    optionLesson: string;
     optionArticle: string;
     // Cover upload
     coverPlaceholder: string;
@@ -2538,6 +2671,23 @@ const i18nBundle = {
       return raw ? (JSON.parse(raw) as AdminI18nBundle) : ({} as AdminI18nBundle);
     } catch {
       return {} as AdminI18nBundle;
+    }
+  })();
+
+  // Per-slug classification discovered by the pipeline (contentType +
+  // course linkage). Used to seed the metadata store so the editor sees
+  // each item's real kind and a save can't flip a lesson to a book.
+  type DiscoveredClassification = Record<string, {
+    contentType: ContentMetadata['contentType'];
+    courseSlug?: string;
+    lessonNumber?: number;
+  }>;
+  const discoveredClassification: DiscoveredClassification = (() => {
+    try {
+      const raw = i18nRoot?.dataset.discoveredClassification;
+      return raw ? (JSON.parse(raw) as DiscoveredClassification) : {};
+    } catch {
+      return {};
     }
   })();
 
@@ -2857,11 +3007,16 @@ const i18nBundle = {
       replaceAllMetadata(split.contentItems);
       replaceAllSeriesMetadata(split.seriesItems);
 
-      // Phase 7 — no reload. State lives in memory only; repaint in
-      // place so the editor can continue from the imported state.
+      // Repaint in place so the editor can continue from the imported
+      // state, then flush the imported catalog straight to disk — an
+      // import is a restore, and catalog.json is the source of truth, so
+      // it should land in the file without a separate save step.
       repaintAllBookCards();
       renderSeries();
-      showToast(fmt(i18n.toastCatalogImportedTpl, { count }));
+      const persisted = await persistCatalog();
+      if (persisted) {
+        showToast(fmt(i18n.toastCatalogImportedTpl, { count }));
+      }
     });
   }
 
@@ -3000,11 +3155,76 @@ const i18nBundle = {
   updateStats();
 
   // ─────────────────────────────────────────────────────────────
+  // persistCatalog — the SINGLE write path to the editorial source of
+  // truth at src/data/library/catalog.json.
+  //
+  // The in-memory ContentMetadata + SeriesMetadata stores (seeded from
+  // catalog.json at boot) are this page's working state. On every
+  // editorial mutation we rebuild the FULL catalog from that state via
+  // buildExportedCatalog() and POST it to /api/save-catalog, which writes
+  // the file atomically. So the file on disk always matches what the
+  // editor sees — no Export-then-commit step.
+  //
+  // Returns true on a confirmed write. On failure it surfaces an error
+  // toast itself and returns false, so each caller can gate its own
+  // success toast on the result.
+  //
+  // NOTE: persisting the change in the git repository still requires a
+  // commit of catalog.json — the server writes the working tree, not git.
+  // ─────────────────────────────────────────────────────────────
+  async function persistCatalog(debugSlug?: string): Promise<boolean> {
+    const payload = buildExportedCatalog({
+      contentDrafts: getAllMetadata(),
+      seriesDrafts: getAllSeriesMetadata(),
+    });
+    // [TEMP DEBUG] inspect the generated catalog BEFORE the POST.
+    if (debugSlug) {
+      const entry = payload.items.find(
+        (it) => it.slug.toLowerCase() === debugSlug.toLowerCase(),
+      );
+      console.log(
+        '[save-flow] generated catalog entry for this book',
+        entry ?? '(NOT IN CATALOG — change would not persist)',
+      );
+    }
+    console.log(
+      '[save-flow] generated catalog series entries',
+      payload.items.filter((it) => it.type === 'series'),
+    );
+    console.log('[save-flow] catalog total items', payload.items.length);
+    try {
+      const res = await fetch('/api/save-catalog', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      // [TEMP DEBUG]
+      console.log('[save-flow] POST /api/save-catalog status', res.status);
+      let data: { success?: boolean; error?: string; count?: number } | null = null;
+      try { data = await res.json(); } catch { /* non-JSON error body */ }
+      console.log('[save-flow] POST response body', data);
+      if (!res.ok || !data?.success) {
+        const msg = data?.error ? String(data.error) : `HTTP ${res.status}`;
+        showToast(fmt(i18n.toastCatalogSaveFailed, { msg }));
+        return false;
+      }
+      return true;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'network error';
+      console.log('[save-flow] POST failed (network)', err);
+      showToast(fmt(i18n.toastCatalogSaveFailed, { msg }));
+      return false;
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────
   // Edit Metadata drawer
   // Reads and writes the editorial layer in src/utils/content-metadata.ts,
-  // which is an in-memory store seeded from src/data/library/catalog.json
-  // at page load. Edits live only until the tab is closed; publishing
-  // still requires Export catalog.json → commit.
+  // an in-memory store seeded from src/data/library/catalog.json at page
+  // load. Every save flushes the full catalog to that file via
+  // persistCatalog() (POST /api/save-catalog), so edits persist across
+  // reloads. catalog.json is the only editorial source of truth; a git
+  // commit of the file is still required to publish from the repo.
   // ─────────────────────────────────────────────────────────────
 
   const metaDrawer = document.getElementById('meta-drawer')!;
@@ -3016,6 +3236,9 @@ const i18nBundle = {
   const metaFields = {
     displayTitle: metaForm.elements.namedItem('displayTitle') as HTMLInputElement,
     contentType: metaForm.elements.namedItem('contentType') as HTMLSelectElement,
+    courseSlug: metaForm.elements.namedItem('courseSlug') as HTMLSelectElement,
+    lessonNumber: metaForm.elements.namedItem('lessonNumber') as HTMLInputElement,
+    orderInCourse: metaForm.elements.namedItem('orderInCourse') as HTMLInputElement,
     category: metaForm.elements.namedItem('category') as HTMLInputElement,
     seriesName: metaForm.elements.namedItem('seriesName') as HTMLInputElement,
     isVisibleInUniverse: metaForm.elements.namedItem('isVisibleInUniverse') as HTMLInputElement,
@@ -3027,12 +3250,41 @@ const i18nBundle = {
 
   function contentTypeLabel(t: ContentMetadata['contentType']): string {
     switch (t) {
-      case 'course':  return i18n.optionCourse;
-      case 'article': return i18n.optionArticle;
+      case 'course':        return i18n.optionCourse;
+      case 'course_lesson': return i18n.optionLesson;
+      case 'article':       return i18n.optionArticle;
       case 'book':
-      default:        return i18n.optionBook;
+      default:              return i18n.optionBook;
     }
   }
+
+  // Show the course / lesson-number / order-in-course fields only when the
+  // item is a lesson, and conversely hide the book-only fields (series
+  // name) for a lesson. Toggled on drawer open and on every contentType
+  // change so the form never shows lesson linkage for a plain
+  // book/course/article — or series membership for a lesson.
+  function syncLessonFieldsVisibility(): void {
+    const isLesson = metaFields.contentType.value === 'course_lesson';
+    metaForm.querySelectorAll<HTMLElement>('[data-lesson-field]').forEach((el) => {
+      el.hidden = !isLesson;
+    });
+    metaForm.querySelectorAll<HTMLElement>('[data-lesson-hide]').forEach((el) => {
+      el.hidden = isLesson;
+    });
+  }
+  metaFields.contentType.addEventListener('change', syncLessonFieldsVisibility);
+
+  // orderInCourse defaults to the lesson number: while the editor hasn't
+  // typed an explicit order, mirror the lesson number into the order field
+  // so the common case needs no extra input. Once the editor edits the
+  // order field directly it becomes "dirty" and stops auto-tracking.
+  metaFields.lessonNumber.addEventListener('input', () => {
+    if (metaFields.orderInCourse.dataset.dirty === 'true') return;
+    metaFields.orderInCourse.value = metaFields.lessonNumber.value;
+  });
+  metaFields.orderInCourse.addEventListener('input', () => {
+    metaFields.orderInCourse.dataset.dirty = 'true';
+  });
 
   function paintCardFromMetadata(
     slug: string,
@@ -3134,9 +3386,31 @@ const i18nBundle = {
     });
   }
 
+  // Seed the in-memory store with each discovered item's REAL kind
+  // (contentType + course linkage) BEFORE the first paint, so:
+  //   1. the admin table shows lessons as "lesson", not "book";
+  //   2. opening a lesson's modal shows the right type + course + number;
+  //   3. a save can never silently flip a discovered lesson into a book.
+  // catalog.json wins — already-classified slugs (seeded into the store
+  // at module init) are left untouched.
+  function seedDiscoveredClassification(): void {
+    const stored = getAllMetadata();
+    for (const [slug, disc] of Object.entries(discoveredClassification)) {
+      if (stored[slug]) continue; // catalog.json already classifies it
+      const card = document.querySelector<HTMLElement>(`.book-card[data-slug="${slug}"]`);
+      const ssrTitle =
+        card?.querySelector<HTMLElement>('.book-title')?.textContent?.trim() || slug;
+      const patch: Partial<ContentMetadata> = { contentType: disc.contentType };
+      if (disc.courseSlug) patch.courseSlug = disc.courseSlug;
+      if (typeof disc.lessonNumber === 'number') patch.lessonNumber = disc.lessonNumber;
+      setMetadata(slug, patch, ssrTitle);
+    }
+  }
+  seedDiscoveredClassification();
+
   // On boot, overlay each card with its stored metadata (seeded from
-  // catalog.json at module init). Cards without a stored record
-  // receive the legacy defaults and the SSR rendering carries.
+  // catalog.json at module init, then from discovery above). Cards
+  // without a stored record receive the legacy defaults.
   repaintAllBookCards();
 
   function openMetaDrawer(slug: string, fallbackTitle: string, trigger: HTMLElement | null) {
@@ -3149,10 +3423,30 @@ const i18nBundle = {
 
     metaFields.displayTitle.value = meta.displayTitle;
     metaFields.contentType.value = meta.contentType;
+    metaFields.courseSlug.value = meta.courseSlug ?? '';
+    metaFields.lessonNumber.value =
+      typeof meta.lessonNumber === 'number' ? String(meta.lessonNumber) : '';
+    // orderInCourse defaults to lessonNumber on load. Whether it came from a
+    // stored override or the default, mark it dirty when it differs from the
+    // lesson number so the auto-mirror doesn't clobber an explicit order.
+    const orderInCourseValue =
+      typeof meta.orderInCourse === 'number' ? meta.orderInCourse
+      : typeof meta.lessonNumber === 'number' ? meta.lessonNumber
+      : undefined;
+    metaFields.orderInCourse.value =
+      typeof orderInCourseValue === 'number' ? String(orderInCourseValue) : '';
+    if (typeof meta.orderInCourse === 'number'
+        && meta.orderInCourse !== meta.lessonNumber) {
+      metaFields.orderInCourse.dataset.dirty = 'true';
+    } else {
+      delete metaFields.orderInCourse.dataset.dirty;
+    }
     metaFields.category.value = meta.category;
     metaFields.seriesName.value = meta.seriesName;
     metaFields.isVisibleInUniverse.checked = meta.isVisibleInUniverse;
     metaFields.visualMode.value = meta.visualMode;
+    // Reveal the course + lesson-number fields only for a lesson.
+    syncLessonFieldsVisibility();
 
     metaDrawer.classList.remove('hidden');
     metaDrawer.setAttribute('aria-hidden', 'false');
@@ -3207,21 +3501,66 @@ const i18nBundle = {
     }
   });
 
-  metaSaveBtn.addEventListener('click', () => {
+  metaSaveBtn.addEventListener('click', async () => {
     if (!editingSlug) return;
     const slug = editingSlug;
     const fallback = metaFields.displayTitle.value.trim() || slug;
 
+    const contentType = metaFields.contentType.value as ContentMetadata['contentType'];
+    const isLesson = contentType === 'course_lesson';
+    // courseSlug comes from a SELECT of real pipeline courses, so a
+    // non-empty value is always a valid, existing course — the only
+    // invalid lesson state is "no course chosen", guarded below.
+    const courseSlug = isLesson ? metaFields.courseSlug.value.trim() : '';
+    const lessonNumberRaw = metaFields.lessonNumber.value.trim();
+    const lessonNumberParsed = lessonNumberRaw === '' ? NaN : Number(lessonNumberRaw);
+    const lessonNumber =
+      isLesson && Number.isFinite(lessonNumberParsed) && lessonNumberParsed > 0
+        ? Math.floor(lessonNumberParsed)
+        : undefined;
+    // orderInCourse defaults to lessonNumber unless the editor typed an
+    // explicit (different) order.
+    const orderInCourseRaw = metaFields.orderInCourse.value.trim();
+    const orderInCourseParsed = orderInCourseRaw === '' ? NaN : Number(orderInCourseRaw);
+    const orderInCourse = !isLesson
+      ? undefined
+      : Number.isFinite(orderInCourseParsed) && orderInCourseParsed > 0
+        ? Math.floor(orderInCourseParsed)
+        : lessonNumber;
+
+    if (isLesson && courseSlug.length === 0) {
+      showToast(i18n.toastCourseRequired);
+      return; // keep the drawer open so the editor can pick a course
+    }
+
     const patch: Partial<ContentMetadata> = {
       displayTitle: metaFields.displayTitle.value.trim() || slug,
-      contentType: metaFields.contentType.value as ContentMetadata['contentType'],
+      contentType,
       category: metaFields.category.value.trim(),
-      seriesName: metaFields.seriesName.value.trim(),
+      // Series name is book-series membership only; a lesson's parent course
+      // is the stable courseSlug, never seriesName — so clear it for lessons.
+      seriesName: isLesson ? '' : metaFields.seriesName.value.trim(),
       isVisibleInUniverse: metaFields.isVisibleInUniverse.checked,
       visualMode: metaFields.visualMode.value as ContentMetadata['visualMode'],
+      // Course linkage — only for lessons. Set to undefined otherwise so
+      // switching a lesson back to a book drops the stale course/number/order.
+      courseSlug: isLesson && courseSlug ? courseSlug : undefined,
+      lessonNumber,
+      orderInCourse,
     };
 
+    // [TEMP DEBUG] book-modal save flow — remove after verifying.
+    console.log('[save-flow] clicked save metadata', { slug, patch });
+
     const saved = setMetadata(slug, patch, fallback);
+    // [TEMP DEBUG]
+    console.log('[save-flow] updated local book metadata', saved);
+    if (saved.seriesName && saved.seriesName.trim().length > 0) {
+      // The book modal sets series MEMBERSHIP (the book's seriesName),
+      // not a series OBJECT. The membership persists on the book's own
+      // catalog entry; the series capsule is managed separately.
+      console.log('[save-flow] book references series (membership)', saved.seriesName);
+    }
     // Save flow is the only place the user explicitly asked for the
     // displayTitle to change, so it's the only place that should
     // overwrite the SSR-rendered manifest title.
@@ -3231,7 +3570,13 @@ const i18nBundle = {
     // Re-derive and repaint the Series Management list.
     renderSeries();
     closeMetaDrawer();
-    showToast(fmt(i18n.toastMetadataSaved, { title: saved.displayTitle }));
+    // Flush the full catalog to disk. The success toast is gated on a
+    // confirmed write so the editor is never told "saved" when the file
+    // didn't actually change.
+    const persisted = await persistCatalog(slug);
+    if (persisted) {
+      showToast(fmt(i18n.toastMetadataSaved, { title: saved.displayTitle }));
+    }
   });
 
   // ─────────────────────────────────────────────────────────────
@@ -3714,7 +4059,7 @@ const i18nBundle = {
         bodyTpl: i18n.modalBodySeries,
         title: displayTitle,
         warning: i18n.modalWarningSeries,
-        onConfirm: () => {
+        onConfirm: async () => {
           // Detach: clear seriesName on every book whose seriesName
           // normalized to this group (covers whitespace variants).
           for (const member of members) {
@@ -3726,7 +4071,10 @@ const i18nBundle = {
             deleteSeriesMetadata(raw);
           }
           renderSeries();
-          showToast(fmt(i18n.seriesToastDeleted, { name: displayTitle }));
+          const persisted = await persistCatalog();
+          if (persisted) {
+            showToast(fmt(i18n.seriesToastDeleted, { name: displayTitle }));
+          }
         },
       });
     });
@@ -3946,7 +4294,7 @@ const i18nBundle = {
     paintColorSwatch(undefined);
   });
 
-  seriesSaveBtn.addEventListener('click', () => {
+  seriesSaveBtn.addEventListener('click', async () => {
     // Resolve the target name AND any rename action.
     //
     // Three flows enter this handler:
@@ -4099,16 +4447,19 @@ const i18nBundle = {
     const wasRenamed = renameFromName !== null;
     renderSeries();
     closeSeriesDrawer();
-    showToast(
-      fmt(
-        wasCreating
-          ? i18n.seriesToastCreated
-          : wasRenamed
-            ? i18n.seriesToastRenamed
-            : i18n.toastSeriesSaved,
-        { name: saved.displayTitle },
-      ),
-    );
+    const persisted = await persistCatalog();
+    if (persisted) {
+      showToast(
+        fmt(
+          wasCreating
+            ? i18n.seriesToastCreated
+            : wasRenamed
+              ? i18n.seriesToastRenamed
+              : i18n.toastSeriesSaved,
+          { name: saved.displayTitle },
+        ),
+      );
+    }
   });
 
   // Wire the section-header "New series" CTA. The button opens the

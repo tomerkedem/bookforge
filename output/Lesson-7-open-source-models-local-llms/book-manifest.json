@@ -1,0 +1,167 @@
+{
+  "book": {
+    "titles": {
+      "he": "שיעור 7: ‏‏ OPEN SOURCE MODELS"
+    },
+    "subtitles": {
+      "he": "AI Engineering"
+    },
+    "descriptions": {
+      "he": "**תקציר:**\n\nשיעור 7 בקורס AI Engineering עוסק במעבר משימוש במודלים סגורים דרך API חיצוני, להבנה מעשית של עולם המודלים הפתוחים והרצה מקומית של מודלים על מחשב המפתח. השיעור מציג את ההבדל החשוב בין Open Source Models לבין Open Weights: מודל פתוח באמת כולל לא רק משקלים, אלא גם מידע רחב יותר על תהליך הבנייה, הקוד, הנתונים והמתודולוגיה. לעומת זאת, רוב המודלים הזמינים לציבור הם בעיקר Open Weights, ולכן לפני שימוש אמיתי חייבים לבדוק רישיון, מקור המודל, התאמה למשימה ומגבלות שימוש.\n\nחלק מרכזי בשיעור מוקדש ל Hugging Face, שמוצג כמרכז העולמי לשיתוף מודלים, דאטה סטים ואפליקציות הדגמה. נלמד איך לחפש מודלים, איך להבין למה הם מיועדים, איך לבדוק האם הם מתאימים למשימה מסוימת, ואיך להיזהר מהסתמכות עיוורת על benchmarks ציבוריים. השיעור מדגיש שהמדד האמיתי הוא בדיקה על הבעיה הספציפית שלנו, עם דוגמאות ונתונים שמתאימים לעולם שלנו.\n\nבחלק המעשי נוצר פרויקט פייתון עם סביבת עבודה וירטואלית, שימוש ב Transformers ו Torch, יצירת Hugging Face Access Token ושמירתו בקובץ env. דרך הקובץ sentiment.py נלמד איך להריץ מודל סיווג רגשות, איך tokenizer הופך טקסט לקלט מספרי, איך המודל מחזיר logits, ואיך softmax ו argmax הופכים אותם לתוצאה מילולית.\n\nבהמשך השיעור עובר למודלי שפה יוצרים בעזרת qwen.py, שמדגים טעינת מודל Qwen דרך Transformers, בניית prompt בפורמט chat, הפעלת generation והפרדה בין תוכן חשיבה לבין התשובה הסופית.\n\nהחלק האחרון מתמקד ב Ollama ככלי להרצת מודלים מקומיים בצורה פשוטה, כולל הבנת GGUF, Quantization והרצת מודלים קטנים או מכווצים על חומרה מקומית. בנוסף נלמד איך ליצור מודל מותאם באמצעות Modelfile, איך לקרוא אליו מקוד פייתון רגיל, ואיך להשתמש בשכבת תאימות ל Anthropic API כדי לחבר אפליקציות קיימות למודל מקומי.\n\nכל קבצי הקוד, מבנה הפרויקט והתרגילים זמינים בגיטהאב שלי:\n\nhttps://github.com/tomerkedem/ai-engineering-course\n\n**מרצה:** ערן סלע\n\n**תאריך:** 02/06/2026"
+    },
+    "chapters": [
+      {
+        "id": "intro",
+        "file_slug": "intro",
+        "type": "intro",
+        "titles": {
+          "he": "פתיחה: מהרצת API להבנה אמיתית של מודלים"
+        },
+        "sections": 0,
+        "has_images": false,
+        "word_count": 347,
+        "topics": []
+      },
+      {
+        "id": 1,
+        "file_slug": "chapter-01",
+        "type": "content",
+        "titles": {
+          "he": "עולם המודלים הפתוחים: לא כל מה שאפשר להוריד הוא באמת פתוח"
+        },
+        "sections": 8,
+        "has_images": false,
+        "word_count": 2103,
+        "topics": []
+      },
+      {
+        "id": 2,
+        "file_slug": "chapter-02",
+        "type": "content",
+        "titles": {
+          "he": "מתי נכון להשתמש במודלים פתוחים"
+        },
+        "sections": 7,
+        "has_images": false,
+        "word_count": 2305,
+        "topics": []
+      },
+      {
+        "id": 3,
+        "file_slug": "chapter-03",
+        "type": "content",
+        "titles": {
+          "he": "Hugging Face: מרכז המודלים של עולם ה AI"
+        },
+        "sections": 9,
+        "has_images": true,
+        "word_count": 3795,
+        "topics": []
+      },
+      {
+        "id": 4,
+        "file_slug": "chapter-04",
+        "type": "content",
+        "titles": {
+          "he": "הכנת סביבת העבודה"
+        },
+        "sections": 5,
+        "has_images": false,
+        "word_count": 1607,
+        "topics": []
+      },
+      {
+        "id": 5,
+        "file_slug": "chapter-05",
+        "type": "content",
+        "titles": {
+          "he": "מודל סיווג רגשות עם Transformers"
+        },
+        "sections": 10,
+        "has_images": false,
+        "word_count": 3085,
+        "topics": []
+      },
+      {
+        "id": 6,
+        "file_slug": "chapter-06",
+        "type": "content",
+        "titles": {
+          "he": "מודל יוצר טקסט עם Qwen"
+        },
+        "sections": 15,
+        "has_images": false,
+        "word_count": 3670,
+        "topics": []
+      },
+      {
+        "id": 7,
+        "file_slug": "chapter-07",
+        "type": "content",
+        "titles": {
+          "he": "Ollama: הרצת מודלים מקומית"
+        },
+        "sections": 8,
+        "has_images": true,
+        "word_count": 2190,
+        "topics": []
+      },
+      {
+        "id": 8,
+        "file_slug": "chapter-08",
+        "type": "content",
+        "titles": {
+          "he": "GGUF ו Quantization"
+        },
+        "sections": 8,
+        "has_images": true,
+        "word_count": 2692,
+        "topics": []
+      },
+      {
+        "id": 9,
+        "file_slug": "chapter-09",
+        "type": "content",
+        "titles": {
+          "he": "קריאה ל Ollama מתוך Python"
+        },
+        "sections": 7,
+        "has_images": false,
+        "word_count": 1850,
+        "topics": []
+      },
+      {
+        "id": 10,
+        "file_slug": "chapter-10",
+        "type": "content",
+        "titles": {
+          "he": "שימוש ב Anthropic Compatibility מול Ollama"
+        },
+        "sections": 7,
+        "has_images": false,
+        "word_count": 1433,
+        "topics": []
+      },
+      {
+        "id": 11,
+        "file_slug": "chapter-11",
+        "type": "content",
+        "titles": {
+          "he": "שיעורי הבית"
+        },
+        "sections": 16,
+        "has_images": false,
+        "word_count": 3752,
+        "topics": []
+      }
+    ],
+    "languages": [
+      "he"
+    ],
+    "credits": {
+      "author": {
+        "he": "תומר קדם"
+      }
+    }
+  }
+}

@@ -27,10 +27,11 @@ import {
   getItemSummary,
   getItemTypeLabelKey,
 } from '../utils/library-display';
-import { getEvenOrbitAngle } from '../utils/library/universe-angle-utils';
+import { getEvenOrbitAngle, ORBIT_START_DEG } from '../utils/library/universe-angle-utils';
 import {
   getKnowledgeCardAssets,
   getKnowledgeCardAssetsOrPlaceholder,
+  getKnowledgeCardIcon,
 } from '../utils/library/knowledge-cards';
 
 const { language: propLanguage } = Astro.props as { language?: Language };
@@ -44,13 +45,28 @@ const language = requestedLanguage as Language;
 const isRtl = getLanguageDirection(language) === 'rtl';
 
 const items = getLibraryItems();
-const stats = getLibraryStats(items);
 const courseProgress = getCourseProgressList();
 
 // Filter out the synthetic ai-engineering course (no /courses route yet)
 // so it never surfaces as a clickable-looking continue suggestion.
 const readableItems = items.filter(isReadableLibraryItem);
 const continueItem = getContinueReadingItem(readableItems);
+
+// Knowledge Core (LibraryStatsPanel) + mobile Knowledge Space stats.
+// Computed from the SAME canonical visible list the carousel renders —
+// `readableItems` (the orbit stations): the synthetic non-openable course
+// and any hidden item are excluded, so the headline and every category
+// tile agree and reconcile (total === books + courses + lessons +
+// articles). One source only — no hardcoded, mock, knowledge-cards, or
+// localStorage counts, and no mixing of `readable` vs `byType`.
+const stats = getLibraryStats(readableItems);
+
+// [TEMP DEBUG] stats data-source diagnosis — remove after verifying.
+console.log('[stats] source: getLibraryStats(readableItems) — src/pages/index.astro');
+console.log('[stats] getLibraryItems total (pre visibility filter):', items.length);
+console.log('[stats] readable/visible items (post filter):', readableItems.length);
+console.log('[stats] count by type:', JSON.stringify(stats.byType));
+console.log('[stats] slugs counted:', readableItems.map((it) => `${it.slug}:${it.type}`).join(', '));
 
 // LibraryItem.href points at the SUMMARY page; the center-card PRIMARY
 // button needs `/read/{slug}/{firstChapterId}`. The hydrator below
@@ -104,36 +120,97 @@ type OrbitItem = {
   item: typeof readableItems[number];
   angle: number;
   kind: 'book' | 'lesson' | 'course';
+  /** Course capsule (type 'series') — the course's single orbit face. */
+  isCapsule: boolean;
+  /** Capsule's stable course id (seriesId) — the drill key. */
+  courseId: string | undefined;
+  /** For a lesson: the seriesId of the capsule it belongs to (drill target). */
+  memberOf: string | undefined;
 };
-// The `ai-engineering-series` overlay is typed `series` in the catalog
-// but surfaces on the orbit as `course` — its real course-type sibling
-// has no readable route yet, so the overlay IS the AI Engineering Course
-// card. data-kind="course" lets the Knowledge Core "Courses" filter
-// focus it directly.
+// A `series` capsule (e.g. `ai-engineering-series`) is the course's single
+// face on the orbit. data-kind="course" keeps its existing capsule styling.
 const orbitKindOf = (it: typeof readableItems[number]): OrbitItem['kind'] =>
   it.type === 'book' ? 'book'
   : it.type === 'course_lesson' ? 'lesson'
   : 'course';
-const orbitItems: OrbitItem[] = orbitItemsSource.map((item, i) => ({
-  item,
-  angle: getEvenOrbitAngle(i, orbitItemsSource.length),
-  kind: orbitKindOf(item),
-}));
-const showOrbitControls = orbitItems.length > 1;
 
-const atlasItems = orbitItems.map(({ item, kind }) => ({
-  slug: item.slug,
-  kind,
-  title: getItemTitle(item, language),
-  subtitle: getItemSummary(item, language),
-  typeLabel: t(getItemTypeLabelKey(item.type), language),
-}));
+// Course capsules + their lessons are linked by the STABLE `seriesId`
+// (the capsule and every lesson share `course-<id>`), never by a text
+// label. A lesson whose seriesId matches a capsule on the orbit is a
+// "course member": it surfaces inside the course on drill, not as a
+// top-level Courses result.
+const capsuleSeriesIds = new Set<string>(
+  orbitItemsSource
+    .filter((it) => it.type === 'series' && it.seriesId)
+    .map((it) => it.seriesId as string),
+);
+const courseMemberSeriesId = (it: LibraryItem): string | undefined =>
+  it.type === 'course_lesson' && it.seriesId && capsuleSeriesIds.has(it.seriesId)
+    ? it.seriesId
+    : undefined;
+
+// Stations shown in the default "all" view = everything EXCEPT course
+// capsules (the capsule appears only under the Courses filter and as the
+// drill source). Angles are distributed over those so a hidden capsule
+// never claims an "all" slot / leaves a gap.
+const allViewStations = orbitItemsSource.filter((it) => it.type !== 'series');
+const allViewIndexBySlug = new Map<string, number>(
+  allViewStations.map((it, i) => [it.slug, i]),
+);
+
+const orbitItems: OrbitItem[] = orbitItemsSource.map((item) => {
+  const isCapsule = item.type === 'series';
+  const vIdx = allViewIndexBySlug.get(item.slug);
+  // Capsules are hidden in "all" → their resting angle is arbitrary; the
+  // Courses filter re-spreads them on the client.
+  const angle = isCapsule || vIdx === undefined
+    ? ORBIT_START_DEG
+    : getEvenOrbitAngle(vIdx, allViewStations.length);
+  return {
+    item,
+    angle,
+    kind: orbitKindOf(item),
+    isCapsule,
+    courseId: isCapsule ? item.seriesId : undefined,
+    memberOf: courseMemberSeriesId(item),
+  };
+});
+const showOrbitControls = allViewStations.length > 1;
+
+// SSR mobile focus-carousel slot + coverflow rel for the default "all"
+// view (capsules are hidden there, so they're excluded). The client's
+// updateMobileSlots() rewrites these on every rotation/filter.
+const allViewTotal = allViewStations.length;
+const orbitSsrSlot = new Map<string, { slot: string; rel: number }>();
+allViewStations.forEach((it, i) => {
+  const slot = i === 0 ? 'center'
+    : i === 1 ? 'next'
+    : i === allViewTotal - 1 ? 'prev'
+    : 'hidden';
+  const rel = i === 0 ? 0 : (i * 2 <= allViewTotal ? i : i - allViewTotal);
+  orbitSsrSlot.set(it.slug, { slot, rel });
+});
+
+const atlasItems = orbitItems
+  .filter(({ isCapsule }) => !isCapsule)
+  .map(({ item, kind }) => ({
+    slug: item.slug,
+    kind,
+    title: getItemTitle(item, language),
+    subtitle: getItemSummary(item, language),
+    typeLabel: t(getItemTypeLabelKey(item.type), language),
+    // Optional per-card `icon.png` (same folder as front.png). When present
+    // it replaces the generic type glyph in the Atlas capsule.
+    iconSrc: getKnowledgeCardIcon(item.slug) ?? '',
+  }));
 
 // Mobile "Knowledge Space" summary card + all-items bottom sheet.
 // Same orbit set the carousel/Atlas use, projected to the sheet's shape.
 // A safe href becomes a real link; otherwise href is '' and the row
 // focuses the carousel via [data-library-focus] (no invented URL).
-const mobileCatalogItems = orbitItems.map(({ item, kind }) => ({
+const mobileCatalogItems = orbitItems
+  .filter(({ isCapsule }) => !isCapsule)
+  .map(({ item, kind }) => ({
   slug: item.slug,
   kind,
   group: (kind === 'book' ? 'books' : 'courses') as 'books' | 'courses' | 'articles',
@@ -142,14 +219,33 @@ const mobileCatalogItems = orbitItems.map(({ item, kind }) => ({
   typeLabel: t(getItemTypeLabelKey(item.type), language),
   href: isSafeLibraryHref(item.href) ? item.href : '',
   thumb: resolveOrbitArtifact(item)?.front ?? '',
+  // Optional per-card `icon.png`; when present it takes priority over the
+  // cover thumbnail / type glyph in the sheet row.
+  iconSrc: getKnowledgeCardIcon(item.slug) ?? '',
 }));
 
-// Summary-card counts — identical source to the desktop Knowledge Core
-// (LibraryStatsPanel): total = readable, per-type = byType. Never hardcoded.
-const ksTotal = stats.readable;
+// Summary-card counts.
+//   books / lessons / articles  → from `stats` (getLibraryStats over
+//     `readableItems`, the canonical visible list the carousel renders),
+//     counted by REAL item type so a course-lesson is its OWN "lessons"
+//     category, never folded into books or courses.
+//   courses → from the COURSES TABLE (`courseProgress` =
+//     getCourseProgressList → discoverCourses). A course is an entity whose
+//     only library stations are its lessons, so counting type 'course' over
+//     readable items reads 0; the authoritative count is the course catalog.
+//   total → connected/openable items (books + lessons). The course is a
+//     container of its lessons, not a 12th station, so it isn't added in.
+// Never hardcoded, never mock, never localStorage.
 const ksBooks = stats.byType['book'] ?? 0;
-const ksCourses = stats.byType['course'] ?? 0;
+const ksCourses = courseProgress.length;
+const ksLessons = stats.byType['course_lesson'] ?? 0;
 const ksArticles = stats.byType['article'] ?? 0;
+const ksTotal = stats.readable; // connected items === readableItems.length
+
+// Desktop Knowledge Core reads its tile counts from `stats.byType[type]`.
+// Inject the courses-table count so the desktop "courses" tile matches the
+// mobile card and the course catalog (readable items have no 'course').
+const coreStats = { ...stats, byType: { ...stats.byType, course: ksCourses } };
 
 const isLesson =
   continueItem?.type === 'course_lesson' && Boolean(continueItem?.courseSlug);
@@ -386,28 +482,26 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
                 is set per-card via inline `--orbit-angle`; CSS handles
                 the rest with cos()/sin(). No queue, no carousel —
                 everything is on screen at once. */}
-            {orbitItems.map(({ item, angle, kind }, idx) => (
+            {orbitItems.map(({ item, angle, kind, isCapsule, courseId, memberOf }) => (
               <div
                 class="galaxy-card"
                 data-galaxy-card
                 data-kind={kind}
+                data-item-type={item.type}
                 data-slug={item.slug}
                 data-series-id={item.seriesId}
                 data-series-name={item.seriesName}
+                data-course-id={courseId}
+                data-course-member={memberOf}
+                {...(isCapsule ? { 'data-filter-hidden': '' } : {})}
                 data-mobile-slot={
                   // SSR ships the rotation=0 mapping; updateMobileSlots()
                   // in universe-layout.ts rewrites this on every rotation.
-                  idx === 0 ? 'center'
-                  : idx === 1 ? 'next'
-                  : idx === orbitItems.length - 1 ? 'prev'
-                  : 'hidden'
+                  // Capsules are hidden in "all", so they get no live slot.
+                  isCapsule ? 'hidden' : (orbitSsrSlot.get(item.slug)?.slot ?? 'hidden')
                 }
                 style={`--orbit-angle: ${angle}deg; --mobile-carousel-rel: ${
-                  idx === 0
-                    ? 0
-                    : idx * 2 <= orbitItems.length
-                      ? idx
-                      : idx - orbitItems.length
+                  orbitSsrSlot.get(item.slug)?.rel ?? 0
                 };`}
               >
                 <LibraryCard
@@ -598,7 +692,7 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
           chapterCount: it.chapterCount ?? 0,
         }))}
     />
-    <LibraryStatsPanel stats={stats} language={language} courseProgress={courseProgress} />
+    <LibraryStatsPanel stats={coreStats} language={language} courseProgress={courseProgress} />
 
     {/* Series details drawer — opened by the JS controller; static labels
         come from i18n so SSR ships the right chrome in every language. */}
@@ -676,6 +770,7 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       total={ksTotal}
       books={ksBooks}
       courses={ksCourses}
+      lessons={ksLessons}
       articles={ksArticles}
     />
     <MobileAllItemsSheet items={mobileCatalogItems} language={language} />
@@ -707,7 +802,7 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
         >
           <span data-galaxy-position-current>1</span>
           <span class="galaxy-position-sep" aria-hidden="true">/</span>
-          <span data-galaxy-position-total>{orbitItems.length}</span>
+          <span data-galaxy-position-total>{allViewStations.length}</span>
         </div>
 
         {/* Series-carousel counter ("3 / 6"). Hidden by default; shown
@@ -745,7 +840,7 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
             data-galaxy-position-dots
             aria-hidden="true"
           >
-            {orbitItems.map((_, i) => (
+            {allViewStations.map((_, i) => (
               <span
                 class="galaxy-position-dot"
                 data-galaxy-position-dot
@@ -795,6 +890,16 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
     background-color: #00010d;
     height: 100dvh;
     overflow: hidden;
+  }
+
+  /* Library type filter (Knowledge Core / Knowledge Space tiles).
+     A station hidden by the active group filter is pulled out of the
+     orbit entirely so the remaining cards re-spread evenly — same
+     mechanism as series members, applied at every breakpoint. Toggled
+     by universe-layout.ts (`applyLibraryFilter`); client-side UI state
+     only, never persisted. */
+  .galaxy-card[data-filter-hidden] {
+    display: none !important;
   }
 
   .library-root {

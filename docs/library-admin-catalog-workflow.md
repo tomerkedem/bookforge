@@ -1,8 +1,11 @@
 # Yuval library — Admin catalog workflow
 
-Final architecture after the Phase 7 cleanup (no browser storage in
-the catalog path). Read this before touching anything under
-`src/data/library/`, `src/pages/admin.astro`, `src/utils/library/`, or
+Architecture after the single-source-of-truth change: `catalog.json` is
+the only editorial source, `/admin` reads it and writes it back directly
+via `/api/save-catalog`, and there is no browser storage and no
+`output/_editorial.json` overlay in the catalog path. Read this before
+touching anything under `src/data/library/`, `src/pages/admin.astro`,
+`src/pages/api/save-catalog.ts`, `src/utils/library/`, or
 `src/utils/library-catalog.ts`.
 
 ## 1. Production source of truth
@@ -27,22 +30,21 @@ Pipeline-generated content only:
 
 `output/` is **generated**. Do not hand-edit it as a catalog source.
 
-## 3. What `output/_editorial.json` is responsible for
+## 3. `output/_editorial.json` is NOT an editorial source (removed)
 
-Per-item editorial overlay for discovered pipeline content. Read at
-SSR by `src/utils/editorial-metadata-file.ts` and applied inside
-`mergeDiscoveredWithCatalog` via the `applyFileContentMetadataOverlay`
-and `applyFileSeriesMetadataOverlay` passes.
+`output/_editorial.json` is **no longer read at runtime**. The library
+renderer takes ALL editorial decisions (displayTitle, category,
+seriesName, visibility flags, visualMode, series fields, status) from
+`src/data/library/catalog.json` and nothing else.
 
-Use it for:
+- `mergeDiscoveredWithCatalog` no longer runs the
+  `applyFileContentMetadataOverlay` / `applyFileSeriesMetadataOverlay`
+  passes — they were deleted.
+- `src/utils/editorial-metadata-file.ts` has no importers and is slated
+  for removal in a cleanup pass.
 
-- Overriding `displayTitle` / `category` / `seriesName` /
-  `isVisibleInUniverse` / `visualMode` on items the pipeline emits.
-- Light per-series editorial fields on existing series records.
-
-Do **not** use `_editorial.json` to declare brand-new entities
-(standalone series, manual articles). Those belong in
-`src/data/library/catalog.json`.
+Do not reintroduce a second editorial file source. Edit catalog.json via
+`/admin` (which persists it directly — see §5).
 
 ## 4. Admin draft state — in memory only
 
@@ -54,25 +56,37 @@ buffer, and not consulted as a preview. The keys
 The /admin page operates on an in-memory store in
 `src/utils/content-metadata.ts`. The store is seeded once per page
 load from `src/data/library/catalog.json` (via
-`splitImportedCatalogIntoDrafts`), then mutated by /admin form
-saves. A page refresh — or closing the tab — discards every unsaved
-edit. The Admin UI surfaces a notice card explaining this.
+`splitImportedCatalogIntoDrafts`), then mutated by /admin form saves.
+It is **working state, not storage** — but every save flushes it to
+disk (see §5), so a saved edit survives reload. Only an edit that was
+typed and never saved is discarded on refresh.
 
 The public library never reads any client-side state. SSR truth is
-catalog.json + the pipeline output + `output/_editorial.json`.
+catalog.json + the pipeline output (physical facts only).
 
-## 5. How to publish Admin changes
+## 5. How Admin changes persist
 
-1. Edit content in `/admin`.
-2. Click **Export catalog.json** (under Global Settings). A file
-   named `catalog.json` downloads.
-3. Replace `src/data/library/catalog.json` with the downloaded file.
-4. Commit the change.
-5. Build / deploy. The orbit picks up the new state at SSR.
+Saving in `/admin` writes the file directly — there is no manual
+export/commit dance in the normal workflow:
 
-To re-edit from the published state, click **Import catalog.json**
-and select the committed file. The in-memory store is replaced and
-the page repaints in place — no reload, no browser storage.
+1. Edit content in `/admin` (book metadata, series create/edit/delete).
+2. On each save, /admin rebuilds the FULL catalog via
+   `buildExportedCatalog` and `POST`s it to **`/api/save-catalog`**
+   (`src/pages/api/save-catalog.ts`), which validates it and writes
+   `src/data/library/catalog.json` atomically (temp file + rename,
+   2-space JSON + trailing newline).
+3. In dev, Vite's JSON-import HMR reloads the file and the next
+   `/library` SSR pass renders the new state.
+4. **Commit `src/data/library/catalog.json`** to persist the change in
+   the repository, then build / deploy to publish.
+
+The **Export / Import catalog.json** buttons under Global Settings
+remain as a manual backup/restore path (export downloads the current
+catalog; import loads a file and persists it through the same endpoint),
+but they are no longer the normal way to save.
+
+> Note: the endpoint writes the working tree, not git. A git commit of
+> catalog.json is still required to ship the change from the repo.
 
 ## 6. Things not to do
 
@@ -84,7 +98,8 @@ the page repaints in place — no reload, no browser storage.
   `src/utils/library-catalog.ts`. Manual series live in
   `catalog.json` now.
 - **Do not edit `output/` as the main catalog source.** It is
-  pipeline output. Use `catalog.json` or `_editorial.json`.
+  pipeline output (physical facts only). Editorial decisions live in
+  `catalog.json`.
 - **Do not add a separate mobile or desktop catalog flow.** Both
   surfaces consume the same `getLibraryItems()` result. Visibility
   differences belong in the `visibility` flags on the catalog item,
@@ -93,8 +108,9 @@ the page repaints in place — no reload, no browser storage.
   (file metadata, artifact probes, cascades) belong inside the
   store so every consumer sees them once.
 - **Do not add `sessionStorage` or `IndexedDB` shims** to recover
-  draft state across reloads. The accepted contract is: in-memory
-  only; export before refreshing.
+  draft state across reloads. Saved edits already persist to
+  catalog.json via `/api/save-catalog`; only unsaved typing is
+  intentionally transient.
 
 ## 7. What this means for the public library
 
@@ -117,20 +133,26 @@ There is no first-paint flash for any committed editorial state and
 there is no preview layer that could disagree with what is
 published.
 
-## 8. Optional future Phase 8 — server endpoint for direct publishing
+## 8. Server endpoint for direct publishing — IMPLEMENTED
 
-Only do this once the security and hosting constraints are decided.
-A possible shape:
+The direct-write endpoint exists: **`POST /api/save-catalog`**
+(`src/pages/api/save-catalog.ts`, `prerender = false`). It accepts the
+payload produced by `buildExportedCatalog`, validates it with
+`validateImportedCatalog`, and writes `src/data/library/catalog.json`
+atomically (temp file + rename). /admin calls it on every editorial save
+via `persistCatalog()`, so the Export → commit step is no longer the
+normal flow and Admin saves persist across reloads through a fetch
+round-trip (no localStorage).
 
-- `POST /api/admin/catalog` in Astro server mode, gated on
-  `import.meta.env.DEV` (or an auth check in production). Accepts
-  the payload produced by `buildExportedCatalog` and writes
-  `src/data/library/catalog.json` directly.
-- Replaces the Export → commit step with a single **Publish**
-  button in `/admin`.
-- Optionally enables Admin state to persist across reloads (still
-  not via localStorage — via a fetch round-trip to the catalog API).
+Operational notes / constraints still to keep in mind:
 
-Do not start Phase 8 without a clear answer for: who is allowed to
-publish, what runtime hosts the endpoint, and how the file write
-interacts with deploys.
+- **Where it runs:** the endpoint touches the repo filesystem, so it
+  only does real work behind the dev/SSR server — same constraint as
+  `/api/upload-front` and `/api/delete-book`. A static build reflects
+  the file as committed at build time; re-run the build to ship a
+  change.
+- **Auth:** there is currently no auth gate. Only the project owner runs
+  /admin locally. Add an auth check before exposing /admin or this
+  endpoint on a public host.
+- **Git:** the write lands in the working tree only. Committing
+  catalog.json is still required to publish from the repo.

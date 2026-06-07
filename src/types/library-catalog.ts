@@ -55,6 +55,7 @@ import type {
   LibrarySourceKind,
 } from './library';
 import type {
+  ContentItemType,
   ContentMetadata,
   SeriesMetadata,
   SeriesStatus,
@@ -285,8 +286,14 @@ export interface LibraryCatalogItem {
    * ContentMetadata once the catalog is unified.
    */
   parentSeriesSlug?: string;
-  /** Position inside the parent series. Course lessons = lessonNumber. */
+  /**
+   * Position inside the parent series/course. A course IS a series here,
+   * so this single field is the lesson's order in its course (defaults to
+   * `lessonNumber`). The admin "Order in course" input persists here.
+   */
   orderInSeries?: number;
+  /** Course-lesson's 1-based number (its identity). */
+  lessonNumber?: number;
   /**
    * Legacy free-text series name from ContentMetadata.seriesName.
    * Kept so the existing linked-glow handler on /index.astro
@@ -618,6 +625,144 @@ export function seriesMetadataToLibraryCatalogItem(
 }
 
 /**
+ * The ONE mapping from the canonical editorial `ContentItemType`
+ * (`ContentMetadata.contentType`) to the catalog.json `type`. Both the
+ * patch and the full-item materializer go through this, so an item's kind
+ * is decided in exactly one place — `contentType` is the source of truth
+ * and `type` is derived, never authored independently.
+ */
+export function contentTypeToCatalogType(
+  contentType: ContentItemType,
+): LibraryCatalogItemType {
+  switch (contentType) {
+    case 'course':        return 'course';
+    case 'article':       return 'article';
+    case 'course_lesson': return 'course_lesson';
+    case 'book':
+    default:              return 'book';
+  }
+}
+
+/** Valid by-type default href so a materialized record passes validation.
+ *  Note: href is NOT an editorial overlay field, so for a discovered item
+ *  the pipeline href always wins on merge — this only matters for
+ *  catalog-only records. Lessons read through the same `/books/<slug>`
+ *  route as books. */
+function defaultHrefForCatalogType(
+  type: LibraryCatalogItemType,
+  slug: string,
+): string {
+  switch (type) {
+    case 'course':  return `/courses/${slug}`;
+    case 'article': return `/articles/${slug}`;
+    case 'series':  return `/series/${slug}`;
+    case 'course_lesson':
+    case 'book':
+    default:        return `/books/${slug}`;
+  }
+}
+
+/**
+ * Course linkage fields — emitted ONLY for `course_lesson` items so a
+ * lesson classified in /admin carries its parent course + position into
+ * catalog.json.
+ *
+ * The parent course is referenced by the STABLE `courseSlug` (the slug of
+ * an existing course/capsule item, e.g. `ai-engineering-series`) — never
+ * by `seriesName` and never by a matched text label. `parentSeriesSlug`
+ * mirrors `courseSlug` so the slug-based series join the rest of the
+ * catalog uses (`applySeriesVisibilityCascade`) links the lesson to its
+ * capsule without any name matching.
+ *
+ * `lessonNumber` is the lesson's identity; `orderInSeries` is its sort
+ * position in the course (a course IS a series, so there is no separate
+ * `orderInCourse`). It defaults to `lessonNumber` unless the editor
+ * overrode the order via the admin "Order in course" field.
+ */
+function lessonLinkageFields(meta: ContentMetadata): Partial<LibraryCatalogItem> {
+  if (meta.contentType !== 'course_lesson') return {};
+  const out: Partial<LibraryCatalogItem> = {};
+  // A lesson's parent is the stable courseSlug — NOT a text label. Clear any
+  // legacy name-based link so reclassifying an item to a lesson drops a stale
+  // seriesName / name-derived seriesId from the catalog (JSON omits undefined).
+  out.seriesName = undefined;
+  out.seriesId = undefined;
+  const courseSlug = meta.courseSlug?.trim();
+  if (courseSlug && courseSlug.length > 0) {
+    out.courseSlug = courseSlug;
+    // Stable slug link to the parent course/capsule item.
+    out.parentSeriesSlug = courseSlug;
+  }
+  const lessonNumber =
+    typeof meta.lessonNumber === 'number' && Number.isFinite(meta.lessonNumber)
+      ? Math.floor(meta.lessonNumber)
+      : undefined;
+  if (lessonNumber !== undefined) out.lessonNumber = lessonNumber;
+  // Order in course == order in series (a course IS a series). Defaults to
+  // lessonNumber when the editor didn't override the order.
+  const orderInSeries =
+    typeof meta.orderInCourse === 'number' && Number.isFinite(meta.orderInCourse)
+      ? Math.floor(meta.orderInCourse)
+      : lessonNumber;
+  if (orderInSeries !== undefined) out.orderInSeries = orderInSeries;
+  return out;
+}
+
+/**
+ * Build a FULL `LibraryCatalogItem` from a per-item `ContentMetadata`
+ * record. Used when persisting an edit to a pipeline-discovered item that
+ * has no entry in catalog.json yet: now that catalog.json is the single
+ * editorial source of truth, the edit must MATERIALIZE a record instead
+ * of being dropped (the old overlay behaviour silently skipped it).
+ *
+ * Only identity + editorial fields are authored here. Derived/physical
+ * fields (real href target, chapterCount, wordCount, cover, languages)
+ * still come from the pipeline at read time via the editorial overlay in
+ * `mergeDiscoveredWithCatalog`, which matches by slug and keeps the
+ * discovered values for everything outside `EDITORIAL_FIELDS`.
+ */
+export function contentMetadataToLibraryCatalogItem(
+  meta: ContentMetadata,
+): LibraryCatalogItem {
+  const slug = meta.slug;
+  const type = contentTypeToCatalogType(meta.contentType);
+  const title = (meta.displayTitle ?? '').trim() || slug;
+
+  const item: LibraryCatalogItem = {
+    id: slug,
+    slug,
+    type,
+    status: 'ready',
+    sourceKind: 'admin',
+    title: { en: title },
+    languages: ['en'],
+    href: defaultHrefForCatalogType(type, slug),
+    visibility: { ...DEFAULT_LIBRARY_CATALOG_VISIBILITY },
+    ...lessonLinkageFields(meta),
+  };
+
+  // Editorial fields the item modal owns.
+  if (meta.seriesName && meta.seriesName.trim().length > 0) {
+    item.seriesName = meta.seriesName.trim();
+  }
+  if (meta.category && meta.category.trim().length > 0) {
+    item.categoryKey = meta.category.trim();
+  }
+  const isHidden = meta.visualMode === 'hidden' || meta.isVisibleInUniverse === false;
+  if (isHidden) {
+    item.visibility = {
+      showInLibrary: false,
+      showInUniverse: false,
+      showInOrbit: false,
+      showInAtlas: false,
+      showInContinueLearning: false,
+    };
+  }
+
+  return item;
+}
+
+/**
  * Project a per-item `ContentMetadata` record onto a partial
  * `LibraryCatalogItem` patch. The patch carries only the fields
  * ContentMetadata actually owns (editorial overrides):
@@ -635,6 +780,15 @@ export function contentMetadataToLibraryCatalogPatch(
   meta: ContentMetadata,
 ): Partial<LibraryCatalogItem> {
   const patch: Partial<LibraryCatalogItem> = {};
+
+  // Type is derived from the canonical contentType via the single mapping,
+  // and overlaid onto the discovered record (type is in EDITORIAL_FIELDS).
+  // This is what lets /admin reclassify a discovered item — e.g. a folder
+  // the pipeline guessed as a book becomes a `course_lesson` here. Lesson
+  // linkage (courseSlug / seriesId / orderInSeries) rides along so the
+  // reclassified lesson groups under its course.
+  patch.type = contentTypeToCatalogType(meta.contentType);
+  Object.assign(patch, lessonLinkageFields(meta));
 
   const trimmedTitle = (meta.displayTitle ?? '').trim();
   if (trimmedTitle.length > 0 && trimmedTitle !== meta.slug) {

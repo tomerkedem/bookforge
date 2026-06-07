@@ -17,7 +17,11 @@
       "PowerShell(& \"C:\\\\Program Files\\\\nodejs\\\\npx.cmd\" astro check --root 'c:\\\\D\\\\Books\\\\bookforge' 2>&1)",
       "PowerShell(Add-Type -AssemblyName System.Drawing; $img = [System.Drawing.Image]::FromFile\\('c:\\\\D\\\\Books\\\\bookforge\\\\public\\\\assets\\\\ui\\\\reading-entry\\\\reading-entry-card1.png'\\); \"$\\($img.Width\\)x$\\($img.Height\\) ratio=$\\([math]::Round\\($img.Width/$img.Height,3\\)\\)\"; $img.Dispose\\(\\))",
       "PowerShell($env:PYTHONIOENCODING='utf-8'; python -c \"import json,sys; d=json.load\\(open\\('output/_catalog.json',encoding='utf-8'\\)\\); print\\(json.dumps\\(d.get\\('courses',{}\\), ensure_ascii=False, indent=2\\)\\); print\\('---BOOKS---'\\); books=d.get\\('books',{}\\); items=books.get\\('items',books\\) if isinstance\\(books,dict\\) else books; print\\(json.dumps\\(items if not isinstance\\(items,dict\\) else list\\(items.items\\(\\)\\)[:50], ensure_ascii=False, indent=2\\)\\)\")",
-      "PowerShell($env:PYTHONIOENCODING='utf-8'; python -c \"import json; d=json.load\\(open\\('output/_catalog.json',encoding='utf-8'\\)\\); books=d.get\\('books',{}\\); items=books.get\\('items',books\\) if isinstance\\(books,dict\\) else books; print\\('total books in catalog:', len\\(items\\)\\); [print\\(slug, '|', meta.get\\('contentType'\\), '|', meta.get\\('course'\\)\\) for slug, meta in \\(items.items\\(\\) if isinstance\\(items,dict\\) else [\\(b['slug'],b\\) for b in items]\\)]\")"
+      "PowerShell($env:PYTHONIOENCODING='utf-8'; python -c \"import json; d=json.load\\(open\\('output/_catalog.json',encoding='utf-8'\\)\\); books=d.get\\('books',{}\\); items=books.get\\('items',books\\) if isinstance\\(books,dict\\) else books; print\\('total books in catalog:', len\\(items\\)\\); [print\\(slug, '|', meta.get\\('contentType'\\), '|', meta.get\\('course'\\)\\) for slug, meta in \\(items.items\\(\\) if isinstance\\(items,dict\\) else [\\(b['slug'],b\\) for b in items]\\)]\")",
+      "PowerShell(\"---\")",
+      "PowerShell(npx vitest run tests/_tmp-catalog-fix.test.ts 2>&1)",
+      "PowerShell($out = npx astro check 2>&1 | Out-String; \\($out -split \"`n\"\\) | Where-Object { $_ -match \"error ts|: error\" } | ForEach-Object { \\($_ -split \"—|- error|:\"\\)[0].Trim\\(\\) } | Sort-Object -Unique)",
+      "PowerShell(npx vitest run tests/_tmp-lesson-classification.test.ts 2>&1)"
     ],
     "additionalDirectories": [
       "D:\\2025 Stu\\AI Engineer\\AllBooks2026\\Claude Code - Book\\bookforge",

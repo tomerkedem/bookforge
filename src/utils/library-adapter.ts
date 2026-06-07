@@ -32,7 +32,6 @@ import type {
 } from '../types/library';
 import type { Language } from '../types/index';
 import { SUPPORTED_LANGUAGES, SOURCE_LANGUAGE } from './language';
-import { getMetadataFromFile } from './editorial-metadata-file';
 
 const SUPPORTED_LANG_CODES = new Set<string>(
   SUPPORTED_LANGUAGES.map((l) => l.code),
@@ -154,13 +153,6 @@ export function mapDiscoveredBookToLibraryItem(
   const isLesson = book.contentType === 'course_lesson';
   const type: LibraryItemType = isLesson ? 'course_lesson' : 'book';
 
-  // Editorial overlay (SSR-only). Empty file / missing entry → no-op.
-  // The browser still owns the canonical edit flow via localStorage;
-  // this read just lets the orbit ship `data-series-name` in the
-  // initial HTML so linked-glow works pre-hydration.
-  const editorial = getMetadataFromFile(book.slug);
-  const editorialSeriesName = editorial?.seriesName?.trim();
-
   return {
     id: `pipeline-${book.slug}`,
     slug: book.slug,
@@ -175,9 +167,11 @@ export function mapDiscoveredBookToLibraryItem(
     categoryKey: book.categoryKey,
     level: book.level,
     seriesId: book.courseSlug ? `course-${book.courseSlug}` : undefined,
-    seriesName: editorialSeriesName && editorialSeriesName.length > 0
-      ? editorialSeriesName
-      : undefined,
+    // seriesName is an editorial decision — it comes from catalog.json via
+    // the overlay in mergeDiscoveredWithCatalog (applyEditorialOverlay),
+    // not from the pipeline. Left undefined here so the overlay is the
+    // single source for it.
+    seriesName: undefined,
     courseSlug: book.courseSlug,
     orderInSeries: book.lessonNumber,
     coverImage: book.coverImage,
@@ -322,6 +316,16 @@ export function getRealLibraryItems(): LibraryItem[] {
  * count in UI code.
  *
  * Returns [] when no courses exist.
+ *
+ * TODO (follow-up — catalog.json as source of truth for classification):
+ *   `discoverCourses()` counts lessons by the PIPELINE classification
+ *   (`output/_catalog.json`), NOT the editorial overlay. So a lesson the
+ *   editor reclassifies in /admin (e.g. Lesson-7 → course_lesson) is
+ *   reflected in /library item counts (which go through
+ *   mergeDiscoveredWithCatalog) but NOT yet in this course's
+ *   `availableLessons`. To make the "Continue learning" widget honour
+ *   catalog.json too, this should count merged library items of type
+ *   `course_lesson` per `courseSlug`, not the raw discovery.
  */
 export function getCourseProgressList(): LibraryCourseProgress[] {
   let courses: DiscoveredCourse[] = [];

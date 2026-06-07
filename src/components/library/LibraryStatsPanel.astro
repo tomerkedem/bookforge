@@ -17,12 +17,13 @@
  * Interaction: each clickable node carries a `data-library-filter`
  * attribute (all | books | courses | articles); the orbit module
  * (universe-layout.ts) owns one delegated `[data-library-filter]`
- * listener that focuses the matching carousel station. The bottom
- * action is different: it carries `data-library-view="all"` and is
- * meant to open an alternative grid/list "all items" view — NOT to
- * focus the carousel. That overlay is not built yet; this widget ships
- * the action's markup + styling only. The widget itself carries no
- * script — no CustomEvent, no event bus.
+ * listener that FILTERS the carousel to that group (the core's "all"
+ * clears it) and toggles `data-active` back onto the selected node. A
+ * node whose count is 0 ships `disabled`. The bottom action carries
+ * `data-library-view="all"`: it opens the KnowledgeAtlas "all items"
+ * overlay AND resets the carousel filter to "all". The widget itself
+ * carries no script — no CustomEvent, no event bus. Filter state is
+ * client-side only (never persisted).
  */
 import type { LibraryStats, LibraryCourseProgress, LibraryItemType } from '../../types/library';
 import type { Language } from '../../types/index';
@@ -50,6 +51,11 @@ const total = stats.readable;
 /* The three fixed category nodes that orbit the core. Always rendered
    (even at count 0) so the constellation shape stays stable. `type` is
    the data-library-filter value; `itemType` keys into LibraryStats.byType. */
+// Top-level Knowledge Space categories: Books / Courses / Articles. A
+// course-lesson is a course's drill-in content, NOT a top-level category,
+// so it gets no tile here (matches MobileKnowledgeSpace). The `courses`
+// tile is fed the COURSES-TABLE count via `stats.byType.course` injected in
+// index.astro (coreStats), so it reflects real courses, not readable items.
 const nodes: Array<{
   type: 'books' | 'courses' | 'articles';
   itemType: LibraryItemType;
@@ -146,6 +152,7 @@ const PARTICLES = [0, 1, 2, 3, 4, 5];
       type="button"
       class="kc__core"
       data-library-filter="all"
+      aria-pressed="false"
       aria-label={`${t('library.core.all', language)}: ${total}`}
     >
       <span class="kc__core-count">{total}</span>
@@ -160,6 +167,8 @@ const PARTICLES = [0, 1, 2, 3, 4, 5];
         type="button"
         class="kc__node"
         data-library-filter={n.type}
+        aria-pressed="false"
+        disabled={n.count === 0}
         aria-label={`${n.label}: ${n.count}`}
       >
         <span class="kc__node-icon" aria-hidden="true">
@@ -678,6 +687,42 @@ const PARTICLES = [0, 1, 2, 3, 4, 5];
     box-shadow:
       var(--kc-node-shadow),
       0 0 18px -2px color-mix(in srgb, var(--kc-accent) 55%, transparent);
+  }
+
+  /* Active filter — the selected category tile. Stronger accent border +
+     glow + brighter text/icon, in keeping with the pearl-glass language.
+     `data-active` is toggled by universe-layout.ts (syncFilterActiveState). */
+  .kc__node[data-active] {
+    border-color: color-mix(in srgb, var(--kc-accent) 70%, transparent);
+    box-shadow:
+      var(--kc-node-shadow),
+      0 0 20px -2px color-mix(in srgb, var(--kc-accent) 60%, transparent),
+      inset 0 0 0 1px color-mix(in srgb, var(--kc-accent) 38%, transparent);
+  }
+  .kc__node[data-active] .kc__node-count { color: var(--kc-accent); }
+  .kc__node[data-active] .kc__node-icon {
+    filter: drop-shadow(0 0 6px color-mix(in srgb, var(--kc-accent) 65%, transparent));
+  }
+
+  /* Empty group — visible but inert (no items of this type to show). */
+  .kc__node:disabled {
+    opacity: 0.45;
+    cursor: default;
+  }
+  .kc__node:disabled:hover {
+    transform: none;
+    border-color: var(--kc-node-border);
+    box-shadow: var(--kc-node-shadow);
+  }
+  .kc__node:disabled:hover .kc__node-icon { filter: none; }
+
+  /* Core "all" reads active whenever no group filter is applied. */
+  .kc__core[data-active] {
+    border-color: var(--kc-core-border);
+    box-shadow:
+      var(--kc-core-glow),
+      var(--kc-core-inset),
+      0 0 26px 6px var(--kc-core-halo);
   }
 
   .kc__node-icon {

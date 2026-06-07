@@ -1,0 +1,26 @@
+Using the attached book cover as the visual reference, create a new 96×96 px standalone icon.
+
+Do not copy the full cover.
+Do not include any text.
+Do not include lesson labels, titles, subtitles, or author names.
+
+Create a compact icon that represents the main topic and central visual idea of the book cover.
+
+The icon must:
+- Match the same neon blue, cyan, white, and accent color palette from the source image.
+- Match the same dark futuristic technical background.
+- Match the same glow style, line style, and premium educational design.
+- Be clean and readable at 96×96 px.
+- Be centered and balanced.
+- Include only the essential symbol or symbols.
+- Remove unnecessary decorative background elements.
+
+Canvas:
+- Exact size: 96×96 px.
+- Add exactly 2 px solid white margin around the image.
+- Margin color must be #FFFFFF.
+- Only the margin should be white.
+- The inner 92×92 px area should contain the icon and original-style background.
+
+Output:
+A clean PNG icon, ready to save as icon.png.

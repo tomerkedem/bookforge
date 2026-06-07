@@ -42,6 +42,7 @@ import {
   LIBRARY_CATALOG_SOURCE_KINDS,
   seriesMetadataToLibraryCatalogItem,
   contentMetadataToLibraryCatalogPatch,
+  contentMetadataToLibraryCatalogItem,
 } from '../../types/library-catalog';
 import type {
   ContentMetadata,
@@ -167,15 +168,22 @@ export function buildExportedCatalog(inputs: ExportInputs): CatalogJsonShape {
     }
   }
 
-  // 3. Admin content drafts — patch existing records only.
+  // 3. Admin content drafts — overlay an existing record, or MATERIALIZE
+  //    a new one. catalog.json is now the single editorial source of
+  //    truth, so an edit to a pipeline-discovered item that isn't in the
+  //    file yet must create a full record here; dropping it (the old
+  //    overlay behaviour) is what made book edits vanish on save.
   for (const [slug, meta] of Object.entries(inputs.contentDrafts)) {
     if (!meta) continue;
     const key = slug.toLowerCase();
-    const patch = contentMetadataToLibraryCatalogPatch(meta);
-    if (Object.keys(patch).length === 0) continue;
     const existing = itemsBySlug.get(key);
-    if (!existing) continue; // patches alone can't synthesize a record
-    itemsBySlug.set(key, { ...existing, ...patch });
+    if (existing) {
+      const patch = contentMetadataToLibraryCatalogPatch(meta);
+      if (Object.keys(patch).length === 0) continue;
+      itemsBySlug.set(key, { ...existing, ...patch });
+    } else {
+      itemsBySlug.set(key, contentMetadataToLibraryCatalogItem(meta));
+    }
   }
 
   // Final pass — ensure every record has a normalized visibility and
@@ -295,6 +303,23 @@ export function splitImportedCatalogIntoDrafts(
       isVisibleInUniverse: item.visibility.showInLibrary !== false,
       visualMode,
     };
+    // Restore course linkage for lessons so the editor sees the same
+    // course + lesson number + order it saved. `courseSlug` is the stable
+    // link; `lessonNumber` falls back to `orderInSeries` for older files;
+    // the admin "Order in course" field maps to the catalog `orderInSeries`
+    // (a course IS a series), defaulting to lessonNumber.
+    if (contentType === 'course_lesson') {
+      if (item.courseSlug) meta.courseSlug = item.courseSlug;
+      const lessonNumber =
+        typeof item.lessonNumber === 'number' ? item.lessonNumber
+        : typeof item.orderInSeries === 'number' ? item.orderInSeries
+        : undefined;
+      if (typeof lessonNumber === 'number') meta.lessonNumber = lessonNumber;
+      const orderInCourse =
+        typeof item.orderInSeries === 'number' ? item.orderInSeries
+        : lessonNumber;
+      if (typeof orderInCourse === 'number') meta.orderInCourse = orderInCourse;
+    }
     contentItems[item.slug] = meta;
   }
 
@@ -417,6 +442,7 @@ function normalizeForExport(raw: unknown): LibraryCatalogItem | null {
 
   if (typeof r.order === 'number'         && Number.isFinite(r.order))         item.order         = r.order;
   if (typeof r.orderInSeries === 'number' && Number.isFinite(r.orderInSeries)) item.orderInSeries = r.orderInSeries;
+  if (typeof r.lessonNumber === 'number'  && Number.isFinite(r.lessonNumber))  item.lessonNumber  = r.lessonNumber;
 
   return item;
 }
@@ -427,7 +453,7 @@ function mapCatalogTypeToContentType(
   switch (type) {
     case 'book':          return 'book';
     case 'course':        return 'course';
-    case 'course_lesson': return 'book';   // ContentMetadata has no lesson kind; default to book like the legacy fallback
+    case 'course_lesson': return 'course_lesson'; // round-trips the lesson classification back to the editor
     case 'article':       return 'article';
     case 'series':        return 'book';   // unreachable in practice — series go to the series branch
   }

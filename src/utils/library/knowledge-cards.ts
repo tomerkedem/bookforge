@@ -59,6 +59,18 @@ const SELECTED_GLOBS = import.meta.glob<string>(
   { eager: true, query: '?url', import: 'default' },
 );
 
+// ── Per-card icon ─────────────────────────────────────────────────────
+// `icon.png` is an OPTIONAL small badge image — distinct from the orbit
+// `front.png` cover. It is used in the "all items" surfaces (desktop
+// KnowledgeAtlas capsule + mobile all-items sheet) in place of the
+// generic type glyph. Same folder convention and case-insensitive slug
+// matching as the faces above; missing icons simply leave the existing
+// fallback (front.png thumb / type glyph) untouched.
+const ICON_GLOBS = import.meta.glob<string>(
+  '/src/assets/knowledge-cards/*/icon.png',
+  { eager: true, query: '?url', import: 'default' },
+);
+
 // ── Shared placeholder asset ──────────────────────────────────────────
 // `_placeholders/book-front.png` is the single fallback image used by
 // any regular content item (book / lesson / generic content) that does
@@ -200,8 +212,36 @@ export function getCardImageSrc(
   return artifact?.front;
 }
 
+/**
+ * Returns the per-card `icon.png` URL for a slug, or `undefined` when the
+ * folder has no `icon.png`. Matches the same case-insensitive slug/folder
+ * identifier used for `front.png`, so no second naming system is created.
+ *
+ * Consumers (KnowledgeAtlas, MobileAllItemsSheet) render this image inside
+ * the existing icon container when present, and fall back to their current
+ * type glyph / cover thumbnail when it is `undefined`.
+ */
+export function getKnowledgeCardIcon(slug: string): string | undefined {
+  if (iconCache === null) iconCache = buildIconCache();
+  return iconCache.get(normalizeSlug(slug));
+}
+
 // ── Internals ──────────────────────────────────────────────────────────
 let assetsCache: Map<string, KnowledgeCardAssets> | null = null;
+let iconCache: Map<string, string> | null = null;
+
+function buildIconCache(): Map<string, string> {
+  const cache = new Map<string, string>();
+  for (const [filePath, url] of Object.entries(ICON_GLOBS)) {
+    // Path shape: `/src/assets/knowledge-cards/<slug>/icon.png`
+    const m = filePath.match(/\/knowledge-cards\/([^/]+)\/icon\.png$/);
+    if (!m) continue;
+    // Reserved `_`-prefixed folders (`_placeholders/`, …) are never slugs.
+    if (m[1].startsWith('_')) continue;
+    cache.set(normalizeSlug(m[1]), url);
+  }
+  return cache;
+}
 
 function normalizeSlug(slug: string): string {
   // Lower-case so catalog slugs (mixed case, e.g. `AI-Developer-Fitness`)

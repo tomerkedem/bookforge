@@ -38,6 +38,12 @@ export interface MobileSheetItem {
   href: string;
   /** Thumbnail URL (front.png / placeholder), or '' for the glyph fallback. */
   thumb: string;
+  /**
+   * Optional per-card `icon.png` URL. When present it renders inside the
+   * thumb tile (object-fit: contain) in place of the cover thumbnail /
+   * type glyph; when '' / absent the existing thumb/glyph fallback stands.
+   */
+  iconSrc?: string;
 }
 
 interface Props {
@@ -156,7 +162,9 @@ const rows = items.map((it) => ({
               {...(linkProps as unknown as Record<string, string>)}
             >
               <span class="mas__thumb" data-kind={it.kind}>
-                {it.thumb ? (
+                {it.iconSrc ? (
+                  <img class="mas__icon" src={it.iconSrc} alt="" loading="lazy" decoding="async" />
+                ) : it.thumb ? (
                   <img src={it.thumb} alt="" loading="lazy" decoding="async" />
                 ) : (
                   <span class="mas__thumb-glyph" aria-hidden="true">
@@ -528,6 +536,16 @@ const rows = items.map((it) => ({
     width: 100%;
     height: 100%;
     object-fit: cover;
+    display: block;
+  }
+  /* Per-card icon.png — centered in the tile, aspect + transparency kept.
+     More specific than `.mas__thumb img` so it overrides `cover`. */
+  .mas__thumb .mas__icon {
+    width: 100%;
+    height: 100%;
+    padding: 6px;
+    box-sizing: border-box;
+    object-fit: contain;
     display: block;
   }
   .mas__thumb[data-kind="book"]   { --mas-accent: var(--yuval-galaxy-type-book); }

@@ -684,6 +684,14 @@ export const translations: Translations = {
   'admin.field.displayTitle':            { he: 'כותרת לתצוגה',                                                  en: 'Display title',                                                       es: 'Título mostrado' },
   'admin.field.displayTitleHint':        { he: 'כיצד פריט זה יופיע במרחב הידע.',                                  en: 'How this item will appear in the Knowledge Universe.',                es: 'Cómo aparecerá este elemento en el Espacio de conocimiento.' },
   'admin.field.contentType':             { he: 'סוג תוכן',                                                       en: 'Content type',                                                        es: 'Tipo de contenido' },
+  'admin.field.courseSlug':              { he: 'קורס',                                                           en: 'Course',                                                              es: 'Curso' },
+  'admin.field.courseSlugNone':          { he: '— בחר קורס —',                                                   en: '— Select a course —',                                                 es: '— Selecciona un curso —' },
+  'admin.field.courseSlugHint':          { he: 'הקורס שאליו שייך השיעור. רק לפריט מסוג "שיעור".',                en: 'The course this lesson belongs to. Lesson items only.',               es: 'El curso al que pertenece la lección. Solo para lecciones.' },
+  'admin.field.lessonNumber':            { he: 'מספר שיעור',                                                     en: 'Lesson number',                                                       es: 'Número de lección' },
+  'admin.field.lessonNumberHint':        { he: 'מיקום השיעור בקורס (1, 2, 3 ...). רק לפריט מסוג "שיעור".',        en: 'Position of the lesson in the course (1, 2, 3 …). Lesson items only.', es: 'Posición de la lección en el curso (1, 2, 3 …). Solo para lecciones.' },
+  'admin.field.orderInCourse':           { he: 'סדר בקורס',                                                      en: 'Order in course',                                                     es: 'Orden en el curso' },
+  'admin.field.orderInCourseHint':       { he: 'סדר המיון של השיעור בקורס. ברירת מחדל: מספר השיעור.',             en: 'Sort position of the lesson in the course. Defaults to the lesson number.', es: 'Posición de la lección en el curso. Por defecto, el número de lección.' },
+  'admin.toast.courseRequired':          { he: 'בחר קורס לפני שמירת שיעור',                                       en: 'Select a course before saving a lesson',                              es: 'Selecciona un curso antes de guardar una lección' },
   'admin.field.category':                { he: 'קטגוריה',                                                        en: 'Category',                                                            es: 'Categoría' },
   'admin.field.categoryPlaceholder':     { he: 'לדוגמה: הנדסת AI',                                              en: 'e.g. AI Engineering',                                                 es: 'p. ej. Ingeniería de IA' },
   'admin.field.seriesName':              { he: 'שם הסדרה',                                                       en: 'Series name',                                                         es: 'Nombre de la serie' },
@@ -695,6 +703,7 @@ export const translations: Translations = {
 
   'admin.option.book':                   { he: 'ספר',         en: 'Book',     es: 'Libro' },
   'admin.option.course':                 { he: 'קורס',        en: 'Course',   es: 'Curso' },
+  'admin.option.lesson':                 { he: 'שיעור',       en: 'Lesson',   es: 'Lección' },
   'admin.option.article':                { he: 'מאמר',        en: 'Article',  es: 'Artículo' },
   'admin.option.card':                   { he: 'כרטיסייה',    en: 'Card',     es: 'Tarjeta' },
   'admin.option.hidden':                 { he: 'מוסתר',       en: 'Hidden',   es: 'Oculto' },
@@ -729,6 +738,7 @@ export const translations: Translations = {
   'admin.toast.deleteFailed':            { he: 'לא ניתן למחוק',                                       en: 'Could not delete',                                                    es: 'No se pudo eliminar' },
   'admin.toast.networkError':            { he: 'שגיאת רשת: {{msg}}',                                  en: 'Network error: {{msg}}',                                              es: 'Error de red: {{msg}}' },
   'admin.toast.metadataSaved':           { he: 'המטא-דאטה נשמרה עבור "{{title}}"',                    en: 'Metadata saved for "{{title}}"',                                      es: 'Metadatos guardados para "{{title}}"' },
+  'admin.toast.catalogSaveFailed':       { he: 'שמירת הקטלוג נכשלה: {{msg}}',                          en: 'Catalog save failed: {{msg}}',                                        es: 'Error al guardar el catálogo: {{msg}}' },
 
   // ── admin.column.* — Knowledge Catalog table column headers ────────────
   // Used by the wide table layout that replaces the previous card list.
@@ -1047,6 +1057,7 @@ export const translations: Translations = {
   'knowledgeSpace.connectedItems':   { he: 'פריטים מחוברים',          en: 'connected items',               es: 'elementos conectados' },
   'knowledgeSpace.books':            { he: 'ספרים',                   en: 'Books',                         es: 'Libros' },
   'knowledgeSpace.courses':          { he: 'קורסים',                  en: 'Courses',                       es: 'Cursos' },
+  'knowledgeSpace.lessons':          { he: 'שיעורים',                 en: 'Lessons',                       es: 'Lecciones' },
   'knowledgeSpace.articles':         { he: 'מאמרים',                  en: 'Articles',                      es: 'Artículos' },
   'knowledgeSpace.viewAll':          { he: 'צפה בכל הפריטים',         en: 'View all items',                es: 'Ver todos los elementos' },
   'knowledgeSpace.allItemsTitle':    { he: 'כל הפריטים במרחב הידע',   en: 'All items in your knowledge space', es: 'Todos los elementos de tu espacio de conocimiento' },

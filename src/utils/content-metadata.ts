@@ -1,27 +1,31 @@
 /**
- * Editorial metadata in-memory store.
+ * Editorial metadata in-memory store — the /admin page's WORKING STATE.
  *
- * Phase 7 — localStorage was removed entirely. This module now backs
- * editorial state in an in-memory map that is seeded once per page
- * load from the committed catalog at `src/data/library/catalog.json`.
+ * There is no localStorage and no persistence in this module. It backs a
+ * per-page in-memory map seeded once from the committed catalog at
+ * `src/data/library/catalog.json`.
  *
- *   Production source of truth → src/data/library/catalog.json
- *   Per-page working state    → the maps below (in this module)
- *   Persistence across reload → none (intentional)
+ *   Single editorial source of truth → src/data/library/catalog.json
+ *   Per-page working state           → the maps below (in this module)
+ *   Persistence                      → /admin flushes the FULL catalog to
+ *                                       the file on every save via
+ *                                       persistCatalog() → POST
+ *                                       /api/save-catalog. This module
+ *                                       itself never writes.
  *
  * The public API (`getMetadata`, `setMetadata`, `getAllMetadata`,
  * `replaceAllMetadata`, and the series equivalents) is unchanged so
  * every caller — /admin forms, `universe-series-actions.ts`,
  * `universe-series-hydrator.ts` — continues to compile without
- * modification. The difference is purely behavioural:
+ * modification. Behaviour:
  *
  *   - Reads return whatever is currently in memory (seeded from
  *     catalog.json on first access, then mutated by `set*` calls or
  *     `replaceAll*` from the Admin Import flow).
- *   - Writes mutate the in-memory map only. They never persist.
- *   - Closing the tab or reloading the page discards every unsaved
- *     edit. The Admin UI surfaces a notice so editors know to Export
- *     before refreshing.
+ *   - Writes mutate the in-memory map only. /admin immediately follows a
+ *     mutation with persistCatalog(), which serializes the whole store
+ *     to catalog.json — so a saved edit survives reload. An edit that was
+ *     typed but never saved is intentionally discarded on reload.
  */
 
 import {

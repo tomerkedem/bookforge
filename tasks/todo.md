@@ -1,6 +1,80 @@
 # tasks/todo.md
 
-## משימה נוכחית — כרטיס "מרחב הידע" + bottom sheet "כל הפריטים" (מובייל)
+## משימה נוכחית (B) — סיווג כשדה עריכתי במקור האמת
+
+מטרה: לסווג פריט כ-"שיעור" (course_lesson) עם קורס + מספר שיעור מתוך /admin,
+לשמור ל-catalog.json, ולשקף בספרייה + בסטטיסטיקה. מאפשר לתומר לסמן את
+Lesson-7 כשיעור 7 של AI Engineering, וכך הספירה תהיה 4 ספרים + 7 שיעורים.
+
+### שורש הבעיה (אומת)
+- Lesson-7 חסר מ-output/_catalog.json → discovery נופל ל-contentType='book'.
+- ContentItemType היום = 'book'|'course'|'article' (אין course_lesson).
+- 'type' אינו ב-EDITORIAL_FIELDS → catalog.json לא יכול לדרוס סיווג.
+- אין אופציית "שיעור" במודל admin.
+
+### תוכנית (6 קבצים) — בוצע
+1. [x] content-metadata.ts: ContentItemType += 'course_lesson'; +courseSlug?, lessonNumber?.
+2. [x] types/library-catalog.ts: מיפוי יחיד `contentTypeToCatalogType` + lessonLinkage
+       ב-patch + materializer (type, courseSlug, seriesId, orderInSeries, href).
+3. [x] library-catalog-store.ts: EDITORIAL_FIELDS += type, courseSlug, seriesId, orderInSeries.
+4. [x] admin.astro: אופציית "שיעור"; select קורס (מ-discoverCourses) + מספר שיעור מותנים;
+       seeding מהגילוי (מונע flip של שיעור לספר); ולידציה שקורס קיים; חיווט populate+save.
+       (+ מסלול הפוך: splitImportedCatalogIntoDrafts מחזיר course_lesson — ללא כפילות.)
+5. [x] i18n: admin.option.lesson, admin.field.courseSlug(+None+Hint), lessonNumber(+Hint),
+       admin.toast.courseRequired, knowledgeSpace.lessons (he/en/es).
+6. [x] כרטיס הסטטיסטיקה: מקור יחיד getLibraryStats(readableItems); node/filter "שיעורים"
+       רביעי (desktop + mobile); universe-layout filter 'lesson'; הקורס הסינתטי לא נספר.
+       לוגים זמניים [stats] + [save-flow] + [save-catalog].
+
+### אומת
+- build: Complete (0 שגיאות). astro check: 0 שגיאות חדשות.
+- בדיקות זמניות (נמחקו): forward (Lesson-7→course_lesson+linkage), round-trip ללא כפילות,
+  ספר לא מקבל linkage, read-path end-to-end → byType {book:4, course_lesson:7}.
+- catalog.json שוחזר למקור (תומר יבצע את הסיווג בפועל דרך admin).
+
+### הסתייגות (follow-up, מחוץ ל-scope)
+- discoverCourses()/ContinueLearningCard סופרים סיווג מהפייפליין ישירות (לא ה-overlay),
+  לכן "availableLessons" של הקורס לא ישקף סיווג עריכתי בלי plumbing נוסף.
+
+---
+
+## משימה קודמת — catalog.json = מקור האמת העריכתי היחיד
+
+Branch: `feature/catalog-single-source-of-truth`
+
+### מטרה
+Admin קורא מטא-דאטה עריכתי מ-`src/data/library/catalog.json`, וכל "שמירה" כותבת את
+הקטלוג המלא חזרה לקובץ דרך endpoint שרת. `catalog.json` = מקור האמת העריכתי היחיד.
+`output/` משמש לעובדות פיזיות בלבד (פרקים, מילים, href, כריכה).
+
+### אבחון (אומת)
+- שמירות Admin קוראות `setMetadata`/`setSeriesMetadata` → store בזיכרון
+  (`content-metadata.ts`), seeded מ-catalog.json, **לא נשמר** (מתאדה ב-reload).
+- שכבות `_editorial.json`: `library-adapter.ts` (`getMetadataFromFile`),
+  `library-catalog-store.ts` (`applyFileContentMetadataOverlay`,
+  `applyFileSeriesMetadataOverlay`).
+- mock fallback ב-`library-catalog.ts`.
+- `output/_editorial.json` ריק כרגע ({}) → אין מיגרציה.
+
+### תוכנית (מעבר ראשון: לנתק, לא למחוק קבצים)
+1. [x] `src/pages/api/save-catalog.ts` — POST, ולידציה, כתיבה אטומית temp+rename,
+       JSON 2-spaces + שורת סיום. (rename-over-existing אומת ב-Windows)
+2. [x] Admin: `persistCatalog()` (build דרך `buildExportedCatalog`, POST).
+       חיווט: שמירת ספר, שמירת סדרה, יצירת/שינוי-שם/מחיקת סדרה, ייבוא קטלוג.
+3. [x] הסרת קריאות `_editorial.json` (adapter + store + helpers יתומים).
+4. [x] הסרת mock fallback (`library-catalog.ts`) → ריק = empty state אמיתי.
+5. [x] i18n: `admin.toast.catalogSaveFailed` (he/en/es).
+6. [x] תיעוד: docs/library-admin-catalog-workflow.md + הערות content-metadata.ts.
+7. [x] אימות: `astro check` (0 שגיאות חדשות) + `npm run build` (Complete).
+8. [ ] אימות ידני (תומר): POST אמיתי דרך dev server → catalog.json מתעדכן.
+
+### ניקוי (מעבר נפרד, אחרי אימות)
+- [ ] מחיקת `src/utils/editorial-metadata-file.ts` (לוודא אין importers).
+- [ ] מחיקת `src/data/library-mock.ts` (לוודא אין importers).
+
+---
+
+## משימה קודמת — כרטיס "מרחב הידע" + bottom sheet "כל הפריטים" (מובייל)
 
 ### ממצאי Phase 1 (בדיקת ארכיטקטורה)
 - מקור אמת לפריטים: `getLibraryItems()` → `getLibraryStats(items)` ב-`src/utils/library-catalog.ts` (build-time, מתעדכן לבד).

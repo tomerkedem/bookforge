@@ -11,7 +11,8 @@
       "PowerShell(Copy-Item -LiteralPath \"src\\\\pages\\\\library.astro\" -Destination \"src\\\\pages\\\\index.astro\" -Force; \\(Get-Item \"src\\\\pages\\\\index.astro\"\\).Length)",
       "PowerShell($c = Get-Content -Raw 'c:\\\\D\\\\Books\\\\bookforge\\\\src\\\\pages\\\\index.astro'; $open=\\([regex]::Matches\\($c,'\\\\{'\\)\\).Count; $close=\\([regex]::Matches\\($c,'\\\\}'\\)\\).Count; \"braces: $open / $close \\(delta $\\($open-$close\\)\\); lines: $\\(\\(\\($c -split \"`n\"\\).Count\\)\\)\")",
       "PowerShell($c = Get-Content -Raw 'c:\\\\D\\\\Books\\\\bookforge\\\\src\\\\pages\\\\index.astro'; $open=\\([regex]::Matches\\($c,'\\\\{'\\)\\).Count; $close=\\([regex]::Matches\\($c,'\\\\}'\\)\\).Count; \"braces: $open / $close \\(delta $\\($open-$close\\)\\)\")",
-      "PowerShell(& \"C:\\\\Program Files\\\\nodejs\\\\node.exe\" \"c:\\\\D\\\\Books\\\\bookforge\\\\tasks\\\\_shot_header.mjs\")"
+      "PowerShell(& \"C:\\\\Program Files\\\\nodejs\\\\node.exe\" \"c:\\\\D\\\\Books\\\\bookforge\\\\tasks\\\\_shot_header.mjs\")",
+      "PowerShell(npm run build 2>&1)"
     ]
   }
 }

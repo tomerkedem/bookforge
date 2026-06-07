@@ -3,16 +3,15 @@
  * ────────────────────────────────────────────────────────────────────────────
  * Pure, side-effect-free helpers operating over `LibraryItem[]`.
  *
- * Source today: mock data only (`libraryMockCatalog`).
- * Source tomorrow: an adapter on top of `discoverAllBooks()` /
- * `_catalog.json`. Consumers won't change because the shape is stable.
+ * Source: `getLibraryItems()` below — pipeline discovery for physical
+ * facts, overlaid with the editorial source of truth at
+ * `src/data/library/catalog.json`. No mock fallback.
  *
  * No I/O, no DOM, no Astro globals. Safe to import from anywhere.
  */
 
 import type { Language } from '../types/index';
 import type {
-  LibraryCatalog,
   LibraryFilter,
   LibraryItem,
   LibraryItemStatus,
@@ -20,11 +19,9 @@ import type {
   LibrarySortKey,
   LibraryStats,
 } from '../types/library';
-import { libraryMockCatalog } from '../data/library-mock';
 import { getRealLibraryItems } from './library-adapter';
 import { isReadableLibraryItem } from './library-display';
 import {
-  getCatalogItems,
   mergeDiscoveredWithCatalog,
   filterVisibleCatalogItems,
 } from './library/library-catalog-store';
@@ -32,76 +29,46 @@ import { libraryCatalogItemToLibraryItem } from '../types/library-catalog';
 
 // ── Source ──────────────────────────────────────────────────────────────────
 
-/** Returns the mock catalog items. Stable order = source order. */
-export function getMockLibraryItems(): LibraryItem[] {
-  return libraryMockCatalog.items;
-}
-
-/** Returns the full mock catalog (items + series + meta). */
-export function getMockLibraryCatalog(): LibraryCatalog {
-  return libraryMockCatalog;
-}
-
 /**
- * Primary source-of-truth for /library at build time.
+ * Primary (and only) source-of-truth for /library at build time.
  *
- * Phase 7 — there is no longer any client-side overlay. The catalog
- * store is the ONLY editorial source; the browser does not contribute
- * any state that affects what the public library renders.
+ * `src/data/library/catalog.json` is the single editorial source of
+ * truth. /admin writes it directly (POST /api/save-catalog). The browser
+ * contributes no state that affects what the public library renders, and
+ * there is no `output/_editorial.json` overlay and no mock fallback.
  *
  * Pipeline:
  *   1. `getRealLibraryItems()` — pipeline-discovered books, lessons,
- *      synthetic courses. Returns `[]` when `output/` is empty.
- *   2. `mergeDiscoveredWithCatalog(base)` — overlays editorial fields
- *      from `src/data/library/catalog.json` onto discovered items by
- *      slug AND appends catalog-only entries (series capsules that
- *      the pipeline cannot emit, e.g. `ai-engineering-series`). Also
- *      applies the SSR overlays from `output/_editorial.json`: file
- *      ContentMetadata, file SeriesMetadata, orbit artifact probe,
- *      series → child visibility cascade.
- *   3. `filterVisibleCatalogItems` — drops anything declared hidden
- *      so the renderer never paints a card that would have to be
- *      removed later. No first-paint flash.
- *   4. `libraryCatalogItemToLibraryItem` — projects the unified
- *      records back onto the legacy `LibraryItem` shape so the page
- *      and side panels render unchanged.
+ *      synthetic courses (PHYSICAL facts only: chapters, word count,
+ *      href, cover). Returns `[]` when `output/` is empty.
+ *   2. `mergeDiscoveredWithCatalog(base)` — overlays the editorial fields
+ *      from catalog.json onto discovered items by slug AND appends
+ *      catalog-only entries (e.g. the `ai-engineering-series` capsule the
+ *      pipeline cannot emit), then applies the asset/structural overlays
+ *      (orbit-artifact probe, series → child visibility cascade).
+ *   3. `filterVisibleCatalogItems` — drops anything declared hidden so
+ *      the renderer never paints a card it would have to remove later.
+ *   4. `libraryCatalogItemToLibraryItem` — projects the unified records
+ *      back onto the legacy `LibraryItem` shape.
  *
- * Fallback rules:
- *   - `real.length > 0`         → real + catalog overlay.
- *   - real empty, catalog>0     → catalog-only items.
- *   - real empty, catalog empty → mock catalog (CI / fresh checkout).
- *   Mock data is NEVER mixed with real data — last-resort only.
+ * Empty state: when `output/` AND catalog.json are both empty the result
+ * is `[]` — a real empty library, never invented mock books.
  */
 export function getLibraryItems(): LibraryItem[] {
   const real = getRealLibraryItems();
-
-  if (real.length > 0) {
-    const merged = mergeDiscoveredWithCatalog(real);
-    return filterVisibleCatalogItems(merged).map(libraryCatalogItemToLibraryItem);
-  }
-
-  const catalogOnly = getCatalogItems();
-  if (catalogOnly.length > 0) {
-    // No real content but the catalog has seeds. Run through the
-    // merge with an empty discovered list so the SSR overlays
-    // (file metadata, artifact probe, cascade) apply identically
-    // to this branch — otherwise a series capsule with no artifact
-    // could leak onto the orbit when output/ is empty.
-    const merged = mergeDiscoveredWithCatalog([]);
-    return filterVisibleCatalogItems(merged).map(libraryCatalogItemToLibraryItem);
-  }
-
-  // CI / fresh checkout fallback — pure mock data. The mock catalog
-  // already declares what's visible, so we don't run the SSR
-  // visibility pipeline over it.
-  return getMockLibraryItems();
+  // Always run through the merge. With discovered content it overlays the
+  // editorial catalog; with none it still surfaces catalog-only entries
+  // and applies the artifact/visibility overlays. An empty catalog +
+  // empty output/ yields [] — the honest empty state.
+  const merged = mergeDiscoveredWithCatalog(real);
+  return filterVisibleCatalogItems(merged).map(libraryCatalogItemToLibraryItem);
 }
 
 // ── Lookup ──────────────────────────────────────────────────────────────────
 
 export function getLibraryItemById(
   id: string,
-  items: LibraryItem[] = getMockLibraryItems(),
+  items: LibraryItem[] = getLibraryItems(),
 ): LibraryItem | undefined {
   return items.find((it) => it.id === id);
 }
@@ -129,7 +96,7 @@ export function getItemsBySeries(
  * The future UI will replace this with real reading-progress lookup.
  */
 export function getContinueReadingItem(
-  items: LibraryItem[] = getMockLibraryItems(),
+  items: LibraryItem[] = getLibraryItems(),
 ): LibraryItem | undefined {
   const candidates = items.filter(
     (it) => it.status !== 'archived' && it.status !== 'failed',

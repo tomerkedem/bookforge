@@ -8,10 +8,16 @@
  * counts (total / books / courses / articles) and a single CTA that opens the
  * all-items bottom sheet (MobileAllItemsSheet).
  *
- * Counts are passed in from index.astro and originate from
- * `getLibraryStats(getLibraryItems())` — the same source the desktop
- * Knowledge Core uses. Nothing here is hardcoded; the card updates
- * automatically when catalog/output data changes.
+ * Counts are passed in from index.astro and derived from the exact
+ * `orbitItems` set the carousel renders (same source the desktop
+ * Knowledge Core now uses), so each tile count equals the number of
+ * cards shown after filtering that group. Nothing here is hardcoded.
+ *
+ * Interaction: the total + the three cells are filter controls carrying
+ * `data-library-filter` (all | books | courses | articles). universe-
+ * layout.ts owns the one delegated listener that filters the shared
+ * carousel and toggles `data-active` back onto the selected tile. A tile
+ * whose count is 0 ships `disabled`. Filter state is client-side only.
  *
  * Theme: dark/light come entirely from the global `--yuval-galaxy-*`
  * tokens. RTL/LTR follow the page `dir`; logical properties only.
@@ -31,10 +37,20 @@ interface Props {
   books: number;
   /** stats.byType['course']. */
   courses: number;
+  /**
+   * Accepted for call-site compatibility only. Lessons are a course's
+   * drill-in content, not a Knowledge Space category, so this card does
+   * not render a lessons tile (intentionally unused here).
+   */
+  lessons: number;
   /** stats.byType['article']. */
   articles: number;
 }
 
+// `lessons` is intentionally NOT destructured / rendered here: this card
+// shows only Books / Courses / Articles. Lessons are a course's drill-in
+// content, not a top-level Knowledge Space category, so they get no tile.
+// The prop stays on the interface so the index.astro call site is unchanged.
 const { language, total, books, courses, articles } = Astro.props;
 const direction = getLanguageDirection(language);
 
@@ -64,16 +80,29 @@ const cells: Array<{ key: 'books' | 'courses' | 'articles'; count: number; label
   </header>
 
   <div class="mks__body">
-    {/* Large total on one side. */}
-    <div class="mks__total">
+    {/* Large total — doubles as the "show all" reset for the carousel filter. */}
+    <button
+      type="button"
+      class="mks__total"
+      data-library-filter="all"
+      aria-pressed="false"
+      aria-label={`${t('knowledgeSpace.connectedItems', language)}: ${total}`}
+    >
       <span class="mks__total-num">{total}</span>
       <span class="mks__total-label">{t('knowledgeSpace.connectedItems', language)}</span>
-    </div>
+    </button>
 
-    {/* Three compact stat cells. */}
+    {/* Three compact stat cells — each filters the carousel to its group. */}
     <div class="mks__cells" role="group" aria-label={t('knowledgeSpace.title', language)}>
       {cells.map((c) => (
-        <div class="mks__cell" data-type={c.key}>
+        <button
+          type="button"
+          class="mks__cell"
+          data-type={c.key}
+          data-library-filter={c.key}
+          aria-pressed="false"
+          disabled={c.count === 0}
+        >
           <span class="mks__cell-icon" aria-hidden="true">
             {c.key === 'books' && (
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
@@ -97,7 +126,7 @@ const cells: Array<{ key: 'books' | 'courses' | 'articles'; count: number; label
           </span>
           <span class="mks__cell-num">{c.count}</span>
           <span class="mks__cell-label">{t(c.labelKey, language)}</span>
-        </div>
+        </button>
       ))}
     </div>
   </div>
@@ -291,9 +320,29 @@ const cells: Array<{ key: 'books' | 'courses' | 'articles'; count: number; label
     flex-direction: column;
     justify-content: center;
     align-items: flex-start;
-    padding-inline-end: 0.75rem;
+    padding-inline: 0 0.75rem;
+    /* Button reset — keep only the inline-end divider. */
+    appearance: none;
+    -webkit-appearance: none;
+    border: 0;
     border-inline-end: 1px solid var(--yuval-galaxy-border);
+    background: none;
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
     min-width: 4.5rem;
+    border-radius: 8px;
+    transition: box-shadow 180ms ease;
+  }
+  .mks__total[data-active] {
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--yuval-galaxy-accent-cyan) 30%, transparent),
+      0 0 16px -6px color-mix(in srgb, var(--yuval-galaxy-accent-cyan) 60%, transparent);
+  }
+  .mks__total:focus-visible,
+  .mks__cell:focus-visible {
+    outline: 2px solid var(--yuval-galaxy-accent-cyan);
+    outline-offset: 2px;
   }
   .mks__total-num {
     font-size: 2.5rem;
@@ -332,6 +381,12 @@ const cells: Array<{ key: 'books' | 'courses' | 'articles'; count: number; label
     justify-content: center;
     gap: 0.3125rem;
     padding: 0.6875rem 0.25rem 0.625rem;
+    /* Button reset — these are real filter controls. */
+    appearance: none;
+    -webkit-appearance: none;
+    font: inherit;
+    cursor: pointer;
+    transition: border-color 180ms ease, box-shadow 180ms ease, transform 160ms ease;
     /* Per-accent glass module: a soft accent bloom at the top fading into a
        faint frosted fill, with an accent-tinted hairline border. */
     border: 1px solid color-mix(in srgb, var(--mks-accent) 24%, rgba(255, 255, 255, 0.10));
@@ -359,7 +414,26 @@ const cells: Array<{ key: 'books' | 'courses' | 'articles'; count: number; label
      orange/gold. Each token already ships a softer light-mode value. */
   .mks__cell[data-type="books"]    { --mks-accent: var(--yuval-galaxy-accent-purple); }
   .mks__cell[data-type="courses"]  { --mks-accent: var(--yuval-galaxy-accent-cyan); }
+  .mks__cell[data-type="lessons"]  { --mks-accent: var(--yuval-galaxy-type-lesson, #7dd3fc); }
   .mks__cell[data-type="articles"] { --mks-accent: var(--yuval-galaxy-type-book); }
+
+  /* Active filter — accent border + glow + brighter count.
+     `data-active` toggled by universe-layout.ts (syncFilterActiveState). */
+  .mks__cell[data-active] {
+    border-color: color-mix(in srgb, var(--mks-accent) 72%, transparent);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.12),
+      inset 0 0 0 1px color-mix(in srgb, var(--mks-accent) 42%, transparent),
+      0 0 18px -5px color-mix(in srgb, var(--mks-accent) 80%, transparent);
+  }
+  .mks__cell[data-active] .mks__cell-num { color: var(--mks-accent); }
+  .mks__cell:active:not(:disabled) { transform: translateY(1px); }
+
+  /* Empty group — visible but inert (no items of this type to show). */
+  .mks__cell:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
   /* Glowing accent tile holding the icon. */
   .mks__cell-icon {
     display: inline-flex;

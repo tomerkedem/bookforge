@@ -29,7 +29,6 @@
  */
 
 import type { LibraryItem } from '../../types/library';
-import type { ContentMetadata, SeriesMetadata } from '../../types/content-metadata';
 import {
   type LibraryCatalogItem,
   type LibraryCatalogStatus,
@@ -41,14 +40,8 @@ import {
   LIBRARY_CATALOG_STATUSES,
   LIBRARY_CATALOG_SOURCE_KINDS,
   libraryItemToLibraryCatalogItem,
-  contentMetadataToLibraryCatalogPatch,
-  fromSeriesStatus,
 } from '../../types/library-catalog';
 import catalogJson from '../../data/library/catalog.json';
-import {
-  getAllMetadataFromFile,
-  getAllSeriesMetadataFromFile,
-} from '../editorial-metadata-file';
 import { getKnowledgeCardAssets } from './knowledge-cards';
 
 // ════════════════════════════════════════════════════════════════════
@@ -180,6 +173,7 @@ function normalizeRawItem(raw: unknown): LibraryCatalogItem | null {
 
   if (typeof r.order         === 'number' && Number.isFinite(r.order))         item.order         = r.order;
   if (typeof r.orderInSeries === 'number' && Number.isFinite(r.orderInSeries)) item.orderInSeries = r.orderInSeries;
+  if (typeof r.lessonNumber  === 'number' && Number.isFinite(r.lessonNumber))  item.lessonNumber  = r.lessonNumber;
   if (typeof r.readingMinutes === 'number' && Number.isFinite(r.readingMinutes)) item.readingMinutes = r.readingMinutes;
   if (typeof r.wordCount     === 'number' && Number.isFinite(r.wordCount))     item.wordCount     = r.wordCount;
   if (typeof r.chapterCount  === 'number' && Number.isFinite(r.chapterCount))  item.chapterCount  = r.chapterCount;
@@ -254,11 +248,18 @@ export function getCatalogItemBySlug(slug: string): LibraryCatalogItem | undefin
  * the catalog entry leaves the field undefined, so a partial editorial
  * record stays safe to author.
  *
+ * `type` + the course-linkage fields (`courseSlug`, `seriesId`,
+ * `orderInSeries`) are editorial as of the /admin classification work:
+ * the editor can reclassify a discovered item (e.g. a folder the pipeline
+ * guessed as a book) into a `course_lesson` and pin it to a course. The
+ * overlay only applies a field when the catalog entry actually defines it
+ * (`overlayValue !== undefined` in applyEditorialOverlay), so a discovered
+ * lesson the editor never touched keeps its pipeline classification.
+ *
  * Anything NOT in this list — href, readingMinutes, wordCount,
  * chapterCount, relatedIds, topics, frontImage, coverImage,
- * dominantColor, courseSlug, seriesId, orderInSeries, createdAt,
- * updatedAt — stays sourced from the pipeline side (the `base`
- * argument to `applyEditorialOverlay`).
+ * dominantColor, createdAt, updatedAt — stays sourced from the pipeline
+ * side (the `base` argument to `applyEditorialOverlay`).
  */
 type EditorialOverlayField =
   | 'title'
@@ -272,7 +273,11 @@ type EditorialOverlayField =
   | 'seriesName'
   | 'categoryKey'
   | 'assetFolder'
-  | 'author';
+  | 'author'
+  | 'type'
+  | 'courseSlug'
+  | 'seriesId'
+  | 'orderInSeries';
 
 const EDITORIAL_FIELDS: readonly EditorialOverlayField[] = [
   'title',
@@ -287,6 +292,10 @@ const EDITORIAL_FIELDS: readonly EditorialOverlayField[] = [
   'categoryKey',
   'assetFolder',
   'author',
+  'type',
+  'courseSlug',
+  'seriesId',
+  'orderInSeries',
 ];
 
 function applyEditorialOverlay(
@@ -369,141 +378,28 @@ export function mergeDiscoveredWithCatalog(
     }
   }
 
-  // ── Phase 4 overlays — SSR-side editorial decisions ─────────────────
-  // Order matters:
-  //   1. File-based per-item ContentMetadata overlay (e.g. visibility
-  //      flags, displayTitle, category, seriesName from
-  //      output/_editorial.json).
-  //   2. File-based per-series SeriesMetadata overlay (titles, status,
-  //      visibility flags from the same file).
-  //   3. Orbit-artifact probe — series capsules without a real
-  //      front.png get showInOrbit=false. Items (books/lessons) are
-  //      untouched so the placeholder fallback in index.astro still
-  //      works.
-  //   4. Series → child cascade — items whose parent series is hidden
-  //      in library/universe inherit the hide. Orbit-only suppression
-  //      (e.g. missing artifact) does NOT cascade to children so a
-  //      member can still be read.
+  // ── Asset / visibility overlays — SSR-side, asset-driven only ───────
+  // All editorial decisions (titles, category, seriesName, visibility
+  // flags, status) already live in catalog.json and were applied above
+  // by applyEditorialOverlay. The remaining overlays are NOT editorial —
+  // they're derived from the filesystem and from parent/child structure,
+  // so they run regardless of the editorial source:
+  //   1. Orbit-artifact probe — series capsules without a real front.png
+  //      get showInOrbit=false. Items (books/lessons) are untouched so
+  //      the placeholder fallback in index.astro still works.
+  //   2. Series → child cascade — items whose parent series is hidden in
+  //      library/universe inherit the hide. Orbit-only suppression (e.g.
+  //      missing artifact) does NOT cascade to children so a member can
+  //      still be read.
   let result = merged;
-  result = applyFileContentMetadataOverlay(result);
-  result = applyFileSeriesMetadataOverlay(result);
   result = applyOrbitArtifactProbe(result);
   result = applySeriesVisibilityCascade(result);
   return result;
 }
 
 // ════════════════════════════════════════════════════════════════════
-// Phase 4 overlays
+// Asset / structural overlays
 // ════════════════════════════════════════════════════════════════════
-
-/**
- * Apply per-item `ContentMetadata` records read from
- * `output/_editorial.json` to the merged catalog. The file is partial
- * per record (any field can be omitted), so we fill missing fields
- * with the same defaults `defaultMetadataFor` uses on the localStorage
- * side and hand a complete record to `contentMetadataToLibraryCatalogPatch`.
- *
- * A patch that only flips visibility is still applied — the field is
- * not present on the base record (which defaults to "visible
- * everywhere"), so the spread cleanly turns the booleans off.
- *
- * SSR-only — the underlying reader uses `fs`.
- */
-function applyFileContentMetadataOverlay(
-  items: LibraryCatalogItem[],
-): LibraryCatalogItem[] {
-  const all = getAllMetadataFromFile();
-  if (Object.keys(all).length === 0) return items;
-
-  return items.map((item) => {
-    const partial = all[item.slug];
-    if (!partial) return item;
-
-    const complete: ContentMetadata = {
-      slug: item.slug,
-      displayTitle: partial.displayTitle?.trim() ?? '',
-      contentType: partial.contentType ?? 'book',
-      category: partial.category ?? '',
-      seriesName: partial.seriesName ?? '',
-      isVisibleInUniverse: partial.isVisibleInUniverse !== false,
-      visualMode: partial.visualMode ?? 'card',
-    };
-
-    const patch = contentMetadataToLibraryCatalogPatch(complete);
-    if (Object.keys(patch).length === 0) return item;
-
-    return { ...item, ...patch };
-  });
-}
-
-/**
- * Apply per-series `SeriesMetadata` records read from
- * `output/_editorial.json` to the merged catalog. Matching is by
- * slug: the file's record is keyed by the editorial `name`, and we
- * derive the public slug the same way `slugFromSeries()` does in
- * admin-series.ts (assetFolder explicit → otherwise slugified name).
- *
- * Editorial fields (display title, descriptions, order, assetFolder,
- * status, visibility flag) overlay onto the existing catalog item.
- * Items that are not of type 'series' are passed through unchanged.
- *
- * SSR-only.
- */
-function applyFileSeriesMetadataOverlay(
-  items: LibraryCatalogItem[],
-): LibraryCatalogItem[] {
-  const all = getAllSeriesMetadataFromFile();
-  if (Object.keys(all).length === 0) return items;
-
-  const overlayBySlug = new Map<string, Partial<SeriesMetadata>>();
-  for (const [name, meta] of Object.entries(all)) {
-    const slug = resolveSeriesSlug(name, meta.assetFolder);
-    if (slug.length > 0) overlayBySlug.set(slug.toLowerCase(), meta);
-  }
-  if (overlayBySlug.size === 0) return items;
-
-  return items.map((item) => {
-    if (item.type !== 'series') return item;
-    const overlay = overlayBySlug.get(item.slug.toLowerCase());
-    if (!overlay) return item;
-
-    const next: LibraryCatalogItem = { ...item };
-
-    if (isFilledString(overlay.displayTitle)) {
-      next.title = { en: overlay.displayTitle.trim() };
-    }
-    if (isFilledString(overlay.shortDescription)) {
-      next.shortDescription = overlay.shortDescription.trim();
-    }
-    if (isFilledString(overlay.fullDescription)) {
-      next.description = { en: overlay.fullDescription.trim() };
-    }
-    if (typeof overlay.order === 'number' && Number.isFinite(overlay.order)) {
-      next.order = overlay.order;
-    }
-    if (isFilledString(overlay.assetFolder)) {
-      next.assetFolder = overlay.assetFolder.trim();
-    }
-
-    if (overlay.status !== undefined) {
-      next.status = fromSeriesStatus(overlay.status);
-    }
-
-    const isHiddenByFlag = overlay.isVisibleInUniverse === false;
-    const isHiddenByStatus = next.status === 'archived';
-    if (isHiddenByFlag || isHiddenByStatus) {
-      next.visibility = {
-        showInLibrary: false,
-        showInUniverse: false,
-        showInOrbit: false,
-        showInAtlas: false,
-        showInContinueLearning: false,
-      };
-    }
-
-    return next;
-  });
-}
 
 /**
  * Series capsules require a real per-slug artifact at
@@ -592,29 +488,6 @@ function applySeriesVisibilityCascade(
       },
     };
   });
-}
-
-// ── Helpers ─────────────────────────────────────────────────────────
-
-function isFilledString(value: unknown): value is string {
-  return typeof value === 'string' && value.trim().length > 0;
-}
-
-/**
- * Same resolution rule as `slugFromSeries` in admin-series.ts. Kept
- * inline here to avoid a circular import (`admin-series` would
- * eventually depend on the store).
- */
-function resolveSeriesSlug(
-  name: string,
-  assetFolder: string | undefined,
-): string {
-  const explicit = assetFolder?.trim();
-  if (explicit && explicit.length > 0) return explicit;
-  return (name ?? '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
 }
 
 // ════════════════════════════════════════════════════════════════════

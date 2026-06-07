@@ -33,7 +33,7 @@
  *   └────────────────────────────────────────────────────────────────┘
  */
 
-import { cssEscape } from './universe-angle-utils';
+import { cssEscape, getEvenOrbitAngle } from './universe-angle-utils';
 
 /**
  * Initialise click-to-center, drag-to-rotate, chevron rotation and
@@ -54,6 +54,25 @@ export function initStageLayout(stage: HTMLElement): void {
   // by ±360°/N where N is the live card count. CSS reads this off the
   // stage as --orbit-rotation and animates every card.
   let rotation = 0;
+
+  // ── Library type filter (Knowledge Core / Knowledge Space tiles) ────
+  // Client-side UI state only — never persisted (catalog.json / admin /
+  // localStorage are untouched). 'all' shows every visible station; a
+  // group key hides the rest and re-spreads the matches evenly.
+  type LibraryFilter = 'all' | 'book' | 'course' | 'lesson' | 'article';
+  let activeFilter: LibraryFilter = 'all';
+
+  // Capture each station's SSR orbit angle so "all" can restore the exact
+  // even spread the server shipped (rather than recomputing and risking
+  // drift). Stored as the raw `--orbit-angle` value, e.g. "250deg".
+  stage
+    .querySelectorAll<HTMLElement>('[data-galaxy-card]')
+    .forEach((card) => {
+      if (card.dataset.baseAngle === undefined) {
+        card.dataset.baseAngle =
+          card.style.getPropertyValue('--orbit-angle').trim();
+      }
+    });
 
   function openCenter(card: HTMLElement) {
     if (focused === card) return;
@@ -82,7 +101,7 @@ export function initStageLayout(stage: HTMLElement): void {
     // Other-Knowledge cards CARRY [data-galaxy-card] (they are real
     // stations) but no [data-series-member], so they ARE counted.
     const visibleCount = stage.querySelectorAll(
-      '[data-galaxy-card]:not([data-series-member])',
+      '[data-galaxy-card]:not([data-series-member]):not([data-filter-hidden])',
     ).length || 1;
     return 360 / visibleCount;
   }
@@ -160,7 +179,7 @@ export function initStageLayout(stage: HTMLElement): void {
     // step indices stay in lockstep.
     const visibleCards = Array.from(
       stage.querySelectorAll<HTMLElement>(
-        '[data-galaxy-card]:not([data-series-member])',
+        '[data-galaxy-card]:not([data-series-member]):not([data-filter-hidden])',
       ),
     );
 
@@ -300,6 +319,147 @@ export function initStageLayout(stage: HTMLElement): void {
     // Reassign mobile slots so the position indicator and 3-slot CSS
     // track the new rotation. No-op on desktop (matchMedia gate).
     updateMobileSlots();
+  }
+
+  // ── Library type filter ────────────────────────────────────────────
+  // Does one station match the active group filter? Matching is by REAL
+  // item type (`data-item-type`):
+  //   - 'all'     → everything EXCEPT course capsules (a course shows as a
+  //                 single capsule only under the Courses filter / on drill,
+  //                 never as scattered lessons in the default view).
+  //   - 'course'  → course capsules (type 'series'). Clicking one drills
+  //                 into its lessons (see drillIntoCourse).
+  //   - 'book'    → standalone books.
+  //   - 'lesson'  → course lessons (also reachable by drilling a capsule).
+  //   - 'article' → articles.
+  function stationMatchesFilter(card: HTMLElement, filter: LibraryFilter): boolean {
+    const type = card.dataset.itemType;
+    if (filter === 'all') return type !== 'series';
+    if (filter === 'book') return type === 'book';
+    if (filter === 'course') return type === 'series';
+    if (filter === 'lesson') return type === 'course_lesson';
+    if (filter === 'article') return type === 'article';
+    return true;
+  }
+
+  // Show only the first `count` pagination dots (one per visible station).
+  // Dots are decorative (aria-hidden); the active one is lit by
+  // setPositionIndicator() via updateMobileSlots().
+  function syncDots(count: number): void {
+    const dots = document.querySelectorAll<HTMLElement>('[data-galaxy-position-dot]');
+    dots.forEach((dot, i) => { dot.hidden = i >= count; });
+    const totalEl = document.querySelector<HTMLElement>('[data-galaxy-position-total]');
+    if (totalEl) totalEl.textContent = String(count);
+  }
+
+  // Reflect the active filter on every filter control across the page
+  // (desktop Knowledge Core nodes + mobile Knowledge Space tiles). Both
+  // render outside the stage; one query covers them. The DOM attribute
+  // uses plural group names (books/courses/articles); normalise to the
+  // stable singular keys.
+  const NODE_FILTER_TO_KEY: Record<string, LibraryFilter> = {
+    all: 'all', books: 'book', courses: 'course', lessons: 'lesson', articles: 'article',
+  };
+  function syncFilterActiveState(filter: LibraryFilter): void {
+    document.querySelectorAll<HTMLElement>('[data-library-filter]').forEach((el) => {
+      const key = NODE_FILTER_TO_KEY[el.dataset.libraryFilter ?? ''] ?? 'all';
+      const on = key === filter;
+      if (on) el.setAttribute('data-active', '');
+      else el.removeAttribute('data-active');
+      // Only real toggle controls carry aria-pressed.
+      if (el.tagName === 'BUTTON') {
+        el.setAttribute('aria-pressed', on ? 'true' : 'false');
+      }
+    });
+  }
+
+  // Apply a group filter to the orbit: hide non-matching stations, re-
+  // spread the matches evenly, reset rotation to the first item, drop any
+  // spotlight, and resync dots / mobile slots / control active-state.
+  function applyLibraryFilter(filter: LibraryFilter): void {
+    const stations = Array.from(
+      stage.querySelectorAll<HTMLElement>(
+        '[data-galaxy-card]:not([data-series-member])',
+      ),
+    );
+    if (stations.length === 0) return;
+
+    let effective = filter;
+    let visible = stations.filter((c) => stationMatchesFilter(c, effective));
+
+    // Never strand the user on an empty carousel (product rule): if a
+    // filter matches nothing, fall back to showing everything.
+    if (visible.length === 0) {
+      effective = 'all';
+      visible = stations;
+    }
+
+    activeFilter = effective;
+
+    stations.forEach((card) => {
+      if (visible.includes(card)) delete card.dataset.filterHidden;
+      else card.dataset.filterHidden = '';
+    });
+
+    if (effective === 'all') {
+      // Restore the SSR even spread exactly.
+      visible.forEach((card) => {
+        const base = card.dataset.baseAngle;
+        if (base) card.style.setProperty('--orbit-angle', base);
+      });
+    } else {
+      // Re-distribute the matching subset evenly around the orbit.
+      const n = visible.length;
+      visible.forEach((card, i) => {
+        card.style.setProperty('--orbit-angle', `${getEvenOrbitAngle(i, n)}deg`);
+      });
+    }
+
+    // Reset to the first item + drop any spotlight so the new set reads
+    // from the top station.
+    rotation = 0;
+    stage.style.setProperty('--orbit-rotation', '0deg');
+    if (focused) closeCenter();
+
+    syncDots(visible.length);
+    updateMobileSlots();
+    syncFilterActiveState(effective);
+  }
+
+  // Drill into a course capsule: replace the carousel with a fresh one of
+  // just that course's lessons (matched by the stable course id, never a
+  // text label). Each capsule drills to its own lessons, so this scales to
+  // any number of courses. The Courses tile stays active; clicking it (or
+  // any other tile) exits the drill.
+  function drillIntoCourse(capsule: HTMLElement): void {
+    const courseId = capsule.dataset.courseId;
+    if (!courseId) { openCenter(capsule); return; }
+    const stations = Array.from(
+      stage.querySelectorAll<HTMLElement>(
+        '[data-galaxy-card]:not([data-series-member])',
+      ),
+    );
+    const members = stations.filter((c) => c.dataset.courseMember === courseId);
+    // No lessons wired to this course yet → fall back to spotlighting the
+    // capsule rather than emptying the carousel.
+    if (members.length === 0) { openCenter(capsule); return; }
+
+    activeFilter = 'course';
+    stations.forEach((card) => {
+      if (members.includes(card)) delete card.dataset.filterHidden;
+      else card.dataset.filterHidden = '';
+    });
+    members.forEach((card, i) => {
+      card.style.setProperty('--orbit-angle', `${getEvenOrbitAngle(i, members.length)}deg`);
+    });
+
+    rotation = 0;
+    stage.style.setProperty('--orbit-rotation', '0deg');
+    if (focused) closeCenter();
+
+    syncDots(members.length);
+    updateMobileSlots();
+    syncFilterActiveState('course');
   }
 
   // ── Drag-to-rotate ─────────────────────────────────────────────────
@@ -470,6 +630,12 @@ export function initStageLayout(stage: HTMLElement): void {
     // The inner LibraryCard renders an <a>. We swallow that nav and
     // run our own behavior instead.
     e.preventDefault();
+    // Course capsule → drill into its lessons (a fresh carousel of just
+    // that course's books), rather than spotlighting the capsule.
+    if (card.dataset.itemType === 'series') {
+      drillIntoCourse(card);
+      return;
+    }
     if (card.dataset.pos === 'center') {
       // Click on card body while focused = close (acts as a second
       // tap to dismiss the spotlight). The reading-entry overlay's
@@ -548,25 +714,29 @@ export function initStageLayout(stage: HTMLElement): void {
     rotateOrbit(e.key === 'ArrowLeft' ? -1 : 1);
   });
 
-  // ── Knowledge Core + Knowledge Atlas bridge ───────────────────────
-  // Two carousel-page widgets steer the orbit through plain data
-  // attributes — no CustomEvent, no event bus, no shared state. This
-  // one delegated click listener is the whole bridge:
+  // ── Knowledge Core / Knowledge Space / Atlas bridge ───────────────
+  // The carousel-page widgets steer the orbit through plain data
+  // attributes — no CustomEvent, no event bus, no shared state. This one
+  // delegated click listener is the whole bridge:
   //
-  //   [data-library-filter]  (Knowledge Core widget nodes)
-  //     "all"      → closeCenter() — drop the spotlight, all visible.
-  //     "books"    → focus first data-kind="book" station.
-  //     "courses"  → focus first data-kind="course" station.
-  //     "articles" → focus first data-kind="article" station (a no-op
-  //                  until article content gets orbit stations).
+  //   [data-library-filter]  (Knowledge Core nodes + Knowledge Space tiles)
+  //     "all"      → applyLibraryFilter('all') — show every station.
+  //     "books"    → applyLibraryFilter('book') — only book stations.
+  //     "courses"  → applyLibraryFilter('course') — course + lesson.
+  //     "articles" → applyLibraryFilter('article') — only article stations
+  //                  (no-op fallback until article content gets stations).
   //
-  //   [data-library-focus="<slug>"]  (Knowledge Atlas item capsules)
-  //     → focus the EXACT station whose data-slug matches.
+  //   [data-library-view="all"]  (the "view all items" button / CTA)
+  //     → reset the carousel filter to 'all' (the overlay/sheet itself is
+  //       opened by its own component).
   //
-  // openCenter() already lifts ANY card to the centre via
-  // data-pos="center" regardless of orbit angle, so "focus" is the
-  // whole bridge. Identical on desktop and mobile — no breakpoint
-  // branch.
+  //   [data-library-focus="<slug>"]  (Atlas / mobile-sheet items)
+  //     → clear any filter, then spotlight the station whose data-slug
+  //       matches via openCenter().
+  //
+  // Filtering hides non-matching stations and re-spreads the rest evenly;
+  // it is identical on desktop and mobile (the mobile focus-carousel reads
+  // the same visible set). No breakpoint branch.
   //
   // Document-level delegation: both widgets render outside the stage
   // subtree (the Core is a position:fixed panel, the Atlas a
@@ -574,22 +744,19 @@ export function initStageLayout(stage: HTMLElement): void {
   // the stage-scoped handler. Same safe-leak pattern as the rotate /
   // keyboard listeners above — after a view transition the captured
   // `stage` is disconnected and isStageOnScreen() makes this a no-op.
-  const LIBRARY_FILTER_TO_KIND: Record<string, 'book' | 'course' | 'article'> = {
-    books:    'book',
-    courses:  'course',
-    articles: 'article',
-  };
-
   document.addEventListener('click', (e) => {
     const target = e.target as Element | null;
     if (!target) return;
 
-    // Knowledge Atlas item → focus that exact station by slug.
+    // Knowledge Atlas / mobile-sheet item → go to that exact station by
+    // slug. Clear any active group filter first so the target is never a
+    // filtered-out (display:none) card, then spotlight it.
     const focusTrigger = target.closest<HTMLElement>('[data-library-focus]');
     if (focusTrigger) {
       if (!isStageOnScreen()) return;
       const slug = focusTrigger.dataset.libraryFocus;
       if (!slug) return;
+      if (activeFilter !== 'all') applyLibraryFilter('all');
       const station = stage.querySelector<HTMLElement>(
         `[data-galaxy-card][data-slug="${cssEscape(slug)}"]`,
       );
@@ -597,33 +764,29 @@ export function initStageLayout(stage: HTMLElement): void {
       return;
     }
 
-    // Knowledge Core node → focus the first station of that category.
+    // "View all items" action — the desktop Knowledge Core bottom button
+    // (`data-library-view="all"`) and the mobile Knowledge Space CTA
+    // (`data-mobile-allitems-open`). Each opens its all-items overlay/sheet
+    // (handled by those components); here we also reset the carousel filter
+    // so returning to the orbit shows every visible item. Don't
+    // preventDefault — let the overlay open normally.
+    if (target.closest<HTMLElement>('[data-library-view="all"], [data-mobile-allitems-open]')) {
+      if (isStageOnScreen() && activeFilter !== 'all') applyLibraryFilter('all');
+      return;
+    }
+
+    // Knowledge Core node / Knowledge Space tile → filter the carousel to
+    // that group (or clear it for "all").
     const trigger = target.closest<HTMLElement>('[data-library-filter]');
     if (!trigger) return;
     if (!isStageOnScreen()) return;
 
-    const filter = trigger.dataset.libraryFilter;
+    const raw = trigger.dataset.libraryFilter;
+    if (!raw) return;
+    const filter = NODE_FILTER_TO_KEY[raw];
     if (!filter) return;
 
-    // "all" — clear the spotlight, every station visible.
-    if (filter === 'all') {
-      closeCenter();
-      return;
-    }
-
-    const kind = LIBRARY_FILTER_TO_KIND[filter];
-    if (!kind) return;
-
-    // First station of that kind. `:not([data-series-member])` mirrors
-    // getStep() so a hidden series member is never spotlighted (a no-op
-    // today — series grouping is disabled — but it keeps the bridge
-    // correct if capsule injection is ever re-enabled).
-    const card = stage.querySelector<HTMLElement>(
-      `[data-galaxy-card][data-kind="${kind}"]:not([data-series-member])`,
-    );
-    // No station of that kind on the orbit → leave the current view
-    // untouched rather than destroying an unrelated spotlight.
-    if (card) openCenter(card);
+    applyLibraryFilter(filter);
   });
 
   // ── Mobile auto-focus — DISABLED ──────────────────────────────────
@@ -666,6 +829,9 @@ export function initStageLayout(stage: HTMLElement): void {
   // bootstrap, ensuring sibling hydrators settle before we read DOM.
   requestAnimationFrame(() => {
     updateMobileSlots();
+    // Reflect the default "all" filter on the Knowledge Core / Knowledge
+    // Space controls so the reset tile reads active on first paint.
+    syncFilterActiveState(activeFilter);
   });
 }
 
