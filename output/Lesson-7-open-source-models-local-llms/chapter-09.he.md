@@ -117,7 +117,7 @@ python .\examples\gemma1.py
 זה הפלט הצפוי:
 
 ```bash
-(.venv) PS [Lesson-7-open-source-models-local-llms]> python .\examples\gemma1.py
+(.venv) PS [lesson-07-open-source-models-local-llms]> python .\examples\gemma1.py
 Well hello there, sunshine! What delightful chaos can I help you stir up today? 😄
 ```
 

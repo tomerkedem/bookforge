@@ -357,7 +357,6 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
             data-series-details-full-description={t('library.series.details.fullDescription', language)}
             data-series-details-assigned-items={t('library.series.details.assignedItems', language)}
             data-series-details-planned-items={t('library.series.details.plannedItems', language)}
-            data-series-details-status={t('library.series.details.status', language)}
             data-series-details-asset-folder={t('library.series.details.assetFolder', language)}
             data-series-details-visible-in-universe={t('library.series.details.visibleInUniverse', language)}
             data-series-details-visible-yes={t('library.series.details.visibleYes', language)}
@@ -367,9 +366,6 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
             data-series-children-empty={t('library.series.children.empty', language)}
             data-series-children-region={t('library.series.children.region', language)}
             data-series-children-placeholder-type={t('library.series.children.placeholderType', language)}
-            data-status-active={t('library.status.ready', language)}
-            data-status-draft={t('library.status.new', language)}
-            data-status-hidden={t('library.status.archived', language)}
             style={`--galaxy-dir: ${isRtl ? -1 : 1};`}
           >
 
@@ -735,10 +731,6 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
           <div class="series-details-meta-row" data-series-details-planned-row hidden>
             <dt>{t('library.series.details.plannedItems', language)}</dt>
             <dd data-series-details-planned-count></dd>
-          </div>
-          <div class="series-details-meta-row">
-            <dt>{t('library.series.details.status', language)}</dt>
-            <dd data-series-details-status-value></dd>
           </div>
           <div class="series-details-meta-row">
             <dt>{t('library.series.details.assetFolder', language)}</dt>

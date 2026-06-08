@@ -741,7 +741,7 @@ python .\homework\finbert_trader.py
 זה הפלט שקיבלתי:
 
 ```bash
-(.venv) PS [Lesson-7-open-source-models-local-llms]> python .\homework\finbert_trader.py
+(.venv) PS [lesson-07-open-source-models-local-llms]> python .\homework\finbert_trader.py
 HF_TOKEN loaded: True
 Loading weights: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 201/201 [00:00<00:00, 47259.10it/s]
 Sentence:
@@ -849,7 +849,7 @@ Quantized llama3:8b-instruct-q4_K_M:
 הגודל שמופיע אצלי ב ollama list
 
 ```bash
-(.venv) PS [Lesson-7-open-source-models-local-llms]> ollama list
+(.venv) PS [lesson-07-open-source-models-local-llms]> ollama list
 NAME                         ID              SIZE      MODIFIED      
 llama3:8b-instruct-q4_K_M    9b8f3f3385bf    4.9 GB    3 seconds ago    
 
@@ -933,7 +933,7 @@ python .\homework\ollama_speed_compare.py
 את התוצאה אני מציג לפי המדידה במחשב שלי:
 
 ```bash
-(.venv) PS [Lesson-7-open-source-models-local-llms]> python .\homework\ollama_speed_compare.py
+(.venv) PS [lesson-07-open-source-models-local-llms]> python .\homework\ollama_speed_compare.py
 Testing model: llama3:8b-instruct-q4_K_M
 Time: 9.52 seconds
 Response:

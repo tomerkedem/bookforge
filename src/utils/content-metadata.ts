@@ -70,7 +70,6 @@ export function defaultSeriesMetadataFor(name: string): SeriesMetadata {
     displayTitle: name,
     visualMode: 'capsule',
     isVisibleInUniverse: true,
-    status: 'active',
   };
 }
 

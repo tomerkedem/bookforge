@@ -92,18 +92,6 @@ export const CONTENT_METADATA_VERSION = 1;
  */
 export type SeriesVisualMode = 'capsule' | 'card' | 'orbit-node';
 
-/**
- * Editorial publication state. Distinct from `isVisibleInUniverse`:
- *   - `status` is the publication lifecycle of the series record itself
- *     (still being authored vs. ready for the public universe).
- *   - `isVisibleInUniverse` is the runtime show/hide toggle on a
- *     status='active' series, kept for back-compat with prior code.
- *
- * Default behaviour for legacy (pre-status) records is `'active'` so
- * existing series remain visible.
- */
-export type SeriesStatus = 'active' | 'draft' | 'hidden';
-
 export interface SeriesMetadata {
   /**
    * Primary key — the `seriesName` typed by the user on a content item.
@@ -160,8 +148,6 @@ export interface SeriesMetadata {
    * `assetFolder` value, the upload uses `slugifySeriesName(name)`.
    */
   assetFolder?: string;
-  /** Publication lifecycle. Defaults to `'active'` on read. */
-  status?: SeriesStatus;
 }
 
 /**

@@ -143,9 +143,6 @@ const i18nBundle = {
   seriesCardEditButton:        t('admin.series.card.editButton', language),
   seriesCardNoDescription:     t('admin.series.card.noDescription', language),
   seriesCardProgressAriaTpl:   t('admin.series.card.progressAria', language),
-  seriesStatusActive:          t('admin.series.status.active', language),
-  seriesStatusDraft:           t('admin.series.status.draft', language),
-  seriesStatusHidden:          t('admin.series.status.hidden', language),
   seriesBadgeVisible:          t('admin.series.badge.visible', language),
   seriesBadgeHiddenFromUni:    t('admin.series.badge.hiddenFromUniverse', language),
   seriesOptionCapsule:         t('admin.series.option.capsule', language),
@@ -425,7 +422,6 @@ const i18nBundle = {
                 <th class="kcc-th col-cover">{t('admin.column.cover', language)}</th>
                 <th class="kcc-th col-series-name">{t('admin.series.column.name', language)}</th>
                 <th class="kcc-th col-series-desc">{t('admin.series.column.description', language)}</th>
-                <th class="kcc-th col-series-status">{t('admin.series.column.status', language)}</th>
                 <th class="kcc-th col-series-universe">{t('admin.series.column.universe', language)}</th>
                 <th class="kcc-th col-series-actual">{t('admin.series.column.actualItems', language)}</th>
                 <th class="kcc-th col-series-planned">{t('admin.series.column.plannedItems', language)}</th>
@@ -807,15 +803,6 @@ const i18nBundle = {
             </select>
           </label>
 
-          <label class="meta-field">
-            <span class="meta-label">{t('admin.series.field.status', language)}</span>
-            <select class="meta-select" name="status">
-              <option value="active">{t('admin.series.status.active', language)}</option>
-              <option value="draft">{t('admin.series.status.draft', language)}</option>
-              <option value="hidden">{t('admin.series.status.hidden', language)}</option>
-            </select>
-            <span class="meta-hint">{t('admin.series.field.statusHint', language)}</span>
-          </label>
         </form>
 
         <footer class="meta-drawer-footer">
@@ -1729,30 +1716,61 @@ const i18nBundle = {
     transform: translateY(1px);
   }
 
-  /* Per-row delete button in the series table. Same visual language
-     as the books-table delete button (red-tinted icon button) but
-     scoped to the series-actions cell so the two delete buttons
-     don't share a class — that way visual changes to one don't
-     accidentally touch the other. */
-  .series-delete-btn {
+  /* Series row actions — flex pair (edit + delete), centered in the
+     cell with a uniform gap so the two icon buttons read as one tidy
+     control group instead of floating at the top of a tall row. */
+  /* :global() is REQUIRED here: the series rows are built with
+     document.createElement in the page script, so they never receive
+     Astro's data-astro-cid scope attribute. Without :global the scoped
+     selector (.series-actions[data-astro-cid-…]) never matches the
+     runtime nodes and the buttons render completely unstyled. */
+  :global(.series-actions) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 100%;
+  }
+
+  /* Per-row delete button in the series table. Quiet neutral icon at
+     rest (same footprint as .series-edit-btn) so the pair looks
+     balanced; the destructive red signal only appears on hover/focus.
+     Kept on its own class so changes here never touch the books table. */
+  :global(.series-delete-btn) {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 30px;
-    height: 30px;
+    width: 32px;
+    height: 32px;
     padding: 0;
-    margin-inline-start: 8px;
-    color: color-mix(in oklab, #f57b6a 75%, currentColor);
-    background: transparent;
-    border: 1px solid color-mix(in oklab, #f57b6a 30%, transparent);
-    border-radius: 6px;
+    color: var(--kcc-text-muted);
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--kcc-rim);
+    border-radius: 8px;
     cursor: pointer;
-    transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
+    transition:
+      background 160ms cubic-bezier(0.4, 0, 0.2, 1),
+      border-color 160ms cubic-bezier(0.4, 0, 0.2, 1),
+      color 160ms cubic-bezier(0.4, 0, 0.2, 1),
+      box-shadow 160ms cubic-bezier(0.4, 0, 0.2, 1);
   }
-  .series-delete-btn:hover {
-    background: color-mix(in oklab, #f57b6a 18%, transparent);
-    border-color: color-mix(in oklab, #f57b6a 70%, transparent);
+  :global(.series-delete-btn svg) {
+    flex-shrink: 0;
+    opacity: 0.75;
+  }
+  :global(.series-delete-btn:hover) {
+    background: color-mix(in oklab, #f57b6a 16%, transparent);
+    border-color: color-mix(in oklab, #f57b6a 55%, transparent);
     color: #ff8e7d;
+  }
+  :global(.series-delete-btn:hover svg) {
+    opacity: 1;
+  }
+  :global(.series-delete-btn:focus-visible) {
+    outline: none;
+    color: #ff8e7d;
+    border-color: color-mix(in oklab, #f57b6a 60%, transparent);
+    box-shadow: 0 0 0 3px color-mix(in oklab, #f57b6a 22%, transparent);
   }
 
   /* ── Series Management table ────────────────────────────────
@@ -1771,9 +1789,9 @@ const i18nBundle = {
   }
 
   .series-table {
-    /* 10 columns; min-width keeps every column readable before the
+    /* 9 columns; min-width keeps every column readable before the
        horizontal scrollbar kicks in on narrow viewports. */
-    min-width: 1280px;
+    min-width: 1170px;
   }
 
   /* Column widths — auto for the description (the only freely-wrapping
@@ -1783,14 +1801,16 @@ const i18nBundle = {
      header label drifting to a different alignment than the body. */
   .col-series-name      { width: 200px; }
   .col-series-desc      { width: auto;  min-width: 240px; }
-  .col-series-status    { width: 110px; text-align: center; }
   .col-series-universe  { width: 150px; text-align: center; }
   .col-series-actual    { width: 110px; text-align: center; }
   .col-series-planned   { width: 130px; text-align: center; }
   .col-series-progress  { width: 200px; }
   .col-series-folder    { width: 200px; }
   .col-series-order     { width: 100px; text-align: center; }
-  .col-series-actions   { width: 150px; text-align: center; }
+  .col-series-actions   { width: 110px; text-align: center; }
+  /* Center the action pair vertically — series rows are tall (wrapping
+     description), so top-aligned icons looked stranded near the header. */
+  :global(.kcc-td.col-series-actions) { vertical-align: middle; }
 
   /* Title cell — same `.kcc-title-stack` pattern as the books table.
      The slug is intentionally muted so the display title leads. */
@@ -1811,40 +1831,6 @@ const i18nBundle = {
     color: var(--kcc-text-muted);
     letter-spacing: 0.02em;
     overflow-wrap: anywhere;
-  }
-
-  /* Status pill — three colour-coded states matching the existing
-     `.kcc-vis--on` / `--off` palette. Width is fluid (no fixed) so
-     Hebrew "פעילה" / "טיוטה" / "מוסתרת" each sit comfortably without
-     padding adjustments per language. */
-  .series-status-pill {
-    display: inline-flex;
-    align-items: center;
-    padding: 3px 10px;
-    border-radius: 999px;
-    font-family: 'Spectral', 'Cardo', Georgia, serif;
-    font-size: 0.7rem;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    border: 1px solid var(--kcc-rim);
-    background: rgba(255, 255, 255, 0.03);
-    color: var(--kcc-text-secondary);
-    white-space: nowrap;
-  }
-  .series-status-pill[data-status="active"] {
-    background: rgba(120, 200, 130, 0.10);
-    border-color: rgba(120, 200, 130, 0.36);
-    color: #9ad6a3;
-  }
-  .series-status-pill[data-status="draft"] {
-    background: rgba(218, 165, 32, 0.10);
-    border-color: rgba(218, 165, 32, 0.40);
-    color: #e8c468;
-  }
-  .series-status-pill[data-status="hidden"] {
-    background: rgba(220, 38, 38, 0.10);
-    border-color: rgba(220, 38, 38, 0.36);
-    color: #f0a9a9;
   }
 
   /* Universe pill — "מוצגת במרחב" / "מוסתרת מהמרחב". Two states
@@ -1962,20 +1948,20 @@ const i18nBundle = {
   /* The series-edit-btn shares its visual treatment with the per-item
      .edit-btn (gold-tinted primary action) but has its own selector so
      class-list changes on items don't accidentally tweak the series row. */
-  .series-edit-btn {
+  :global(.series-edit-btn) {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    padding: 7px 14px;
+    justify-content: center;
+    /* Icon-only square, same footprint as .series-delete-btn so the two
+       series row actions read as one aligned, compact pair. */
+    width: 32px;
+    height: 32px;
+    padding: 0;
     border-radius: 8px;
     border: 1px solid var(--kcc-gold-rim);
     background: rgba(201, 169, 110, 0.14);
     color: var(--kcc-gold);
-    font-size: 0.78rem;
-    font-weight: 600;
     cursor: pointer;
-    white-space: nowrap;
-    letter-spacing: 0.01em;
     transition:
       background 160ms cubic-bezier(0.4, 0, 0.2, 1),
       color 160ms cubic-bezier(0.4, 0, 0.2, 1),
@@ -1983,19 +1969,19 @@ const i18nBundle = {
       box-shadow 160ms cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  .series-edit-btn svg {
+  :global(.series-edit-btn svg) {
     flex-shrink: 0;
     opacity: 0.9;
   }
 
-  .series-edit-btn:hover {
+  :global(.series-edit-btn:hover) {
     background: rgba(201, 169, 110, 0.22);
     border-color: rgba(201, 169, 110, 0.55);
     color: #e8d39a;
     box-shadow: 0 4px 12px -4px rgba(184, 146, 63, 0.35);
   }
 
-  .series-edit-btn:focus-visible {
+  :global(.series-edit-btn:focus-visible) {
     outline: none;
     border-color: rgba(201, 169, 110, 0.7);
     box-shadow: 0 0 0 3px rgba(201, 169, 110, 0.22);
@@ -2554,7 +2540,6 @@ const i18nBundle = {
   import type {
     ContentMetadata,
     SeriesMetadata,
-    SeriesStatus,
   } from '../types/content-metadata';
   // Phase 5 — catalog.json export/import. Pure helpers; no fs, no DOM.
   import {
@@ -2619,9 +2604,6 @@ const i18nBundle = {
     seriesCardEditButton: string;
     seriesCardNoDescription: string;
     seriesCardProgressAriaTpl: string;
-    seriesStatusActive: string;
-    seriesStatusDraft: string;
-    seriesStatusHidden: string;
     seriesBadgeVisible: string;
     seriesBadgeHiddenFromUni: string;
     seriesOptionCapsule: string;
@@ -3750,14 +3732,13 @@ const i18nBundle = {
   // mirrored automatically by the browser):
   //   1. שם סדרה        — display title (prominent) + slug (muted)
   //   2. תיאור          — shortDescription, or muted "no description"
-  //   3. סטטוס          — pill, colored by status
-  //   4. מרחב ידע       — pill, colored by isVisibleInUniverse
-  //   5. פריטים בפועל   — computed count (members.length)
-  //   6. פריטים מתוכננים — plannedBooksCount or "לא הוגדר"
-  //   7. התקדמות        — counter + bar, or "לא הוגדר" without bar
-  //   8. תיקיית נכסים   — monospace folder name or "ללא תיקייה"
-  //   9. סדר תצוגה      — number or "-"
-  //  10. פעולות         — gold-outline "עריכת סדרה" button
+  //   3. מרחב ידע       — pill, colored by isVisibleInUniverse
+  //   4. פריטים בפועל   — computed count (members.length)
+  //   5. פריטים מתוכננים — plannedBooksCount or "לא הוגדר"
+  //   6. התקדמות        — counter + bar, or "לא הוגדר" without bar
+  //   7. תיקיית נכסים   — monospace folder name or "ללא תיקייה"
+  //   8. סדר תצוגה      — number or "-"
+  //   9. פעולות         — edit + delete icon buttons
   //
   // The same `data-series-name` attribute is kept on the row so any
   // existing selector (`[data-series-name="…"]`) continues to work.
@@ -3772,12 +3753,10 @@ const i18nBundle = {
         ? seriesMeta.plannedBooksCount
         : undefined;
     const color = seriesMeta.color || DEFAULT_SERIES_COLOR;
-    const status: SeriesStatus = seriesMeta.status ?? 'active';
 
     const tr = document.createElement('tr');
     tr.className = 'series-row kcc-tr';
     tr.dataset.seriesName = name;
-    tr.dataset.status = status;
     // Series color is exposed on the row so the progress-bar fill
     // (declared in CSS as `var(--series-color, …)`) picks up the
     // per-series accent without extra inline styling per cell.
@@ -3869,20 +3848,7 @@ const i18nBundle = {
     }
     tr.appendChild(descTd);
 
-    // 3. סטטוס — colored pill driven by data-status.
-    const statusTd = document.createElement('td');
-    statusTd.className = 'kcc-td col-series-status';
-    const statusPill = document.createElement('span');
-    statusPill.className = 'series-status-pill';
-    statusPill.dataset.status = status;
-    statusPill.textContent =
-      status === 'draft'  ? i18n.seriesStatusDraft  :
-      status === 'hidden' ? i18n.seriesStatusHidden :
-                            i18n.seriesStatusActive;
-    statusTd.appendChild(statusPill);
-    tr.appendChild(statusTd);
-
-    // 4. מרחב ידע — green / red pill driven by data-on.
+    // 3. מרחב ידע — green / red pill driven by data-on.
     const universeTd = document.createElement('td');
     universeTd.className = 'kcc-td col-series-universe';
     const universePill = document.createElement('span');
@@ -3897,13 +3863,13 @@ const i18nBundle = {
     universeTd.appendChild(universePill);
     tr.appendChild(universeTd);
 
-    // 5. פריטים בפועל — computed count. Read-only: never editable.
+    // 4. פריטים בפועל — computed count. Read-only: never editable.
     const actualTd = document.createElement('td');
     actualTd.className = 'kcc-td col-series-actual series-cell-num';
     actualTd.textContent = String(actualBooksCount);
     tr.appendChild(actualTd);
 
-    // 6. פריטים מתוכננים — number or "לא הוגדר".
+    // 5. פריטים מתוכננים — number or "לא הוגדר".
     const plannedTd = document.createElement('td');
     plannedTd.className = 'kcc-td col-series-planned series-cell-num';
     if (plannedBooksCount !== undefined) {
@@ -3914,7 +3880,7 @@ const i18nBundle = {
     }
     tr.appendChild(plannedTd);
 
-    // 7. התקדמות — counter + bar when planned set; "לא הוגדר" otherwise.
+    // 6. התקדמות — counter + bar when planned set; "לא הוגדר" otherwise.
     const progressTd = document.createElement('td');
     progressTd.className = 'kcc-td col-series-progress';
     if (plannedBooksCount !== undefined) {
@@ -3954,7 +3920,7 @@ const i18nBundle = {
     }
     tr.appendChild(progressTd);
 
-    // 8. תיקיית נכסים — monospace folder name or "ללא תיקייה".
+    // 7. תיקיית נכסים — monospace folder name or "ללא תיקייה".
     const folderTd = document.createElement('td');
     folderTd.className = 'kcc-td col-series-folder';
     const folder = (seriesMeta.assetFolder ?? '').trim();
@@ -3969,7 +3935,7 @@ const i18nBundle = {
     }
     tr.appendChild(folderTd);
 
-    // 9. סדר תצוגה — number or "-".
+    // 8. סדר תצוגה — number or "-".
     const orderTd = document.createElement('td');
     orderTd.className = 'kcc-td col-series-order series-cell-num';
     if (typeof seriesMeta.order === 'number') {
@@ -3980,7 +3946,7 @@ const i18nBundle = {
     }
     tr.appendChild(orderTd);
 
-    // 10. פעולות — primary "עריכת סדרה" button + small delete icon.
+    // 9. פעולות — edit + delete icon buttons.
     //     The delete button never deletes immediately; it pops the
     //     shared confirmation modal (same flow used for book delete)
     //     and only on confirm does it (a) clear `seriesName` on every
@@ -3989,6 +3955,8 @@ const i18nBundle = {
     //     locally in localStorage — no API call.
     const actionsTd = document.createElement('td');
     actionsTd.className = 'kcc-td col-series-actions';
+    const actionsWrap = document.createElement('div');
+    actionsWrap.className = 'series-actions';
     const editBtn = document.createElement('button');
     editBtn.type = 'button';
     editBtn.className = 'series-edit-btn';
@@ -4012,11 +3980,8 @@ const i18nBundle = {
     p2.setAttribute('d', 'M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z');
     svg.append(p1, p2);
     editBtn.appendChild(svg);
-    const editLabel = document.createElement('span');
-    editLabel.textContent = i18n.seriesCardEditButton;
-    editBtn.appendChild(editLabel);
     editBtn.addEventListener('click', () => openSeriesDrawer(name, editBtn));
-    actionsTd.appendChild(editBtn);
+    actionsWrap.appendChild(editBtn);
 
     const deleteBtn = document.createElement('button');
     deleteBtn.type = 'button';
@@ -4078,7 +4043,8 @@ const i18nBundle = {
         },
       });
     });
-    actionsTd.appendChild(deleteBtn);
+    actionsWrap.appendChild(deleteBtn);
+    actionsTd.appendChild(actionsWrap);
 
     tr.appendChild(actionsTd);
 
@@ -4109,7 +4075,6 @@ const i18nBundle = {
     order: seriesForm.elements.namedItem('order') as HTMLInputElement,
     isVisibleInUniverse: seriesForm.elements.namedItem('isVisibleInUniverse') as HTMLInputElement,
     visualMode: seriesForm.elements.namedItem('visualMode') as HTMLSelectElement,
-    status: seriesForm.elements.namedItem('status') as HTMLSelectElement,
   };
 
   // Live label that surfaces the read-only computed `actualBooksCount`
@@ -4173,7 +4138,6 @@ const i18nBundle = {
     seriesFields.order.value = typeof meta.order === 'number' ? String(meta.order) : '';
     seriesFields.isVisibleInUniverse.checked = meta.isVisibleInUniverse;
     seriesFields.visualMode.value = meta.visualMode;
-    seriesFields.status.value = meta.status ?? 'active';
     editingColorOverride = meta.color;
     paintColorSwatch(editingColorOverride);
 
@@ -4225,7 +4189,6 @@ const i18nBundle = {
     seriesFields.order.value = '';
     seriesFields.isVisibleInUniverse.checked = true;
     seriesFields.visualMode.value = 'capsule';
-    seriesFields.status.value = 'active';
     editingColorOverride = undefined;
     paintColorSwatch(undefined);
 
@@ -4396,12 +4359,6 @@ const i18nBundle = {
       return t.length === 0 ? undefined : t;
     };
 
-    const status = (
-      ['active', 'draft', 'hidden'].includes(seriesFields.status.value)
-        ? seriesFields.status.value
-        : 'active'
-    ) as SeriesStatus;
-
     const patch: Partial<SeriesMetadata> = {
       displayTitle:        seriesFields.displayTitle.value.trim() || name,
       visualMode:          seriesFields.visualMode.value as SeriesMetadata['visualMode'],
@@ -4412,7 +4369,6 @@ const i18nBundle = {
       fullDescription:     trimOrUndef(seriesFields.fullDescription.value),
       plannedBooksCount:   plannedClean,
       assetFolder:         trimOrUndef(seriesFields.assetFolder.value),
-      status,
     };
 
     // If this is a rename: walk every book attached to any raw

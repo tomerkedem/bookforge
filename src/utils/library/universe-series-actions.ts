@@ -60,9 +60,6 @@ interface ActionLabels {
   placeholderType: string;
   visibleYes: string;
   visibleNo: string;
-  statusActive: string;
-  statusDraft: string;
-  statusHidden: string;
 }
 
 function readLabels(stage: HTMLElement): ActionLabels {
@@ -78,9 +75,6 @@ function readLabels(stage: HTMLElement): ActionLabels {
     placeholderType: ds.seriesChildrenPlaceholderType || 'Series item',
     visibleYes: ds.seriesDetailsVisibleYes || 'Yes',
     visibleNo: ds.seriesDetailsVisibleNo || 'No',
-    statusActive: ds.statusActive || 'Active',
-    statusDraft: ds.statusDraft || 'Draft',
-    statusHidden: ds.statusHidden || 'Hidden',
   };
 }
 
@@ -165,7 +159,6 @@ interface DrawerEls {
   assignedCount: HTMLElement;
   plannedRow: HTMLElement;
   plannedCount: HTMLElement;
-  statusValue: HTMLElement;
   assetFolder: HTMLElement;
   visible: HTMLElement;
   list: HTMLElement;
@@ -182,15 +175,14 @@ function getDrawerEls(): DrawerEls | null {
   const assignedCount = drawer.querySelector<HTMLElement>('[data-series-details-assigned-count]');
   const plannedRow = drawer.querySelector<HTMLElement>('[data-series-details-planned-row]');
   const plannedCount = drawer.querySelector<HTMLElement>('[data-series-details-planned-count]');
-  const statusValue = drawer.querySelector<HTMLElement>('[data-series-details-status-value]');
   const assetFolder = drawer.querySelector<HTMLElement>('[data-series-details-asset-folder]');
   const visible = drawer.querySelector<HTMLElement>('[data-series-details-visible]');
   const list = drawer.querySelector<HTMLElement>('[data-series-details-list]');
   if (!close || !name || !summary || !full || !assignedCount || !plannedRow || !plannedCount
-      || !statusValue || !assetFolder || !visible || !list) return null;
+      || !assetFolder || !visible || !list) return null;
   return {
     overlay, drawer, close, name, summary, full, assignedCount,
-    plannedRow, plannedCount, statusValue, assetFolder, visible, list,
+    plannedRow, plannedCount, assetFolder, visible, list,
   };
 }
 
@@ -518,7 +510,6 @@ export function initSeriesActions(
       drawerEls.plannedCount.textContent = '';
     }
 
-    drawerEls.statusValue.textContent = mapStatusLabel(meta.status, labels);
     drawerEls.assetFolder.textContent = meta.assetFolder?.trim() || slug;
     drawerEls.visible.textContent = meta.isVisibleInUniverse
       ? labels.visibleYes
@@ -659,16 +650,4 @@ export function initSeriesActions(
     attributeFilter: ['data-pos'],
     subtree: true,
   });
-}
-
-function mapStatusLabel(
-  status: SeriesMetadata['status'],
-  labels: ActionLabels,
-): string {
-  switch (status) {
-    case 'draft':  return labels.statusDraft;
-    case 'hidden': return labels.statusHidden;
-    case 'active':
-    default:       return labels.statusActive;
-  }
 }

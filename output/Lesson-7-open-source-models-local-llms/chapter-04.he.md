@@ -20,15 +20,15 @@
 
 שם מומלץ לתיקיית הפרק בגיט:
 
-Lesson-7-open-source-models-local-llms
+lesson-07-open-source-models-local-llms
 
 השם ארוך יחסית, אבל ברור. הוא אומר בדיוק מה נמצא בתיקייה: מודלים פתוחים והרצת LLMs מקומית.
 
 ניצור תיקייה חדשה:
 
 ```bash
-mkdir Lesson-7-open-source-models-local-llms
-cd Lesson-7-open-source-models-local-llms
+mkdir lesson-07-open-source-models-local-llms
+cd lesson-07-open-source-models-local-llms
 ```
 
 בתוך התיקייה הזאת נרכז את כל הקבצים: דוגמאות הקוד, קובצי ההגדרות, פתרונות התרגול, וקובץ הסבר ראשי.
@@ -38,7 +38,7 @@ cd Lesson-7-open-source-models-local-llms
 מבנה בסיסי טוב יכול להיראות כך:
 
 ```bash
-Lesson-7-open-source-models-local-llms/
+lesson-07-open-source-models-local-llms/
   README.md
   requirements.txt
   .env.example
@@ -419,7 +419,7 @@ outputs/
 בסיום ההכנה, מבנה הפרויקט אמור להיראות בערך כך:
 
 ```bash
-Lesson-7-open-source-models-local-llms/
+lesson-07-open-source-models-local-llms/
   README.md
   requirements.txt
   .env

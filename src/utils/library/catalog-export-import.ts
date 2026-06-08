@@ -281,7 +281,6 @@ export function splitImportedCatalogIntoDrafts(
         displayTitle,
         visualMode: 'capsule',
         isVisibleInUniverse: item.visibility.showInLibrary !== false,
-        status: libraryStatusToSeriesStatus(item.status),
       };
       if (item.shortDescription) series.shortDescription = item.shortDescription;
       const full = pickPrimaryString(item.description);
@@ -456,15 +455,5 @@ function mapCatalogTypeToContentType(
     case 'course_lesson': return 'course_lesson'; // round-trips the lesson classification back to the editor
     case 'article':       return 'article';
     case 'series':        return 'book';   // unreachable in practice — series go to the series branch
-  }
-}
-
-function libraryStatusToSeriesStatus(
-  status: LibraryCatalogStatus,
-): SeriesMetadata['status'] {
-  switch (status) {
-    case 'ready':    return 'active';
-    case 'draft':    return 'draft';
-    case 'archived': return 'hidden';
   }
 }

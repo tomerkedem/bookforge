@@ -58,7 +58,6 @@ import type {
   ContentItemType,
   ContentMetadata,
   SeriesMetadata,
-  SeriesStatus,
 } from './content-metadata';
 
 // ════════════════════════════════════════════════════════════════════
@@ -420,18 +419,6 @@ export function fromLegacyItemStatus(
   }
 }
 
-/** Bridge `SeriesStatus` (admin) → `LibraryCatalogStatus` (unified). */
-export function fromSeriesStatus(
-  status: SeriesStatus | undefined,
-): LibraryCatalogStatus {
-  switch (status) {
-    case 'draft':  return 'draft';
-    case 'hidden': return 'archived';
-    case 'active':
-    default:       return 'ready';
-  }
-}
-
 /**
  * Narrow the broader `LibraryItemType` to the unified
  * `LibraryCatalogItemType`. Less common pipeline kinds collapse onto
@@ -596,7 +583,10 @@ export function seriesMetadataToLibraryCatalogItem(
     id: slug,
     slug,
     type: 'series',
-    status: fromSeriesStatus(meta.status),
+    // Series no longer carry an editorial status; they are always
+    // surfaced as a ready catalog entry. Public visibility is driven
+    // solely by `isVisibleInUniverse`.
+    status: 'ready',
     sourceKind: 'admin',
     title: { en: title },
     languages: ['en'],
@@ -604,7 +594,7 @@ export function seriesMetadataToLibraryCatalogItem(
     visibility: {
       showInLibrary:          meta.isVisibleInUniverse !== false,
       showInUniverse:         meta.isVisibleInUniverse !== false,
-      showInOrbit:            meta.isVisibleInUniverse !== false && (meta.status ?? 'active') === 'active',
+      showInOrbit:            meta.isVisibleInUniverse !== false,
       showInAtlas:            meta.isVisibleInUniverse !== false,
       showInContinueLearning: false, // series are organizing entities, never the "continue" target
     },

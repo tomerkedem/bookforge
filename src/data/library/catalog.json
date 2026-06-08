@@ -168,8 +168,8 @@
         "showInContinueLearning": true
       },
       "href": "/books/Lesson-2-Machine-Learning",
-      "parentSeriesSlug": "ai-engineering",
-      "courseSlug": "ai-engineering",
+      "parentSeriesSlug": "ai-engineering-series",
+      "courseSlug": "ai-engineering-series",
       "orderInSeries": 2,
       "lessonNumber": 2
     },
@@ -218,8 +218,8 @@
         "showInContinueLearning": true
       },
       "href": "/books/Lesson-4-LLM-APIs",
-      "parentSeriesSlug": "ai-engineering",
-      "courseSlug": "ai-engineering",
+      "parentSeriesSlug": "ai-engineering-series",
+      "courseSlug": "ai-engineering-series",
       "orderInSeries": 4,
       "lessonNumber": 4
     },
@@ -243,8 +243,8 @@
         "showInContinueLearning": true
       },
       "href": "/books/Lesson-5-From-LLM-To-Agent",
-      "parentSeriesSlug": "ai-engineering",
-      "courseSlug": "ai-engineering",
+      "parentSeriesSlug": "ai-engineering-series",
+      "courseSlug": "ai-engineering-series",
       "orderInSeries": 5,
       "lessonNumber": 5
     },
@@ -268,8 +268,8 @@
         "showInContinueLearning": true
       },
       "href": "/books/Lesson-6-Rag",
-      "parentSeriesSlug": "ai-engineering",
-      "courseSlug": "ai-engineering",
+      "parentSeriesSlug": "ai-engineering-series",
+      "courseSlug": "ai-engineering-series",
       "orderInSeries": 6,
       "lessonNumber": 6
     },
