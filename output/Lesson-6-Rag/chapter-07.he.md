@@ -11,7 +11,7 @@
 בשיעור המרצה מסביר את חשיבות ה Similarity ואת העבודה עם וקטורים, ובהמשך גם מציין במפורש שאפשר לשלב בין סוגי חיפושים. זו נקודה חשובה מאוד, משום שהיא מלמדת אותנו שחיפוש סמנטי אינו מוחק את החיפוש הקלאסי, אלא מצטרף אליו ככלי נוסף.
 
 **]Keyword Search vs Semantic Search[**
-<img src="/Lesson-6-Rag/assets/image-07.png" alt="image-07.png" width="709" height="399" />
+<img src="/Lesson-6-Rag/assets/image-08.png" alt="image-08.png" width="709" height="399" />
 
 
 **חיפוש מילות מפתח: כשהמילים עצמן קובעות**

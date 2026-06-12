@@ -10,7 +10,7 @@
 
 **]Nearest Neighbors[**
 
-<img src="/Lesson-6-Rag/assets/image-11.png" alt="image-11.png" width="709" height="399" />
+<img src="/Lesson-6-Rag/assets/image-12.png" alt="image-12.png" width="709" height="399" />
 
 
 

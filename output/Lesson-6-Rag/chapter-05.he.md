@@ -22,7 +22,7 @@ Generate
 
 [The Three Steps of RAG]
 
-<img src="/Lesson-6-Rag/assets/image-05.png" alt="image-05.png" width="709" height="140" />
+<img src="/Lesson-6-Rag/assets/image-06.png" alt="image-06.png" width="709" height="140" />
 
 
 ## Index: שלב הכנסת המידע למערכת

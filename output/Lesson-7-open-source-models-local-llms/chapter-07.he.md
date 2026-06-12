@@ -186,7 +186,7 @@ ollama run llama3
 הרעיון דומה לקריאה ל API חיצוני, רק שהכתובת היא מקומית. במקום לשלוח טקסט לספק ענן, שולחים אותו ל Ollama שרץ על המחשב או השרת שלנו.
 
 דוגמה רעיונית:היתרון הוא שהאפליקציה לא חייבת לדעת איך המודל נטען, איפה הקבצים שלו, או באיזה פורמט הוא שמור. היא רק שולחת בקשה ומקבלת תשובה.
-<img src="/Lesson-7-open-source-models-local-llms/assets/image-02.png" alt="image-02.png" width="710" height="112" />
+<img src="/Lesson-7-open-source-models-local-llms/assets/image-03.png" alt="image-03.png" width="710" height="112" />
 
 
 ב Python אפשר לעבוד מול Ollama בכמה דרכים. דרך אחת היא להשתמש בספריית ollama:

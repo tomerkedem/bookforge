@@ -22,7 +22,7 @@
 
 **[RAG Is Not a Magic Layer]**
 
-<img src="/Lesson-6-Rag/assets/image-08.png" alt="image-08.png" width="710" height="299" />
+<img src="/Lesson-6-Rag/assets/image-09.png" alt="image-09.png" width="710" height="299" />
 
 
 **כאשר השליפה מחזירה מידע לא נכון**

@@ -14,7 +14,7 @@
 
 **]Recall vs Speed[**
 
-<img src="/Lesson-6-Rag/assets/image-13.png" alt="image-13.png" width="710" height="344" />
+<img src="/Lesson-6-Rag/assets/image-14.png" alt="image-14.png" width="710" height="344" />
 
 
 **השאלה אינה מה הכי מדויק, אלא מה נכון למערכת**

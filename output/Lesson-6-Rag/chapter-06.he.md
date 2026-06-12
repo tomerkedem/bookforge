@@ -10,7 +10,7 @@
 
 **]From Document to Chunks[**
 
-<img src="/Lesson-6-Rag/assets/image-06.png" alt="image-06.png" width="710" height="347" />
+<img src="/Lesson-6-Rag/assets/image-07.png" alt="image-07.png" width="710" height="347" />
 
 
 כדי להבין למה Chunking חשוב כל כך, צריך לזכור מהי המטרה של שלב ה Retrieve. המערכת לא מנסה למצוא את “המסמך הנכון” באופן כללי, אלא את החלקים מתוך המסמך שיכולים לעזור לענות על השאלה הנוכחית.

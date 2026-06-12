@@ -12,7 +12,7 @@
 
 **]Approximate Search Tradeoff[**
 
-<img src="/Lesson-6-Rag/assets/image-12.png" alt="image-12.png" width="710" height="316" />
+<img src="/Lesson-6-Rag/assets/image-13.png" alt="image-13.png" width="710" height="316" />
 
 
 

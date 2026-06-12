@@ -14,7 +14,7 @@
 
 **]Practical RAG Pipeline in Python[**
 
-<img src="/Lesson-6-Rag/assets/image-15.png" alt="image-15.png" width="709" height="399" />
+<img src="/Lesson-6-Rag/assets/image-16.png" alt="image-16.png" width="709" height="399" />
 
 .
 

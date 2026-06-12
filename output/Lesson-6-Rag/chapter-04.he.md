@@ -12,7 +12,7 @@ Similarity הוא מדד לקרבה בין שני וקטורים. במילים �
 
 **[Semantic Similarity]**
 
-<img src="/Lesson-6-Rag/assets/image-04.png" alt="image-04.png" width="710" height="328" />
+<img src="/Lesson-6-Rag/assets/image-05.png" alt="image-05.png" width="710" height="328" />
 
 
 כדי להבין למה Similarity נחוץ, נחזור לדוגמה פשוטה.

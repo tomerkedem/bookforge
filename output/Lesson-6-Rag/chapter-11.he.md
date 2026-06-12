@@ -6,7 +6,7 @@
 
 **]Vector Database Search[**
 
-<img src="/Lesson-6-Rag/assets/image-10.png" alt="image-10.png" width="709" height="303" />
+<img src="/Lesson-6-Rag/assets/image-11.png" alt="image-11.png" width="709" height="303" />
 
 
 כדי להבין למה בכלל צריך Vector Database, נחזור לרגע לבעיה הבסיסית.

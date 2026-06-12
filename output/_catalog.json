@@ -19,16 +19,12 @@
         "es": "AI Engineering"
       },
       "descriptions": {
-        "he": "קורס AI Engineering בהנחיית ערן סלע — מיסודות ML ועד בנייה מעשית של מערכות הסתברותיות.",
-        "en": "AI Engineering course with Eran Sela — from ML foundations to practical probabilistic system design.",
-        "es": "Curso de AI Engineering con Eran Sela — desde los fundamentos de ML hasta el diseño práctico de sistemas."
+        "he": "קורס AI Engineering — מיסודות ML ועד בנייה מעשית של מערכות הסתברותיות.",
+        "en": "AI Engineering course — from ML foundations to practical probabilistic system design.",
+        "es": "Curso de AI Engineering — desde los fundamentos de ML hasta el diseño práctico de sistemas."
       },
       "totalLessons": 15,
-      "lecturer": {
-        "he": "ערן סלע",
-        "en": "Eran Sela",
-        "es": "Eran Sela"
-      },
+      
       "summaryAuthor": {
         "he": "תומר קדם",
         "en": "Tomer Kedem",

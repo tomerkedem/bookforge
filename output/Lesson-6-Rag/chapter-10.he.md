@@ -8,7 +8,7 @@
 
 **]Improving RAG Quality[**
 
-<img src="/Lesson-6-Rag/assets/image-09.png" alt="image-09.png" width="709" height="342" />
+<img src="/Lesson-6-Rag/assets/image-10.png" alt="image-10.png" width="709" height="342" />
 
 
 כדי להבין למה השיפורים האלה חשובים, נתחיל מהגרסה הפשוטה ביותר של RAG.

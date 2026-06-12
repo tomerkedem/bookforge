@@ -4,7 +4,7 @@
 
 כאן נכנס.
 
-<img src="/Lesson-7-open-source-models-local-llms/assets/image-01.png" alt="image-01.png" width="150" height="42" />
+<img src="/Lesson-7-open-source-models-local-llms/assets/image-02.png" alt="image-02.png" width="150" height="42" />
 
 
 Hugging Face הוא אחד המרכזים החשובים ביותר בעולם המודלים הפתוחים. הוא לא רק אתר שממנו מורידים מודלים, אלא סביבת עבודה שלמה למפתחים, חוקרים וחברות: מודלים, datasets, דוגמאות קוד, אפליקציות הדגמה, קבצים, רישיונות, Model Cards, נתוני שימוש וכלים להרצה. בחומר המקורי הוא מתואר כמעין GitHub למודלים, עם כמות עצומה של מודלים זמינים.

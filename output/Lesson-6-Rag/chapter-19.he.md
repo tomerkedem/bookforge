@@ -12,7 +12,7 @@ Context Window, Retrieval, Embeddings, Similarity, Chunks, Vector Databases, ANN
 
 **]End to End RAG Architecture[**
 
-<img src="/Lesson-6-Rag/assets/image-14.png" alt="image-14.png" width="709" height="290" />
+<img src="/Lesson-6-Rag/assets/image-15.png" alt="image-15.png" width="709" height="290" />
 
 
 **מה המשתמש רואה ומה המערכת עושה**

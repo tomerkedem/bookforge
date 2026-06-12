@@ -188,7 +188,7 @@ INT4 הוא ייצוג של 4 ביט לכל משקל.
 
 כאשר מכפילים את זה במיליארדי פרמטרים, ההבדל עצום.
 
-<img src="/Lesson-7-open-source-models-local-llms/assets/image-03.png" alt="image-03.png" width="398" height="561" />
+<img src="/Lesson-7-open-source-models-local-llms/assets/image-04.png" alt="image-04.png" width="398" height="561" />
 
 
 חשוב להבדיל בין שני סוגי זיכרון:
