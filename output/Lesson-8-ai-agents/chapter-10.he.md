@@ -16,15 +16,17 @@ build_rag_db.py
 
 הזרימה הכללית נראית כך:
 
-Text files 
- ↓ 
-Load documents 
- ↓ 
-Split into chunks 
- ↓ 
-Create embeddings 
- ↓ 
+```bash
+Text files
+   ↓
+Load documents
+   ↓
+Split into chunks
+   ↓
+Create embeddings
+   ↓
 Store in ChromaDB
+```
 
 הרעיון הוא לא לשמור את הטקסט רק כטקסט רגיל, אלא להפוך אותו למשהו שאפשר לחפש בו בצורה סמנטית. כלומר, לא רק לפי התאמה מדויקת של מילים, אלא לפי משמעות.
 

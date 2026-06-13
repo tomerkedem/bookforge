@@ -141,15 +141,17 @@ Orchestrator-workers הוא דפוס שבו יש רכיב מרכזי שמנהל 
 
 אפשר לתאר את זה כך:
 
-User task 
- ↓ 
-Orchestrator 
- ↓ 
-Worker 1 → result 1 
-Worker 2 → result 2 
-Worker 3 → result 3 
- ↓ 
+```bash
+User task
+   ↓
+Orchestrator
+   ↓
+Worker 1 → result 1
+Worker 2 → result 2
+Worker 3 → result 3
+   ↓
 Final combined answer
+```
 
 לדוגמה, אם המשתמש מבקש:
 
@@ -181,13 +183,15 @@ Evaluator-optimizer הוא דפוס שבו רכיב אחד מייצר תשובה
 
 הזרימה יכולה להיראות כך:
 
-generate answer 
- ↓ 
-evaluate answer 
- ↓ 
-improve answer 
- ↓ 
+```bash
+generate answer
+      ↓
+evaluate answer
+      ↓
+improve answer
+      ↓
 final answer
+```
 
 לדוגמה, אם המערכת כותבת תשובה לפי מסמכים, אפשר להוסיף שלב שבודק:
 
@@ -229,17 +233,19 @@ Find out why my RAG chatbot gives weak answers.
 
 Agent Loop יכול לפעול כך:
 
-observe the problem 
- ↓ 
-check the retrieval logic 
- ↓ 
-inspect chunk size 
- ↓ 
-review the prompt 
- ↓ 
-suggest changes 
- ↓ 
+```bash
+observe the problem
+   ↓
+check the retrieval logic
+   ↓
+inspect chunk size
+   ↓
+review the prompt
+   ↓
+suggest changes
+   ↓
 ask whether to apply them
+```
 
 היתרון הוא גמישות. הסוכן לא חייב לדעת מראש מה הבעיה. הוא יכול להתקדם לפי מה שהוא מגלה.
 
@@ -270,7 +276,17 @@ ask whether to apply them
 
 </div>
 
-Prompt Chaining מתאים כאשר יודעים מראש מה סדר השלבים. Routing מתאים כאשר יש כמה סוגי בקשות וכל סוג צריך טיפול אחר. Parallelization מתאים כאשר אפשר לחלק את העבודה לחלקים עצמאיים. Orchestrator-workers מתאים כאשר יש משימה מורכבת שצריך לפרק באופן גמיש. Evaluator-optimizer מתאים כאשר איכות התוצאה חשובה וצריך שלב ביקורת. Agent Loop מתאים כאשר הדרך לפתרון לא ידועה מראש.
+- Prompt Chaining מתאים כאשר יודעים מראש מה סדר השלבים.
+
+- Routing מתאים כאשר יש כמה סוגי בקשות וכל סוג צריך טיפול אחר.
+
+- Parallelization מתאים כאשר אפשר לחלק את העבודה לחלקים עצמאיים.
+
+- Orchestrator-workers מתאים כאשר יש משימה מורכבת שצריך לפרק באופן גמיש.
+
+- Evaluator-optimizer מתאים כאשר איכות התוצאה חשובה וצריך שלב ביקורת.
+
+- Agent Loop מתאים כאשר הדרך לפתרון לא ידועה מראש.
 
 <img src="/Lesson-8-ai-agents/assets/image-05.png" alt="image-05.png" width="710" height="305" />
 

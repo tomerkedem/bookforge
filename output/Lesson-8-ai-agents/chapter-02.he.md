@@ -8,16 +8,18 @@
 
 הזרימה הבסיסית נראית כך:
 
-User Request 
- ↓ 
-AI Agent 
- ↔ LLM 
- ↔ Memory 
- ↔ Tools 
- ↑ 
-Instructions 
- ↓ 
+```bash
+User Request
+     ↓
+AI Agent
+  ↔ LLM
+  ↔ Memory
+  ↔ Tools
+  ↑
+Instructions
+     ↓
 Answer or Action
+```
 
 המשתמש מתחיל את התהליך עם בקשה. זו יכולה להיות שאלה פשוטה, משימה פתוחה, בקשה לניתוח מסמך, או פעולה שצריך לבצע.
 
@@ -178,7 +180,7 @@ What is the current price of Apple stock?
 
 אבל בלי כלי חיצוני הוא לא באמת יודע להביא את המחיר הנוכחי. בשביל זה צריך Tool שמתחבר למקור נתוני מניות ומחזיר תוצאה עדכנית.
 
-Tool יכול להיות פשוט מאוד, כמו פונקציית חישוב:
+Tool יכול להיות דבר ממש פשוט, כמו פונקציית חישוב:
 
 ```python
 def calculate_total(price, quantity):

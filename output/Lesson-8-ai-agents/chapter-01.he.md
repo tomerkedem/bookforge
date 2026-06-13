@@ -280,17 +280,19 @@ The support ticket was created.
 
 אפשר לראות את כל המרכיבים יחד כך:
 
-User input 
- ↓ 
-Context understanding 
- ↓ 
-LLM reasoning 
- ↓ 
-Memory / Tools when needed 
- ↓ 
-Decision 
- ↓ 
+```bash
+User input
+   ↓
+Context understanding
+   ↓
+LLM reasoning
+   ↓
+Memory / Tools when needed
+   ↓
+Decision
+   ↓
 Answer or action
+```
 
 בשלב הזה כבר אפשר להבין ש-Agent הוא לא רכיב אחד. הוא תיאום בין כמה רכיבים. המודל חשוב, אבל הוא חלק ממערכת רחבה יותר שמנהלת הקשר, מידע, כלים והחלטות.
 

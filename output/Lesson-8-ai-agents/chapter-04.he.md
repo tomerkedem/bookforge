@@ -133,15 +133,17 @@ Can you give me another example?
 
 הזרימה יכולה להיראות כך:
 
-User question 
- ↓ 
-Search external memory 
- ↓ 
-Retrieve relevant information 
- ↓ 
-Send the relevant context to the LLM 
- ↓ 
+```bash
+User question
+     ↓
+Search external memory
+     ↓
+Retrieve relevant information
+     ↓
+Send the relevant context to the LLM
+     ↓
 Generate answer
+```
 
 היתרון הוא שה-LLM לא צריך “לזכור” את כל המידע בעצמו. המערכת שומרת את המידע במקום חיצוני, וה-Agent שולף ממנו רק את מה שנדרש לאותה שאלה.
 
@@ -163,19 +165,21 @@ RAG הוא אחת הדרכים הנפוצות לתת לסוכן זיכרון ח�
 
 הזרימה נראית כך:
 
-Documents 
- ↓ 
-Split into chunks 
- ↓ 
-Create embeddings 
- ↓ 
-Store in ChromaDB 
- ↓ 
-User asks a question 
- ↓ 
-Retrieve relevant chunks 
- ↓ 
+```bash
+Documents
+   ↓
+Split into chunks
+   ↓
+Create embeddings
+   ↓
+Store in ChromaDB
+   ↓
+User asks a question
+   ↓
+Retrieve relevant chunks
+   ↓
 LLM answers using the retrieved context
+```
 
 <img src="/Lesson-8-ai-agents/assets/image-04.png" alt="image-04.png" width="542" height="327" />
 

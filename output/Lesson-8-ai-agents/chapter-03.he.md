@@ -124,7 +124,7 @@ What does the document say about ChromaDB?
 
 ה-Agent לא אמור לשלוח למודל רק את השאלה. הוא צריך קודם לשלוף את הקטעים הרלוונטיים מהמסמכים, ואז לשלוח למודל משהו בסגנון:
 
-```bash
+```python
 System instructions:
 Answer only based on the provided context.
 
@@ -139,7 +139,7 @@ What does the document say about ChromaDB?
 
 במקרה של Agent עם כלים, ה-Agent יכול לשלוח גם תיאור של הכלים הזמינים. לדוגמה:
 
-```bash
+```python
 Available tool:
 get_stock_info(symbol) - returns current stock information for a ticker symbol.
 ```
@@ -172,17 +172,19 @@ What is the current stock price of Apple?
 
 הזרימה יכולה להיראות כך:
 
-User asks about Apple stock price 
- ↓ 
-LLM understands this requires current data 
- ↓ 
-Agent uses stock data tool 
- ↓ 
-Tool returns the current price 
- ↓ 
+```bash
+User asks about Apple stock price
+        ↓
+LLM understands this requires current data
+        ↓
+Agent uses stock data tool
+        ↓
+Tool returns the current price
+        ↓
 LLM explains the result clearly
+```
 
-כאן רואים את ההפרדה החשובה בין הבנה לבין אימות נתונים. ה-LLM מבין את הבקשה ומנסח את התשובה, אבל הנתון עצמו מגיע מהכלי.
+רואים כאן את ההפרדה החשובה בין הבנה לבין אימות נתונים. ה-LLM מבין את הבקשה ומנסח את התשובה, אבל הנתון עצמו מגיע מהכלי.
 
 אותו עיקרון נכון גם בשאלות על מסמכים. אם המשתמש שואל:
 

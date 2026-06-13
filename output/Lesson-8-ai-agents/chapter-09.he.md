@@ -12,15 +12,17 @@
 
 הזרימה הכללית שלה נראית כך:
 
-User question 
- ↓ 
-Search relevant documents 
- ↓ 
-Retrieve context 
- ↓ 
-Send context + question to LLM 
- ↓ 
+```bash
+User question
+   ↓
+Search relevant documents
+   ↓
+Retrieve context
+   ↓
+Send context + question to LLM
+   ↓
 Return answer
+```
 
 המערכת הזאת מלמדת איך נותנים ל-LLM זיכרון חיצוני. במקום שהמודל יענה רק מהידע הפנימי שלו, הוא מקבל מידע ממסמכים שאנחנו סיפקנו.
 
@@ -28,15 +30,17 @@ Return answer
 
 הזרימה הכללית שלה נראית כך:
 
-User question 
- ↓ 
-Agent understands that stock data is needed 
- ↓ 
-Agent calls stock tool 
- ↓ 
-Tool returns market data 
- ↓ 
+```bash
+User question
+   ↓
+Agent understands that stock data is needed
+   ↓
+Agent calls stock tool
+   ↓
+Tool returns market data
+   ↓
 Agent explains the result
+```
 
 שתי המערכות משלימות זו את זו. ה-RAG Chatbot מדגים עבודה עם זיכרון חיצוני ומסמכים. ה-Stock Agent מדגים עבודה עם Tool שמביא מידע ממקור חיצוני בזמן אמת.
 
