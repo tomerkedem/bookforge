@@ -1,0 +1,227 @@
+{
+  "book": {
+    "titles": {
+      "he": "שיעור 8: ‏‏ AI Agents"
+    },
+    "subtitles": {
+      "he": "AI Engineering"
+    },
+    "descriptions": {
+      "he": "**תקציר:**\n\nבשיעור זה נלמד מהו AI Agent, איך הוא שונה מצ’אטבוט רגיל, ואיך בונים מערכת שמסוגלת לא רק לענות בטקסט, אלא גם להשתמש בכלים, לזכור מידע, לשלוף ידע חיצוני ולקדם משימה בצורה מסודרת.\n\nנקודת המוצא היא שמודל שפה גדול, LLM, הוא רכיב מרכזי אך לא כל המערכת. ה-LLM יודע להבין שפה, לנסח תשובות, להסיק מסקנות ולעזור בקבלת החלטות. סביבו נבנית שכבת Agent שמנהלת הנחיות, זיכרון, כלים, תהליך עבודה ואינטראקציה עם המשתמש. במילים פשוטות, Agent הוא מערכת שמחברת בין חשיבה, מידע ופעולה.\n\nנכיר את רכיבי הבסיס של Agent: ה-LLM כמנוע החשיבה, Memory כיכולת לשמור או לשלוף מידע, Tools כדרך להפעיל פונקציות, APIs או מקורות מידע חיצוניים, ו-Instructions שמגדירות כיצד הסוכן אמור להתנהג. נלמד גם את ההבדל בין Workflow מובנה וצפוי לבין Agent Loop דינמי, שבו הסוכן פועל במחזוריות של התבוננות, חשיבה ופעולה.\n\nבהמשך נלמד דפוסי עבודה מרכזיים לבניית מערכות Agentic: Prompt Chaining, Routing, Parallelization, Orchestrator-workers, Evaluator-optimizer ו-Agent Loop. בכל דפוס נבין מה הבעיה שהוא פותר, מתי כדאי להשתמש בו, ומהן הטעויות הנפוצות שחשוב להימנע מהן.\n\nבחלק המעשי נבנה את ההבנה דרך קוד, לפי סדר התפתחות נכון. נתחיל מבניית בסיס RAG: טעינת מסמכים, חלוקה ל-chunks, יצירת embeddings ושמירה ב-ChromaDB. לאחר מכן נבנה צ’אטבוט RAG שמשתמש ב-context רלוונטי ובהיסטוריית שיחה כדי לענות בצורה מבוססת יותר. בהמשך נבנה Agent שמשתמש בכלי חיצוני לקבלת מידע על מניות, וכך נראה איך עוברים ממודל שמחזיר תשובה למערכת שמפעילה פעולה.\n\nבסיום נתרגל הרחבות מעשיות: מעבר ממודל בענן למודל מקומי עם Ollama, הוספת כלים חדשים, בניית ממשק משתמש עם FastAPI, ויצירת Workflow דו-שלבי שמדגים כיצד מפרקים משימה מורכבת לשלבים פשוטים, ברורים ובדוקים.\n\nכל קבצי הקוד, מבנה הפרויקט והתרגילים זמינים בגיטהאב שלי:\n\nhttps://github.com/tomerkedem/ai-engineering-course"
+    },
+    "chapters": [
+      {
+        "id": "intro",
+        "file_slug": "intro",
+        "type": "intro",
+        "titles": {
+          "he": "פתיחה - ממודל שעונה למערכת שפועלת"
+        },
+        "sections": 4,
+        "has_images": false,
+        "word_count": 2328,
+        "topics": []
+      },
+      {
+        "id": 1,
+        "file_slug": "chapter-01",
+        "type": "content",
+        "titles": {
+          "he": "מהו AI Agent"
+        },
+        "sections": 5,
+        "has_images": true,
+        "word_count": 2411,
+        "topics": []
+      },
+      {
+        "id": 2,
+        "file_slug": "chapter-02",
+        "type": "content",
+        "titles": {
+          "he": "איך Agent בנוי"
+        },
+        "sections": 6,
+        "has_images": true,
+        "word_count": 1322,
+        "topics": []
+      },
+      {
+        "id": 3,
+        "file_slug": "chapter-03",
+        "type": "content",
+        "titles": {
+          "he": "LLM - מנוע החשיבה של הסוכן"
+        },
+        "sections": 5,
+        "has_images": false,
+        "word_count": 1296,
+        "topics": []
+      },
+      {
+        "id": 4,
+        "file_slug": "chapter-04",
+        "type": "content",
+        "titles": {
+          "he": "Memory - איך הסוכן שומר ושולף מידע"
+        },
+        "sections": 5,
+        "has_images": true,
+        "word_count": 1105,
+        "topics": []
+      },
+      {
+        "id": 5,
+        "file_slug": "chapter-05",
+        "type": "content",
+        "titles": {
+          "he": "Tools - איך הסוכן מבצע פעולות"
+        },
+        "sections": 5,
+        "has_images": false,
+        "word_count": 1112,
+        "topics": []
+      },
+      {
+        "id": 6,
+        "file_slug": "chapter-06",
+        "type": "content",
+        "titles": {
+          "he": "Instructions - איך מגדירים התנהגות"
+        },
+        "sections": 4,
+        "has_images": false,
+        "word_count": 956,
+        "topics": []
+      },
+      {
+        "id": 7,
+        "file_slug": "chapter-07",
+        "type": "content",
+        "titles": {
+          "he": "Workflow מובנה מול Agent Loop"
+        },
+        "sections": 4,
+        "has_images": false,
+        "word_count": 1179,
+        "topics": []
+      },
+      {
+        "id": 8,
+        "file_slug": "chapter-08",
+        "type": "content",
+        "titles": {
+          "he": "דפוסי עבודה לבניית מערכות Agentic"
+        },
+        "sections": 7,
+        "has_images": true,
+        "word_count": 1673,
+        "topics": []
+      },
+      {
+        "id": 9,
+        "file_slug": "chapter-09",
+        "type": "content",
+        "titles": {
+          "he": "בחירת שלד נכון למערכת Agentic"
+        },
+        "sections": 8,
+        "has_images": false,
+        "word_count": 4206,
+        "topics": []
+      },
+      {
+        "id": 10,
+        "file_slug": "chapter-10",
+        "type": "content",
+        "titles": {
+          "he": "בניית בסיס RAG"
+        },
+        "sections": 5,
+        "has_images": false,
+        "word_count": 2382,
+        "topics": []
+      },
+      {
+        "id": 11,
+        "file_slug": "chapter-11",
+        "type": "content",
+        "titles": {
+          "he": "בניית RAG Chatbot"
+        },
+        "sections": 6,
+        "has_images": false,
+        "word_count": 3577,
+        "topics": []
+      },
+      {
+        "id": 12,
+        "file_slug": "chapter-12",
+        "type": "content",
+        "titles": {
+          "he": "בניית Stock Agent עם Tool"
+        },
+        "sections": 6,
+        "has_images": false,
+        "word_count": 4480,
+        "topics": []
+      },
+      {
+        "id": 13,
+        "file_slug": "chapter-13",
+        "type": "content",
+        "titles": {
+          "he": "איך כותבים קוד כזה בעזרת סוכן קוד"
+        },
+        "sections": 7,
+        "has_images": false,
+        "word_count": 4534,
+        "topics": []
+      },
+      {
+        "id": 14,
+        "file_slug": "chapter-14",
+        "type": "content",
+        "titles": {
+          "he": "מעבר ממודל בענן למודל מקומי"
+        },
+        "sections": 5,
+        "has_images": false,
+        "word_count": 2811,
+        "topics": []
+      },
+      {
+        "id": 15,
+        "file_slug": "chapter-15",
+        "type": "content",
+        "titles": {
+          "he": "תרגול מעשי מונחה והרחבות"
+        },
+        "sections": 5,
+        "has_images": false,
+        "word_count": 2522,
+        "topics": []
+      },
+      {
+        "id": 16,
+        "file_slug": "chapter-16",
+        "type": "content",
+        "titles": {
+          "he": "טעויות נפוצות בבניית Agents"
+        },
+        "sections": 8,
+        "has_images": false,
+        "word_count": 4872,
+        "topics": []
+      }
+    ],
+    "languages": [
+      "he"
+    ],
+    "credits": {
+      "author": {
+        "he": "תומר קדם"
+      }
+    }
+  }
+}
