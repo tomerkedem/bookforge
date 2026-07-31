@@ -1,190 +1,139 @@
-# בניית Stock Agent עם Tool
+# מעבדה מעשית: בניית RAG Chatbot
 
-עד עכשיו בנינו שתי שכבות חשובות:
+אחרי שבנינו את בסיס ה-RAG בחלק הקודם, יש לנו עכשיו מאגר ידע מקומי שנשמר בתוך תיקיית chroma_db.
 
-build_rag_db.py בונה בסיס RAG ושומר אותו לדיסק
+בחלק הזה נבנה את השלב הבא: צ’אטבוט שמסוגל להשתמש במאגר הזה כדי לענות על שאלות.
 
-rag_chatbot.py טוען את בסיס ה-RAG ועונה על שאלות לפי מסמכים
+חשוב לזכור את ההפרדה:
 
-זו מערכת חשובה, אבל היא עדיין עובדת בעיקר עם מידע שכבר הכנו מראש.
+<div dir="rtl">
 
-בפרק זה נעבור לסוג אחר של יכולת:
+| **קובץ** | **תפקיד** |
+| --- | --- |
+| **build_rag_db.py** | בונה את בסיס ה-RAG ושומר אותו לדיסק |
+| **rag_chatbot.py** | טוען את בסיס ה-RAG ומשתמש בו כדי לענות לשאלות |
 
-**Agent שמפעיל כלי חיצוני בזמן אמת.**
+</div>
 
-במקום לחפש תשובה בתוך מסמכים, הסוכן יקבל שאלה על מניה, יבין שצריך נתון עדכני, יפעיל פונקציה שמביאה מידע פיננסי, ואז יחזיר תשובה מסודרת למשתמש.
+כלומר, rag_chatbot.py לא אמור לטעון מסמכים מחדש, לא לחלק אותם ל-chunks, ולא לבנות embeddings מחדש. את כל זה כבר עשינו בפרק הקודם.
 
-הקובץ המרכזי שנבנה בחלק הזה הוא:
+הקובץ החדש רק משתמש במאגר הקיים.
 
-```bash
-stock_agent.py
-```
+## מה אנחנו בונים
 
-הרעיון המרכזי הוא:
+אנחנו בונים RAG Chatbot פשוט שעובד דרך שורת הפקודה.
+
+המשתמש יכתוב שאלה, והמערכת תבצע את השלבים הבאים:
 
 ```bash
 User question
    ↓
-Agent understands the request
+Load existing Vector Store
    ↓
-Agent chooses a tool
+Retrieve relevant chunks
    ↓
-Tool fetches external data
+Build context
    ↓
-Agent receives the result
+Send context + question to LLM
    ↓
-Agent returns a clear answer
+Return answer
 ```
 
-זו קפיצה חשובה לעומת RAG Chatbot.
+ההבדל המרכזי בין צ’אטבוט רגיל לבין RAG Chatbot הוא מקור הידע.
 
-ב-RAG Chatbot מקור המידע הוא מסמכים שכבר נשמרו ב-Vector Store.
+צ’אטבוט רגיל מקבל שאלה ומנסה לענות מתוך הידע של המודל.
 
-ב-Stock Agent מקור המידע הוא כלי חיצוני שמופעל בזמן הריצה.
+RAG Chatbot קודם מחפש מידע רלוונטי במסמכים, ורק אחר כך שולח את המידע הזה למודל.
 
 לדוגמה, אם המשתמש שואל:
 
 ```bash
-What is the current price of MSFT?
+What does the document say about ChromaDB?
 ```
 
-לא נרצה שהמודל ינחש מחיר. מחיר מניה הוא מידע משתנה. לכן המערכת צריכה להפעיל כלי שמביא את הנתון בזמן אמת.
+המערכת לא אמורה לענות רק מהידע הכללי של ה-LLM. היא צריכה קודם לחפש בתוך ה-Vector Store קטעים שמדברים על ChromaDB.
 
-במקרה שלנו, הכלי ישתמש בספרייה:
-
-```python
-yfinance
-```
-
-היא תאפשר לנו להביא נתוני מניה לפי ticker symbol כמו:
+לאחר מכן היא בונה context:
 
 ```bash
-MSFT
-AAPL
-TSLA
-NVDA
+ChromaDB is a vector database.
+It can store embeddings and search for similar text based on meaning.
 ```
 
-המשתמש לא צריך לדעת איך מפעילים את הכלי. הוא לא כותב:
+ורק אז שולחת למודל את השאלה יחד עם ה-context.
 
-```python
-get_stock_info("MSFT")
-```
-
-הוא פשוט שואל בשפה טבעית:
+אפשר לחשוב על זה כך:
 
 ```bash
-What is the current price of Microsoft stock?
+Question:
+What does the document say about ChromaDB?
+
+Retrieved context:
+Relevant chunks from the vector store
+
+LLM task:
+Answer the question using only the provided context
 ```
 
-וה-Agent צריך להבין לבד שכנראה מדובר ב-MSFT, להפעיל את הכלי, לקבל נתונים, ולנסח תשובה.
+זו נקודה חשובה מאוד: ה-LLM עדיין מנסח את התשובה, אבל הוא לא אמור להמציא מקור ידע. הוא אמור להסתמך על ה-context שנשלף מתוך המסמכים.
 
-זה בדיוק הרעיון של Agent עם Tools: המודל לא רק מחזיר טקסט, אלא מקבל יכולת להפעיל פעולות חיצוניות לפי הצורך. הטקסט הקיים שלך כבר מסביר את המעבר הזה מ-RAG למערכת שמפעילה כלי, אבל כאן נבנה אותו מחדש סביב קובץ מלא שאפשר להעלות ל-GitHub ולהריץ.
-
-## מה אנחנו בונים
-
-אנחנו בונים Stock Agent פשוט שרץ דרך שורת הפקודה.
-
-ה-Agent יוכל לענות על שאלות כמו:
+בפרק הזה נבנה קובץ מלא בשם:
 
 ```bash
-What is the current price of MSFT?
-Give me market data for Apple stock.
-What is the quote for NVDA?
+rag_chatbot.py
 ```
 
-המערכת תורכב משלושה רכיבים מרכזיים:
+הקובץ הזה יכלול:
 
-```bash
-LLM
-Tools
-Instructions
-```
+1. טעינת ה-Vector Store הקיים
 
-ה-LLM אחראי להבין את השאלה ולנסח תשובה.
+2. יצירת retriever
 
-ה-Tools מאפשרים לסוכן להביא מידע מבחוץ.
+3. בניית prompt עם context, history ושאלה
 
-ה-Instructions מגדירות לסוכן מתי להשתמש בכלי, איך להתנהג, ואיך להחזיר תשובה למשתמש.
+4. הרכבת chain
 
-במקרה שלנו נתחיל עם כלי אחד:
+5. הרצת לולאת צ’אט ב-command-line
 
-```python
-get_stock_info
-```
-
-הכלי הזה יקבל ticker symbol, יביא נתוני מניה דרך yfinance, ויחזיר טקסט מסודר עם מידע בסיסי:
-
-```bash
-Company name
-Current price
-Currency
-Day high
-Day low
-Volume
-```
-
-הזרימה המלאה תהיה:
-
-```bash
-User:
-What is the current price of MSFT?
-
-Agent:
-This question requires live market data.
-
-Tool call:
-get_stock_info("MSFT")
-
-Tool result:
-Microsoft Corporation
-Current price: ...
-Day high: ...
-Day low: ...
-Volume: ...
-
-Final answer:
-The current market data for Microsoft is...
-```
-
-בסוף הפרק הזה יהיו לנו:
-
-1. requirements.txt מעודכן
-
-2. קובץ stock_agent.py מלא
-
-3. Agent שרץ דרך command-line
-
-4. Tool שמביא נתוני מניה
-
-5. הוראות הרצה
-
-6. שאלות בדיקה
+6. שמירת היסטוריית שיחה קצרה
 
 7. טיפול בסיסי בשגיאות
 
-השלב הבא הוא להגדיר את הקבצים שנשתמש בהם ולעדכן את requirements.txt.
+בסוף הפרק נוכל להריץ:
+
+```bash
+python rag_chatbot.py
+```
+
+ולשאול שאלות על התוכן שנמצא ב-data/sample_docs.txt.
+
+לפני שנכתוב את הקוד המלא, נוודא שהפרויקט שלנו כולל את הקבצים הדרושים.
 
 ## הקבצים שנשתמש בהם
 
-לפני שנכתוב את stock_agent.py, נוודא שמבנה הפרויקט ברור.
+לפני שנכתוב את rag_chatbot.py, נוודא שמבנה הפרויקט ברור.
 
-בשלב הזה כבר יש לנו את הקבצים מהחלקים הקודמים:
+בסיום הפרק הקודם כבר אמורים להיות לנו הקבצים והתיקיות הבאים:
 
 ```bash
 lesson-08-ai-agents/
   build_rag_db.py
-  rag_chatbot.py
   requirements.txt
   data/
     sample_docs.txt
   chroma_db/
 ```
 
+הקובץ build_rag_db.py בנה את המאגר.
+
+התיקייה data מכילה את מסמכי המקור.
+
+התיקייה chroma_db מכילה את ה-Vector Store שנשמר לדיסק.
+
 עכשיו נוסיף קובץ חדש:
 
 ```bash
-stock_agent.py
+rag_chatbot.py
 ```
 
 לאחר ההוספה, מבנה הפרויקט יהיה:
@@ -193,67 +142,59 @@ stock_agent.py
 lesson-08-ai-agents/
   build_rag_db.py
   rag_chatbot.py
-  stock_agent.py
   requirements.txt
   data/
     sample_docs.txt
   chroma_db/
 ```
 
-אפשר לחשוב על שלושת קבצי ה-Python כך:
+אפשר לחשוב על הפרויקט כך:
 
 <div dir="rtl">
 
-| **קובץ** | **תפקיד** |
+| **קובץ או תיקיי**ה | **תפקיד** |
 | --- | --- |
-| **build_rag_db.py** | בונה את בסיס ה-RAG ושומר אותו לדיסק |
-| **rag_chatbot.py** | טוען את בסיס ה-RAG ועונה לפי מסמכים |
-| **stock_agent.py** | מפעיל Agent עם tool שמביא נתוני מניה |
+| **requirements.txt** | הספריות שהפרויקט צריך |
+| **data/sample_docs.txt** | מסמך הדוגמה שממנו נבנה המאגר |
+| **build_rag_db.py** | בונה ושומר את בסיס ה-RAG |
+| **chroma_db/** | המאגר המקומי שנוצר אחרי ההרצה |
+| **rag_chatbot.py** | צ’אטבוט שטוען את המאגר ועונה על שאלות |
 
 </div>
 
-הקובץ stock_agent.py לא צריך את chroma_db.
+הנקודה החשובה היא שהקובץ החדש לא מתחיל מאפס.
 
-זו נקודה חשובה.
+הוא משתמש בפונקציה שכבר כתבנו בחלק הקודם:
 
-ה-RAG Chatbot עובד מול מסמכים שנשמרו מראש.
-
-ה-Stock Agent עובד מול כלי חיצוני שמביא מידע בזמן אמת.
-
-לכן הזרימות שונות:
-
-```bash
-RAG Chatbot:
-Question → Vector Store → Context → LLM → Answer
-
-Stock Agent:
-Question → Agent → Tool → External Data → LLM → Answer
+```python
+from build_rag_db import load_vectorstore
 ```
 
-בפרק זה נתמקד רק ב-Stock Agent.
+הפונקציה הזאת מחזירה לנו את ה-Vector Store הקיים מתוך chroma_db.
+
+כלומר, במקום לכתוב שוב קוד שטוען מסמכים, מחלק ל-chunks ויוצר embeddings, אנחנו משתמשים בקוד שכבר בנינו.
+
+זו הפרדה מקצועית יותר:
+
+build_rag_db.py אחראי על הכנה ובנייה של המאגר 
+ 
+rag_chatbot.py אחראי על שימוש במאגר בזמן שיחה
+
+בפרויקטים אמיתיים ההפרדה הזאת חשובה מאוד. היא מאפשרת לנו לבנות את המאגר פעם אחת, ואז להשתמש בו שוב ושוב בלי לשלם בכל הרצה את מחיר הבנייה מחדש.
 
 **עדכון requirements.txt**
 
-כדי לבנות את ה-Agent, נצטרך כמה ספריות נוספות.
+כדי להפעיל את הצ’אטבוט, אנחנו צריכים גם ספרייה שמאפשרת לנו לקרוא ל-LLM.
 
-נשתמש ב:
+בגרסה הזאת נשתמש ב-Anthropic דרך LangChain.
+
+לכן הקובץ requirements.txt צריך לכלול גם:
 
 ```python
-langchain
 langchain-anthropic
-yfinance
-python-dotenv
 ```
 
-- langchain מאפשרת לנו לבנות Agent ולהגדיר tools.
-
-- langchain-anthropic מאפשרת לעבוד עם מודל של Anthropic דרך LangChain.
-
-- yfinance תביא את נתוני המניה.
-
-- python-dotenv תאפשר בעתיד לטעון משתני סביבה מקובץ .env, למרות שבשלב הזה עדיין אפשר להגדיר אותם ישירות ב-PowerShell.
-
-הקובץ requirements.txt בשלב הזה יכול להיראות כך:
+הגרסה המלאה של requirements.txt בשלב הזה תהיה:
 
 ```python
 langchain
@@ -262,239 +203,295 @@ langchain-community
 langchain-anthropic
 chromadb
 sentence-transformers
-yfinance
-python-dotenv
 ```
 
-אם כבר יש לך requirements.txt מהחלקים הקודמים, פשוט מוסיפים אליו:
+אם הקובץ כבר קיים, פשוט נוסיף אליו את langchain-anthropic.
 
-```python
-yfinance
-python-dotenv
-```
-
-לאחר העדכון נריץ:
+לאחר העדכון נריץ שוב:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-**הגדרת API key**
+גם אם חלק מהספריות כבר מותקנות, זה בסדר. pip ישלים את מה שחסר.
 
-גם כאן נשתמש ב-LLM, ולכן צריך להגדיר:
+**משתנה סביבה עבור API key**
+
+כדי שהצ’אטבוט יוכל לקרוא למודל של Anthropic, צריך להגדיר משתנה סביבה בשם:
 
 ```python
 ANTHROPIC_API_KEY
 ```
 
-ב-PowerShell:
+ב-PowerShell אפשר להגדיר אותו כך:
 
 ```bash
 $env:ANTHROPIC_API_KEY="your_api_key_here"
 ```
 
-חשוב לא להכניס את המפתח לתוך הקוד.
+במקום your_api_key_here נשים את המפתח האמיתי.
 
-לא עושים כך:
+חשוב לא להכניס API key ישירות לקובץ Python, ולא להעלות אותו ל-GitHub.
+
+כלומר, לא עושים כך:
 
 ```python
 api_key = "my-real-api-key"
 ```
 
-קוד כזה מסוכן להעלאה ל-GitHub.
-
 במקום זה, הקוד יקרא את המפתח מתוך משתנה הסביבה.
 
-**מה הקובץ stock_agent.py יכיל**
+כך הקוד נשאר בטוח יותר ומתאים להעלאה ל-GitHub.
 
-הקובץ שנכתוב יכלול את החלקים הבאים:
+בשלב הזה יש לנו:
 
-1. imports
+1. בסיס RAG קיים בתיקיית chroma_db
 
-2. הגדרת tool בשם get_stock_info
+2. requirements.txt מעודכן
 
-3. הגדרת SYSTEM_PROMPT
+3. API key שמוגדר כמשתנה סביבה
 
-4. פונקציה build_agent
+4. מקום מוכן לקובץ rag_chatbot.py
 
-5. פונקציה query_agent
+השלב הבא הוא לכתוב את הקובץ המלא rag_chatbot.py.
 
-6. פונקציה main
+## תפקיד LangChain בצ׳אטבוט ה-RAG
 
-7. לולאת command-line לשיחה עם המשתמש
+עד עכשיו הבנו מה ה-RAG Chatbot צריך לעשות: לקבל שאלה מהמשתמש, לחפש מידע רלוונטי ב-ChromaDB, לשלוף קטעי טקסט מתאימים, לבנות מהם context, לשלוח את השאלה וה-context למודל שפה, ולהחזיר תשובה ברורה.
 
-החלוקה הזאת חשובה כי היא הופכת את הקובץ לקל לקריאה ולהרחבה.
+כל אחד מהשלבים האלה מובן בפני עצמו. אבל כאשר מחברים אותם לקוד אמיתי, צריך דרך מסודרת לנהל את הזרימה ביניהם.
 
-במקום לכתוב את כל הקוד בתוך main, נחלק אותו לפונקציות:
+כאן נכנסת LangChain.
 
-<div dir="rtl">
+LangChain היא ספריית פיתוח שמטרתה לעזור לנו לבנות אפליקציות סביב מודלי שפה. היא לא מחליפה את ה-LLM, לא מחליפה את ChromaDB, ולא מחליפה את רעיון ה-RAG. התפקיד שלה הוא לחבר בין הרכיבים: המודל, הפרומפט, השליפה מהמאגר, היסטוריית השיחה והפלט הסופי.
 
-| **פונקצי**ה | **תפקיד** |
-| --- | --- |
-| **get_stock_info** | מביאה נתוני מניה דרך yfinance |
-| **build_agent** | יוצרת את ה-Agent ומחברת לו את הכלים |
-| **query_agent** | שולחת שאלה ל-Agent ומחזירה תשובה |
-| **main** | מפעילה את התוכנית דרך שורת הפקודה |
+במקום לכתוב בעצמנו קוד שמחבר ידנית כל שלב לשלב הבא, LangChain מאפשרת להגדיר שרשרת עבודה ברורה יותר.
 
-</div>
-
-בסעיף הבא נכתוב את הקובץ המלא stock_agent.py, כך שאפשר יהיה להעתיק אותו ישירות לפרויקט ולהריץ.
-
-
-
-## כתיבת הקובץ stock_agent.py
-
-עכשיו נכתוב את הקובץ המרכזי של החלק הזה:
+בצ׳אטבוט שלנו הזרימה תיראה כך:
 
 ```bash
-stock_agent.py
+User question
+↓
+Retriever searches ChromaDB
+↓
+Relevant chunks are returned as context
+↓
+Prompt is built from question + context + chat history
+↓
+LLM generates an answer
+↓
+Output parser returns clean text
 ```
 
-הקובץ הזה יבנה Agent פשוט שמסוגל לקבל שאלה על מניה, להפעיל tool שמביא נתונים דרך yfinance, ולהחזיר תשובה ברורה למשתמש.
+כלומר, LangChain עוזרת לנו להפוך כמה רכיבים נפרדים לתהליך אחד.
 
-ניצור קובץ בשם stock_agent.py בתיקיית הפרויקט, ונכניס אליו את הקוד הבא.
+חשוב להבין: RAG הוא הרעיון הארכיטקטוני. LangChain היא אחת הדרכים לממש אותו בקוד.
 
-**תוכן מלא לקובץ stock_agent.py**
+אפשר לבנות RAG גם בלי LangChain. למשל, אפשר לקרוא ידנית ל-ChromaDB, לבנות מחרוזת Prompt לבד, לשלוח אותה ישירות ל-API של מודל, ואז להחזיר את התשובה. זה יעבוד, אבל ככל שהמערכת גדלה, הקוד עלול להפוך לפחות מסודר: יותר חיבורים ידניים, יותר שכפול, ויותר מקומות שבהם קשה להבין מה בדיוק עובר בין השלבים.
+
+LangChain נותנת לנו רכיבים מוכנים שמייצגים את החלקים המרכזיים בתהליך.
+
+בצ׳אטבוט שנבנה מיד נשתמש בכמה רכיבים חשובים:
+
+```bash
+ChatAnthropic
+```
+
+הרכיב שמחבר את הקוד שלנו למודל שפה של Anthropic. במקום לקרוא ישירות ל-API בכל פעם, אנחנו יוצרים אובייקט שמייצג את המודל שבו נשתמש.
+
+```bash
+ChatPromptTemplate
+```
+
+הרכיב שמגדיר את מבנה ההודעה שנשלחת למודל. הפרומפט לא יהיה סתם טקסט חופשי, אלא תבנית מסודרת שכוללת הנחיות, context, היסטוריית שיחה והשאלה הנוכחית.
+
+```bash
+MessagesPlaceholder
+```
+
+רכיב שמאפשר להכניס את היסטוריית השיחה לתוך הפרומפט. כך המודל יכול להבין לא רק את השאלה האחרונה, אלא גם את מה שנאמר קודם בשיחה.
+
+```bash
+Retriever
+```
+
+הרכיב שאחראי לשלוף מידע רלוונטי מתוך ChromaDB. המשתמש שואל שאלה, וה-Retriever מחפש ב-Vector Store את הקטעים שהכי מתאימים למשמעות של השאלה.
+
+```bash
+RunnablePassthrough
+```
+
+רכיב שמאפשר להעביר את שאלת המשתמש הלאה בתוך השרשרת, בלי לשנות אותה. הוא שימושי כאשר חלק אחד בשרשרת צריך את השאלה כפי שהיא, וחלק אחר משתמש בה כדי לשלוף context.
+
+```bash
+StrOutputParser
+```
+
+הרכיב שמקבל את תשובת המודל ומחזיר אותה כמחרוזת טקסט פשוטה. כלומר, במקום לעבוד עם אובייקט תשובה מורכב, נקבל בסוף טקסט נקי שאפשר להדפיס למשתמש.
+
+המטרה של כל הרכיבים האלה אינה לסבך את הקוד, אלא להפך: לתת שמות ברורים לחלקים של התהליך.
+
+כאשר רואים בקוד שורה כמו:
+
+```python
+rag_chain = ...
+```
+
+צריך להבין שלא מדובר בקסם. זו פשוט שרשרת שמחברת בין כמה פעולות:
+
+```bash
+question → retrieve context → build prompt → call LLM → parse answer
+```
+
+זו נקודה חשובה במיוחד. LangChain לא הופכת את המערכת לחכמה בפני עצמה. החוכמה עדיין מגיעה מהשילוב בין המודל, המידע שנשלף, איכות הפרומפט והדרך שבה אנחנו מנהלים את התהליך.
+
+אם ה-Retriever מחזיר context לא רלוונטי, LangChain לא תפתור את זה לבד.
+
+אם הפרומפט לא ברור, התשובה עלולה להיות חלשה.
+
+אם אין טיפול בשגיאות, המערכת עדיין יכולה להיכשל.
+
+אם המידע במאגר לא איכותי, גם שרשרת בנויה היטב לא תייצר תשובה טובה.
+
+לכן חשוב לראות את LangChain ככלי הנדסי: היא עוזרת לארגן את החיבורים, אבל עדיין צריך להבין מה כל רכיב עושה ולמה הוא נמצא שם.
+
+בשלב הבא נכתוב את הקובץ rag_chatbot.py. בזמן הקריאה של הקוד, כדאי לשים לב לא רק לשורות עצמן, אלא לתפקיד של כל חלק בתוך השרשרת:
+
+```bash
+Model
+Prompt
+Retriever
+Chat history
+Chain
+Output
+```
+
+ברגע שמבינים את התפקידים האלה, הקוד נהיה הרבה פחות מאיים. הוא כבר לא נראה כמו אוסף imports ושורות מוזרות, אלא כמו מימוש מסודר של תהליך RAG.
+
+
+
+## כתיבת הקובץ rag_chatbot.py
+
+עכשיו נכתוב את הקובץ המרכזי של החלק הזה: rag_chatbot.py
+
+הקובץ הזה טוען את ה-Vector Store הקיים, בונה retriever, מחבר prompt ל-LLM, ומפעיל צ’אט פשוט דרך שורת הפקודה.
+
+ניצור קובץ בשם rag_chatbot.py בתיקיית הפרויקט, ונכניס אליו את הקוד הבא.
+
+**תוכן מלא לקובץ rag_chatbot.py**
 
 ```python
 import os
 
-import yfinance as yf
-from langchain.agents import create_agent
-from langchain.chat_models import init_chat_model
-from langchain_core.messages import AIMessage
-from langchain_core.tools import tool
+from langchain_anthropic import ChatAnthropic
+from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.runnables import RunnablePassthrough
+
+from build_rag_db import load_vectorstore
 
 
-MODEL_NAME = "anthropic:claude-haiku-4-5-20251001"
+MODEL_NAME = "claude-haiku-4-5-20251001"
+RETRIEVER_K = 4
+MAX_HISTORY_MESSAGES = 10
 
 
-SYSTEM_PROMPT = """
-You are a helpful stock market assistant.
-
-When the user asks about a stock price, quote, or market data,
-use the get_stock_info tool with the relevant ticker symbol.
-
-Do not invent stock prices or live market data.
-
-Do not provide financial advice.
-Do not tell the user to buy, sell, or hold a stock.
-
-Summarize the tool result clearly for the user.
-"""
-
-
-@tool
-def get_stock_info(symbol: str) -> str:
+def build_llm() -> ChatAnthropic:
     """
-    Get basic stock market data for a ticker symbol.
+    Build the LLM client.
 
-    Args:
-        symbol: Stock ticker symbol, for example MSFT, AAPL, TSLA, or NVDA.
+    The API key is read from the ANTHROPIC_API_KEY environment variable.
     """
-    symbol = symbol.strip().upper()
+    api_key = os.getenv("ANTHROPIC_API_KEY")
 
-    if not symbol:
-        return "Error: Please provide a stock ticker symbol."
-
-    try:
-        ticker = yf.Ticker(symbol)
-        info = ticker.info
-
-        if not info:
-            return f"Error: No market data found for {symbol}."
-
-        name = info.get("longName") or info.get("shortName") or symbol
-
-        price = (
-            info.get("currentPrice")
-            or info.get("regularMarketPrice")
-            or info.get("previousClose")
-        )
-
-        currency = info.get("currency", "")
-        day_high = info.get("dayHigh")
-        day_low = info.get("dayLow")
-        volume = info.get("volume")
-
-        if price is None:
-            return f"Error: Could not find a current price for {symbol}."
-
-        lines = [
-            f"Ticker: {symbol}",
-            f"Company: {name}",
-            f"Current price: {price} {currency}".strip(),
-        ]
-
-        if day_high is not None:
-            lines.append(f"Day high: {day_high}")
-
-        if day_low is not None:
-            lines.append(f"Day low: {day_low}")
-
-        if volume is not None:
-            lines.append(f"Volume: {volume}")
-
-        return "\n".join(lines)
-
-    except Exception:
-        return f"Error: Could not fetch stock data for {symbol}."
-
-
-def build_agent():
-    """
-    Build the stock agent with one external tool.
-    """
-    if not os.getenv("ANTHROPIC_API_KEY"):
+    if not api_key:
         raise EnvironmentError(
             "ANTHROPIC_API_KEY is not set. "
-            "Please set it before running stock_agent.py."
+            "Please set it before running rag_chatbot.py."
         )
 
-    model = init_chat_model(
-        MODEL_NAME,
+    return ChatAnthropic(
+        model=MODEL_NAME,
         temperature=0,
     )
 
-    agent = create_agent(
-        model=model,
-        tools=[get_stock_info],
-        system_prompt=SYSTEM_PROMPT,
+
+def build_rag_chain(vectorstore, llm):
+    """
+    Build a RAG chain that retrieves relevant context
+    and sends it to the language model.
+    """
+    retriever = vectorstore.as_retriever(
+        search_kwargs={"k": RETRIEVER_K}
     )
 
-    return agent
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            (
+                "system",
+                """
+You are a helpful assistant.
 
+Answer the user's question based only on the following context.
 
-def query_agent(agent, user_input: str) -> str:
-    """
-    Send a user question to the agent and return the final answer.
-    """
-    result = agent.invoke(
-        {
-            "messages": [
-                {
-                    "role": "user",
-                    "content": user_input,
-                }
-            ]
-        }
+If the context does not contain relevant information,
+say that you do not have enough information in the provided documents.
+
+Keep the answer concise and clear.
+
+Context:
+{context}
+""",
+            ),
+            MessagesPlaceholder(variable_name="chat_history"),
+            ("human", "{question}"),
+        ]
     )
 
-    last_message = result["messages"][-1]
+    def get_context(inputs):
+        docs = retriever.invoke(inputs["question"])
+        return "\n\n".join(doc.page_content for doc in docs)
 
-    if isinstance(last_message, AIMessage):
-        return last_message.content
+    chain = (
+        RunnablePassthrough.assign(context=get_context)
+        | prompt
+        | llm
+        | StrOutputParser()
+    )
 
-    return str(last_message)
+    return chain
+
+
+def convert_history_to_messages(chat_history: list[dict]):
+    """
+    Convert a simple list of dictionaries into LangChain message objects.
+    """
+    messages = []
+
+    for message in chat_history[-MAX_HISTORY_MESSAGES:]:
+        role = message["role"]
+        content = message["content"]
+
+        if role == "user":
+            messages.append(HumanMessage(content=content))
+        elif role == "assistant":
+            messages.append(AIMessage(content=content))
+
+    return messages
 
 
 def main():
-    print("Loading Stock Agent...")
+    print("Loading RAG chatbot...")
 
-    agent = build_agent()
+    llm = build_llm()
+    vectorstore = load_vectorstore()
+    rag_chain = build_rag_chain(vectorstore, llm)
 
-    print("Stock Agent is ready.")
-    print("Ask about stock prices, quotes, or market data.")
+    chat_history = []
+
+    print("RAG chatbot is ready.")
+    print("Ask a question about the documents.")
     print("Type 'quit' or 'exit' to stop.")
 
     while True:
@@ -509,8 +506,29 @@ def main():
             continue
 
         try:
-            answer = query_agent(agent, user_input)
+            messages_for_prompt = convert_history_to_messages(chat_history)
+
+            answer = rag_chain.invoke(
+                {
+                    "question": user_input,
+                    "chat_history": messages_for_prompt,
+                }
+            )
+
             print(f"\nAssistant: {answer}")
+
+            chat_history.append(
+                {
+                    "role": "user",
+                    "content": user_input,
+                }
+            )
+            chat_history.append(
+                {
+                    "role": "assistant",
+                    "content": answer,
+                }
+            )
 
         except Exception as error:
             print(f"\nError: {error}")
@@ -520,563 +538,361 @@ if __name__ == "__main__":
     main()
 ```
 
-זה קובץ מלא שאפשר להעלות ל-GitHub ולהריץ.
+זהו קובץ מלא שאפשר להעלות ל-GitHub ולהריץ.
 
-הוא כולל את כל החלקים הדרושים:
+הוא בנוי כך שהקוד יהיה ברור, מחולק לפונקציות, וקל להרחבה בהמשך.
 
-1. חיבור ל-LLM
-
-2. הגדרת tool
-
-3. שימוש ב-yfinance
-
-4. הנחיות התנהגות ל-Agent
-
-5. יצירת Agent
-
-6. שליחת שאלות ל-Agent
-
-7. לולאת command-line
-
-8. טיפול בסיסי בשגיאות
-
-החלק החשוב ביותר בקובץ הוא הכלי:
-
-```python
-@tool
-def get_stock_info(symbol: str) -> str:
-```
-
-הסימון @tool אומר ל-LangChain שהפונקציה הזאת זמינה ל-Agent ככלי חיצוני.
-
-כלומר, זו כבר לא רק פונקציית Python רגילה. זו פעולה שה-Agent יכול לבחור להפעיל כאשר הוא מבין שהמשתמש מבקש נתוני מניה.
-
-לדוגמה, אם המשתמש שואל:
+הקובץ כולל כמה חלקים מרכזיים:
 
 ```bash
-What is the current price of MSFT?
+1. build_llm
+2. build_rag_chain
+3. convert_history_to_messages
+4. main
 ```
 
-ה-Agent אמור להבין שצריך להשתמש בכלי, ולהפעיל אותו עם:
+הפונקציה build_llm יוצרת את החיבור למודל.
+
+הפונקציה build_rag_chain בונה את שרשרת ה-RAG: שליפה, prompt, מודל ופלט.
+
+הפונקציה convert_history_to_messages הופכת את היסטוריית השיחה לפורמט שמתאים ל-LangChain.
+
+הפונקציה main מפעילה את הצ’אט בפועל דרך שורת הפקודה.
+
+הדבר החשוב ביותר בקובץ הזה הוא שהוא לא בונה את בסיס ה-RAG מחדש.
+
+הוא משתמש בשורה הזאת:
+
+```python
+from build_rag_db import load_vectorstore
+```
+
+ובהמשך:
+
+```python
+vectorstore = load_vectorstore()
+```
+
+כלומר, הקובץ הזה מניח שכבר הרצנו קודם:
 
 ```bash
-MSFT
+python build_rag_db.py
 ```
 
-הפונקציה עצמה משתמשת ב-yfinance:
-
-```python
-ticker = yf.Ticker(symbol)
-info = ticker.info
-```
-
-לאחר מכן היא שולפת מתוך info כמה נתונים בסיסיים:
+ורק אחרי שיש לנו chroma_db, אפשר להריץ:
 
 ```bash
-Company name
-Current price
-Currency
-Day high
-Day low
-Volume
+python rag_chatbot.py
 ```
 
-ולבסוף מחזירה טקסט מסודר שה-Agent יכול להשתמש בו כדי לענות למשתמש.
-
-ה-SYSTEM_PROMPT מגדיר לסוכן איך להתנהג:
-
-```python
-SYSTEM_PROMPT = """
-You are a helpful stock market assistant.
-
-When the user asks about a stock price, quote, or market data,
-use the get_stock_info tool with the relevant ticker symbol.
-
-Do not invent stock prices or live market data.
-
-Do not provide financial advice.
-Do not tell the user to buy, sell, or hold a stock.
-
-Summarize the tool result clearly for the user.
-"""
-```
-
-ההנחיות האלה חשובות במיוחד כי מחיר מניה הוא מידע משתנה. אנחנו לא רוצים שהמודל ינחש. אם המשתמש מבקש נתון שוק, הסוכן צריך להשתמש בכלי.
-
-בנוסף, הוספנו כלל בטיחות פשוט:
-
-```python
-Do not provide financial advice.
-```
-
-כלומר, הסוכן יכול להציג מידע, אבל לא להמליץ למשתמש לקנות או למכור מניה.
-
-השלב הבא הוא להסביר בצורה מסודרת איך הקוד עובד, ואז נריץ אותו ונבדוק שאלות אמיתיות.
-
-
+זו הפרדה נקייה בין שלב הבנייה לבין שלב השימוש.
 
 ## הסבר על הקוד
 
-אחרי שיש לנו את הקובץ המלא stock_agent.py, נעבור על המבנה שלו ונבין איך הוא עובד.
+אחרי שיש לנו את הקובץ המלא rag_chatbot.py, כדאי לעבור על החלקים המרכזיים שלו ולהבין מה כל חלק עושה.
 
-הקובץ בנוי סביב רעיון פשוט:
+המטרה כאן היא לא לזכור כל שורה בעל פה, אלא להבין את המבנה המקצועי של הקובץ.
 
-```bash
-LLM + Tool + Instructions = Agent
-```
-
-כל רכיב נותן לסוכן יכולת אחרת.
-
-- ה-LLM מבין את השאלה ומנסח תשובה.
-
-- ה-Tool מביא מידע חיצוני בזמן אמת.
-
-- ה-Instructions מגדירות מתי להשתמש בכלי ואיך לענות למשתמש.
-
-**הגדרת המודל**
-
-בתחילת הקובץ הגדרנו את שם המודל:
-
-```python
-MODEL_NAME = "anthropic:claude-haiku-4-5-20251001"
-```
-
-המודל הוא מנוע השפה של הסוכן. הוא זה שמקבל את שאלת המשתמש, מבין מה המשתמש רוצה, ומחליט אם צריך להשתמש בכלי.
-
-כאשר יוצרים את המודל בפועל, משתמשים ב:
-
-```python
-model = init_chat_model(
-    MODEL_NAME,
-    temperature=0,
-)
-```
-
-הערך:
-
-```python
-temperature=0
-```
-
-גורם למודל להיות יציב יותר ופחות יצירתי.
-
-במקרה של Stock Agent זו בחירה נכונה, כי אנחנו לא רוצים תשובות דמיוניות או ניסוחים חופשיים מדי. אנחנו רוצים שהסוכן יפעל בצורה עקבית: אם המשתמש מבקש נתוני מניה, הוא ישתמש בכלי.
-
-**הגדרת ההנחיות**
-
-ההנחיות מוגדרות בתוך:
-
-```python
-SYSTEM_PROMPT
-```
-
-זה החלק שמגדיר לסוכן את כללי ההתנהגות:
-
-```python
-SYSTEM_PROMPT = """
-You are a helpful stock market assistant.
-
-When the user asks about a stock price, quote, or market data,
-use the get_stock_info tool with the relevant ticker symbol.
-
-Do not invent stock prices or live market data.
-
-Do not provide financial advice.
-Do not tell the user to buy, sell, or hold a stock.
-
-Summarize the tool result clearly for the user.
-"""
-```
-
-ההנחיה החשובה ביותר כאן היא:
-
-```python
-Do not invent stock prices or live market data.
-```
-
-מחיר מניה הוא מידע שמשתנה כל הזמן. לכן לא נכון לבקש מהמודל “לזכור” אותו. במקום זה, הסוכן צריך להשתמש בכלי שמביא מידע עדכני.
-
-ההנחיה השנייה שחשובה מאוד היא:
-
-```python
-Do not provide financial advice.
-```
-
-הסוכן יכול להציג נתוני שוק, אבל הוא לא אמור לומר למשתמש לקנות, למכור או להחזיק מניה.
-
-זו הפרדה חשובה:
-
-מותר: 
-להציג מידע 
- 
-אסור: 
-לתת המלצת השקעה
-
-**הגדרת ה-Tool**
-
-הכלי מוגדר כך:
-
-```python
-@tool
-def get_stock_info(symbol: str) -> str:
-```
-
-הסימון @tool הופך את הפונקציה לפעולה שה-Agent יכול להפעיל.
-
-כלומר, זו לא רק פונקציה שאנחנו יכולים לקרוא לה ידנית. זו פונקציה שהסוכן יכול לבחור להפעיל כחלק מהתהליך שלו.
-
-הפונקציה מקבלת פרמטר אחד:
-
-```python
-symbol: str
-```
-
-זהו ticker symbol של מניה.
-
-לדוגמה:
-
-```python
-MSFT
-AAPL
-TSLA
-NVDA
-```
-
-כאשר המשתמש שואל:
+הקובץ בנוי סביב ארבעה רכיבים:
 
 ```bash
-What is the current price of Microsoft stock?
+LLM
+Vector Store
+Retriever
+Prompt + Chain
 ```
 
-הסוכן צריך להבין שהכוונה היא כנראה ל:
+כל אחד מהם אחראי על שלב אחר בתהליך.
 
-```bash
-MSFT
-```
+**יצירת ה-LLM**
 
-ואז להפעיל את הכלי עם אותו סימול.
-
-**ניקוי ובדיקת הקלט**
-
-בתחילת הכלי מופיעה השורה:
+**החלק הראשון** הוא יצירת החיבור למודל:
 
 ```python
-symbol = symbol.strip().upper()
-```
+def build_llm() -> ChatAnthropic:
+    api_key = os.getenv("ANTHROPIC_API_KEY")
 
-השורה הזאת עושה שני דברים:
+    if not api_key:
+        raise EnvironmentError(
+            "ANTHROPIC_API_KEY is not set. "
+            "Please set it before running rag_chatbot.py."
+        )
 
-1. strip מסיר רווחים מיותרים
-
-2. upper הופך את הסימול לאותיות גדולות
-
-כך גם אם מתקבל קלט כמו:
-
-```bash
- msft 
-```
-
-הוא יהפוך ל:
-
-```bash
-MSFT
-```
-
-לאחר מכן יש בדיקה:
-
-```python
-if not symbol:
-    return "Error: Please provide a stock ticker symbol."
-```
-
-אם לא התקבל סימול, הכלי מחזיר הודעת שגיאה ברורה.
-
-זו נקודה חשובה בבניית tools: לא מניחים שהקלט תמיד תקין. כלי טוב בודק את הקלט ומחזיר הודעה מובנת במקרה של בעיה.
-
-**שימוש ב-yfinance**
-
-בתוך הכלי אנחנו משתמשים ב-yfinance:
-
-```python
-ticker = yf.Ticker(symbol)
-info = ticker.info
-```
-
-הקריאה הזאת מביאה מידע על מניה לפי הסימול שלה.
-
-לדוגמה, אם הסימול הוא:
-
-```python
-MSFT
-```
-
-אז yfinance תנסה להביא מידע על Microsoft.
-
-המידע שחוזר נמצא בתוך משתנה בשם:
-
-```python
-info
-```
-
-זה מילון גדול שמכיל הרבה שדות. אנחנו לא צריכים את כולם, לכן אנחנו שולפים רק את הנתונים החשובים להדגמה.
-
-**שליפת מחיר ונתונים בסיסיים**
-
-שם החברה נשלף כך:
-
-```python
-name = info.get("longName") or info.get("shortName") or symbol
-```
-
-השורה הזאת אומרת:
-
-נסה לקחת longName
-
-אם אין, נסה shortName
-
-אם גם אין, השתמש בסימול עצמו
-
-המחיר נשלף כך:
-
-```python
-price = (
-    info.get("currentPrice")
-    or info.get("regularMarketPrice")
-    or info.get("previousClose")
-)
-```
-
-גם כאן יש ניסיון להשתמש בכמה שדות אפשריים.
-
-זה חשוב כי לא תמיד כל שדה קיים עבור כל מניה או בכל זמן. לפעמים יהיה currentPrice, לפעמים regularMarketPrice, ולפעמים נצטרך להשתמש ב-previousClose.
-
-נתונים נוספים נשלפים כך:
-
-```python
-currency = info.get("currency", "")
-day_high = info.get("dayHigh")
-day_low = info.get("dayLow")
-volume = info.get("volume")
-```
-
-אלה נתוני עזר שמאפשרים להחזיר תשובה עשירה יותר, ולא רק מחיר יחיד.
-
-**בניית תשובת הכלי**
-
-הכלי בונה רשימת שורות:
-
-```python
-lines = [
-    f"Ticker: {symbol}",
-    f"Company: {name}",
-    f"Current price: {price} {currency}".strip(),
-]
-```
-
-לאחר מכן הוא מוסיף שורות רק אם הנתונים קיימים:
-
-```python
-if day_high is not None:
-    lines.append(f"Day high: {day_high}")
-
-if day_low is not None:
-    lines.append(f"Day low: {day_low}")
-
-if volume is not None:
-    lines.append(f"Volume: {volume}")
-```
-
-בסוף הוא מחזיר טקסט אחד:
-
-```python
-return "\n".join(lines)
-```
-
-כלומר, הכלי מחזיר תוצאה בסגנון:
-
-```bash
-Ticker: MSFT
-Company: Microsoft Corporation
-Current price: 430 USD
-Day high: 432
-Day low: 425
-Volume: 21000000
-```
-
-התוצאה הזאת חוזרת ל-Agent. לאחר מכן ה-Agent משתמש בה כדי לנסח תשובה ברורה למשתמש.
-
-**טיפול בשגיאות בתוך הכלי**
-
-הקריאה ל-yfinance עטופה ב:
-
-```python
-try:
-    ...
-except Exception:
-    return f"Error: Could not fetch stock data for {symbol}."
-```
-
-זה חשוב כי כלי חיצוני יכול להיכשל.
-
-לדוגמה:
-
-- אין חיבור אינטרנט
-
-- הסימול לא תקין
-
-- השירות החיצוני לא מחזיר נתונים
-
-- חלק מהשדות חסרים
-
-במקום שהתוכנית תקרוס, הכלי מחזיר הודעת שגיאה שה-Agent יכול להציג למשתמש.
-
-Agent טוב לא חייב להצליח תמיד. אבל הוא צריך להיכשל בצורה ברורה ומבוקרת.
-
-**יצירת ה-Agent**
-
-ה-Agent נוצר בפונקציה:
-
-```python
-def build_agent():
-```
-
-בתחילת הפונקציה בודקים שיש API key:
-
-```python
-if not os.getenv("ANTHROPIC_API_KEY"):
-    raise EnvironmentError(
-        "ANTHROPIC_API_KEY is not set. "
-        "Please set it before running stock_agent.py."
+    return ChatAnthropic(
+        model=MODEL_NAME,
+        temperature=0,
     )
 ```
 
-אם אין מפתח, אין טעם להמשיך. לכן הקוד עוצר עם הודעה ברורה.
-
-לאחר מכן יוצרים את המודל:
+הפונקציה הזאת בודקת אם קיים משתנה סביבה בשם:
 
 ```python
-model = init_chat_model(
-    MODEL_NAME,
-    temperature=0,
-)
+ANTHROPIC_API_KEY
 ```
 
-ואז יוצרים את ה-Agent:
+אם המפתח לא קיים, הקוד עוצר עם הודעה ברורה.
+
+זו התנהגות חשובה, כי בלי API key אין לצ’אטבוט דרך לקרוא למודל.
+
+שימו לב שהמפתח לא כתוב בתוך הקוד. זה חשוב במיוחד כאשר מעלים פרויקט ל-GitHub.
+
+במקום לכתוב מפתח בקובץ Python, אנחנו קוראים אותו מהסביבה:
 
 ```python
-agent = create_agent(
-    model=model,
-    tools=[get_stock_info],
-    system_prompt=SYSTEM_PROMPT,
-)
+os.getenv("ANTHROPIC_API_KEY")
 ```
 
-זו השורה שמחברת את כל הרכיבים:
+כך הקוד נשאר נקי ובטוח יותר.
+
+**טעינת ה-Vector Store**
+
+בתוך main() מופיעה השורה:
+
+```python
+vectorstore = load_vectorstore()
+```
+
+הפונקציה הזאת מגיעה מהקובץ הקודם:
+
+```python
+from build_rag_db import load_vectorstore
+```
+
+זו נקודה חשובה מאוד.
+
+rag_chatbot.py לא בונה את המאגר מחדש. הוא רק טוען מאגר שכבר נוצר קודם בתוך chroma_db.
+
+אם התיקייה chroma_db לא קיימת, הפונקציה load_vectorstore() תחזיר שגיאה ותזכיר להריץ קודם:
 
 ```bash
-model         היכולת להבין ולנסח
-tools         הפעולות שהסוכן יכול לבצע
-system_prompt כללי ההתנהגות של הסוכן
+python build_rag_db.py
 ```
 
-גם אם יש כרגע רק כלי אחד, אנחנו מעבירים אותו כרשימה:
+ההפרדה הזאת הופכת את הפרויקט למסודר יותר: build_rag_db.py מכין את המאגר rag_chatbot.py משתמש במאגר
+
+**יצירת Retriever**
+
+בתוך build_rag_chain אנחנו יוצרים retriever:
 
 ```python
-tools=[get_stock_info]
+retriever = vectorstore.as_retriever(
+    search_kwargs={"k": RETRIEVER_K}
+)
 ```
 
-כי בהמשך אפשר להוסיף כלים נוספים.
+ה-retriever הוא רכיב החיפוש של המערכת.
 
-לדוגמה:
+הוא מקבל שאלה, מחפש ב-Vector Store, ומחזיר את ה-chunks הכי רלוונטיים.
+
+הערך RETRIEVER_K מוגדר בתחילת הקובץ:
+
+RETRIEVER_K = 4
+
+המשמעות היא שבכל שאלה נחזיר עד ארבעה chunks.
+
+למה לא להחזיר את כל המסמכים?
+
+כי המטרה של RAG היא לשלוח למודל רק את המידע הרלוונטי ביותר. יותר מדי context עלול להעמיס על המודל ולפגוע באיכות התשובה.
+
+**בניית ה-Prompt**
+
+ה-Prompt מוגדר כך:
 
 ```python
-tools=[
-    get_stock_info,
-    get_stock_news,
-    get_stock_recommendations,
-]
+prompt = ChatPromptTemplate.from_messages(
+    [
+        (
+            "system",
+            """
+You are a helpful assistant.
+
+Answer the user's question based only on the following context.
+
+If the context does not contain relevant information,
+say that you do not have enough information in the provided documents.
+
+Keep the answer concise and clear.
+
+Context:
+{context}
+""",
+        ),
+        MessagesPlaceholder(variable_name="chat_history"),
+        ("human", "{question}"),
+    ]
+)
 ```
 
-כך Agent יכול להפוך בהדרגה ממערכת קטנה עם כלי אחד למערכת עשירה יותר עם כמה יכולות.
+ה-Prompt מכיל שלושה חלקים:
 
-**שליחת שאלה ל-Agent**
+<div dir="rtl">
 
-הפונקציה ששולחת שאלה היא:
+| **חלק** | **תפקיד** |
+| --- | --- |
+| **system** | מגדיר למודל איך להתנהג |
+| **chat_history** | מוסיף חלק מהשיחה הקודמת |
+| **question** | השאלה הנוכחית של המשתמש |
 
-```python
-def query_agent(agent, user_input: str) -> str:
+</div>
+
+החלק החשוב ביותר הוא ההנחיה:
+
+```bash
+Answer the user's question based only on the following context.
 ```
 
-בתוכה אנחנו מפעילים את הסוכן:
+המשמעות היא שהמודל מתבקש לענות לפי ה-context שנשלף מהמסמכים, ולא לפי ידע כללי בלבד.
+
+גם ההנחיה הזאת חשובה:
+
+```bash
+If the context does not contain relevant information,
+say that you do not have enough information in the provided documents.
+```
+
+זו דרך פשוטה להקטין תשובות מומצאות. אם המידע לא נמצא במסמכים, עדיף שהמערכת תגיד שאין לה מספיק מידע.
+
+**שליפת ה-context**
+
+בתוך build_rag_chain יש פונקציה פנימית בשם get_context:
 
 ```python
-result = agent.invoke(
+def get_context(inputs):
+    docs = retriever.invoke(inputs["question"])
+    return "\n\n".join(doc.page_content for doc in docs)
+```
+
+הפונקציה הזאת מקבלת את השאלה, שולחת אותה ל-retriever, ומחזירה טקסט אחד שמורכב מכל ה-chunks שנמצאו.
+
+לדוגמה, אם ה-retriever מצא ארבעה chunks, הפונקציה תחבר אותם כך:
+
+```bash
+chunk 1
+
+chunk 2
+
+chunk 3
+
+chunk 4
+```
+
+התוצאה הזאת נכנסת לתוך {context} ב-Prompt.
+
+**הרכבת ה-Chain**
+
+החלק שמחבר את הכול הוא:
+
+```python
+chain = (
+    RunnablePassthrough.assign(context=get_context)
+    | prompt
+    | llm
+    | StrOutputParser()
+)
+```
+
+אפשר לקרוא את זה כזרימה:
+
+```bash
+Input
+   ↓
+Add retrieved context
+   ↓
+Build prompt
+   ↓
+Call LLM
+   ↓
+Return text answer
+```
+
+**השלב הראשון:**
+
+```python
+RunnablePassthrough.assign(context=get_context)
+```
+
+משאיר את הקלט המקורי, ובמקביל מוסיף לו שדה חדש בשם context.
+
+כלומר, אם הקלט המקורי היה:
+
+```python
+{
+    "question": "What is ChromaDB?",
+    "chat_history": []
+}
+```
+
+אחרי השליפה הוא הופך בערך ל:
+
+```python
+{
+    "question": "What is ChromaDB?",
+    "chat_history": [],
+    "context": "Relevant chunks from the vector store..."
+}
+```
+
+לאחר מכן ה-Prompt מקבל את הנתונים, ה-LLM מייצר תשובה, ו-StrOutputParser מחזיר את התשובה כמחרוזת רגילה.
+
+**שמירת היסטוריית שיחה**
+
+היסטוריית השיחה נשמרת ברשימה פשוטה:
+
+```python
+chat_history = []
+```
+
+אחרי כל תשובה, מוסיפים אליה את שאלת המשתמש ואת תשובת הצ’אטבוט:
+
+```python
+chat_history.append(
     {
-        "messages": [
-            {
-                "role": "user",
-                "content": user_input,
-            }
-        ]
+        "role": "user",
+        "content": user_input,
+    }
+)
+chat_history.append(
+    {
+        "role": "assistant",
+        "content": answer,
     }
 )
 ```
 
-המשתמש שולח שאלה רגילה:
-
-```bash
-What is the current price of MSFT?
-```
-
-וה-Agent מחליט לבד אם צריך להפעיל tool.
-
-אם הוא מפעיל את get_stock_info, הזרימה היא בערך:
-
-```bash
-User question
-   ↓
-Agent decides to use tool
-   ↓
-get_stock_info("MSFT")
-   ↓
-Tool returns market data
-   ↓
-Agent writes final answer
-```
-
-בסוף אנחנו לוקחים את ההודעה האחרונה:
+לפני שליחת השאלה הבאה למודל, ההיסטוריה מומרת לאובייקטים של LangChain:
 
 ```python
-last_message = result["messages"][-1]
+messages_for_prompt = convert_history_to_messages(chat_history)
 ```
 
-אם זו הודעת AI, מחזירים את התוכן שלה:
+בתוך הפונקציה הזאת אנחנו לוקחים רק את ההודעות האחרונות:
 
 ```python
-if isinstance(last_message, AIMessage):
-    return last_message.content
+for message in chat_history[-MAX_HISTORY_MESSAGES:]:
 ```
 
-וזו התשובה שמודפסת למשתמש.
-
-**לולאת השיחה**
-
-בסוף הקובץ יש את main().
-
-היא בונה את ה-Agent:
+הערך מוגדר בתחילת הקובץ:
 
 ```python
-agent = build_agent()
+MAX_HISTORY_MESSAGES = 10
 ```
 
-ואז נכנסת ללולאה:
+כלומר, לא שולחים למודל את כל השיחה מאז תחילת הריצה, אלא רק את ההודעות האחרונות.
+
+זה שומר על context קצר וממוקד יותר.
+
+**לולאת הצ’אט**
+
+בסוף הקובץ יש לולאה שמפעילה את הצ’אט:
 
 ```python
 while True:
     user_input = input("\nYou: ").strip()
 ```
 
-אם המשתמש כותב:
+בכל סיבוב המשתמש כותב שאלה.
+
+אם הוא כותב:
 
 ```bash
 quit
@@ -1090,24 +906,28 @@ exit
 
 התוכנית נעצרת.
 
-אם המשתמש כותב שאלה רגילה, היא נשלחת ל-Agent:
+אם הוא כותב שאלה רגילה, הקוד מפעיל את ה-chain:
 
 ```python
-answer = query_agent(agent, user_input)
+answer = rag_chain.invoke(
+    {
+        "question": user_input,
+        "chat_history": messages_for_prompt,
+    }
+)
+```
+
+ואז מדפיס את התשובה:
+
+```python
 print(f"\nAssistant: {answer}")
 ```
 
-מבחינת המשתמש, זו נראית כמו שיחת צ’אט פשוטה.
+בשלב הזה כבר יש לנו צ’אטבוט RAG עובד: הוא מקבל שאלה, שולף context מתוך המאגר, שולח אותו למודל, ומחזיר תשובה למשתמש.
 
-אבל מאחורי הקלעים, המערכת יודעת להפעיל כלי חיצוני, להביא מידע, ולהחזיר תשובה מבוססת יותר.
+## הרצה ובדיקת הצ’אטבוט
 
-זה ההבדל המרכזי בין צ’אטבוט רגיל לבין Agent עם Tool.
-
-
-
-## הרצה ובדיקת ה-Agent
-
-אחרי שכתבנו את stock_agent.py, אפשר להריץ אותו ולבדוק שה-Agent באמת יודע להשתמש בכלי.
+אחרי שכתבנו את rag_chatbot.py, אפשר להריץ את הצ’אטבוט ולבדוק שהוא באמת משתמש במאגר שבנינו בחלק הקודם.
 
 לפני ההרצה, מבנה הפרויקט אמור להיראות כך:
 
@@ -1115,28 +935,29 @@ print(f"\nAssistant: {answer}")
 lesson-08-ai-agents/
   build_rag_db.py
   rag_chatbot.py
-  stock_agent.py
   requirements.txt
   data/
     sample_docs.txt
   chroma_db/
 ```
 
-שימו לב: stock_agent.py לא תלוי ב-chroma_db.
+אם תיקיית chroma_db עדיין לא קיימת, צריך קודם להריץ:
 
-הוא לא משתמש ב-RAG, לא מחפש במסמכים, ולא טוען Vector Store.
+```bash
+python build_rag_db.py
+```
 
-הוא משתמש ב-LLM וב-tool שמביא נתוני מניה דרך yfinance.
+רק אחרי שהמאגר נבנה ונשמר לדיסק, אפשר להריץ את הצ’אטבוט.
 
 **שלב 1: התקנת הספריות**
 
-מתוך תיקיית הפרויקט נריץ:
+אם עדיין לא התקנו את הספריות, נריץ:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-אם עובדים בתוך virtual environment, נפעיל אותו קודם.
+אם עובדים בתוך virtual environment, נוודא שהוא פעיל.
 
 ב-PowerShell:
 
@@ -1145,11 +966,9 @@ pip install -r requirements.txt
 pip install -r requirements.txt
 ```
 
-אם ההתקנה הסתיימה בלי שגיאות, אפשר להמשיך.
-
 **שלב 2: הגדרת API key**
 
-ה-Agent משתמש במודל של Anthropic, ולכן צריך להגדיר משתנה סביבה:
+הצ’אטבוט משתמש ב-Anthropic, לכן צריך להגדיר את המשתנה:
 
 ```python
 ANTHROPIC_API_KEY
@@ -1161,151 +980,133 @@ ANTHROPIC_API_KEY
 $env:ANTHROPIC_API_KEY="your_api_key_here"
 ```
 
-במקום your_api_key_here נשים את המפתח האמיתי.
+חשוב לא לכתוב את המפתח האמיתי בתוך הקוד, ולא להעלות אותו ל-GitHub.
 
-חשוב לא להכניס את המפתח לתוך stock_agent.py, ולא להעלות אותו ל-GitHub.
+**שלב 3: בניית בסיס ה-RAG**
 
-**שלב 3: הרצת ה-Agent**
+נריץ:
+
+```bash
+python build_rag_db.py
+```
+
+אם הכול תקין, נקבל פלט בסגנון:
+
+```bash
+Building RAG vector store...
+Loaded and created 5 chunks.
+Vector store was created successfully.
+Saved to: ...\chroma_db
+```
+
+מספר ה-chunks יכול להיות שונה. זה תלוי באורך המסמכים ובגודל ה-chunk שהגדרנו.
+
+**שלב 4: הרצת הצ’אטבוט**
 
 עכשיו נריץ:
 
 ```bash
-python stock_agent.py
+python rag_chatbot.py
 ```
 
 פלט אפשרי:
 
 ```bash
-Loading Stock Agent...
-Stock Agent is ready.
-Ask about stock prices, quotes, or market data.
+Loading RAG chatbot...
+RAG chatbot is ready.
+Ask a question about the documents.
 Type 'quit' or 'exit' to stop.
 
 You:
 ```
 
-בשלב הזה ה-Agent ממתין לשאלה.
+בשלב הזה הצ’אטבוט מחכה לשאלה.
 
-**בדיקה ראשונה: מחיר מניה לפי סימול**
+**שאלות בדיקה**
 
-נשאל:
-
-```bash
-What is the current price of MSFT?
-```
-
-ה-Agent אמור להבין שזו שאלה על נתוני שוק, לבחור את הכלי get_stock_info, להעביר אליו את הסימול MSFT, ואז להחזיר תשובה מסודרת.
-
-תשובה אפשרית:
+אפשר להתחיל עם שאלה שנמצאת בבירור בתוך sample_docs.txt:
 
 ```bash
-Assistant: Microsoft Corporation is currently trading at 430.12 USD.
-The day's high is 432.50, the day's low is 425.80, and the volume is 21000000.
-```
-
-המספרים בפועל יהיו שונים, כי הם מגיעים ממקור מידע חיצוני בזמן הריצה.
-
-הנקודה החשובה היא לא המחיר עצמו, אלא זה שה-Agent הפעיל כלי ולא המציא תשובה.
-
-**בדיקה שנייה: שאלה עם שם חברה**
-
-ננסה שאלה פחות טכנית:
-
-```bash
-What is the current price of Apple stock?
-```
-
-כאן המשתמש לא כתב AAPL, אלא כתב Apple stock.
-
-ה-Agent צריך לנסות להבין שהכוונה היא ל-Apple, ולהשתמש בסימול המתאים:
-
-```python
-AAPL
+What is ChromaDB?
 ```
 
 תשובה אפשרית:
 
 ```bash
-Assistant: Apple Inc. is currently trading at 195.40 USD.
-The day's high is 197.10, the day's low is 193.80, and the volume is 52000000.
+ChromaDB is a vector database. It stores embeddings and can search for similar text based on meaning rather than exact keyword matching.
 ```
 
-אם המודל לא מצליח לזהות את הסימול, אפשר לשאול בצורה מפורשת יותר:
+ננסה שאלה נוספת:
 
 ```bash
-What is the current price of AAPL?
-```
-
-במערכת אמיתית אפשר להוסיף tool נוסף שממיר שם חברה ל-ticker symbol בצורה אמינה יותר.
-
-**בדיקה שלישית: נתוני שוק כלליים**
-
-נשאל:
-
-```bash
-Give me market data for NVDA.
+What does RAG stand for?
 ```
 
 תשובה אפשרית:
 
 ```bash
-Assistant: Here is the current market data for NVIDIA Corporation:
-Ticker: NVDA
-Current price: ...
-Day high: ...
-Day low: ...
-Volume: ...
+RAG stands for Retrieval-Augmented Generation.
 ```
 
-זו בדיקה טובה כי היא מוודאת שה-Agent לא מחפש רק את הביטוי “current price”, אלא מבין שגם “market data” דורש שימוש בכלי.
-
-**בדיקה רביעית: שאלה שלא דורשת Tool**
-
-נשאל:
+ננסה גם שאלה על תהליך העבודה:
 
 ```bash
-What is a stock?
+What are the steps in a typical RAG pipeline?
 ```
-
-זו שאלה מושגית. היא לא דורשת מחיר חי, quote או נתוני שוק.
-
-במקרה כזה ה-Agent יכול לענות בלי להפעיל את get_stock_info.
 
 תשובה אפשרית:
 
 ```bash
-Assistant: A stock represents a share of ownership in a company. When someone owns a stock, they own a small part of that company.
+A typical RAG pipeline loads documents, splits them into chunks, converts each chunk into an embedding, stores the embeddings in a vector database, retrieves relevant chunks for a user question, and sends them to the language model as context.
 ```
 
-זו בדיקה חשובה, כי Agent טוב לא אמור להשתמש בכלי בכל שאלה. הוא צריך לדעת מתי להשתמש בכלי ומתי לענות רגיל.
+**בדיקת שאלה שאין עליה מידע במסמכים**
 
-**בדיקה חמישית: סימול לא תקין**
+חשוב לבדוק גם מה קורה כאשר המשתמש שואל שאלה שלא קשורה למסמכים.
 
-ננסה:
+לדוגמה:
 
 ```bash
-What is the current price of ABCXYZ123?
+What is the weather in London today?
 ```
-
-במקרה כזה ייתכן ש-yfinance לא יחזיר נתונים שימושיים.
 
 תשובה טובה תהיה בסגנון:
 
 ```bash
-Assistant: I could not find valid market data for ABCXYZ123.
+I do not have enough information in the provided documents to answer that question.
 ```
 
-או:
+זו בדיקה חשובה מאוד.
+
+מערכת RAG טובה לא אמורה להמציא תשובות כאשר אין לה context מתאים. אם המידע לא נמצא במסמכים, עדיף שהצ’אטבוט יאמר זאת בצורה ברורה.
+
+**בדיקת שאלת המשך**
+
+עכשיו נבדוק אם היסטוריית השיחה עוזרת.
+
+נשאל קודם:
 
 ```bash
-Assistant: The tool could not fetch stock data for ABCXYZ123.
+What is ChromaDB?
 ```
 
-המטרה היא לוודא שהמערכת לא קורסת ולא מחזירה תשובה מומצאת.
+ואחר כך:
 
-**יציאה מהתוכנית**
+```bash
+How is it used in RAG?
+```
 
-כדי לצאת מה-Agent, מקלידים:
+המילה it מתייחסת ל-ChromaDB. בגלל שהצ’אטבוט שומר חלק מהיסטוריית השיחה, יש לו סיכוי טוב יותר להבין למה המשתמש מתכוון.
+
+תשובה אפשרית:
+
+```bash
+ChromaDB is used in RAG as the vector database that stores embeddings and helps retrieve relevant chunks based on the user's question.
+```
+
+**יציאה מהצ’אט**
+
+כדי לצאת, מקלידים:
 
 ```bash
 quit
@@ -1317,7 +1118,7 @@ quit
 exit
 ```
 
-ואז נקבל:
+ואז התוכנית תדפיס:
 
 ```bash
 Goodbye.
@@ -1325,333 +1126,276 @@ Goodbye.
 
 **מה בדקנו כאן**
 
-בשלב הזה בדקנו שהמערכת עובדת מקצה לקצה:
+בשלב הזה בדקנו שהמערכת באמת עובדת מקצה לקצה:
 
-1. ה-Agent נטען
+1. הצ’אטבוט נטען
 
-2. ה-LLM מחובר
+2. ה-Vector Store נטען מתוך chroma_db
 
-3. הכלי get_stock_info זמין ל-Agent
+3. השאלה נשלחת ל-retriever
 
-4. המשתמש יכול לשאול בשפה טבעית
+4. chunks רלוונטיים נשלפים
 
-5. ה-Agent יודע מתי להשתמש בכלי
+5. ה-context נכנס ל-prompt
 
-6. הכלי מביא נתונים דרך yfinance
+6. ה-LLM מחזיר תשובה
 
-7. ה-Agent מחזיר תשובה ברורה
+7. היסטוריית השיחה נשמרת לשאלות המשך
 
-8. התוכנית יודעת לעצור בצורה מסודרת
+זה כבר RAG Chatbot עובד.
 
-זהו Agent פשוט, אבל הוא כבר מדגים את אחד הרעיונות החשובים ביותר בבניית סוכנים: המודל לא חייב לדעת הכול בעצמו. הוא יכול להשתמש בכלים כדי להביא מידע או לבצע פעולה בזמן אמת.
+הוא עדיין פשוט, אבל הוא כולל את כל הרכיבים המרכזיים של מערכת RAG אמיתית: מאגר וקטורי, retriever, prompt, מודל שפה, context, והיסטוריית שיחה קצרה.
 
-ראש הטופס
+## טעויות נפוצות בבניית RAG Chatbot
 
-## טעויות נפוצות בבניית Stock Agent
+אחרי שהצ’אטבוט עובד, חשוב להבין אילו טעויות יכולות לגרום לו להיכשל או להחזיר תשובות לא טובות.
 
-אחרי שה-Agent עובד, חשוב להבין איפה הוא עלול להיכשל.
+במערכת RAG יש הרבה חלקים קטנים שמתחברים יחד: Vector Store, retriever, prompt, LLM, היסטוריית שיחה וטעינת קבצים. אם אחד מהם לא מוגדר נכון, כל המערכת יכולה להיראות כאילו היא עובדת, אבל בפועל להחזיר תשובות חלשות.
 
-ב-Stock Agent יש תלות בכמה דברים יחד:
+**טעות 1: להריץ את rag_chatbot.py לפני build_rag_db.py**
 
-```bash
-LLM
-Instructions
-Tool
-yfinance
-Ticker symbol
-External data
-```
+זו הטעות הנפוצה ביותר.
 
-אם אחד מהם לא עובד נכון, התשובה עלולה להיות שגויה, חסרה או לא ברורה.
+הקובץ rag_chatbot.py לא בונה את המאגר. הוא רק טוען מאגר קיים.
 
-**טעות 1: לצפות מהמודל לדעת מחיר מניה**
-
-מחיר מניה הוא מידע משתנה.
-
-לכן לא נכון לצפות מה-LLM לענות עליו מתוך הזיכרון הפנימי שלו.
-
-לדוגמה, שאלה כזאת:
+לכן הסדר הנכון הוא:
 
 ```bash
-What is the current price of MSFT?
+python build_rag_db.py
+python rag_chatbot.py
 ```
 
-דורשת מידע עדכני.
-
-אם המודל עונה בלי להשתמש בכלי, זו בעיה.
-
-זו בדיוק הסיבה שהוספנו ל-SYSTEM_PROMPT את ההנחיה:
+אם מריצים קודם את rag_chatbot.py, הקוד ינסה לטעון את התיקייה:
 
 ```bash
-Do not invent stock prices or live market data.
+chroma_db/
 ```
 
-הסוכן צריך להבין:
+אבל אם היא עדיין לא קיימת, נקבל שגיאה.
 
-שאלה על מחיר חי 
- ↓ 
-צריך להשתמש בכלי
+זו בדיוק הסיבה שבנינו את הפונקציה load_vectorstore() עם בדיקה ברורה:
 
-ולא:
+```python
+if not CHROMA_PERSIST_DIR.exists():
+    raise FileNotFoundError(
+        f"Vector store not found at {CHROMA_PERSIST_DIR}. "
+        "Run build_rag_db.py first."
+    )
+```
 
-שאלה על מחיר חי 
- ↓ 
-לנסות לנחש תשובה
+הודעת שגיאה טובה לא רק אומרת שיש בעיה. היא גם אומרת מה צריך לעשות כדי לפתור אותה.
 
-**טעות 2: לא להגדיר API key**
+**טעות 2: לא להגדיר ANTHROPIC_API_KEY**
 
-ה-Agent צריך LLM כדי להבין את השאלה ולהחליט אם להשתמש בכלי.
+הצ’אטבוט צריך לקרוא ל-LLM. במקרה שלנו, הוא משתמש ב-Anthropic.
 
-לכן צריך להגדיר:
+לכן חייב להיות מוגדר משתנה סביבה בשם:
 
 ```python
 ANTHROPIC_API_KEY
 ```
 
-אם המשתנה לא מוגדר, הקוד יעצור כאן:
+אם המשתנה לא מוגדר, הפונקציה build_llm() תעצור את הריצה:
 
 ```python
-if not os.getenv("ANTHROPIC_API_KEY"):
+api_key = os.getenv("ANTHROPIC_API_KEY")
+
+if not api_key:
     raise EnvironmentError(
         "ANTHROPIC_API_KEY is not set. "
-        "Please set it before running stock_agent.py."
+        "Please set it before running rag_chatbot.py."
     )
 ```
 
-ב-PowerShell מגדירים אותו כך:
+ב-PowerShell מגדירים את המפתח כך:
 
 ```bash
 $env:ANTHROPIC_API_KEY="your_api_key_here"
 ```
 
-חשוב לא לשים את המפתח בתוך הקוד ולא להעלות אותו ל-GitHub.
+חשוב מאוד לא לשמור את המפתח בתוך הקוד.
 
-**טעות 3: לסמוך על שם חברה במקום על ticker symbol**
+לא כך:
 
-הכלי שלנו מקבל ticker symbol.
+```python
+api_key = "my-real-api-key"
+```
+
+קוד כזה מסוכן להעלאה ל-GitHub, כי הוא עלול לחשוף מפתח אמיתי.
+
+**טעות 3: לחשוב ש-RAG יודע לענות על כל דבר**
+
+RAG לא הופך את הצ’אטבוט לכל-יודע.
+
+הוא רק מוסיף לו יכולת לענות על בסיס מסמכים חיצוניים.
+
+אם המסמכים מדברים על LangChain, ChromaDB ו-RAG, ואז המשתמש שואל:
+
+```bash
+Who won the NBA championship this year?
+```
+
+אין למערכת מידע מתאים בתוך המסמכים.
+
+במקרה כזה, התשובה הנכונה היא לא להמציא.
+
+התשובה הנכונה היא משהו בסגנון:
+
+```bash
+I do not have enough information in the provided documents to answer that question.
+```
+
+זו לא חולשה של המערכת. זו התנהגות נכונה.
+
+מערכת RAG טובה נמדדת לא רק לפי היכולת שלה לענות, אלא גם לפי היכולת שלה לעצור כאשר אין לה בסיס מספיק.
+
+**טעות 4: לשלוח יותר מדי context למודל**
+
+לפעמים נראה שכדאי להחזיר הרבה chunks, כדי שהמודל יקבל כמה שיותר מידע.
+
+אבל זה לא תמיד נכון.
+
+אם נחזיר יותר מדי chunks, ה-context עלול להיות ארוך, עמוס ולא ממוקד. המודל עלול להתבלבל, להתייחס לפרטים לא חשובים, או לפספס את הנקודה המרכזית.
+
+לכן הגדרנו:
+
+```python
+RETRIEVER_K = 4
+```
+
+המשמעות היא שה-retriever מחזיר עד ארבעה chunks לכל שאלה.
+
+זה ערך טוב להתחלה, אבל לא ערך קדוש.
+
+בפרויקט אמיתי אפשר לבדוק ערכים שונים:
+
+```python
+k = 2
+k = 4
+k = 6
+k = 8
+```
+
+ולראות באיזה ערך התשובות הכי טובות.
+
+הכלל הוא פשוט:
+
+יותר context לא תמיד אומר תשובה טובה יותר.
+
+המטרה היא להביא למודל את המידע הכי רלוונטי, לא את כמות המידע הכי גדולה.
+
+**טעות 5: לא לשמור על Prompt ברור**
+
+ה-Prompt הוא המקום שבו אנחנו מגדירים למודל איך להשתמש ב-context.
+
+אם ה-Prompt לא ברור, המודל עלול לענות מתוך ידע כללי, גם כאשר רצינו שהוא יענה רק מתוך המסמכים.
+
+לכן כתבנו:
+
+```bash
+Answer the user's question based only on the following context.
+```
+
+וגם:
+
+```bash
+If the context does not contain relevant information,
+say that you do not have enough information in the provided documents.
+```
+
+שתי ההנחיות האלה חשובות.
+
+הראשונה מכוונת את המודל להשתמש ב-context.
+
+השנייה מכוונת אותו לא להמציא תשובה כאשר אין מספיק מידע.
+
+במערכת אמיתית אפשר לשפר את ה-Prompt עוד יותר, אבל כבר כאן יש לנו בסיס נכון.
+
+**טעות 6: לשמור יותר מדי היסטוריית שיחה**
+
+היסטוריית שיחה עוזרת בשאלות המשך.
 
 לדוגמה:
 
 ```bash
-MSFT
-AAPL
-NVDA
-TSLA
+What is ChromaDB?
 ```
 
-כאשר המשתמש שואל:
+ואחר כך:
 
 ```bash
-What is the current price of Apple stock?
+How is it used in RAG?
 ```
 
-ה-Agent צריך להבין שהכוונה היא כנראה:
+אבל אם שולחים למודל את כל השיחה מתחילת הריצה, ה-context עלול להיות עמוס מדי.
 
-```bash
-AAPL
-```
-
-אבל זה לא תמיד מובטח.
-
-לכן בבדיקות כדאי לשאול גם עם שם חברה וגם עם ticker:
-
-```bash
-What is the current price of Apple stock?
-What is the current price of AAPL?
-```
-
-אם השאלה עם שם החברה לא עובדת טוב, זה לא אומר שה-tool נכשל. יכול להיות שהמודל לא המיר את שם החברה לסימול הנכון.
-
-במערכת מתקדמת יותר אפשר להוסיף tool נפרד שמחפש ticker לפי שם חברה.
-
-**טעות 4: לא לטפל ב-ticker לא תקין**
-
-משתמש יכול להקליד סימול שלא קיים:
-
-```bash
-ABCXYZ123
-```
-
-או שאלה לא ברורה:
-
-```bash
-What is the current stock price?
-```
-
-אם אין סימול ברור, הכלי לא צריך לקרוס.
-
-לכן בתחילת get_stock_info יש בדיקה:
+לכן הגדרנו:
 
 ```python
-symbol = symbol.strip().upper()
-
-if not symbol:
-    return "Error: Please provide a stock ticker symbol."
+MAX_HISTORY_MESSAGES = 10
 ```
 
-בנוסף, אם yfinance לא מחזיר נתונים, הכלי מחזיר שגיאה ברורה:
+המשמעות היא שהמערכת שומרת את כל ההיסטוריה בזיכרון המקומי של התוכנית, אבל שולחת למודל רק את ההודעות האחרונות.
 
-```python
-if not info:
-    return f"Error: No market data found for {symbol}."
-```
+זה איזון טוב להתחלה.
 
-המטרה היא שה-Agent יקבל תוצאה מובנת, גם כאשר הכלי לא הצליח.
+אם רוצים מערכת מתקדמת יותר, אפשר בעתיד לנהל היסטוריה בצורה חכמה יותר: לסכם שיחות ישנות, לשמור זיכרון חיצוני, או להפריד בין context של מסמכים לבין context של שיחה.
 
-**טעות 5: להחזיר למשתמש שגיאה טכנית מדי**
+**טעות 7: לא לבדוק שאלות מחוץ למסמכים**
 
-במערכת לימודית זה בסדר להחזיר הודעה כמו:
-
-```bash
-Error: Could not fetch stock data for MSFT.
-```
-
-אבל במערכת אמיתית עדיף להחזיר ניסוח ידידותי יותר:
-
-```bash
-I could not fetch market data for MSFT right now.
-Please try again later or check the ticker symbol.
-```
-
-העיקרון הוא:
-
-- לוגים טכניים למפתח
-
-- הודעה ברורה למשתמש
-
-לא כדאי לחשוף למשתמש stack trace, פרטים פנימיים או הודעות שגיאה ארוכות מדי.
-
-**טעות 6: לתת ייעוץ השקעות**
-
-ה-Agent שלנו מציג מידע.
-
-הוא לא אמור להמליץ למשתמש לקנות, למכור או להחזיק מניה.
-
-לכן ב-SYSTEM_PROMPT כתבנו:
-
-```python
-Do not provide financial advice.
-Do not tell the user to buy, sell, or hold a stock.
-```
-
-לדוגמה, אם המשתמש שואל:
-
-```bash
-Should I buy NVDA?
-```
-
-תשובה טובה לא תהיה:
-
-```bash
-Yes, you should buy it.
-```
-
-תשובה טובה יותר תהיה:
-
-```bash
-I can provide market data, but I cannot give financial advice.
-You may want to review the company's financials and consult a qualified professional.
-```
-
-בפרויקט שלנו הדגש הוא טכני: איך Agent משתמש בכלי. לא איך לקבל החלטות השקעה.
-
-**טעות 7: לחשוב ש-yfinance הוא ה-Agent**
-
-yfinance הוא לא הסוכן.
-
-הוא רק מקור הנתונים.
-
-חלוקת התפקידים היא:
-
-- yfinance מביא נתונים גולמיים
-
-- get_stock_info עוטף את yfinance ומחזיר טקסט מסודר
-
-- Agent מחליט מתי להפעיל את הכלי ואיך להסביר את התוצאה
-
-זו נקודה חשובה.
-
-Agent הוא לא API.
-
-Agent הוא שכבה שמחברת בין שפה טבעית, כלי חיצוני, הנחיות והתנהגות.
-
-**טעות 8: לא לבדוק אם ה-Agent באמת השתמש בכלי**
-
-לפעמים התשובה נראית טובה, אבל לא בטוח שה-Agent הפעיל את הכלי.
-
-בשלב לימודי אפשר להוסיף הדפסה זמנית בתוך הכלי:
-
-```python
-print(f"Calling get_stock_info with symbol: {symbol}")
-```
-
-כך בזמן הרצה אפשר לראות אם הפונקציה באמת הופעלה.
-
-אחרי שמסיימים לבדוק, אפשר להסיר את ההדפסה הזאת או להחליף אותה בלוג מסודר.
-
-בדיקה כזאת עוזרת להבין את ההבדל בין:
-
-המודל ענה לבד
-
-לבין:
-
-המודל הפעיל כלי וקיבל תוצאה
-
-**טעות 9: להעמיס יותר מדי אחריות על Tool אחד**
-
-בשלב הראשון בנינו tool אחד:
-
-```python
-get_stock_info
-```
-
-הוא מביא מחיר, טווח יומי ונפח מסחר.
-
-לא כדאי להפוך אותו לכלי ענק שמטפל בכל דבר: חדשות, המלצות אנליסטים, ביצועים היסטוריים, דוחות כספיים ועוד.
-
-בדרך כלל עדיף לבנות כמה כלים קטנים וברורים:
-
-```python
-get_stock_info
-get_stock_news
-get_stock_recommendations
-get_stock_year_performance
-```
-
-כך כל tool עושה פעולה אחת ברורה, וה-Agent יכול לבחור את הכלי המתאים לפי שאלת המשתמש.
-
-**טעות 10: לא להפריד בין מידע חי לבין מידע שמור**
-
-RAG מתאים כאשר מקור הידע הוא מסמכים קיימים.
-
-Stock Agent מתאים כאשר צריך להביא מידע בזמן אמת.
-
-לכן לא נכון לשמור מחיר מניה במסמך ולהשתמש ב-RAG כדי לענות עליו לאורך זמן. המחיר יתיישן מהר מאוד.
-
-הכלל הוא:
-
-מידע יציב יחסית - מתאים ל-RAG
-
-מידע משתנה בזמן אמת - מתאים ל-Tool
+הרבה מפתחים בודקים רק שאלות שקל למערכת לענות עליהן.
 
 לדוגמה:
 
-<div dir="rtl">
+```bash
+What is RAG?
+What is ChromaDB?
+What are embeddings?
+```
 
-| **שאל**ה | **פתרון מתאים** |
-| --- | --- |
-| **What does the document say about ChromaDB?** | RAG |
-| **What is the current price of MSFT?** | Tool |
-| **What is the company policy about refunds?** | RAG |
-| **What is the current status of order 123?** | Tool |
-| **What are the latest headlines about AAPL?** | Tool |
+אלה שאלות טובות לבדיקה ראשונה, אבל הן לא מספיקות.
 
-</div>
+חייבים לבדוק גם שאלות שאין עליהן תשובה במסמכים:
 
-ההבדל הזה הוא בסיס חשוב בתכנון מערכות Agentic.
+```bash
+What is the weather in London today?
+Who is the CEO of Microsoft?
+How do I cook pasta?
+```
 
-בסוף הפרק הזה, ה-Agent שלנו כבר לא רק עובד. אנחנו גם מבינים מה עלול להשתבש, איך לבדוק אותו, ואיך לשפר אותו בהמשך.
+המטרה היא לוודא שהמערכת לא ממציאה תשובות.
 
-תחתית הטופס
+אם הצ’אטבוט עונה בביטחון על שאלות שלא קיימות במסמכים, צריך לשפר את ה-Prompt, את בדיקת ה-context, או את הלוגיקה של השליפה.
+
+**טעות 8: לא להבין את ההבדל בין retrieval לבין generation**
+
+ב-RAG יש שני שלבים שונים:
+
+```bash
+retrieval   → מציאת מידע רלוונטי
+generation  → ניסוח תשובה בעזרת LLM
+```
+
+ה-retriever לא כותב תשובה.
+
+ה-LLM לא מחפש לבד במסמכים.
+
+כל רכיב עושה תפקיד אחר.
+
+אם ה-retriever מחזיר context לא טוב, גם LLM חזק עלול לתת תשובה חלשה.
+
+אם ה-context טוב אבל ה-Prompt לא ברור, המודל עלול להשתמש בו בצורה לא מדויקת.
+
+לכן כשיש בעיה בתשובה, צריך לשאול:
+
+- האם נשלפו chunks רלוונטיים?
+
+- האם ה-context שנשלח למודל ברור?
+
+- האם ה-Prompt מגדיר נכון את ההתנהגות?
+
+- האם השאלה בכלל מתאימה למסמכים?
+
+זו דרך מקצועית יותר לדבג מערכת RAG.
 
 

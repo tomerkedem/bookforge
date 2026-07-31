@@ -9,8 +9,6 @@
 <img src="/Lesson-1-Introduction-To-AI-Engineering-and-Generative-AI/assets/image-08.png" alt="image-08.png" width="702" height="461" />
 
 
-
-
 להלן ניתוח אבני הדרך המרכזיות:
 
 **ההיסטוריה של ה-AI מחולקת לשלוש תקופות עיקריות:** הלידה, ה"חורף", והמפץ הגדול של ה-Deep Learning.

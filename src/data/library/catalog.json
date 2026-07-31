@@ -6,7 +6,7 @@
       "id": "ai-engineering-series",
       "slug": "ai-engineering-series",
       "type": "series",
-      "status": "draft",
+      "status": "ready",
       "sourceKind": "manual_seed",
       "title": {
         "en": "AI Engineering Course"
@@ -17,7 +17,7 @@
       "visibility": {
         "showInLibrary": true,
         "showInUniverse": true,
-        "showInOrbit": false,
+        "showInOrbit": true,
         "showInAtlas": true,
         "showInContinueLearning": false
       },
@@ -293,6 +293,32 @@
         "showInContinueLearning": true
       },
       "href": "/books/practical-python-for-ai-engineering"
+    },
+    {
+      "id": "Lesson-8-ai-agents",
+      "slug": "Lesson-8-ai-agents",
+      "type": "course_lesson",
+      "status": "ready",
+      "sourceKind": "admin",
+      "title": {
+        "en": "שיעור 8: ‏‏ AI Agents"
+      },
+      "languages": [
+        "en"
+      ],
+      "visibility": {
+        "showInLibrary": true,
+        "showInUniverse": true,
+        "showInOrbit": true,
+        "showInAtlas": true,
+        "showInContinueLearning": true
+      },
+      "href": "/books/Lesson-8-ai-agents",
+      "categoryKey": "מערכות AI",
+      "parentSeriesSlug": "ai-engineering-series",
+      "courseSlug": "ai-engineering-series",
+      "orderInSeries": 8,
+      "lessonNumber": 8
     }
   ]
 }

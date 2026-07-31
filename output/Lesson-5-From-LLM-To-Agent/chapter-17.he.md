@@ -1,405 +1,479 @@
-# Reasoning, Structured Output ומה באמת קורה במערכות
+# פתרון תרגיל הבית: Intelligent Request Router
 
-לקראת סוף השיעור המרצה התחיל לגעת בנושא רחב הרבה יותר:
+תרגיל הבית ממשיך ישירות את מה שנלמד בשיעור: לקחת הודעת לקוח חופשית, לשלוח אותה ל-LLM, ולהחזיר ממנה פלט מובנה שהמערכת יכולה לפעול לפיו.
 
-איך מודלים "חושבים", איך מפרקים בעיות, ואיך בפועל בונים סביב זה מערכות.
+בתרגיל הזה לא מבקשים רק לסכם את ההודעה. המטרה היא לבנות endpoint בשם Smart Support Router, שיודע לנתח פנייה של לקוח ולהחזיר החלטה תפעולית:
 
-אבל הדגש היה חשוב מאוד.
+לאיזו מחלקה הפנייה שייכת
 
-המטרה היא לא להתרשם מזה שהמודל נשמע חכם.
+מה רמת הדחיפות שלה
 
-המטרה היא לבנות מערכת שאפשר לסמוך עליה.
+מה הסנטימנט של הלקוח
 
-וזה הבדל עצום.
+ואילו ישויות חשובות הופיעו בהודעה
 
-**הרבה הדגמות AI נראות מרשימות כי המודל:**
+כלומר, זה כבר לא “LLM כצ'אט”, אלא LLM כרכיב ניתוב בתוך מערכת שירות.
 
-- מסביר יפה
+**מבנה הפתרון**
 
-- כותב טקסט משכנע
+נבנה פתרון עם שלושה קבצים מרכזיים:
 
-- מנמק
-
-- נשמע בטוח בעצמו
-
-אבל במערכות אמיתיות זה לא מספיק.
-
-**מה שמעניין אותנו הנדסית הוא:**
-
-- האם הפלט עקבי
-
-- האם אפשר לבדוק אותו
-
-- האם אפשר לאמת אותו
-
-- האם הוא עומד בחוקים
-
-- האם אפשר להזרים אותו למערכת אחרת
-
-- האם אפשר לסמוך עליו בתוך workflow
-
-**וזה בדיוק המקום שבו מתחברים:**
-
-- Reasoning
-
-- Structured Output
-
-- Multi-step flows
-
-- Validation
-
-- Chained calls
-
-
-
-## Reasoning
-
-כאשר מדברים על Reasoning בעולם ה-LLMs, הכוונה בדרך כלל היא ליכולת של המודל לבצע כמה שלבי חשיבה לפני שהוא מחזיר תשובה.
-
-לא רק לחפש pattern סטטיסטי פשוט, אלא לבצע תהליך מורכב יותר:
-
-- להבין הקשר
-
-- להסיק מסקנות
-
-- לחבר מידע
-
-- לזהות קשרים
-
-- לבצע פירוק לוגי
-
-לדוגמה:
-
-```python
-Customer says the package arrived late,
-the tracking stopped updating,
-and they want compensation.
+```bash
+project/
+│
+├── server.py
+├── anthropic_api_structured.py
+│
+└── data/
+    └── routing_schema.json
 ```
 
-מודל טוב לא רק "קורא" את המשפט.
+הקובץ routing_schema.json יגדיר את מבנה הפלט שהמודל חייב להחזיר.
 
-הוא יכול להסיק:
+הקובץ anthropic_api_structured.py יכיל את הפונקציה שמדברת עם Anthropic,
 
-- שיש בעיית מסירה או עיכוב במשלוח
+מבצעת retry, ממירה את התשובה ל-JSON, ומוודאת שהתוצאה עומדת בסכמה.
 
-- שהלקוח מתוסכל או לא מרוצה מהטיפול
+הקובץ server.py יחשוף endpoint מסוג POST /route-ticket.
 
-- שייתכן שהשירות לא עמד בזמן הטיפול שהוגדר
-
-- שנדרשת פעולת המשך מצד הארגון
-
-- ושאולי צריך להעביר את המקרה לטיפול ברמה גבוהה יותר
-
-כלומר, המודל מייצר שכבת משמעות מעל הטקסט.
-
-אבל כאן מגיעה נקודה קריטית:
-
-אנחנו לא באמת רואים את "המחשבות" של המודל.
-
-אנחנו רואים רק את הפלט.
-
-ולכן בעולם ההנדסי פחות חשוב האם המודל "חשב יפה", ויותר חשוב: 
-האם הפלט שלו אמין ושימושי.
-
-
-
-## Multi-step Decomposition
-
-אחד הרעיונות המרכזיים שעלו הוא פירוק בעיה גדולה לשלבים קטנים יותר.
-
-במקום לבקש:
-
-```python
-Analyze the entire conversation and generate all business outputs.
-```
-
-אפשר לפרק:
-
-1. חילוץ ישויות
-
-2. סיווג נושא
-
-3. ניתוח סנטימנט
-
-4. זיהוי משימות המשך
-
-5. יצירת summary
-
-6. חישוב risk score
-
-למה זה חשוב?
-
-כי בעיות גדולות הן בדרך כלל:
-
-- פחות יציבות
-
-- יותר קשות לבדיקה
-
-- יותר קשות ל-debugging
-
-- יותר רגישות להזיות
-
-- יותר קשות לוולידציה
-
-כאשר כל שלב קטן וממוקד:
-
-- קל יותר להבין מה נכשל
-
-- קל יותר לבצע validation
-
-- קל יותר לבצע retry
-
-- קל יותר להחליף מודל
-
-- קל יותר למדוד איכות
-
-וזה בדיוק מה שמתחיל לקרות במערכות AI מודרניות: 
-במקום "קריאה אחת קסומה", בונים pipelines.
-
-
-
-## Chain of Thought כרעיון
-
-המרצה הזכיר גם את הרעיון של Chain of Thought.
-
-הכוונה הכללית היא לעודד את המודל לבצע reasoning בשלבים.
-
-לדוגמה:
-
-```python
-Think step by step.
-```
-
-או:
-
-```python
-First identify the issue.
-Then determine the customer sentiment.
-Finally generate the follow-up action.
-```
-
-הרעיון הוא שלא תמיד כדאי שהמודל "יקפוץ" ישר לתשובה הסופית.
-
-לפעמים תהליך ביניים משפר איכות reasoning.
-
-אבל גם כאן חשוב להבין משהו הנדסי:
-
-לא באמת מעניין אותנו שהמודל "נשמע חכם".
-
-מעניין אותנו:
-
-- האם התוצאה טובה יותר
-
-- האם היא יציבה יותר
-
-- האם אפשר לבדוק אותה
-
-- האם היא עומדת בדרישות
-
-כלומר, Chain of Thought הוא לא מטרה.
-
-הוא כלי.
-
-ובמערכות אמיתיות לא תמיד חושפים את reasoning למשתמש או שומרים אותו בכלל.
-
-מה שבדרך כלל חשוב הוא הפלט הסופי.
-
-## Structured Output
-
-וכאן מתחברים כל הרעיונות מהפרקים הקודמים.
-
-Reasoning לבד לא מספיק.
-
-גם אם המודל ביצע reasoning מצוין, מערכת עדיין צריכה:
-
-- JSON תקין
-
-- schema ברור
-
-- שדות צפויים
-
-- טיפוסים תקינים
-
-- מבנה קבוע
-
-לכן Structured Output הוא חלק קריטי בכל pipeline רציני.
-
-לדוגמה:
+## קובץ ראשון: data/routing_schema.json
 
 ```python
 {
-  "issue_type": "delivery_delay",
-  "sentiment": "negative",
-  "requires_follow_up": true
-}
-```
-
-זה פלט שמערכת יכולה לעבוד איתו.
-
-לעומת זאת:
-
-```python
-The customer seems somewhat frustrated because the delivery was delayed.
-```
-
-אולי זה נשמע טוב לבן אדם. 
-אבל הרבה יותר קשה למערכת להשתמש בזה.
-
-וזו אחת התובנות החשובות ביותר בכל התחום:
-
-מערכות לא צריכות "טקסט יפה".
-
-מערכות צריכות מבנה.
-
-## Schema כחלק מהפרומפט
-
-במערכות Structured Output מודרניות, ה-schema עצמו הופך לחלק מה-prompt.
-
-כלומר, המודל לא רק מקבל:
-
-- task
-
-- context
-
-אלא גם:
-
-- specification מלא של הפלט
-
-לדוגמה:
-
-```python
-{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
+  "additionalProperties": false,
+  "required": ["department", "priority", "sentiment", "entities"],
   "properties": {
+    "department": {
+      "type": "string",
+      "enum": ["billing", "technical_support", "sales", "complaints"]
+    },
+    "priority": {
+      "type": "string",
+      "enum": ["low", "medium", "high", "critical"]
+    },
     "sentiment": {
-      "type": "string"
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5
+    },
+    "entities": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
     }
   }
 }
 ```
 
-ה-schema למעשה אומר למודל:
+הסכמה הזו חשובה כי היא הופכת את התשובה של המודל לחוזה ברור.
 
-- אילו שדות להחזיר
+המודל לא יכול להחזיר מחלקה חופשית כמו "support" או "finance". הוא חייב לבחור מתוך הערכים שהוגדרו:
 
-- איזה טיפוס יש לכל שדה
+```python
+billing
+technical_support
+sales
+complaints
+```
 
-- מה חובה
+גם העדיפות מוגבלת לערכים ברורים בלבד:
 
-- מה אסור
+```python
+low
+medium
+high
+critical
+```
 
-וזה משנה את כל אופי העבודה.
+הסנטימנט חייב להיות מספר בין 1 ל 5, והישויות חייבות להיות רשימת מחרוזות.
 
-במקום: 
-"כתוב תשובה"
+המאפיין:
 
-אנחנו אומרים: 
-"החזר אובייקט שעומד בחוזה מוגדר"
+```python
+"additionalProperties": false
+```
 
-זו כבר חשיבה של תוכנה, לא של צ'אט.
+חשוב מאוד, כי הוא מונע מהמודל להוסיף שדות שלא ביקשנו. זה הופך את הפלט צפוי יותר ונוח יותר לעיבוד בקוד.
 
-## שימוש בפלט של קריאה אחת כקלט לקריאה אחרת
+## קובץ שני: anthropic_api_structured.py
 
-עוד רעיון חשוב שהופיע בשקפים הוא chaining.
+```python
+import json
 
-כלומר: 
-קריאה אחת מייצרת פלט, 
-והפלט הזה הופך לקלט לקריאה הבאה.
+import anthropic
+from jsonschema import validate
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
 
-**לדוגמה:**
+client = anthropic.AsyncAnthropic()
 
-**שלב ראשון:** 
-חילוץ entities.
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_fixed(2),
+    retry=retry_if_exception_type(Exception),
+)
+async def get_structured_data(text: str, schema: dict) -> dict:
+    response = await client.messages.create(
+        model="claude-haiku-4-5",
+        max_tokens=1024,
+        temperature=0,
+        messages=[
+            {
+                "role": "user",
+                "content": (
+                    "Analyze the following customer support message.\n"
+                    "Return ONLY valid JSON. Do not include markdown.\n"
+                    "The JSON must match this schema:\n"
+                    f"{json.dumps(schema)}\n\n"
+                    "Customer message:\n"
+                    f"{text}"
+                ),
+            }
+        ],
+    )
+
+    
+    raw_text = response.content[0].text.strip()
+
+    if raw_text.startswith("```json"):
+        raw_text = raw_text.removeprefix("```json").removesuffix("```").strip()
+    elif raw_text.startswith("```"):
+        raw_text = raw_text.removeprefix("```").removesuffix("```").strip()
+
+    parsed = json.loads(raw_text)
+    validate(instance=parsed, schema=schema)
+    return parsed
+```
+
+הקובץ הזה דומה מאוד לקובץ שנלמד בשיעור, אבל הפרומפט הותאם למשימת ניתוב פניות שירות.
+
+במקום:
+
+```python
+Extract the key information from this interaction between agent and customer
+```
+
+אנחנו מבקשים:
+
+```python
+Analyze the following customer support message.
+Classify it for routing and extract important entities.
+```
+
+כלומר, המודל לא רק מחלץ מידע. הוא גם מקבל החלטת routing.
+
+**הפונקציה עושה כמה דברים:**
+
+שולחת את הודעת הלקוח למודל.
+
+מצרפת את הסכמה דרך output_config.
+
+מקבלת תשובה מובנית.
+
+ממירה אותה ל-JSON בעזרת json.loads.
+
+בודקת את התוצאה מול הסכמה בעזרת validate.
+
+ומבצעת retry עד שלושה ניסיונות במקרה של שגיאה.
+
+
+
+## קובץ שלישי: server.py
+
+```python
+import json
+from pathlib import Path
+
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel, Field
+
+from anthropic_api_structured import get_structured_data
+
+app = FastAPI(title="Smart Support Router")
+
+_DATA_DIR = Path(__file__).parent / "data"
+_ROUTING_SCHEMA_PATH = _DATA_DIR / "routing_schema.json"
+
+
+def load_routing_schema() -> dict:
+    if not _ROUTING_SCHEMA_PATH.is_file():
+        raise RuntimeError(f"Routing schema not found: {_ROUTING_SCHEMA_PATH}")
+
+    return json.loads(_ROUTING_SCHEMA_PATH.read_text(encoding="utf-8"))
+
+
+class RouteTicketRequest(BaseModel):
+    message: str = Field(
+        ...,
+        description="Unstructured customer support message to analyze and route",
+    )
+
+
+@app.get("/routing-schema")
+def get_routing_schema() -> dict:
+    return load_routing_schema()
+
+
+@app.post("/route-ticket")
+async def route_ticket(body: RouteTicketRequest) -> dict:
+    if not body.message.strip():
+        raise HTTPException(status_code=400, detail="message must not be empty")
+
+    schema = load_routing_schema()
+
+    try:
+        return await get_structured_data(body.message, schema)
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=str(e)) from e
+```
+
+כאן אנחנו בונים שרת FastAPI עם שני endpoints.
+
+הראשון:
+
+```python
+GET /routing-schema
+```
+
+מחזיר את הסכמה, כדי שיהיה קל לראות מה השירות מצפה להחזיר.
+
+השני:
+
+```python
+POST /route-ticket
+```
+
+הוא ה endpoint המרכזי של התרגיל.
+
+הוא מקבל JSON כזה:
 
 ```python
 {
-  "customer_name": "John",
-  "issue_type": "billing"
+  "message": "customer message here"
 }
 ```
 
-**שלב שני:** 
-הפלט הזה נשלח למודל אחר שמבצע risk classification.
+בודק שההודעה לא ריקה.
 
-**שלב שלישי:** 
-התוצאה נשלחת למערכת workflow.
+טוען את routing_schema.json.
 
-זו כבר לא "שיחה עם AI".
+שולח את ההודעה והסכמה לפונקציה get_structured_data.
 
-זו מערכת pipeline אמיתית.
+ומחזיר את התוצאה ללקוח.
 
-וזה בדיוק הכיוון שאליו התעשייה הולכת:
+## קובץ תלויות: requirements.txt
 
-- multi-step reasoning
+```python
+anthropic
+fastapi
+jsonschema
+tenacity
+uvicorn
+```
 
-- orchestrated calls
 
-- chained workflows
 
-- agentic systems
+## שלבי הרצה ובדיקה
 
-אבל גם כאן המרצה הדגיש נקודה חשובה:
+**כניסה לתיקיית הפרויקט**
 
-כל שלב חייב להיות ניתן לבדיקה.
+```bash
+cd homework
+```
 
-כלומר:
+**יצירת Virtual Environment**
 
-- validate
+ב-Windows:
 
-- log
+```bash
+python -m venv .venv
+```
 
-- retry
+אם python אינו מזוהה:
 
-- monitor
+```bash
+py -m venv .venv
+```
 
-- trace
+**הפעלת הסביבה**
 
-- inspect
+**PowerShell:**
 
-כי ברגע שמערכת בנויה מכמה שלבי AI, debugging נהיה הרבה יותר מורכב.
+```bash
+.\.venv\Scripts\Activate.ps1
+```
 
-## מה באמת מעניין במערכות AI
+CMD:
 
-בסופו של דבר, בעולם ההנדסי פחות מעניין האם המודל "חושב".
+```bash
+.\.venv\Scripts\activate
+```
 
-מה שמעניין הוא:
+לאחר ההפעלה אמור להופיע:
 
-האם אפשר להכניס אותו בצורה בטוחה למערכת אמיתית.
+```bash
+(.venv)
+```
 
-ולכן המיקוד האמיתי הוא:
+בתחילת שורת הפקודה.
 
-- structured output
+**התקנת כל הספריות**
 
-- validation
+```bash
+python -m pip install -r requirements.txt
+```
 
-- retry
+**הגדרת Anthropic API Key**
 
-- observability
+**PowerShell:**
 
-- decomposition
+```bash
+$env:ANTHROPIC_API_KEY="your_api_key_here"
+```
 
-- schema enforcement
+**CMD:**
 
-- deterministic workflows
+```bash
+set ANTHROPIC_API_KEY=your_api_key_here
+```
 
-המודל הוא רק רכיב אחד בתוך pipeline גדול יותר.
+**הרצת השרת**
 
-והערך האמיתי לא מגיע מזה שהמודל "נשמע אינטליגנטי".
+מומלץ להריץ כך:
 
-הערך מגיע מזה שאפשר:
+```bash
+python -m uvicorn server:app --reload
+```
 
-- לבדוק את הפלט
+ולא רק:
 
-- לאמת אותו
+```bash
+uvicorn server:app --reload
+```
 
-- למדוד אותו
+כי במערכות Windows לעיתים uvicorn אינו נמצא ב PATH גם כאשר הוא מותקן.
 
-- לעקוב אחריו
+אם ההרצה הצליחה אמורה להופיע הודעה בסגנון:
 
-- ולהפעיל עליו לוגיקה עסקית אמיתית
+```bash
+Uvicorn running on http://127.0.0.1:8000
+```
 
-וזו אולי אחת הנקודות החשובות ביותר שעלו בשיעור כולו:
+**פתיחת Swagger**
 
-AI systems אמיתיים לא בנויים רק על prompts.
+בדפדפן:
 
-הם בנויים על הנדסה סביב המודל.
+```bash
+http://127.0.0.1:8000/docs
+```
+
+שם ניתן לבדוק את ה endpoint דרך Swagger UI.
+
+**בדיקת endpoint**
+
+לבחור:
+
+```bash
+POST /route-ticket
+```
+
+ללחוץ:
+
+```bash
+Try it out
+```
+
+ולהדביק הודעת לקוח לדוגמה.
+
+**דוגמת Request**
+
+```python
+{
+  "message": "Subject: Urgent - Cannot access my Pro dashboard\nHello, I've been trying to log into my account (j.smith@email.com) since this morning but I keep getting a '403 Forbidden' error on the main dashboard. I just paid my annual renewal for the 'Advanced Analytics Suite' yesterday (Transaction ID: TXN_98765) and I’m worried my access was cut off by mistake. I have a presentation in two hours and really need this fixed now. This is extremely frustrating."
+}
+```
+
+**דוגמת Response צפוי**
+
+```bash
+{
+  "department": "technical_support",
+  "priority": "critical",
+  "sentiment": 2,
+  "entities": [
+    "j.smith@email.com",
+    "Pro dashboard",
+    "403 Forbidden error",
+    "Advanced Analytics Suite",
+    "TXN_98765",
+    "annual renewal"
+  ]
+}
+```
+
+כאן אפשר להתווכח האם המחלקה צריכה להיות technical_support או billing, כי יש בהודעה גם בעיית גישה וגם תשלום שבוצע. אבל בגלל שהבעיה המיידית היא חוסר גישה לדשבורד ושגיאת 403 Forbidden, הבחירה הטובה ביותר היא technical_support.
+
+העדיפות critical מוצדקת בגלל כמה סימנים:
+
+המילה Urgent.
+
+הלקוח לא מצליח להיכנס.
+
+יש מצגת בעוד שעתיים.
+
+הלקוח מתוסכל מאוד.
+
+הסנטימנט הוא 1, כי ההודעה מציינת במפורש:
+
+```python
+This is extremely frustrating.
+```
+
+והישויות כוללות גם פרטי זיהוי, גם מוצר, גם שגיאה, וגם מזהה עסקה.
+
+**בעיה נפוצה: המודל מחזיר Markdown במקום JSON**
+
+במהלך הפיתוח התברר שלעיתים Claude מחזיר JSON עטוף ב:
+
+```json
+
+ולכן ()json.loads נכשל.
+
+הפתרון היה לנקות את Markdown wrappers לפני parsing:
+
+```bash
+raw_text = response.content[0].text.strip()
+
+if raw_text.startswith("```json"):
+ raw_text = raw_text.removeprefix("```json").removesuffix("```").strip()
+elif raw_text.startswith("```"):
+ raw_text = raw_text.removeprefix("```").removesuffix("```").strip()
+
+parsed = json.loads(raw_text)
+```
+
+זו דוגמה טובה לכך שגם כאשר עובדים עם Structured Output, עדיין צריך לחשוב על robustness ועל טיפול במקרים לא צפויים.
+
+
+
+## מה התרגיל מלמד אותנו?
+
+**התרגיל מחבר כמעט את כל החומר של השיעור:**
+
+- FastAPI נותן לנו endpoint שאפשר לקרוא לו מבחוץ.
+
+- Pydantic מוודא שהבקשה מכילה message.
+
+- JSON Schema מגדיר את מבנה הפלט.
+
+- Anthropic API מבצע את הניתוח.
+
+- Structured Output הופך את התשובה ל JSON שימושי.
+
+- Tenacity מוסיף retry במקרה של שגיאה.
+
+- jsonschema.validate מוודא שהמודל באמת עמד בחוזה.
+
+והתוצאה היא שירות קטן אבל אמיתי: מערכת שמקבלת טקסט חופשי ומחזירה החלטת routing שמערכת שירות לקוחות יכולה להשתמש בה.

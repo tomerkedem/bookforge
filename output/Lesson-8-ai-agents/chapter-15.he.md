@@ -1,1076 +1,578 @@
-# תרגול מעשי מונחה והרחבות
+# מעבדה מעשית: מעבר ממודל בענן למודל מקומי
 
-בפרק זה נרחיב את הפרויקט בעזרת חמישה תרגילים מעשיים.
+עד עכשיו השתמשנו במודל דרך שירות ענן. כלומר, הקוד שלנו שולח בקשה ל-API חיצוני, המודל מעבד את הבקשה בשרת מרוחק, והתגובה חוזרת אלינו.
 
-בכל תרגיל נוסיף יכולת אחת, נעדכן את הקבצים הדרושים, נריץ את הקוד, ונבדוק שהתוצאה עובדת.
+זו דרך נוחה מאוד להתחיל לעבוד. לא צריך להתקין מודל גדול במחשב, לא צריך לנהל GPU, ולא צריך לחשוב יותר מדי על משאבי חומרה. אבל זו לא הדרך היחידה.
 
-התרגילים בפרק זה הם:
+אותה ארכיטקטורה שבנינו יכולה לעבוד גם עם מודל מקומי.
 
-1. מעבר ל-Ollama
+הכוונה היא שה-LLM לא ירוץ דרך API חיצוני בענן, אלא על המחשב שלנו או על שרת פנימי שאנחנו שולטים בו. במצב כזה, הקוד עדיין יכול לעבוד עם Agent, Tools, RAG, Prompt ו-Chain, אבל במקום לשלוח את הבקשה לשירות ענן, הוא שולח אותה למודל שרץ מקומית.
 
-2. בדיקה אם מניה עלתה או ירדה בשנה האחרונה
+זה רעיון חשוב מאוד:
 
-3. הוספת כלי המלצות וחדשות
+הארכיטקטורה לא חייבת להיות קשורה לספק מודלים אחד.
 
-4. בניית UI עם FastAPI ו-Jinja2
+אפשר להתחיל עם מודל בענן, ובהמשך לעבור למודל מקומי. אפשר גם לעבוד הפוך: לפתח מקומית, ואז לעבור למודל חזק יותר בענן. אם הקוד בנוי נכון, המעבר הזה לא אמור לשבור את כל המערכת.
 
-5. בניית Workflow דו-שלבי
+## למה לעבוד עם מודל מקומי
 
-## פתרון תרגיל 1: מעבר ל-Ollama
+יש כמה סיבות לעבוד עם מודל מקומי.
 
-בתרגיל הזה נוסיף לפרויקט אפשרות לבחור בין מודל ענן לבין מודל מקומי.
+הסיבה הראשונה היא פרטיות. כאשר עובדים עם מודל בענן, השאלה של המשתמש וה-context שנשלח למודל יוצאים מהסביבה המקומית ונשלחים לשירות חיצוני. במקרים רבים זה בסדר, אבל לא תמיד.
 
-עד עכשיו הקבצים rag_chatbot.py ו-stock_agent.py השתמשו ישירות במודל של Anthropic. זה עובד, אבל זה יוצר תלות חזקה בספק אחד.
+אם עובדים עם מסמכים פנימיים, מידע עסקי, נתוני לקוחות, קוד רגיש או נהלים ארגוניים, ייתכן שנעדיף שהמידע לא יצא החוצה. מודל מקומי מאפשר להריץ את העיבוד בתוך המחשב או בתוך הרשת הארגונית.
 
-במקום שכל קובץ יחליט לבד איך ליצור את המודל, נרכז את יצירת המודל בקובץ אחד:
+הסיבה השנייה היא עלות. שימוש במודלים בענן בדרך כלל עולה כסף לפי שימוש: מספר טוקנים, מספר קריאות, או סוג המודל. בפרויקט קטן זה אולי לא מורגש, אבל במערכת עם הרבה משתמשים או הרבה בקשות, העלות יכולה לגדול.
+
+מודל מקומי לא בהכרח “חינם”, כי עדיין צריך חומרה מתאימה, חשמל, תחזוקה וזמן ניהול. אבל לאחר ההתקנה, אין תשלום לפי כל בקשה באותה צורה כמו בשירות ענן.
+
+הסיבה השלישית היא זמינות. אם המודל רץ מקומית, אפשר לעבוד גם בלי תלות מלאה בשירות חיצוני. זה שימושי במיוחד בסביבות פיתוח, במעבדות, או במקומות שבהם החיבור לאינטרנט מוגבל.
+
+לדוגמה, אם אנחנו רוצים לבדוק Agent פשוט שמפעיל tool, לא תמיד חייבים לקרוא למודל בענן. אפשר להריץ מודל קטן מקומית, לבדוק את הזרימה, ורק אחר כך לעבור למודל חזק יותר.
+
+הסיבה הרביעית היא ניסוי מקומי. מודלים מקומיים מאפשרים להתנסות מהר: להחליף מודל, לשנות פרמטרים, לבדוק prompts, למדוד זמן תגובה, ולראות איך המערכת מתנהגת בלי לחשוש מכל קריאה ל-API.
+
+לדוגמה:
 
 ```bash
-llm_factory.py
+Cloud model:
+easy to start, strong models, external dependency
+
+Local model:
+more control, more privacy, depends on local hardware
 ```
 
-הקובץ הזה יהיה אחראי לבדוק את משתני הסביבה ולהחזיר את המודל המתאים.
+הסיבה החמישית היא פחות תלות ב-API חיצוני. כאשר כל המערכת תלויה בספק חיצוני אחד, כל שינוי אצלו יכול להשפיע עלינו: שינוי מחיר, שינוי שם מודל, מגבלות שימוש, זמינות שירות, או שינוי בהתנהגות המודל.
 
-אם נרצה לעבוד עם Anthropic, נגדיר:
+עבודה עם מודל מקומי לא מבטלת את כל הבעיות, אבל היא נותנת לנו יותר שליטה.
+
+חשוב לומר בצורה ברורה: מודל מקומי אינו תמיד טוב יותר ממודל בענן. לרוב, מודלים חזקים בענן יהיו מהירים, מדויקים ונוחים יותר לשימוש. אבל מודל מקומי נותן יתרונות אחרים: פרטיות, שליטה, ניסוי, ועלות צפויה יותר במקרים מסוימים.
+
+לכן הבחירה אינה “ענן או מקומי” באופן מוחלט. הבחירה היא לפי הצורך של המערכת.
+
+אם צריך איכות גבוהה מאוד, זמינות גבוהה ונוחות שימוש, מודל ענן יכול להיות בחירה מצוינת.
+
+אם צריך פרטיות, שליטה, ניסוי מקומי או פחות תלות בשירות חיצוני, מודל מקומי יכול להיות פתרון מתאים מאוד.
+
+## מה משתנה בקוד
+
+כאשר עוברים ממודל בענן למודל מקומי, לא כל המערכת צריכה להשתנות. בדרך כלל השינוי המרכזי נמצא בשכבה שמדברת עם המודל.
+
+כלומר, אנחנו לא רוצים לשכתב את כל ה-Agent, את ה-tools, את ה-RAG או את הלוגיקה העסקית. אנחנו רוצים להחליף בעיקר את ה-client שמפעיל את ה-LLM.
+
+במודל בענן, הקוד נראה בדרך כלל כך:
 
 ```python
-MODEL_PROVIDER=anthropic
+llm = ChatAnthropic(
+    model="claude-haiku-4-5-20251001",
+    temperature=0,
+)
 ```
 
-אם נרצה לעבוד עם Ollama, נגדיר:
+במקרה כזה, הקוד משתמש ב-client שמתאים ל-Anthropic, והמפתח מגיע ממשתנה סביבה כמו:
 
 ```python
-MODEL_PROVIDER=ollama
+ANTHROPIC_API_KEY
 ```
 
-כך שאר הקוד לא צריך להשתנות. rag_chatbot.py ו-stock_agent.py יקבלו אובייקט LLM מוכן, בלי לדעת אם הוא הגיע מהענן או ממודל מקומי.
+כאשר עוברים למודל מקומי, ה-client משתנה. לדוגמה, אם עובדים עם Ollama דרך LangChain, נשתמש ברכיב שמתאים ל-Ollama במקום ChatAnthropic.
 
-הקבצים שנעדכן בתרגיל הזה הם:
-
-- llm_factory.py קובץ חדש
-
-- rag_chatbot.py עדכון קטן
-
-- stock_agent.py עדכון קטן
-
-- requirements.txt הוספת langchain-ollama
-
-המטרה של התרגיל היא להגיע למצב שבו אפשר להריץ את אותו פרויקט בשתי צורות:
-
-```bash
-$env:MODEL_PROVIDER="anthropic"
-python rag_chatbot.py
-```
-
-או:
-
-```bash
-$env:MODEL_PROVIDER="ollama"
-python rag_chatbot.py
-```
-
-אותה אפליקציה, אותו קוד כמעט לגמרי, ספק מודל שונה.
-
-ונעדכן את הקבצים שמשתמשים במודל:
-
-```bash
-rag_chatbot.py
-stock_agent.py
-requirements.txt
-```
-
-**עדכון requirements.txt**
-
-נוסיף:
-
-```bash
-langchain-ollama
-```
-
-**תוכן מלא לקובץ llm_factory.py**
+הקוד יכול להיראות כך:
 
 ```python
-import os
-
-from langchain_anthropic import ChatAnthropic
 from langchain_ollama import ChatOllama
 
-
-def build_llm():
-    """
-    Build an LLM client based on environment configuration.
-
-    Supported providers:
-    - anthropic
-    - ollama
-    """
-    provider = os.getenv("MODEL_PROVIDER", "anthropic").strip().lower()
-    temperature = float(os.getenv("MODEL_TEMPERATURE", "0"))
-
-    if provider == "anthropic":
-        api_key = os.getenv("ANTHROPIC_API_KEY")
-
-        if not api_key:
-            raise EnvironmentError(
-                "ANTHROPIC_API_KEY is not set. "
-                "Set it or use MODEL_PROVIDER=ollama."
-            )
-
-        model_name = os.getenv(
-            "ANTHROPIC_MODEL",
-            "claude-haiku-4-5-20251001",
-        )
-
-        return ChatAnthropic(
-            model=model_name,
-            temperature=temperature,
-        )
-
-    if provider == "ollama":
-        model_name = os.getenv("OLLAMA_MODEL", "gemma3:1b")
-        base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
-
-        return ChatOllama(
-            model=model_name,
-            base_url=base_url,
-            temperature=temperature,
-        )
-
-    raise ValueError(
-        f"Unsupported MODEL_PROVIDER: {provider}. "
-        "Use 'anthropic' or 'ollama'."
-    )
+llm = ChatOllama(
+    model="gemma3:4b",
+    temperature=0,
+)
 ```
 
-**עדכון rag_chatbot.py**
+**השינוי הראשון** הוא ה-client:
 
-נוסיף import:
+```bash
+ChatAnthropic  →  ChatOllama
+```
+
+**השינוי השני** הוא שם המודל.
+
+במודל ענן, שם המודל הוא שם שמוגדר אצל ספק חיצוני:
 
 ```python
-from llm_factory import build_llm
+claude-haiku-4-5-20251001
 ```
 
-ובתוך main() נשתמש ב:
+במודל מקומי, שם המודל הוא השם של המודל שהותקן בסביבה המקומית:
 
 ```python
-llm = build_llm()
+gemma3:4b
+qwen2.5:0.5b
+llama3:8b-instruct-q4_K_M
 ```
 
-במקום ליצור את ChatAnthropic ישירות בקובץ.
+כלומר, אם המודל לא מותקן מקומית, הקוד לא יוכל להשתמש בו. צריך לוודא שהמודל באמת קיים בסביבה המקומית.
 
-**עדכון stock_agent.py**
+לדוגמה, ב-Ollama אפשר לבדוק אילו מודלים קיימים באמצעות:
 
-נוסיף import:
+```bash
+ollama list
+```
+
+השינוי השלישי הוא base URL, אם צריך.
+
+כאשר עובדים מול שירות ענן, ה-client יודע בדרך כלל לאן לשלוח את הבקשה. אבל כאשר עובדים מול מודל מקומי, לפעמים צריך לציין כתובת של שרת מקומי.
+
+לדוגמה:
 
 ```python
-from llm_factory import build_llm
+http://localhost:11434
 ```
 
-ונעדכן את build_agent():
+זו הכתובת שבה Ollama מאזין כברירת מחדל במחשב המקומי.
+
+במקרים מסוימים הקוד ייראה כך:
 
 ```python
-def build_agent():
-    model = build_llm()
-
-    return create_agent(
-        model=model,
-        tools=[get_stock_info],
-        system_prompt=SYSTEM_PROMPT,
-    )
+llm = ChatOllama(
+    model="gemma3:4b",
+    base_url="http://localhost:11434",
+    temperature=0,
+)
 ```
 
-**הרצה עם Anthropic**
+לא תמיד חייבים לציין את base_url, כי לפעמים הספרייה כבר משתמשת בברירת המחדל. אבל חשוב להבין שזה אחד הדברים שעשויים להשתנות במעבר למודל מקומי.
 
-```bash
-$env:MODEL_PROVIDER="anthropic"
-$env:ANTHROPIC_API_KEY="your_api_key_here"
-python rag_chatbot.py
-```
+**השינוי הרביעי** הוא הספרייה שבה משתמשים.
 
-**הרצה עם Ollama**
-
-```bash
-ollama pull gemma3:1b
-
-$env:MODEL_PROVIDER="ollama"
-$env:OLLAMA_MODEL="gemma3:1b"
-python rag_chatbot.py
-```
-
-**בדיקה**
-
-בודקים שהצ’אטבוט עדיין עובד:
-
-```bash
-What is ChromaDB?
-```
-
-ובודקים שגם ה-Agent עדיין עובד:
-
-```bash
-What is the current price of MSFT?
-```
-
-בסיום התרגיל, יצירת המודל מרוכזת בקובץ אחד, ושאר הפרויקט יכול לעבוד עם Anthropic או Ollama בלי שינוי לוגיקה.
-
-
-
-## פתרון תרגיל 2: בדיקה אם מניה עלתה או ירדה בשנה האחרונה
-
-בתרגיל הזה נרחיב את stock_agent.py ונוסיף Tool חדש שבודק ביצועי מניה בשנה האחרונה.
-
-המטרה היא לא רק להביא מחיר נוכחי, אלא להביא נתונים היסטוריים, לחשב שינוי, ולהחזיר תשובה ברורה.
-
-נעדכן קובץ אחד:
-
-```bash
-stock_agent.py
-```
-
-נוסיף Tool חדש:
+במודל ענן השתמשנו בספרייה שמתאימה לספק הענן:
 
 ```python
-get_stock_year_performance
+from langchain_anthropic import ChatAnthropic
 ```
 
-**הקוד שנוסיף ל-stock_agent.py**
-
-נוסיף את הפונקציה הבאה מתחת ל-get_stock_info:
+במודל מקומי דרך Ollama נשתמש בספרייה אחרת:
 
 ```python
-@tool
-def get_stock_year_performance(symbol: str) -> str:
-    """Check whether a stock went up or down over the past year."""
-    symbol = symbol.strip().upper()
-
-    if not symbol:
-        return "Error: Please provide a stock ticker symbol."
-
-    try:
-        ticker = yf.Ticker(symbol)
-        history = ticker.history(period="1y")
-
-        if history.empty:
-            return f"Error: No historical price data found for {symbol}."
-
-        start_price = history["Close"].iloc[0]
-        end_price = history["Close"].iloc[-1]
-
-        if start_price == 0:
-            return f"Error: Invalid start price found for {symbol}."
-
-        change = end_price - start_price
-        change_percent = (change / start_price) * 100
-
-        if change > 0:
-            direction = "up"
-        elif change < 0:
-            direction = "down"
-        else:
-            direction = "flat"
-
-        return (
-            f"{symbol} went {direction} over the past year.\n"
-            f"Start price: {start_price:.2f}\n"
-            f"End price: {end_price:.2f}\n"
-            f"Change: {change_percent:.2f}%"
-        )
-
-    except Exception:
-        return f"Error: Could not fetch historical data for {symbol}."
+from langchain_ollama import ChatOllama
 ```
 
-**עדכון SYSTEM_PROMPT**
-
-נעדכן את ההנחיות כך שה-Agent ידע מתי להשתמש בכלי החדש:
+לכן גם requirements.txt צריך לכלול את הספרייה המתאימה:
 
 ```python
-SYSTEM_PROMPT = """
-You are a helpful stock assistant.
-
-Use get_stock_info when the user asks about:
-- current stock price
-- quote
-- current market data
-- day high, day low, volume, or currency
-
-Use get_stock_year_performance when the user asks about:
-- whether a stock went up or down over the past year
-- one-year performance
-- 12-month performance
-- how a stock performed during the last year
-
-Do not invent live market data or historical performance.
-If the user does not provide a ticker symbol, ask for one.
-Summarize tool results clearly for the user.
-Do not provide financial advice or tell the user to buy or sell a stock.
-"""
-```
-
-**עדכון רשימת הכלים**
-
-בתוך build_agent() נעדכן את רשימת הכלים:
-
-```python
-def build_agent():
-    model = build_llm()
-
-    return create_agent(
-        model=model,
-        tools=[
-            get_stock_info,
-            get_stock_year_performance,
-        ],
-        system_prompt=SYSTEM_PROMPT,
-    )
-```
-
-**הרצה**
-
-אם עובדים עם Anthropic:
-
-```bash
-$env:MODEL_PROVIDER="anthropic"
-$env:ANTHROPIC_API_KEY="your_api_key_here"
-python stock_agent.py
-```
-
-אם עובדים עם Ollama:
-
-```bash
-$env:MODEL_PROVIDER="ollama"
-$env:OLLAMA_MODEL="gemma3:1b"
-python stock_agent.py
-```
-
-**בדיקה**
-
-בודקים שהכלי הישן עדיין עובד:
-
-```bash
-What is the current price of MSFT?
-```
-
-בודקים את הכלי החדש:
-
-```bash
-Did MSFT go up or down in the last year?
-```
-
-אפשר לבדוק גם:
-
-```bash
-How did NVDA perform over the past 12 months?
-```
-
-תשובה תקינה אמורה לכלול כיוון שינוי, מחיר התחלה, מחיר סיום ואחוז שינוי.
-
-**טעויות נפוצות**
-
-הטעות הנפוצה ביותר היא להוסיף את הפונקציה אבל לשכוח להוסיף אותה לרשימת tools.
-
-טעות נוספת היא לא לעדכן את SYSTEM_PROMPT, ואז ה-Agent לא תמיד יבין מתי להשתמש בכלי החדש.
-
-חשוב גם לבדוק את history.empty, כי לא לכל סימול יהיו נתונים היסטוריים זמינים.
-
-בסיום התרגיל, ה-Stock Agent יודע לענות גם על מחיר נוכחי וגם על ביצועים בשנה האחרונה.
-
-## פתרון תרגיל 3: הוספת כלי המלצות וחדשות
-
-בתרגיל הזה נרחיב את stock_agent.py בעוד שני Tools:
-
-```python
-get_stock_recommendations
-get_stock_news
-```
-
-הראשון יחזיר המלצות אנליסטים כאשר הן זמינות.
-
-השני יחזיר חדשות אחרונות על מניה.
-
-נעדכן קובץ אחד:
-
-```bash
-stock_agent.py
-```
-
-**הקוד שנוסיף ל-stock_agent.py**
-
-נוסיף את שתי הפונקציות הבאות מתחת ל-get_stock_year_performance.
-
-```python
-@tool
-def get_stock_recommendations(symbol: str) -> str:
-    """Get recent analyst recommendations for a stock ticker."""
-    symbol = symbol.strip().upper()
-
-    if not symbol:
-        return "Error: Please provide a stock ticker symbol."
-
-    try:
-        ticker = yf.Ticker(symbol)
-        recommendations = ticker.recommendations
-
-        if recommendations is None or recommendations.empty:
-            return f"No analyst recommendations found for {symbol}."
-
-        latest = recommendations.tail(5)
-
-        rows = []
-        for _, row in latest.iterrows():
-            firm = row.get("Firm", "Unknown firm")
-            to_grade = row.get("To Grade", "Unknown rating")
-            action = row.get("Action", "")
-
-            if action:
-                rows.append(f"- {firm}: {to_grade} ({action})")
-            else:
-                rows.append(f"- {firm}: {to_grade}")
-
-        return (
-            f"Recent analyst recommendations for {symbol}:\n"
-            + "\n".join(rows)
-        )
-
-    except Exception:
-        return f"Error: Could not fetch analyst recommendations for {symbol}."
-
-
-@tool
-def get_stock_news(symbol: str) -> str:
-    """Get recent news headlines for a stock ticker."""
-    symbol = symbol.strip().upper()
-
-    if not symbol:
-        return "Error: Please provide a stock ticker symbol."
-
-    try:
-        ticker = yf.Ticker(symbol)
-        news_items = ticker.news
-
-        if not news_items:
-            return f"No recent news found for {symbol}."
-
-        top_items = news_items[:5]
-
-        rows = []
-        for item in top_items:
-            title = item.get("title", "No title")
-            publisher = item.get("publisher", "Unknown publisher")
-            link = item.get("link")
-
-            if link:
-                rows.append(f"- {title} ({publisher})\n  {link}")
-            else:
-                rows.append(f"- {title} ({publisher})")
-
-        return f"Recent news for {symbol}:\n" + "\n".join(rows)
-
-    except Exception:
-        return f"Error: Could not fetch news for {symbol}."
-```
-
-**עדכון SYSTEM_PROMPT**
-
-נעדכן את ההנחיות כך שה-Agent ידע לבחור בין ארבעת הכלים:
-
-```python
-SYSTEM_PROMPT = """
-You are a helpful stock assistant.
-
-Use get_stock_info when the user asks about:
-- current stock price
-- quote
-- current market data
-- day high, day low, volume, or currency
-
-Use get_stock_year_performance when the user asks about:
-- whether a stock went up or down over the past year
-- one-year performance
-- 12-month performance
-- how a stock performed during the last year
-
-Use get_stock_recommendations when the user asks about:
-- analyst recommendations
-- analyst ratings
-- upgrades or downgrades
-
-Use get_stock_news when the user asks about:
-- recent news
-- headlines
-- company news
-- latest events related to a stock
-
-Do not invent live market data, historical performance, recommendations, or news.
-If the user does not provide a ticker symbol, ask for one.
-Summarize tool results clearly for the user.
-Do not provide financial advice or tell the user to buy or sell a stock.
-"""
-```
-
-**עדכון רשימת הכלים**
-
-בתוך build_agent() נעדכן את רשימת הכלים:
-
-```python
-def build_agent():
-    model = build_llm()
-
-    return create_agent(
-        model=model,
-        tools=[
-            get_stock_info,
-            get_stock_year_performance,
-            get_stock_recommendations,
-            get_stock_news,
-        ],
-        system_prompt=SYSTEM_PROMPT,
-    )
-```
-
-**הרצה**
-
-אם עובדים עם Anthropic:
-
-```bash
-$env:MODEL_PROVIDER="anthropic"
-$env:ANTHROPIC_API_KEY="your_api_key_here"
-python stock_agent.py
-```
-
-אם עובדים עם Ollama:
-
-```bash
-$env:MODEL_PROVIDER="ollama"
-$env:OLLAMA_MODEL="gemma3:1b"
-python stock_agent.py
-```
-
-**בדיקה**
-
-בודקים מחיר נוכחי:
-
-```bash
-What is the current price of MSFT?
-```
-
-בודקים ביצועים בשנה האחרונה:
-
-```bash
-Did NVDA go up or down in the last year?
-```
-
-בודקים המלצות אנליסטים:
-
-```bash
-What are the analyst recommendations for AAPL?
-```
-
-בודקים חדשות:
-
-```bash
-Show me recent news about TSLA.
-```
-
-**טעויות נפוצות**
-
-הטעות הנפוצה ביותר היא להוסיף את הפונקציות אבל לשכוח להוסיף אותן לרשימת tools.
-
-טעות נוספת היא להשאיר SYSTEM_PROMPT כללי מדי. כאשר יש כמה כלים, צריך להסביר בבירור מתי להשתמש בכל כלי.
-
-חשוב גם לזכור שלא לכל מניה יהיו חדשות או המלצות זמינות. במקרה כזה הכלי צריך להחזיר הודעה ברורה, ולא לגרום לתוכנית להיכשל.
-
-בסיום התרגיל, ה-Stock Agent יודע להשתמש בארבעה כלים שונים: מחיר נוכחי, ביצועים שנתיים, המלצות אנליסטים וחדשות.
-
-
-
-## פתרון תרגיל 4: בניית UI עם FastAPI ו-Jinja2
-
-בתרגיל הזה נוסיף ל-Stock Agent ממשק Web פשוט.
-
-במקום להריץ את הסוכן רק דרך שורת הפקודה, נוכל לפתוח דפדפן, להקליד שאלה בטופס, ולקבל תשובה בעמוד.
-
-נוסיף שני קבצים:
-
-```bash
-app.py
-templates/index.html
-```
-
-ונעדכן את:
-
-```bash
-requirements.txt
-```
-
-**עדכון requirements.txt**
-
-נוסיף את הספריות הבאות:
-
-```python
-fastapi
-uvicorn[standard]
-jinja2
-python-multipart
-```
-
-הקובץ המלא יכול להיראות כך:
-
-```python
-langchain
-langchain-chroma
-langchain-community
-langchain-anthropic
 langchain-ollama
-chromadb
-sentence-transformers
-yfinance
-python-dotenv
-fastapi
-uvicorn[standard]
-jinja2
-python-multipart
 ```
 
-לאחר העדכון נריץ:
+אפשר לחשוב על השינוי כך:
 
-```bash
-pip install -r requirements.txt
-```
+<div dir="rtl">
 
-**תוכן הקובץ app.py**
+| **רכי**ב | **מודל בענן** | **מודל מקומי** |
+| --- | --- | --- |
+| **Client** | ChatAnthropic | ChatOllama |
+| **Model name** | שם מודל אצל ספק ענן | שם מודל שמותקן מקומית |
+| **API key** | נדרש בדרך כלל | לא תמיד נדרש |
+| **Base URL** | מנוהל על ידי הספק | לרוב שרת מקומי |
+| **תלות מרכזית** | שירות חיצוני | חומרת המחשב |
 
-ניצור קובץ חדש בשם app.py:
+</div>
 
-הקובץ app.py לא מכיל את הלוגיקה של הסוכן עצמו. הוא רק שכבת Web דקה שמייבאת את:
+הנקודה החשובה היא שהשינוי צריך להיות ממוקד. אם כל הקוד שלנו מפוזר סביב הקריאה למודל, המעבר יהיה קשה. אבל אם הקריאה למודל מרוכזת במקום אחד, המעבר פשוט הרבה יותר.
+
+לדוגמה, עדיף לבנות פונקציה אחת שאחראית ליצור את המודל:
 
 ```python
-from fastapi import FastAPI, Form
-from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
-from starlette.requests import Request
-
-from stock_agent import build_agent, query_agent
-
-
-app = FastAPI(title="Stock Agent UI")
-templates = Jinja2Templates(directory="templates")
-
-agent = build_agent()
-
-
-@app.get("/", response_class=HTMLResponse)
-def home(request: Request):
-    return templates.TemplateResponse(
-        request,
-        "index.html",
-        {
-            "question": "",
-            "answer": None,
-            "error": None,
-        },
+def build_llm():
+    return ChatOllama(
+        model="gemma3:4b",
+        temperature=0,
     )
-
-
-@app.post("/", response_class=HTMLResponse)
-def ask(request: Request, question: str = Form(...)):
-    question = question.strip()
-
-    if not question:
-        return templates.TemplateResponse(
-            request,
-            "index.html",
-            {
-                "question": "",
-                "answer": None,
-                "error": "Please enter a question.",
-            },
-        )
-
-    try:
-        answer = query_agent(agent, question)
-
-        return templates.TemplateResponse(
-            request,
-            "index.html",
-            {
-                "question": question,
-                "answer": answer,
-                "error": None,
-            },
-        )
-
-    except Exception:
-        return templates.TemplateResponse(
-            request,
-            "index.html",
-            {
-                "question": question,
-                "answer": None,
-                "error": "Something went wrong while processing your question.",
-            },
-        )
 ```
 
-**תוכן הקובץ templates/index.html**
+ואז שאר המערכת משתמשת ב-llm בלי לדעת אם הוא הגיע מענן או ממודל מקומי.
 
-ניצור תיקייה בשם:
+כך אנחנו שומרים על עיקרון חשוב בתכנון תוכנה:
 
-```bash
-templates
-```
+- להפריד בין הלוגיקה של המערכת לבין ספק המודל.
 
-ובתוכה קובץ:
+- ה-Agent לא אמור לדעת אם המודל רץ בענן או מקומית.
 
-```bash
-index.html
-```
+- ה-RAG לא אמור להשתנות בגלל החלפת מודל.
 
-תוכן הקובץ:
+- ה-tools לא אמורים להשתנות בגלל החלפת מודל.
+
+מה שמשתנה הוא בעיקר החיבור למודל: client, שם מודל, כתובת, וספרייה מתאימה.
+
+## מה לא אמור להשתנות
+
+כאשר עוברים ממודל בענן למודל מקומי, קל לחשוב שצריך לשנות את כל המערכת. בפועל, אם הארכיטקטורה בנויה נכון, רוב המערכת לא אמורה להשתנות.
+
+השינוי המרכזי הוא בשכבת החיבור למודל. אבל המבנה הכללי של ה-Agent, הכלים, הזיכרון ותהליך ה-RAG אמורים להישאר כמעט אותו דבר.
+
+לדוגמה, אם יש לנו Agent שמקבל שאלה, מחליט האם להשתמש בכלי, מפעיל tool ומחזיר תשובה - המבנה הזה לא משתנה רק בגלל שהחלפנו את המודל.
+
+הזרימה נשארת אותה זרימה:
+
+User question 
+ ↓ 
+Agent 
+ ↓ 
+LLM decision 
+ ↓ 
+Tool call if needed 
+ ↓ 
+Tool result 
+ ↓ 
+Final answer
+
+מה שהשתנה הוא רק המנוע שמבצע את חלק ה-LLM.
+
+במקום: Cloud LLM
+
+נשתמש ב: Local LLM
+
+אבל ה-Agent עדיין עובד באותו רעיון.
+
+גם הכלים לא אמורים להשתנות. אם יש לנו tool בשם get_stock_info, שמקבל ticker ומחזיר נתוני מניה, הכלי הזה לא תלוי בשאלה אם המודל רץ בענן או מקומית.
+
+ה-tool עדיין נראה כמו פונקציה רגילה:
 
 ```python
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Stock Agent</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 760px;
-            margin: 40px auto;
-            padding: 0 20px;
-            line-height: 1.6;
-        }
-
-        h1 {
-            margin-bottom: 8px;
-        }
-
-        .subtitle {
-            color: #555;
-            margin-bottom: 24px;
-        }
-
-        form {
-            margin-bottom: 24px;
-        }
-
-        input[type="text"] {
-            width: 100%;
-            padding: 10px;
-            font-size: 16px;
-            box-sizing: border-box;
-        }
-
-        button {
-            margin-top: 12px;
-            padding: 10px 16px;
-            font-size: 16px;
-            cursor: pointer;
-        }
-
-        .box {
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 16px;
-            margin-top: 20px;
-            background: #fafafa;
-            white-space: pre-wrap;
-        }
-
-        .error {
-            border: 1px solid #e0a0a0;
-            background: #fff5f5;
-            color: #8a1f1f;
-        }
-
-        .question {
-            color: #444;
-            margin-bottom: 8px;
-        }
-    </style>
-</head>
-<body>
-    <h1>Stock Agent</h1>
-    <p class="subtitle">
-        Ask about stock prices, market data, one-year performance, recommendations, or news.
-    </p>
-
-    <form method="post">
-        <label for="question">Question</label><br>
-        <input
-            type="text"
-            id="question"
-            name="question"
-            value="{{ question }}"
-            placeholder="Example: What is the current price of MSFT?"
-        >
-        <button type="submit">Ask</button>
-    </form>
-
-    {% if error %}
-        <div class="box error">
-            {{ error }}
-        </div>
-    {% endif %}
-
-    {% if answer %}
-        <div class="box">
-            <div class="question">
-                <strong>You asked:</strong> {{ question }}
-            </div>
-            <strong>Answer:</strong>
-            <br>
-            {{ answer }}
-        </div>
-    {% endif %}
-</body>
-</html>
+@tool
+def get_stock_info(symbol: str) -> str:
+    ...
 ```
 
-**הרצה**
+הוא עדיין מקבל קלט, מבצע פעולה, ומחזיר תוצאה.
 
-אם עובדים עם Anthropic:
+המודל רק מחליט מתי להשתמש בו.
+
+גם הזיכרון לא אמור להשתנות. אם המערכת שומרת היסטוריית שיחה, היא יכולה להמשיך לעשות זאת באותה דרך. ההודעות האחרונות עדיין ייכנסו ל-prompt, והמודל המקומי יקבל אותן כחלק מה-context.
+
+אותו דבר לגבי RAG.
+
+אם בנינו מערכת שבה השאלה עוברת ל-retriever, ה-retriever שולף chunks מתוך ChromaDB, וה-context נשלח למודל המבנה הזה נשאר אותו מבנה.
+
+הזרימה עדיין נראית כך:
+
+Question 
+ ↓ 
+Retriever 
+ ↓ 
+Relevant chunks 
+ ↓ 
+Prompt with context 
+ ↓ 
+LLM 
+ ↓ 
+Answer
+
+ההבדל היחיד הוא איזה LLM נמצא בסוף הזרימה.
+
+במודל בענן:
 
 ```bash
-$env:MODEL_PROVIDER="anthropic"
-$env:ANTHROPIC_API_KEY="your_api_key_here"
-uvicorn app:app --reload
+Prompt with context → Cloud LLM → Answer
 ```
 
-אם עובדים עם Ollama:
+במודל מקומי:
 
 ```bash
-$env:MODEL_PROVIDER="ollama"
-$env:OLLAMA_MODEL="gemma3:1b"
-uvicorn app:app --reload
+Prompt with context → Local LLM → Answer
 ```
 
-לאחר ההרצה נפתח בדפדפן:
+זו הפרדה חשובה מאוד. היא מאפשרת לנו להחליף מודל בלי לבנות מחדש את כל הפרויקט.
 
-```bash
-http://localhost:8000
-```
+אפשר לחשוב על זה כמו החלפת מנוע ברכב. הרכב עדיין כולל גלגלים, הגה, מושבים ומערכת בלמים. מה שהשתנה הוא המנוע. אם הרכב תוכנן נכון, לא צריך להחליף את כל השלדה בכל פעם שמחליפים מנוע.
 
-**בדיקה**
+באותה צורה, במערכת AI טובה לא כדאי לפזר את הקריאה למודל בכל מקום בקוד. עדיף לרכז אותה במקום אחד. כך, כאשר עוברים ממודל ענן למודל מקומי, משנים בעיקר את פונקציית יצירת ה-LLM.
 
-נבדוק שהעמוד עולה, ואז נשלח שאלות:
-
-```bash
-What is the current price of MSFT?
-Did NVDA go up or down in the last year?
-Show me recent news about TSLA.
-```
-
-אם מתקבלת תשובה בדפדפן, סימן שה-UI מחובר בהצלחה ל-Stock Agent.
-
-**טעויות נפוצות**
-
-אם מתקבלת שגיאה שקשורה ל-Form, בדרך כלל חסרה הספרייה:
-
-python-multipart
-
-אם מתקבלת שגיאה שהתבנית לא נמצאה, צריך לוודא שהקובץ נמצא בדיוק כאן:
-
-templates/index.html
-
-אם השרת נפתח אבל השאלה נכשלת, כדאי לבדוק קודם שה-Agent עובד לבד:
-
-python stock_agent.py
-
-בסיום התרגיל, יש לפרויקט גם ממשק Web פשוט שמפעיל את אותו Stock Agent שכבר בנינו.
-
-## פתרון תרגיל 5: Workflow דו-שלבי
-
-בתרגיל הזה נוסיף לפרויקט Workflow פשוט.
-
-המטרה היא להראות שלא כל מערכת צריכה להיות Agent חופשי. לפעמים סדר הפעולות ידוע מראש, ואז עדיף לבנות Workflow ברור.
-
-נוסיף קובץ חדש:
-
-```bash
-recipe_workflow.py
-```
-
-הזרימה תהיה:
-
-```bash
-User ingredients
-   ↓
-Generate recipe name
-   ↓
-Write cooking instructions
-   ↓
-Final recipe
-```
-
-**תוכן הקובץ recipe_workflow.py**
+לדוגמה:
 
 ```python
-from llm_factory import build_llm
-
-
-def validate_ingredients(ingredients: str) -> str:
-    ingredients = ingredients.strip()
-
-    if not ingredients:
-        raise ValueError("Please provide at least one ingredient.")
-
-    return ingredients
-
-
-def generate_recipe_name(llm, ingredients: str) -> str:
-    prompt = f"""
-You are a creative recipe naming assistant.
-
-Create one short recipe name based on these ingredients:
-{ingredients}
-
-Rules:
-- Return only the recipe name.
-- Do not include explanations.
-- Do not include cooking instructions.
-"""
-
-    response = llm.invoke(prompt)
-    return response.content.strip()
-
-
-def write_cooking_instructions(
-    llm,
-    ingredients: str,
-    recipe_name: str,
-) -> str:
-    prompt = f"""
-You are a practical cooking assistant.
-
-Recipe name:
-{recipe_name}
-
-Ingredients:
-{ingredients}
-
-Write simple cooking instructions for this recipe.
-
-Rules:
-- Keep the instructions beginner-friendly.
-- Use numbered steps.
-- Do not add ingredients that were not provided unless absolutely necessary.
-- Keep the answer concise.
-"""
-
-    response = llm.invoke(prompt)
-    return response.content.strip()
-
-
-def run_recipe_workflow(llm, ingredients: str) -> str:
-    ingredients = validate_ingredients(ingredients)
-
-    recipe_name = generate_recipe_name(llm, ingredients)
-
-    instructions = write_cooking_instructions(
-        llm=llm,
-        ingredients=ingredients,
-        recipe_name=recipe_name,
+def build_llm():
+    return ChatOllama(
+        model="gemma3:4b",
+        temperature=0,
     )
-
-    return (
-        f"Recipe name: {recipe_name}\n\n"
-        f"Cooking instructions:\n{instructions}"
-    )
-
-
-def main():
-    llm = build_llm()
-
-    print("Recipe Workflow is ready.")
-    print("Enter ingredients, or type 'quit' / 'exit' to stop.")
-
-    while True:
-        ingredients = input("\nIngredients: ").strip()
-
-        if ingredients.lower() in {"quit", "exit"}:
-            print("Goodbye.")
-            break
-
-        try:
-            result = run_recipe_workflow(llm, ingredients)
-            print(f"\n{result}")
-
-        except ValueError as error:
-            print(f"\nError: {error}")
-
-        except Exception:
-            print("\nError: Something went wrong while running the workflow.")
-
-
-if __name__ == "__main__":
-    main()
 ```
 
-**הרצה**
+שאר המערכת לא צריכה לדעת אם build_llm מחזירה מודל מקומי או מודל ענן. היא פשוט מקבלת אובייקט LLM ומשתמשת בו.
 
-אם עובדים עם Anthropic:
+לכן, במעבר למודל מקומי, אלה הדברים שלא אמורים להשתנות:
+
+<div dir="rtl">
+
+| **רכי**ב | **האם אמור להשתנות?** | **למה** |
+| --- | --- | --- |
+| **מבנה ה-Agent** | לא | הסוכן עדיין מקבל שאלה, חושב, מפעיל כלים ומחזיר תשובה |
+| **Tools** | לא | הכלים הם פונקציות חיצוניות שהמודל יכול להפעיל |
+| **Memory** | לא בהכרח | היסטוריית השיחה עדיין נשלחת כחלק מה-context |
+| **RAG** | לא | שליפה מ-Vector Store נשארת אותו תהליך |
+| **Prompt בסיסי** | לא בהכרח | ייתכן שנכוון ניסוח, אבל המבנה נשאר דומה |
+| **תהליך כללי** | לא | השאלה עדיין עוברת דרך אותה ארכיטקטורה |
+
+</div>
+
+ייתכן שיהיו התאמות קטנות. למשל, מודל מקומי קטן יכול להיות פחות טוב בהבנת הוראות מורכבות, ולכן נרצה לכתוב prompt פשוט וברור יותר. ייתכן גם שנצטרך לקצר context אם המודל המקומי תומך בחלון הקשר קטן יותר.
+
+אבל אלה התאמות, לא שינוי ארכיטקטורה.
+
+העיקרון החשוב הוא זה:
+
+כאשר הקוד בנוי נכון, מעבר ממודל בענן למודל מקומי אמור להיות החלפה של שכבת המודל, לא בנייה מחדש של כל המערכת.
+
+## שימוש ב-Ollama
+
+אחת הדרכים הפשוטות להריץ מודלים מקומיים היא להשתמש ב-Ollama.
+
+Ollama הוא כלי שמאפשר להוריד ולהריץ מודלי שפה על המחשב המקומי בצורה יחסית פשוטה. במקום שנצטרך להתקין ידנית מודל, להגדיר קבצי משקלים, לנהל שרת, ולכתוב שכבת תקשורת בעצמנו, Ollama נותן לנו ממשק נוח להרצה מקומית.
+
+אפשר לחשוב עליו כעל שכבת הרצה למודלים מקומיים.
+
+במקום לשלוח בקשה לשרת חיצוני בענן, הקוד שולח בקשה לשרת מקומי שרץ על המחשב שלנו.
+
+הזרימה נראית כך:
 
 ```bash
-$env:MODEL_PROVIDER="anthropic"
-$env:ANTHROPIC_API_KEY="your_api_key_here"
-python recipe_workflow.py
+Python code
+   ↓
+Ollama local server
+   ↓
+Local model
+   ↓
+Response
 ```
 
-אם עובדים עם Ollama:
+בדרך כלל Ollama מאזין בכתובת מקומית: http://localhost:11434
+
+המשמעות של localhost היא שהשירות רץ על המחשב שלנו. הוא לא שרת חיצוני באינטרנט, אלא תהליך מקומי שהקוד יכול לדבר איתו.
+
+כדי לעבוד עם מודל מקומי, צריך קודם לוודא שהמודל קיים אצלנו. לדוגמה, אפשר לבדוק אילו מודלים מותקנים באמצעות:
 
 ```bash
-$env:MODEL_PROVIDER="ollama"
-$env:OLLAMA_MODEL="gemma3:1b"
-python recipe_workflow.py
+ollama list
 ```
 
-**בדיקה**
-
-נכניס מרכיבים לדוגמה:
+אם רוצים להוריד מודל חדש, משתמשים בפקודה בסגנון:
 
 ```bash
-tomatoes, pasta, garlic, olive oil, basil
+ollama pull gemma3:4b
 ```
 
-פלט אפשרי:
+או מריצים אותו ישירות:
 
 ```bash
-Recipe name: Garlic Basil Tomato Pasta
-
-Cooking instructions:
-1. Cook the pasta according to the package instructions.
-2. Heat olive oil in a pan and add chopped garlic.
-3. Add tomatoes and cook until softened.
-4. Mix in the cooked pasta.
-5. Add basil before serving.
+ollama run gemma3:4b
 ```
 
-נבדוק גם קלט קצר:
+לאחר שהמודל קיים, אפשר לחבר אותו לקוד Python.
+
+לדוגמה, אם אנחנו עובדים עם LangChain, אפשר להשתמש ב-ChatOllama:
+
+```python
+from langchain_ollama import ChatOllama
+
+llm = ChatOllama(
+    model="gemma3:4b",
+    temperature=0,
+)
+```
+
+כאן אנחנו אומרים לקוד:
+
+במקום להשתמש במודל בענן, השתמש במודל מקומי בשם gemma3:4b.
+
+אם צריך לציין במפורש את כתובת Ollama, אפשר להוסיף:
+
+```python
+llm = ChatOllama(
+    model="gemma3:4b",
+    base_url="http://localhost:11434",
+    temperature=0,
+)
+```
+
+הנקודה החשובה היא שהשינוי הזה נמצא בשכבת יצירת ה-LLM. שאר הקוד יכול להמשיך לעבוד באותו מבנה.
+
+לדוגמה, אם יש לנו RAG Chatbot, עדיין נבצע:
 
 ```bash
-eggs, cheese
+Question
+   ↓
+Retriever
+   ↓
+Context
+   ↓
+LLM
+   ↓
+Answer
 ```
 
-ונבדוק קלט ריק. במקרה כזה אמורה להופיע הודעה:
+רק שה-LLM יהיה מודל מקומי.
+
+אם יש לנו Agent עם Tools, עדיין נבצע:
 
 ```bash
-Error: Please provide at least one ingredient.
+User question
+   ↓
+Agent
+   ↓
+Tool call if needed
+   ↓
+Tool result
+   ↓
+LLM
+   ↓
+Answer
 ```
 
-**למה זה Workflow ולא Agent**
+גם כאן, רק שכבת המודל משתנה.
 
-כאן אין צורך שהמודל יחליט מה לעשות.
+חשוב להבין ש-Ollama לא מחליף את כל הארכיטקטורה. הוא מחליף בעיקר את הדרך שבה אנחנו מריצים את המודל. ה-Agent, הכלים, ה-RAG, הזיכרון והפרומפטים יכולים להישאר באותו רעיון.
 
-הסדר קבוע מראש:
+עם זאת, כאשר עוברים למודל מקומי, כדאי לבדוק את איכות התשובות. לא כל מודל מקומי יתנהג כמו מודל ענן חזק. ייתכן שמודל קטן יתקשה להבין הנחיות מורכבות, לבחור tool נכון, או לעבד context ארוך.
 
-שלב 1: ליצור שם למתכון
+**לכן במעבר ל-Ollama כדאי להתחיל פשוט:**
 
-שלב 2: לכתוב הוראות הכנה
+1. בדיקה שהמודל עונה לשאלה רגילה
 
-לכן Workflow מתאים יותר מ-Agent.
+2. בדיקה שהוא עובד מתוך Python
 
-בסיום התרגיל, נוסף לפרויקט קובץ שמדגים Prompt Chaining פשוט: פלט של שלב אחד נכנס כקלט לשלב הבא.
+3. בדיקה שהוא משתלב ב-RAG
+
+4. בדיקה שהוא משתלב ב-Agent עם tools
+
+לא כדאי להתחיל מיד ממערכת מלאה ומורכבת. קודם מוודאים שהמודל המקומי עובד, אחר כך מחברים אותו בהדרגה לשאר המערכת.
+
+לדוגמה, בדיקה ראשונה יכולה להיות:
+
+```python
+response = llm.invoke("Explain what a RAG chatbot is in one sentence.")
+print(response.content)
+```
+
+אם זה עובד, אפשר להמשיך לשלב הבא ולחבר את אותו llm ל-chain או ל-Agent.
+
+במילים פשוטות, Ollama מאפשר לנו לקחת את אותה תפיסה של עבודה עם LLM, ולהריץ אותה מקומית. במקום לחשוב על מודל כעל שירות רחוק בענן, אנחנו יכולים לחשוב עליו כתהליך שרץ ליד הקוד שלנו, על אותה מכונה או בסביבה פנימית.
+
+
+
+## בחירת מודל לפי חומרה
+
+כאשר עוברים למודל מקומי, אחד הדברים החשובים ביותר הוא לבחור מודל שמתאים לחומרה שיש לנו.
+
+במודל ענן, רוב העבודה הכבדה מתבצעת אצל ספק השירות. אנחנו שולחים בקשה ומקבלים תשובה. אבל במודל מקומי, המחשב שלנו הוא זה שמריץ את המודל. לכן יש משמעות גדולה לזיכרון, ל-GPU, לגודל המודל ולקצב התגובה שאנחנו רוצים לקבל.
+
+מודל גדול יותר יכול להיות חכם וחזק יותר, אבל הוא גם דורש יותר משאבים. הוא צורך יותר זיכרון, נטען לאט יותר, ולעיתים מגיב לאט יותר. מודל קטן יותר ירוץ מהר יותר ועל יותר מחשבים, אבל ייתכן שהוא יהיה פחות מדויק במשימות מורכבות.
+
+אפשר לחשוב על זה כך:
+
+<div dir="rtl">
+
+| **סוג מוד**ל | **יתרון** | **חיסרון** |
+| --- | --- | --- |
+| **מודל קטן** | מהיר, קל להרצה, מתאים לניסויים | יכולת הבנה מוגבלת יותר |
+| **מודל בינוני** | איזון טוב בין איכות למהירות | דורש חומרה סבירה |
+| **מודל גדול** | תשובות טובות יותר במשימות מורכבות | דורש הרבה זיכרון ו-GPU חזק |
+
+</div>
+
+לדוגמה, אם רוצים רק לבדוק שהקוד עובד, אפשר להתחיל ממודל קטן:
+
+```bash
+qwen2.5:0.5b
+gemma3:1b
+```
+
+מודלים כאלה טובים לניסוי ראשוני. הם מאפשרים לבדוק שהחיבור ל-Ollama עובד, שהקוד מצליח לקרוא למודל, ושהמערכת מחזירה תשובה.
+
+אבל אם רוצים לבנות Agent שמבין הוראות, בוחר tools ומנסח תשובות טובות יותר, ייתכן שנרצה מודל חזק יותר:
+
+```bash
+gemma3:4b
+qwen2.5-coder:7b-instruct
+llama3:8b-instruct
+```
+
+כאן כבר חשוב לבדוק אם המחשב מסוגל להריץ את המודל בצורה נוחה.
+
+הגורם הראשון הוא זיכרון. מודלים מקומיים צריכים להיטען לזיכרון. לפעמים זה זיכרון GPU, ולפעמים זיכרון RAM רגיל. אם אין מספיק זיכרון, המודל עלול לרוץ לאט מאוד או לא לרוץ בכלל.
+
+הגורם השני הוא GPU. כרטיס מסך מתאים יכול לשפר מאוד את מהירות ההרצה. אם המודל רץ על CPU בלבד, הוא עדיין יכול לעבוד, אבל התגובה עלולה להיות איטית יותר, במיוחד במודלים גדולים.
+
+הגורם השלישי הוא קצב תגובה. לא תמיד צריך את המודל הכי חזק. לפעמים עדיף מודל קטן ומהיר שנותן תשובות מספיק טובות, מאשר מודל גדול שנותן תשובה טובה יותר אבל גורם למשתמש לחכות הרבה זמן.
+
+לדוגמה, במערכת לימודית או בניסוי מקומי, אפשר להתחיל כך:
+
+```bash
+Start small
+   ↓
+Verify that the flow works
+   ↓
+Try a stronger model
+   ↓
+Compare quality and speed
+```
+
+זו גישה טובה יותר מאשר להתחיל מיד ממודל גדול מאוד. קודם מוודאים שהמערכת עובדת מקצה לקצה, ורק אחר כך משפרים את איכות המודל.
+
+בבחירת מודל כדאי לשאול כמה שאלות פשוטות:
+
+<div dir="rtl">
+
+| **שאל**ה | **למה היא חשובה** |
+| --- | --- |
+| **האם המחשב מצליח להריץ את המודל?** | אם לא, צריך לבחור מודל קטן יותר |
+| **האם זמן התגובה סביר?** | משתמשים לא רוצים לחכות יותר מדי |
+| **האם המודל מבין את ההנחיות?** | חשוב במיוחד ב-Agent עם tools |
+| **האם המודל מתמודד עם context ארוך?** | חשוב במיוחד ב-RAG |
+| **האם איכות התשובות מספיקה למשימה?** | לא תמיד צריך את המודל הכי גדול |
+
+</div>
+
+ב-RAG, צריך לשים לב במיוחד לחלון ההקשר. אם המודל המקומי תומך בחלון הקשר קטן, לא כדאי לשלוח אליו הרבה chunks. במקרה כזה אפשר להקטין את k, לקצר chunks, או לשפר את ה-retrieval כדי להכניס רק מידע רלוונטי באמת.
+
+לדוגמה:
+
+```python
+retriever = vectorstore.as_retriever(search_kwargs={"k": 3})
+```
+
+ב-Agent עם tools, צריך לבדוק דבר אחר: האם המודל מצליח להבין מתי להשתמש בכלי. מודלים קטנים עלולים לפעמים להתקשות בבחירת tool מתאים, במיוחד אם ההנחיות ארוכות או אם יש כמה כלים דומים.
+
+לכן במודל מקומי כדאי לכתוב הנחיות פשוטות יותר:
+
+```bash
+Use get_stock_info only when the user asks for stock price, quote, or market data.
+If the user asks a general question, answer without using the tool.
+```
+
+הנחיות קצרות וברורות עוזרות במיוחד למודלים קטנים.
+
+חשוב גם לזכור שאפשר להחליף מודלים לפי סוג המשימה. לא חייבים להשתמש באותו מודל לכל דבר.
+
+לדוגמה:
+
+<div dir="rtl">
+
+| **משימ**ה | **מודל מתאים יותר** |
+| --- | --- |
+| **בדיקת חיבור ראשונית** | מודל קטן ומהיר |
+| **כתיבת קוד** | מודל שמותאם לקוד |
+| **Agent עם tools** | מודל שמבין הוראות היטב |
+| **RAG עם context ארוך** | מודל עם חלון הקשר גדול |
+| **ניסוח תשובות איכותיות** | מודל חזק יותר |
+
+</div>
+
+המעבר למודל מקומי נותן לנו שליטה, אבל הוא גם דורש בדיקה. אין בחירה אחת שמתאימה לכל מצב. צריך להריץ, למדוד, להשוות, ולבחור את המודל שנותן את האיזון הטוב ביותר בין איכות, מהירות ומשאבים.
+
+במילים פשוטות:
+
+במודל ענן אנחנו בעיקר בוחרים ספק ושם מודל.
+
+במודל מקומי אנחנו בוחרים גם לפי המחשב שעליו המודל רץ.
+
+לכן הבחירה הנכונה היא לא בהכרח “המודל הכי גדול”, אלא המודל שהכי מתאים למשימה, לחומרה, ולחוויית המשתמש שאנחנו רוצים לקבל.
 
 

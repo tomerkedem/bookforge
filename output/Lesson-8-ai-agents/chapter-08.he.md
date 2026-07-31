@@ -288,7 +288,7 @@ ask whether to apply them
 
 - Agent Loop מתאים כאשר הדרך לפתרון לא ידועה מראש.
 
-<img src="/Lesson-8-ai-agents/assets/image-05.png" alt="image-05.png" width="710" height="305" />
+<img src="/Lesson-8-ai-agents/assets/image-07.png" alt="image-07.png" width="710" height="305" />
 
 
 בפועל, הרבה מערכות לא משתמשות בדפוס אחד בלבד. מערכת יכולה להתחיל ב-Routing, להפעיל RAG במסלול אחד, להשתמש ב-Prompt Chaining במסלול אחר, ולהוסיף Evaluator שבודק את התשובה לפני שהיא חוזרת למשתמש. הבחירה הנכונה היא לא לבחור את הדפוס הכי מתקדם, אלא את הדפוס שהופך את המערכת לברורה, אמינה וקלה לבדיקה.

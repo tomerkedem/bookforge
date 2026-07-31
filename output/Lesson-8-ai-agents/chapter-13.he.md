@@ -1,917 +1,1657 @@
-# איך כותבים קוד כזה בעזרת סוכן קוד
+# מעבדה מעשית: בניית Stock Agent עם Tool
 
-אחרי שראינו איך בנויים build_rag_db.py, rag_chatbot.py ו-stock_agent.py, אפשר לשאול שאלה מעשית מאוד: איך כותבים קוד כזה בעזרת סוכן קוד?
+עד עכשיו בנינו שתי שכבות חשובות:
 
-הנקודה החשובה היא לא רק לדעת לבקש קוד. הנקודה היא לדעת לבקש קוד בצורה הדרגתית, ברורה, ומבוקרת.
+build_rag_db.py בונה בסיס RAG ושומר אותו לדיסק
 
-כאשר עובדים עם סוכן קוד, קל מאוד להתפתות לכתוב בקשה גדולה מדי:
+rag_chatbot.py טוען את בסיס ה-RAG ועונה על שאלות לפי מסמכים
 
-```bash
-Build me a full RAG chatbot with agents, tools, memory, UI, API, error handling, and documentation.
-```
+זו מערכת חשובה, אבל היא עדיין עובדת בעיקר עם מידע שכבר הכנו מראש.
 
-בקשה כזאת אולי נשמעת יעילה, אבל בפועל היא עלולה ליצור קוד גדול, עמוס, קשה להבנה וקשה לתיקון.
+בפרק זה נעבור לסוג אחר של יכולת:
 
-במקום זה, עדיף לעבוד כמו מפתח שמפרק מערכת לשלבים קטנים:
+**Agent שמפעיל כלי חיצוני בזמן אמת.**
 
-```bash
-1. Build the vector store.
-2. Load the vector store.
-3. Build the retriever.
-4. Build the prompt.
-5. Build the chain.
-6. Add chat history.
-7. Add error handling.
-8. Test the flow.
-```
+במקום לחפש תשובה בתוך מסמכים, הסוכן יקבל שאלה על מניה, יבין שצריך נתון עדכני, יפעיל פונקציה שמביאה מידע פיננסי, ואז יחזיר תשובה מסודרת למשתמש.
 
-כך אפשר לבדוק כל שלב בנפרד, להבין מה נוצר, ולתקן בעיות מוקדם.
-
-המטרה של החלק הזה היא ללמוד איך לכתוב פרומפטים טובים לסוכן קוד, כדי שהוא יעזור לנו לבנות מערכת בצורה מסודרת, ולא ייצור עבורנו קופסה שחורה שקשה להבין.
-
-## למה לא לבקש את הכול בבת אחת
-
-כאשר מבקשים מסוכן קוד לבנות מערכת שלמה בבת אחת, מקבלים לעיתים קוד שנראה מרשים, אבל קשה לעבוד איתו.
-
-הבעיה הראשונה היא שקשה להבין מה בדיוק נבנה. אם הסוכן יוצר כמה קבצים, הרבה פונקציות, קונפיגורציה, UI, קריאות API וטיפול בשגיאות בפעם אחת, קשה לדעת איפה להתחיל לבדוק.
-
-הבעיה השנייה היא שקשה לאתר תקלות. אם הקוד לא רץ, לא תמיד ברור אם הבעיה נמצאת בהתקנות, ב-imports, במפתח API, במבנה התיקיות, בטעינת המסמכים, ב-vector store, או בקריאה למודל.
-
-לדוגמה, נניח שביקשנו מסוכן קוד לבנות מערכת RAG מלאה, ואז קיבלנו שגיאה בהרצה:
-
-```bash
-Vector store not found.
-```
-
-עכשיו צריך להבין:
-
-- האם תיקיית data לא קיימת?
-
-- האם לא נוצרו chunks?
-
-- האם ChromaDB לא נשמר?
-
-- האם הנתיב שגוי?
-
-- האם הצ’אטבוט רץ לפני בניית המאגר?
-
-כאשר הכול נבנה בבת אחת, קשה לדעת.
-
-הבעיה השלישית היא שהקוד עלול לכלול יותר מדי החלטות שלא ביקשנו במפורש. סוכן קוד עשוי לבחור ספריות, לשנות שמות קבצים, להוסיף שכבות מיותרות, ליצור מבנה תיקיות חדש, או לשנות חלקים קיימים בפרויקט בלי שהתכוונו לכך.
-
-לכן עדיף לעבוד בשלבים קטנים וברורים.
-
-במקום לבקש:
-
-```bash
-Build the entire RAG chatbot project.
-```
-
-עדיף לבקש:
-
-```bash
-Create only build_rag_db.py.
-The file should:
-- load .txt files from a data folder
-- split them into chunks
-- create embeddings
-- save them into ChromaDB
-- expose a load_vectorstore function
-
-Do not create UI.
-Do not create an API server.
-Do not modify other files.
-```
-
-בקשה כזאת הרבה יותר טובה. היא מגדירה קובץ יעד, מגדירה תפקיד ברור, ומגבילה את הסוכן כדי שלא ייצור דברים שלא ביקשנו.
-
-עבודה הדרגתית גם עוזרת לנו ללמוד. אם הסוכן כותב את כל המערכת בבת אחת, אנחנו עלולים להשתמש בקוד בלי להבין אותו. אבל אם בכל פעם בונים רכיב אחד, אפשר לקרוא את הקוד, להריץ אותו, לבדוק אותו, ורק אז להמשיך לשלב הבא.
-
-במילים פשוטות:
-
-סוכן קוד הוא כלי עבודה חזק, אבל הוא לא תחליף לחשיבה הנדסית.
-
-ככל שהבקשה שלנו מדויקת יותר, כך הקוד שנקבל יהיה ברור, יציב וקל יותר לתחזוקה.
-
-## עקרונות לכתיבת פרומפט טוב
-
-כאשר עובדים עם סוכן קוד, איכות התוצאה תלויה מאוד באיכות הבקשה. ככל שהפרומפט ברור יותר, כך גדל הסיכוי לקבל קוד פשוט, מדויק וקל לבדיקה.
-
-פרומפט טוב לא אומר רק “תכתוב לי קוד”. הוא מגדיר לסוכן הקוד מה לבנות, איפה לבנות, באילו ספריות להשתמש, מה לא לשנות, ואיך לבדוק שהתוצאה תקינה.
-
-העיקרון הראשון הוא לציין קובץ יעד.
-
-במקום לכתוב:
-
-```bash
-Build a RAG database.
-```
-
-עדיף לכתוב:
-
-```bash
-Create the implementation inside build_rag_db.py only.
-```
-
-כך סוכן הקוד יודע בדיוק איפה לעבוד. זה מקטין את הסיכוי שהוא ייצור קבצים חדשים, ישנה מבנה תיקיות, או יפזר קוד במקומות שלא התכוונו אליהם.
-
-העיקרון השני הוא לציין ספריות נדרשות.
-
-לדוגמה:
-
-```bash
-Use LangChain, ChromaDB, and HuggingFaceEmbeddings.
-```
-
-או:
-
-```bash
-Use yfinance for stock market data.
-```
-
-כאשר לא מציינים ספריות, הסוכן עלול לבחור פתרון אחר: ספרייה שלא מותקנת בפרויקט, API לא מתאים, או דרך מימוש מורכבת מדי. בפרויקט לימודי, חשוב שהקוד יתאים בדיוק לסביבה שאנחנו רוצים ללמד.
-
-העיקרון השלישי הוא לציין פונקציות נדרשות.
-
-לדוגמה:
-
-```bash
-The file must include:
-- load_and_chunk_documents()
-- get_embeddings()
-- build_vectorstore()
-- load_vectorstore()
-- main()
-```
-
-זה עוזר לשמור על מבנה ברור. במקום לקבל קוד אחד ארוך בתוך main, אנחנו מקבלים פונקציות עם אחריות נפרדת. כך קל יותר לקרוא, לבדוק ולתקן.
-
-העיקרון הרביעי הוא לציין מה לא לשנות.
-
-זה אחד הדברים החשובים ביותר בעבודה עם סוכן קוד בתוך פרויקט קיים. אם לא מגבילים אותו, הוא עלול לשנות קבצים שלא ביקשנו, לעדכן שמות פונקציות, למחוק קוד קיים, או לשנות התנהגות של חלקים אחרים במערכת.
-
-לדוגמה:
-
-```bash
-Do not modify requirements.txt.
-Do not create a UI.
-Do not change existing function names.
-Do not edit files other than rag_chatbot.py.
-```
-
-הנחיות כאלה מגנות על הפרויקט. הן הופכות את העבודה של הסוכן לממוקדת יותר.
-
-העיקרון החמישי הוא לבקש קוד פשוט וברור.
-
-אפשר לכתוב:
-
-```bash
-Write simple, readable Python code.
-Avoid unnecessary abstractions.
-Use clear function names.
-Add short comments only where they help understanding.
-```
-
-זו הנחיה חשובה במיוחד בלמידה. לפעמים סוכן קוד מנסה לכתוב פתרון “מקצועי מדי”: מחלקות, שכבות, קונפיגורציה, טיפוסים מורכבים ולוגיקה כללית מדי. אבל בשלב לימודי, עדיף קוד קטן, ישיר וברור.
-
-העיקרון השישי הוא לבקש טיפול בשגיאות.
-
-לדוגמה:
-
-```bash
-Add clear error handling for:
-- missing data folder
-- no .txt files
-- missing API key
-- missing vector store
-- failed external API call
-```
-
-קוד שעובד רק במצב מושלם אינו מספיק טוב. מערכת אמיתית צריכה לדעת מה לעשות כאשר חסר קובץ, חסר מפתח API, אין נתונים, או שירות חיצוני נכשל.
-
-העיקרון השביעי הוא לבקש הסבר קצר לאחר השינוי.
-
-לדוגמה:
-
-```bash
-After making the change, explain briefly:
-- what you changed
-- which files were modified
-- how to run the code
-```
-
-ההסבר הזה חשוב כי הוא עוזר לנו להבין מה הסוכן עשה. אנחנו לא רוצים רק לקבל קוד. אנחנו רוצים להבין את השינוי, לדעת איך להריץ אותו, ולוודא שהוא מתאים למה שביקשנו.
-
-העיקרון השמיני הוא לבקש בדיקות הרצה.
-
-לדוגמה:
-
-```bash
-Also provide the exact commands to test the implementation.
-```
-
-או:
-
-```bash
-Tell me how to verify that the vector store was created successfully.
-```
-
-כך מקבלים לא רק מימוש, אלא גם דרך לבדוק אותו. זה הופך את העבודה להרבה יותר בטוחה.
-
-פרומפט טוב יכול להיראות כך:
-
-```bash
-Edit only rag_chatbot.py.
-
-Build a simple RAG chatbot that:
-- loads an existing ChromaDB vector store using load_vectorstore()
-- creates a retriever with k=4
-- builds a prompt with system instructions, context, chat history, and question
-- calls the LLM
-- returns a clear answer to the user
-
-Use LangChain components already used in the project.
-Do not rebuild the vector store in this file.
-Do not create a UI.
-Do not modify other files.
-
-Add clear error handling for a missing API key and missing vector store.
-Keep the code simple and readable.
-
-After the change, explain:
-- what you changed
-- how to run it
-- how to test it
-```
-
-זה פרומפט טוב כי הוא לא משאיר לסוכן מקום לנחש. הוא מגדיר קובץ, מטרה, גבולות, ספריות, התנהגות רצויה, טיפול בשגיאות ובדיקות.
-
-במילים פשוטות, פרומפט טוב לסוכן קוד צריך להרגיש כמו משימה מדויקת למפתח בצוות. לא בקשה כללית, אלא הוראת עבודה ברורה שאפשר לבצע, לבדוק ולתחזק.
-
-
-
-## פרומפט לבניית בסיס RAG
-
-אחרי שהבנו את העקרונות לפרומפט טוב, נכתוב עכשיו פרומפט מלא שאפשר לתת לסוכן קוד כדי לבנות את הקובץ הראשון במערכת: build_rag_db.py.
-
-המטרה של הקובץ הזה היא לא לבנות צ’אטבוט, לא לבנות UI, ולא להפעיל Agent. המטרה שלו היא אחת: לקחת מסמכים, לחלק אותם ל-chunks, ליצור embeddings, ולשמור אותם בתוך ChromaDB.
-
-כלומר, זה קובץ ההכנה של בסיס ה-RAG.
-
-הפרומפט צריך להיות מדויק, כדי שסוכן הקוד לא יתחיל לבנות מערכת שלמה לפני הזמן.
-
-דוגמה לפרומפט טוב:
-
-```bash
-Create a Python file named build_rag_db.py.
-
-Goal:
-Build and persist a ChromaDB vector store from local text documents.
-
-Requirements:
-- Load all .txt files from a folder named data.
-- Use UTF-8 encoding when loading files.
-- Split the documents into chunks using RecursiveCharacterTextSplitter.
-- Use chunk_size=400 and chunk_overlap=80.
-- Create embeddings using HuggingFaceEmbeddings.
-- Use the model sentence-transformers/all-MiniLM-L6-v2.
-- Store the vector database in a local folder named chroma_db.
-- Use the ChromaDB collection name rag_docs.
-
-The file must include these functions:
-- get_embeddings()
-- load_and_chunk_documents(data_dir="data")
-- build_vectorstore(chunks)
-- load_vectorstore()
-- main()
-
-Behavior:
-- If the data folder does not exist, raise a clear FileNotFoundError.
-- If no .txt files are found, raise a clear FileNotFoundError.
-- If the vector store folder does not exist when calling load_vectorstore(), raise a clear FileNotFoundError explaining that build_rag_db.py should be run first.
-- Print clear progress messages while building the vector store.
-
-Constraints:
-- Do not create a chatbot in this file.
-- Do not call an LLM in this file.
-- Do not create a UI.
-- Do not modify other files.
-- Keep the code simple and readable.
-- Use type hints where helpful.
-
-After implementing, explain briefly:
-- what the file does
-- how to run it
-- what folder should be created after a successful run
-```
-
-זה פרומפט טוב כי הוא מגדיר לסוכן הקוד גבולות ברורים. הוא לא אומר רק “תבנה RAG”, אלא מפרט בדיוק מה צריך להיות בקובץ ומה לא צריך להיות בו.
-
-שימו לב במיוחד להנחיות האלה:
-
-```bash
-Do not create a chatbot in this file.
-Do not call an LLM in this file.
-Do not create a UI.
-```
-
-אלה הנחיות חשובות. בלי הגבלות כאלה, סוכן קוד עלול לנסות “לעזור יותר מדי” ולהוסיף דברים שלא ביקשנו. לפעמים הוא ייצור גם קובץ צ’אט, גם שרת FastAPI, גם דוגמת UI, וגם קונפיגורציה נוספת. זה אולי נראה שימושי, אבל זה מקשה על הלמידה ועל הבדיקה.
-
-בשלב הזה אנחנו רוצים רק לבנות את המאגר.
-
-אפשר לחשוב על המשימה כך:
-
-```bash
-Input:
-local .txt files
-
-Process:
-load → split → embed → store
-
-Output:
-persistent ChromaDB vector store
-```
-
-הקוד שנרצה לקבל צריך להיות פשוט להפעלה:
-
-```bash
-python build_rag_db.py
-```
-
-לאחר הרצה מוצלחת, אמורה להיווצר תיקייה בשם:
-
-```bash
-chroma_db
-```
-
-התיקייה הזאת היא התוצאה החשובה של השלב. היא מכילה את ה-Vector Store שנוכל לטעון בהמשך מתוך הצ’אטבוט.
-
-חשוב גם לבקש מסוכן הקוד להוסיף פונקציה בשם load_vectorstore. לכאורה, זו פונקציה ששייכת יותר לשלב הצ’אטבוט, כי היא טוענת את המאגר הקיים. אבל בפועל נוח לשים אותה באותו קובץ שאחראי על בניית המאגר, ואז לייבא אותה מתוך rag_chatbot.py.
-
-כך נשמרת הפרדה ברורה:
-
-```bash
-build_rag_db.py
-   builds the vector store
-   loads the vector store
-
-rag_chatbot.py
-   uses the vector store to answer questions
-```
-
-בפרומפט טוב, אנחנו לא רק מבקשים קוד. אנחנו מתכננים את אחריות הקובץ. זה ההבדל בין בקשה כללית לבין משימת פיתוח מסודרת.
-
-## פרומפט לבניית RAG Chatbot
-
-אחרי שבנינו את בסיס ה-RAG ושמרנו את ה-Vector Store בדיסק, השלב הבא הוא לבנות את הקובץ שמשתמש במאגר הזה כדי לענות לשאלות.
-
-הקובץ הזה הוא:
-
-```bash
-rag_chatbot.py
-```
-
-המטרה של הקובץ אינה לבנות את המאגר מחדש. המאגר כבר נבנה בשלב הקודם. כאן אנחנו רוצים לטעון אותו, ליצור retriever, לשלוף context מתאים, לבנות prompt, לשלוח את הכול ל-LLM, ולהחזיר תשובה למשתמש.
-
-לכן הפרומפט לסוכן הקוד צריך להדגיש הפרדה ברורה:
-
-```bash
-build_rag_db.py builds the vector store.
-rag_chatbot.py uses the existing vector store.
-```
-
-דוגמה לפרומפט טוב:
-
-```bash
-Create a Python file named rag_chatbot.py.
-
-Goal:
-Build a simple command-line RAG chatbot that answers questions using an existing ChromaDB vector store.
-
-Requirements:
-- Import load_vectorstore from build_rag_db.py.
-- Do not rebuild the vector store in this file.
-- Load the existing vector store using load_vectorstore().
-- Create a retriever from the vector store.
-- Use search_kwargs={"k": 4}.
-- Build a RAG chain that:
-  1. receives a user question
-  2. retrieves relevant chunks from the vector store
-  3. joins the retrieved chunks into a context string
-  4. builds a prompt with system instructions, context, chat history, and question
-  5. sends the prompt to the LLM
-  6. returns the final answer as a string
-
-Prompt requirements:
-- The system message should tell the assistant to answer based on the provided context.
-- If the context does not contain relevant information, the assistant should say so.
-- Keep answers concise.
-- Include chat history so follow-up questions can be understood.
-
-LLM requirements:
-- Use ChatAnthropic.
-- Read the API key from the environment.
-- If ANTHROPIC_API_KEY is missing, raise a clear error message.
-- Use temperature=0 for stable answers.
-
-Command-line behavior:
-- Start an interactive chat loop.
-- Read user input from the terminal.
-- If the user types quit or exit, stop the program.
-- For each question, invoke the RAG chain.
-- Print the assistant answer.
-- Save the latest user question and assistant answer in chat history.
-- Keep only the latest messages when sending history to the prompt.
-
-Constraints:
-- Do not create a UI.
-- Do not create a FastAPI server.
-- Do not modify build_rag_db.py.
-- Do not modify requirements.txt.
-- Keep the code simple and readable.
-- Add clear error handling for missing API key and missing vector store.
-
-The file should include:
-- build_rag_chain(vectorstore, llm)
-- main()
-
-After implementing, explain briefly:
-- what the file does
-- how it connects to build_rag_db.py
-- how to run it
-- what command should be run before this file
-```
-
-הפרומפט הזה טוב כי הוא מגדיר לסוכן הקוד בדיוק מה התפקיד של rag_chatbot.py.
-
-הוא לא משאיר מקום לניחוש. הסוכן יודע שהוא צריך להשתמש במאגר קיים, ולא ליצור אותו מחדש. הוא יודע שצריך להשתמש ב-load_vectorstore, שצריך לבנות retriever עם k=4, ושצריך לשלב context, שאלה והיסטוריית שיחה בתוך prompt אחד.
-
-הנקודה החשובה ביותר כאן היא ההנחיה:
-
-```bash
-Do not rebuild the vector store in this file.
-```
-
-זו הנחיה קטנה, אבל היא מונעת ערבוב אחריות בין קבצים.
-
-אם rag_chatbot.py גם יבנה את המאגר וגם יריץ את הצ’אט, הקוד יהפוך פחות ברור. בכל הרצה של הצ’אט נבצע פעולת הכנה כבדה ומיותרת. בנוסף, יהיה קשה יותר להבין איפה נגמר שלב ההכנה ואיפה מתחילה השיחה.
-
-הזרימה שאנחנו רוצים לקבל היא:
-
-User question 
- ↓ 
-Retriever 
- ↓ 
-Relevant chunks 
- ↓ 
-Prompt with context 
- ↓ 
-LLM 
- ↓ 
-Answer
-
-הפרומפט גם מבקש טיפול במצב שבו אין מידע רלוונטי:
-
-```bash
-If the context does not contain relevant information, the assistant should say so.
-```
-
-זו הנחיה חשובה מאוד במערכות RAG. המטרה היא לא לגרום למודל לענות בכל מחיר. המטרה היא לגרום לו לענות כאשר יש בסיס במסמכים, ולהגיד שאין מספיק מידע כאשר אין בסיס כזה.
-
-בנוסף, הפרומפט מבקש לשלב היסטוריית שיחה. זה מאפשר למערכת להתמודד עם שאלות המשך.
-
-לדוגמה:
-
-```bash
-User:
-What does the document say about ChromaDB?
-
-User:
-How is it used in RAG?
-```
-
-השאלה השנייה לא מזכירה שוב את ChromaDB, אבל בעזרת היסטוריית השיחה המודל יכול להבין למה המשתמש מתכוון.
-
-בסוף, חשוב לבקש מסוכן הקוד גם הוראות הרצה. קוד טוב אינו מספיק אם לא ברור איך לבדוק אותו.
-
-סדר ההרצה צריך להיות:
-
-```bash
-python build_rag_db.py
-python rag_chatbot.py
-```
-
-הפקודה הראשונה בונה את המאגר. 
-הפקודה השנייה מפעילה את הצ’אטבוט שמשתמש במאגר.
-
-כך אנחנו שומרים על תהליך עבודה ברור: קודם מכינים את הידע, אחר כך משתמשים בו כדי לענות לשאלות.
-
-
-
-## פרומפט לבניית Stock Agent
-
-אחרי שבנינו RAG Chatbot, אפשר לעבור לפרומפט שמבקש מסוכן הקוד לבנות Agent עם Tool.
-
-כאן חשוב לדייק: אנחנו כבר לא בונים מערכת ששולפת מידע ממסמכים. אנחנו בונים מערכת שמקבלת שאלה, מחליטה אם צריך להפעיל כלי חיצוני, מפעילה אותו, ואז מחזירה תשובה למשתמש.
-
-הקובץ המרכזי הוא:
+הקובץ המרכזי שנבנה בחלק הזה הוא:
 
 ```bash
 stock_agent.py
 ```
 
-המטרה של הקובץ היא לבנות Stock Agent פשוט, שמסוגל לענות על שאלות לגבי מניות בעזרת כלי שמביא נתונים דרך yfinance.
-
-דוגמה לפרומפט טוב:
+הרעיון המרכזי הוא:
 
 ```bash
-Create a Python file named stock_agent.py.
-
-Goal:
-Build a simple command-line stock agent that can answer stock price and market data questions by using a tool.
-
-Requirements:
-- Use LangChain's create_agent.
-- Use init_chat_model to create the LLM.
-- Use Anthropic as the model provider.
-- Read ANTHROPIC_API_KEY from the environment.
-- If ANTHROPIC_API_KEY is missing, raise a clear error message.
-- Use temperature=0 for stable answers.
-- Use yfinance to fetch stock market data.
-
-Tool requirements:
-- Create a tool named get_stock_info.
-- Decorate it with @tool.
-- The tool should accept one argument: symbol: str.
-- The symbol represents a stock ticker, for example AAPL, MSFT, NVDA, or TSLA.
-- Strip whitespace from the symbol.
-- Convert the symbol to uppercase.
-- If the symbol is empty, return a clear error message.
-- Use yfinance.Ticker(symbol).info to fetch stock data.
-
-The tool should return a clear text summary that includes available fields such as:
-- company name
-- current price
-- currency
-- day high
-- day low
-- volume
-
-Handle missing fields safely:
-- Use currentPrice if available.
-- Otherwise use regularMarketPrice.
-- Otherwise use previousClose.
-- If no price is available, explain that price data could not be found.
-
-Agent requirements:
-- Create a SYSTEM_PROMPT that instructs the agent to use get_stock_info when the user asks about stock price, quote, or market data.
-- The agent should summarize the tool result clearly for the user.
-- The agent should not invent live market data.
-- The agent should ask for a ticker symbol if the user did not provide enough information.
-
-The file should include:
-- get_stock_info(symbol: str)
-- build_agent()
-- query_agent(agent, user_input: str)
-- main()
-
-Command-line behavior:
-- Start an interactive loop.
-- Read user input from the terminal.
-- If the user types quit or exit, stop the program.
-- Otherwise, send the user input to the agent.
-- Print the final answer.
-
-Constraints:
-- Do not create a RAG system in this file.
-- Do not use ChromaDB in this file.
-- Do not create a UI.
-- Do not create a FastAPI server.
-- Do not modify other files.
-- Keep the code simple and readable.
-- Add clear error handling for invalid ticker symbols, missing data, and failed API calls.
-
-After implementing, explain briefly:
-- what the file does
-- how the tool works
-- how the agent decides when to use the tool
-- how to run the file
-- how to test it with example questions
+User question
+   ↓
+Agent understands the request
+   ↓
+Agent chooses a tool
+   ↓
+Tool fetches external data
+   ↓
+Agent receives the result
+   ↓
+Agent returns a clear answer
 ```
 
-הפרומפט הזה טוב כי הוא מבהיר לסוכן הקוד שאנחנו בונים Agent עם כלי, ולא RAG Chatbot.
+זו קפיצה חשובה לעומת RAG Chatbot.
 
-ההנחיה החשובה ביותר כאן היא:
+ב-RAG Chatbot מקור המידע הוא מסמכים שכבר נשמרו ב-Vector Store.
 
-```bash
-The agent should not invent live market data.
-```
+ב-Stock Agent מקור המידע הוא כלי חיצוני שמופעל בזמן הריצה.
 
-זו נקודה קריטית. מחיר מניה הוא מידע משתנה. אם המודל לא מפעיל כלי, אין לו דרך לדעת את המחיר הנוכחי בצורה אמינה. לכן צריך להנחות אותו להשתמש ב-tool כאשר השאלה דורשת נתוני שוק.
-
-גם כאן חשוב להגדיר מה לא לעשות:
-
-```bash
-Do not create a RAG system in this file.
-Do not use ChromaDB in this file.
-Do not create a UI.
-```
-
-בלי ההגבלות האלה, סוכן הקוד עלול לערבב בין הדוגמאות. הוא עלול להכניס Vector Store לקובץ של ה-Agent, או לבנות ממשק משתמש לפני שביקשנו. זה בדיוק מה שאנחנו מנסים למנוע בעבודה הדרגתית.
-
-הזרימה שאנחנו רוצים לקבל היא:
-
-User question 
- ↓ 
-Agent 
- ↓ 
-get_stock_info tool 
- ↓ 
-yfinance 
- ↓ 
-Tool result 
- ↓ 
-Final answer
-
-דוגמה לשאלת בדיקה טובה:
+לדוגמה, אם המשתמש שואל:
 
 ```bash
 What is the current price of MSFT?
 ```
 
+לא נרצה שהמודל ינחש מחיר. מחיר מניה הוא מידע משתנה. לכן המערכת צריכה להפעיל כלי שמביא את הנתון בזמן אמת.
+
+במקרה שלנו, הכלי ישתמש בספרייה:
+
+```python
+yfinance
+```
+
+היא תאפשר לנו להביא נתוני מניה לפי ticker symbol כמו:
+
+```bash
+MSFT
+AAPL
+TSLA
+NVDA
+```
+
+המשתמש לא צריך לדעת איך מפעילים את הכלי. הוא לא כותב:
+
+```python
+get_stock_info("MSFT")
+```
+
+הוא פשוט שואל בשפה טבעית:
+
+```bash
+What is the current price of Microsoft stock?
+```
+
+וה-Agent צריך להבין לבד שכנראה מדובר ב-MSFT, להפעיל את הכלי, לקבל נתונים, ולנסח תשובה.
+
+זה בדיוק הרעיון של Agent עם Tools: המודל לא רק מחזיר טקסט, אלא מקבל יכולת להפעיל פעולות חיצוניות לפי הצורך. הטקסט הקיים שלך כבר מסביר את המעבר הזה מ-RAG למערכת שמפעילה כלי, אבל כאן נבנה אותו מחדש סביב קובץ מלא שאפשר להעלות ל-GitHub ולהריץ.
+
+## מה אנחנו בונים
+
+אנחנו בונים Stock Agent פשוט שרץ דרך שורת הפקודה.
+
+ה-Agent יוכל לענות על שאלות כמו:
+
+```bash
+What is the current price of MSFT?
+Give me market data for Apple stock.
+What is the quote for NVDA?
+```
+
+המערכת תורכב משלושה רכיבים מרכזיים:
+
+```bash
+LLM
+Tools
+Instructions
+```
+
+ה-LLM אחראי להבין את השאלה ולנסח תשובה.
+
+ה-Tools מאפשרים לסוכן להביא מידע מבחוץ.
+
+ה-Instructions מגדירות לסוכן מתי להשתמש בכלי, איך להתנהג, ואיך להחזיר תשובה למשתמש.
+
+במקרה שלנו נתחיל עם כלי אחד:
+
+```python
+get_stock_info
+```
+
+הכלי הזה יקבל ticker symbol, יביא נתוני מניה דרך yfinance, ויחזיר טקסט מסודר עם מידע בסיסי:
+
+```bash
+Company name
+Current price
+Currency
+Day high
+Day low
+Volume
+```
+
+הזרימה המלאה תהיה:
+
+```bash
+User:
+What is the current price of MSFT?
+
+Agent:
+This question requires live market data.
+
+Tool call:
+get_stock_info("MSFT")
+
+Tool result:
+Microsoft Corporation
+Current price: ...
+Day high: ...
+Day low: ...
+Volume: ...
+
+Final answer:
+The current market data for Microsoft is...
+```
+
+בסוף הפרק הזה יהיו לנו:
+
+1. requirements.txt מעודכן
+
+2. קובץ stock_agent.py מלא
+
+3. Agent שרץ דרך command-line
+
+4. Tool שמביא נתוני מניה
+
+5. הוראות הרצה
+
+6. שאלות בדיקה
+
+7. טיפול בסיסי בשגיאות
+
+השלב הבא הוא להגדיר את הקבצים שנשתמש בהם ולעדכן את requirements.txt.
+
+## הקבצים שנשתמש בהם
+
+לפני שנכתוב את stock_agent.py, נוודא שמבנה הפרויקט ברור.
+
+בשלב הזה כבר יש לנו את הקבצים מהחלקים הקודמים:
+
+```bash
+lesson-08-ai-agents/
+  build_rag_db.py
+  rag_chatbot.py
+  requirements.txt
+  data/
+    sample_docs.txt
+  chroma_db/
+```
+
+עכשיו נוסיף קובץ חדש:
+
+```bash
+stock_agent.py
+```
+
+לאחר ההוספה, מבנה הפרויקט יהיה:
+
+```bash
+lesson-08-ai-agents/
+  build_rag_db.py
+  rag_chatbot.py
+  stock_agent.py
+  requirements.txt
+  data/
+    sample_docs.txt
+  chroma_db/
+```
+
+אפשר לחשוב על שלושת קבצי ה-Python כך:
+
+<div dir="rtl">
+
+| **קובץ** | **תפקיד** |
+| --- | --- |
+| **build_rag_db.py** | בונה את בסיס ה-RAG ושומר אותו לדיסק |
+| **rag_chatbot.py** | טוען את בסיס ה-RAG ועונה לפי מסמכים |
+| **stock_agent.py** | מפעיל Agent עם tool שמביא נתוני מניה |
+
+</div>
+
+הקובץ stock_agent.py לא צריך את chroma_db.
+
+זו נקודה חשובה.
+
+ה-RAG Chatbot עובד מול מסמכים שנשמרו מראש.
+
+ה-Stock Agent עובד מול כלי חיצוני שמביא מידע בזמן אמת.
+
+לכן הזרימות שונות:
+
+```bash
+RAG Chatbot:
+Question → Vector Store → Context → LLM → Answer
+
+Stock Agent:
+Question → Agent → Tool → External Data → LLM → Answer
+```
+
+בפרק זה נתמקד רק ב-Stock Agent.
+
+**עדכון requirements.txt**
+
+כדי לבנות את ה-Agent, נצטרך כמה ספריות נוספות.
+
+נשתמש ב:
+
+```python
+langchain
+langchain-anthropic
+yfinance
+python-dotenv
+```
+
+- langchain מאפשרת לנו לבנות Agent ולהגדיר tools.
+
+- langchain-anthropic מאפשרת לעבוד עם מודל של Anthropic דרך LangChain.
+
+- yfinance תביא את נתוני המניה.
+
+- python-dotenv תאפשר בעתיד לטעון משתני סביבה מקובץ .env, למרות שבשלב הזה עדיין אפשר להגדיר אותם ישירות ב-PowerShell.
+
+הקובץ requirements.txt בשלב הזה יכול להיראות כך:
+
+```python
+langchain
+langchain-chroma
+langchain-community
+langchain-anthropic
+chromadb
+sentence-transformers
+yfinance
+python-dotenv
+```
+
+אם כבר יש לך requirements.txt מהחלקים הקודמים, פשוט מוסיפים אליו:
+
+```python
+yfinance
+python-dotenv
+```
+
+לאחר העדכון נריץ:
+
+```bash
+pip install -r requirements.txt
+```
+
+**הגדרת API key**
+
+גם כאן נשתמש ב-LLM, ולכן צריך להגדיר:
+
+```python
+ANTHROPIC_API_KEY
+```
+
+ב-PowerShell:
+
+```bash
+$env:ANTHROPIC_API_KEY="your_api_key_here"
+```
+
+חשוב לא להכניס את המפתח לתוך הקוד.
+
+לא עושים כך:
+
+```python
+api_key = "my-real-api-key"
+```
+
+קוד כזה מסוכן להעלאה ל-GitHub.
+
+במקום זה, הקוד יקרא את המפתח מתוך משתנה הסביבה.
+
+**מה הקובץ stock_agent.py יכיל**
+
+הקובץ שנכתוב יכלול את החלקים הבאים:
+
+1. imports
+
+2. הגדרת tool בשם get_stock_info
+
+3. הגדרת SYSTEM_PROMPT
+
+4. פונקציה build_agent
+
+5. פונקציה query_agent
+
+6. פונקציה main
+
+7. לולאת command-line לשיחה עם המשתמש
+
+החלוקה הזאת חשובה כי היא הופכת את הקובץ לקל לקריאה ולהרחבה.
+
+במקום לכתוב את כל הקוד בתוך main, נחלק אותו לפונקציות:
+
+<div dir="rtl">
+
+| **פונקצי**ה | **תפקיד** |
+| --- | --- |
+| **get_stock_info** | מביאה נתוני מניה דרך yfinance |
+| **build_agent** | יוצרת את ה-Agent ומחברת לו את הכלים |
+| **query_agent** | שולחת שאלה ל-Agent ומחזירה תשובה |
+| **main** | מפעילה את התוכנית דרך שורת הפקודה |
+
+</div>
+
+בסעיף הבא נכתוב את הקובץ המלא stock_agent.py, כך שאפשר יהיה להעתיק אותו ישירות לפרויקט ולהריץ.
+
+
+
+## כתיבת הקובץ stock_agent.py
+
+עכשיו נכתוב את הקובץ המרכזי של החלק הזה:
+
+```bash
+stock_agent.py
+```
+
+הקובץ הזה יבנה Agent פשוט שמסוגל לקבל שאלה על מניה, להפעיל tool שמביא נתונים דרך yfinance, ולהחזיר תשובה ברורה למשתמש.
+
+ניצור קובץ בשם stock_agent.py בתיקיית הפרויקט, ונכניס אליו את הקוד הבא.
+
+**תוכן מלא לקובץ stock_agent.py**
+
+```python
+import os
+
+import yfinance as yf
+from langchain.agents import create_agent
+from langchain.chat_models import init_chat_model
+from langchain_core.messages import AIMessage
+from langchain_core.tools import tool
+
+
+MODEL_NAME = "anthropic:claude-haiku-4-5-20251001"
+
+
+SYSTEM_PROMPT = """
+You are a helpful stock market assistant.
+
+When the user asks about a stock price, quote, or market data,
+use the get_stock_info tool with the relevant ticker symbol.
+
+Do not invent stock prices or live market data.
+
+Do not provide financial advice.
+Do not tell the user to buy, sell, or hold a stock.
+
+Summarize the tool result clearly for the user.
+"""
+
+
+@tool
+def get_stock_info(symbol: str) -> str:
+    """
+    Get basic stock market data for a ticker symbol.
+
+    Args:
+        symbol: Stock ticker symbol, for example MSFT, AAPL, TSLA, or NVDA.
+    """
+    symbol = symbol.strip().upper()
+
+    if not symbol:
+        return "Error: Please provide a stock ticker symbol."
+
+    try:
+        ticker = yf.Ticker(symbol)
+        info = ticker.info
+
+        if not info:
+            return f"Error: No market data found for {symbol}."
+
+        name = info.get("longName") or info.get("shortName") or symbol
+
+        price = (
+            info.get("currentPrice")
+            or info.get("regularMarketPrice")
+            or info.get("previousClose")
+        )
+
+        currency = info.get("currency", "")
+        day_high = info.get("dayHigh")
+        day_low = info.get("dayLow")
+        volume = info.get("volume")
+
+        if price is None:
+            return f"Error: Could not find a current price for {symbol}."
+
+        lines = [
+            f"Ticker: {symbol}",
+            f"Company: {name}",
+            f"Current price: {price} {currency}".strip(),
+        ]
+
+        if day_high is not None:
+            lines.append(f"Day high: {day_high}")
+
+        if day_low is not None:
+            lines.append(f"Day low: {day_low}")
+
+        if volume is not None:
+            lines.append(f"Volume: {volume}")
+
+        return "\n".join(lines)
+
+    except Exception:
+        return f"Error: Could not fetch stock data for {symbol}."
+
+
+def build_agent():
+    """
+    Build the stock agent with one external tool.
+    """
+    if not os.getenv("ANTHROPIC_API_KEY"):
+        raise EnvironmentError(
+            "ANTHROPIC_API_KEY is not set. "
+            "Please set it before running stock_agent.py."
+        )
+
+    model = init_chat_model(
+        MODEL_NAME,
+        temperature=0,
+    )
+
+    agent = create_agent(
+        model=model,
+        tools=[get_stock_info],
+        system_prompt=SYSTEM_PROMPT,
+    )
+
+    return agent
+
+
+def query_agent(agent, user_input: str) -> str:
+    """
+    Send a user question to the agent and return the final answer.
+    """
+    result = agent.invoke(
+        {
+            "messages": [
+                {
+                    "role": "user",
+                    "content": user_input,
+                }
+            ]
+        }
+    )
+
+    last_message = result["messages"][-1]
+
+    if isinstance(last_message, AIMessage):
+        return last_message.content
+
+    return str(last_message)
+
+
+def main():
+    print("Loading Stock Agent...")
+
+    agent = build_agent()
+
+    print("Stock Agent is ready.")
+    print("Ask about stock prices, quotes, or market data.")
+    print("Type 'quit' or 'exit' to stop.")
+
+    while True:
+        user_input = input("\nYou: ").strip()
+
+        if user_input.lower() in {"quit", "exit"}:
+            print("Goodbye.")
+            break
+
+        if not user_input:
+            print("Please enter a question.")
+            continue
+
+        try:
+            answer = query_agent(agent, user_input)
+            print(f"\nAssistant: {answer}")
+
+        except Exception as error:
+            print(f"\nError: {error}")
+
+
+if __name__ == "__main__":
+    main()
+```
+
+זה קובץ מלא שאפשר להעלות ל-GitHub ולהריץ.
+
+הוא כולל את כל החלקים הדרושים:
+
+1. חיבור ל-LLM
+
+2. הגדרת tool
+
+3. שימוש ב-yfinance
+
+4. הנחיות התנהגות ל-Agent
+
+5. יצירת Agent
+
+6. שליחת שאלות ל-Agent
+
+7. לולאת command-line
+
+8. טיפול בסיסי בשגיאות
+
+החלק החשוב ביותר בקובץ הוא הכלי:
+
+```python
+@tool
+def get_stock_info(symbol: str) -> str:
+```
+
+הסימון @tool אומר ל-LangChain שהפונקציה הזאת זמינה ל-Agent ככלי חיצוני.
+
+כלומר, זו כבר לא רק פונקציית Python רגילה. זו פעולה שה-Agent יכול לבחור להפעיל כאשר הוא מבין שהמשתמש מבקש נתוני מניה.
+
+לדוגמה, אם המשתמש שואל:
+
+```bash
+What is the current price of MSFT?
+```
+
+ה-Agent אמור להבין שצריך להשתמש בכלי, ולהפעיל אותו עם:
+
+```bash
+MSFT
+```
+
+הפונקציה עצמה משתמשת ב-yfinance:
+
+```python
+ticker = yf.Ticker(symbol)
+info = ticker.info
+```
+
+לאחר מכן היא שולפת מתוך info כמה נתונים בסיסיים:
+
+```bash
+Company name
+Current price
+Currency
+Day high
+Day low
+Volume
+```
+
+ולבסוף מחזירה טקסט מסודר שה-Agent יכול להשתמש בו כדי לענות למשתמש.
+
+ה-SYSTEM_PROMPT מגדיר לסוכן איך להתנהג:
+
+```python
+SYSTEM_PROMPT = """
+You are a helpful stock market assistant.
+
+When the user asks about a stock price, quote, or market data,
+use the get_stock_info tool with the relevant ticker symbol.
+
+Do not invent stock prices or live market data.
+
+Do not provide financial advice.
+Do not tell the user to buy, sell, or hold a stock.
+
+Summarize the tool result clearly for the user.
+"""
+```
+
+ההנחיות האלה חשובות במיוחד כי מחיר מניה הוא מידע משתנה. אנחנו לא רוצים שהמודל ינחש. אם המשתמש מבקש נתון שוק, הסוכן צריך להשתמש בכלי.
+
+בנוסף, הוספנו כלל בטיחות פשוט:
+
+```python
+Do not provide financial advice.
+```
+
+כלומר, הסוכן יכול להציג מידע, אבל לא להמליץ למשתמש לקנות או למכור מניה.
+
+השלב הבא הוא להסביר בצורה מסודרת איך הקוד עובד, ואז נריץ אותו ונבדוק שאלות אמיתיות.
+
+
+
+## הסבר על הקוד
+
+אחרי שיש לנו את הקובץ המלא stock_agent.py, נעבור על המבנה שלו ונבין איך הוא עובד.
+
+הקובץ בנוי סביב רעיון פשוט:
+
+```bash
+LLM + Tool + Instructions = Agent
+```
+
+כל רכיב נותן לסוכן יכולת אחרת.
+
+- ה-LLM מבין את השאלה ומנסח תשובה.
+
+- ה-Tool מביא מידע חיצוני בזמן אמת.
+
+- ה-Instructions מגדירות מתי להשתמש בכלי ואיך לענות למשתמש.
+
+**הגדרת המודל**
+
+בתחילת הקובץ הגדרנו את שם המודל:
+
+```python
+MODEL_NAME = "anthropic:claude-haiku-4-5-20251001"
+```
+
+המודל הוא מנוע השפה של הסוכן. הוא זה שמקבל את שאלת המשתמש, מבין מה המשתמש רוצה, ומחליט אם צריך להשתמש בכלי.
+
+כאשר יוצרים את המודל בפועל, משתמשים ב:
+
+```python
+model = init_chat_model(
+    MODEL_NAME,
+    temperature=0,
+)
+```
+
+הערך:
+
+```python
+temperature=0
+```
+
+גורם למודל להיות יציב יותר ופחות יצירתי.
+
+במקרה של Stock Agent זו בחירה נכונה, כי אנחנו לא רוצים תשובות דמיוניות או ניסוחים חופשיים מדי. אנחנו רוצים שהסוכן יפעל בצורה עקבית: אם המשתמש מבקש נתוני מניה, הוא ישתמש בכלי.
+
+**הגדרת ההנחיות**
+
+ההנחיות מוגדרות בתוך:
+
+```python
+SYSTEM_PROMPT
+```
+
+זה החלק שמגדיר לסוכן את כללי ההתנהגות:
+
+```python
+SYSTEM_PROMPT = """
+You are a helpful stock market assistant.
+
+When the user asks about a stock price, quote, or market data,
+use the get_stock_info tool with the relevant ticker symbol.
+
+Do not invent stock prices or live market data.
+
+Do not provide financial advice.
+Do not tell the user to buy, sell, or hold a stock.
+
+Summarize the tool result clearly for the user.
+"""
+```
+
+ההנחיה החשובה ביותר כאן היא:
+
+```python
+Do not invent stock prices or live market data.
+```
+
+מחיר מניה הוא מידע שמשתנה כל הזמן. לכן לא נכון לבקש מהמודל “לזכור” אותו. במקום זה, הסוכן צריך להשתמש בכלי שמביא מידע עדכני.
+
+ההנחיה השנייה שחשובה מאוד היא:
+
+```python
+Do not provide financial advice.
+```
+
+הסוכן יכול להציג נתוני שוק, אבל הוא לא אמור לומר למשתמש לקנות, למכור או להחזיק מניה.
+
+זו הפרדה חשובה:
+
+מותר: 
+להציג מידע 
+ 
+אסור: 
+לתת המלצת השקעה
+
+**הגדרת ה-Tool**
+
+הכלי מוגדר כך:
+
+```python
+@tool
+def get_stock_info(symbol: str) -> str:
+```
+
+הסימון @tool הופך את הפונקציה לפעולה שה-Agent יכול להפעיל.
+
+כלומר, זו לא רק פונקציה שאנחנו יכולים לקרוא לה ידנית. זו פונקציה שהסוכן יכול לבחור להפעיל כחלק מהתהליך שלו.
+
+הפונקציה מקבלת פרמטר אחד:
+
+```python
+symbol: str
+```
+
+זהו ticker symbol של מניה.
+
+לדוגמה:
+
+```python
+MSFT
+AAPL
+TSLA
+NVDA
+```
+
+כאשר המשתמש שואל:
+
+```bash
+What is the current price of Microsoft stock?
+```
+
+הסוכן צריך להבין שהכוונה היא כנראה ל:
+
+```bash
+MSFT
+```
+
+ואז להפעיל את הכלי עם אותו סימול.
+
+**ניקוי ובדיקת הקלט**
+
+בתחילת הכלי מופיעה השורה:
+
+```python
+symbol = symbol.strip().upper()
+```
+
+השורה הזאת עושה שני דברים:
+
+1. strip מסיר רווחים מיותרים
+
+2. upper הופך את הסימול לאותיות גדולות
+
+כך גם אם מתקבל קלט כמו:
+
+```bash
+ msft 
+```
+
+הוא יהפוך ל:
+
+```bash
+MSFT
+```
+
+לאחר מכן יש בדיקה:
+
+```python
+if not symbol:
+    return "Error: Please provide a stock ticker symbol."
+```
+
+אם לא התקבל סימול, הכלי מחזיר הודעת שגיאה ברורה.
+
+זו נקודה חשובה בבניית tools: לא מניחים שהקלט תמיד תקין. כלי טוב בודק את הקלט ומחזיר הודעה מובנת במקרה של בעיה.
+
+**שימוש ב-yfinance**
+
+בתוך הכלי אנחנו משתמשים ב-yfinance:
+
+```python
+ticker = yf.Ticker(symbol)
+info = ticker.info
+```
+
+הקריאה הזאת מביאה מידע על מניה לפי הסימול שלה.
+
+לדוגמה, אם הסימול הוא:
+
+```python
+MSFT
+```
+
+אז yfinance תנסה להביא מידע על Microsoft.
+
+המידע שחוזר נמצא בתוך משתנה בשם:
+
+```python
+info
+```
+
+זה מילון גדול שמכיל הרבה שדות. אנחנו לא צריכים את כולם, לכן אנחנו שולפים רק את הנתונים החשובים להדגמה.
+
+**שליפת מחיר ונתונים בסיסיים**
+
+שם החברה נשלף כך:
+
+```python
+name = info.get("longName") or info.get("shortName") or symbol
+```
+
+השורה הזאת אומרת:
+
+נסה לקחת longName
+
+אם אין, נסה shortName
+
+אם גם אין, השתמש בסימול עצמו
+
+המחיר נשלף כך:
+
+```python
+price = (
+    info.get("currentPrice")
+    or info.get("regularMarketPrice")
+    or info.get("previousClose")
+)
+```
+
+גם כאן יש ניסיון להשתמש בכמה שדות אפשריים.
+
+זה חשוב כי לא תמיד כל שדה קיים עבור כל מניה או בכל זמן. לפעמים יהיה currentPrice, לפעמים regularMarketPrice, ולפעמים נצטרך להשתמש ב-previousClose.
+
+נתונים נוספים נשלפים כך:
+
+```python
+currency = info.get("currency", "")
+day_high = info.get("dayHigh")
+day_low = info.get("dayLow")
+volume = info.get("volume")
+```
+
+אלה נתוני עזר שמאפשרים להחזיר תשובה עשירה יותר, ולא רק מחיר יחיד.
+
+**בניית תשובת הכלי**
+
+הכלי בונה רשימת שורות:
+
+```python
+lines = [
+    f"Ticker: {symbol}",
+    f"Company: {name}",
+    f"Current price: {price} {currency}".strip(),
+]
+```
+
+לאחר מכן הוא מוסיף שורות רק אם הנתונים קיימים:
+
+```python
+if day_high is not None:
+    lines.append(f"Day high: {day_high}")
+
+if day_low is not None:
+    lines.append(f"Day low: {day_low}")
+
+if volume is not None:
+    lines.append(f"Volume: {volume}")
+```
+
+בסוף הוא מחזיר טקסט אחד:
+
+```python
+return "\n".join(lines)
+```
+
+כלומר, הכלי מחזיר תוצאה בסגנון:
+
+```bash
+Ticker: MSFT
+Company: Microsoft Corporation
+Current price: 430 USD
+Day high: 432
+Day low: 425
+Volume: 21000000
+```
+
+התוצאה הזאת חוזרת ל-Agent. לאחר מכן ה-Agent משתמש בה כדי לנסח תשובה ברורה למשתמש.
+
+**טיפול בשגיאות בתוך הכלי**
+
+הקריאה ל-yfinance עטופה ב:
+
+```python
+try:
+    ...
+except Exception:
+    return f"Error: Could not fetch stock data for {symbol}."
+```
+
+זה חשוב כי כלי חיצוני יכול להיכשל.
+
+לדוגמה:
+
+- אין חיבור אינטרנט
+
+- הסימול לא תקין
+
+- השירות החיצוני לא מחזיר נתונים
+
+- חלק מהשדות חסרים
+
+במקום שהתוכנית תקרוס, הכלי מחזיר הודעת שגיאה שה-Agent יכול להציג למשתמש.
+
+Agent טוב לא חייב להצליח תמיד. אבל הוא צריך להיכשל בצורה ברורה ומבוקרת.
+
+**יצירת ה-Agent**
+
+ה-Agent נוצר בפונקציה:
+
+```python
+def build_agent():
+```
+
+בתחילת הפונקציה בודקים שיש API key:
+
+```python
+if not os.getenv("ANTHROPIC_API_KEY"):
+    raise EnvironmentError(
+        "ANTHROPIC_API_KEY is not set. "
+        "Please set it before running stock_agent.py."
+    )
+```
+
+אם אין מפתח, אין טעם להמשיך. לכן הקוד עוצר עם הודעה ברורה.
+
+לאחר מכן יוצרים את המודל:
+
+```python
+model = init_chat_model(
+    MODEL_NAME,
+    temperature=0,
+)
+```
+
+ואז יוצרים את ה-Agent:
+
+```python
+agent = create_agent(
+    model=model,
+    tools=[get_stock_info],
+    system_prompt=SYSTEM_PROMPT,
+)
+```
+
+זו השורה שמחברת את כל הרכיבים:
+
+```bash
+model         היכולת להבין ולנסח
+tools         הפעולות שהסוכן יכול לבצע
+system_prompt כללי ההתנהגות של הסוכן
+```
+
+גם אם יש כרגע רק כלי אחד, אנחנו מעבירים אותו כרשימה:
+
+```python
+tools=[get_stock_info]
+```
+
+כי בהמשך אפשר להוסיף כלים נוספים.
+
+לדוגמה:
+
+```python
+tools=[
+    get_stock_info,
+    get_stock_news,
+    get_stock_recommendations,
+]
+```
+
+כך Agent יכול להפוך בהדרגה ממערכת קטנה עם כלי אחד למערכת עשירה יותר עם כמה יכולות.
+
+**שליחת שאלה ל-Agent**
+
+הפונקציה ששולחת שאלה היא:
+
+```python
+def query_agent(agent, user_input: str) -> str:
+```
+
+בתוכה אנחנו מפעילים את הסוכן:
+
+```python
+result = agent.invoke(
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": user_input,
+            }
+        ]
+    }
+)
+```
+
+המשתמש שולח שאלה רגילה:
+
+```bash
+What is the current price of MSFT?
+```
+
+וה-Agent מחליט לבד אם צריך להפעיל tool.
+
+אם הוא מפעיל את get_stock_info, הזרימה היא בערך:
+
+```bash
+User question
+   ↓
+Agent decides to use tool
+   ↓
+get_stock_info("MSFT")
+   ↓
+Tool returns market data
+   ↓
+Agent writes final answer
+```
+
+בסוף אנחנו לוקחים את ההודעה האחרונה:
+
+```python
+last_message = result["messages"][-1]
+```
+
+אם זו הודעת AI, מחזירים את התוכן שלה:
+
+```python
+if isinstance(last_message, AIMessage):
+    return last_message.content
+```
+
+וזו התשובה שמודפסת למשתמש.
+
+**לולאת השיחה**
+
+בסוף הקובץ יש את main().
+
+היא בונה את ה-Agent:
+
+```python
+agent = build_agent()
+```
+
+ואז נכנסת ללולאה:
+
+```python
+while True:
+    user_input = input("\nYou: ").strip()
+```
+
+אם המשתמש כותב:
+
+```bash
+quit
+```
+
 או:
+
+```bash
+exit
+```
+
+התוכנית נעצרת.
+
+אם המשתמש כותב שאלה רגילה, היא נשלחת ל-Agent:
+
+```python
+answer = query_agent(agent, user_input)
+print(f"\nAssistant: {answer}")
+```
+
+מבחינת המשתמש, זו נראית כמו שיחת צ’אט פשוטה.
+
+אבל מאחורי הקלעים, המערכת יודעת להפעיל כלי חיצוני, להביא מידע, ולהחזיר תשובה מבוססת יותר.
+
+זה ההבדל המרכזי בין צ’אטבוט רגיל לבין Agent עם Tool.
+
+
+
+## הרצה ובדיקת ה-Agent
+
+אחרי שכתבנו את stock_agent.py, אפשר להריץ אותו ולבדוק שה-Agent באמת יודע להשתמש בכלי.
+
+לפני ההרצה, מבנה הפרויקט אמור להיראות כך:
+
+```bash
+lesson-08-ai-agents/
+  build_rag_db.py
+  rag_chatbot.py
+  stock_agent.py
+  requirements.txt
+  data/
+    sample_docs.txt
+  chroma_db/
+```
+
+שימו לב: stock_agent.py לא תלוי ב-chroma_db.
+
+הוא לא משתמש ב-RAG, לא מחפש במסמכים, ולא טוען Vector Store.
+
+הוא משתמש ב-LLM וב-tool שמביא נתוני מניה דרך yfinance.
+
+**שלב 1: התקנת הספריות**
+
+מתוך תיקיית הפרויקט נריץ:
+
+```bash
+pip install -r requirements.txt
+```
+
+אם עובדים בתוך virtual environment, נפעיל אותו קודם.
+
+ב-PowerShell:
+
+```bash
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+```
+
+אם ההתקנה הסתיימה בלי שגיאות, אפשר להמשיך.
+
+**שלב 2: הגדרת API key**
+
+ה-Agent משתמש במודל של Anthropic, ולכן צריך להגדיר משתנה סביבה:
+
+```python
+ANTHROPIC_API_KEY
+```
+
+ב-PowerShell:
+
+```bash
+$env:ANTHROPIC_API_KEY="your_api_key_here"
+```
+
+במקום your_api_key_here נשים את המפתח האמיתי.
+
+חשוב לא להכניס את המפתח לתוך stock_agent.py, ולא להעלות אותו ל-GitHub.
+
+**שלב 3: הרצת ה-Agent**
+
+עכשיו נריץ:
+
+```bash
+python stock_agent.py
+```
+
+פלט אפשרי:
+
+```bash
+Loading Stock Agent...
+Stock Agent is ready.
+Ask about stock prices, quotes, or market data.
+Type 'quit' or 'exit' to stop.
+
+You:
+```
+
+בשלב הזה ה-Agent ממתין לשאלה.
+
+**בדיקה ראשונה: מחיר מניה לפי סימול**
+
+נשאל:
+
+```bash
+What is the current price of MSFT?
+```
+
+ה-Agent אמור להבין שזו שאלה על נתוני שוק, לבחור את הכלי get_stock_info, להעביר אליו את הסימול MSFT, ואז להחזיר תשובה מסודרת.
+
+תשובה אפשרית:
+
+```bash
+Assistant: Microsoft Corporation is currently trading at 430.12 USD.
+The day's high is 432.50, the day's low is 425.80, and the volume is 21000000.
+```
+
+המספרים בפועל יהיו שונים, כי הם מגיעים ממקור מידע חיצוני בזמן הריצה.
+
+הנקודה החשובה היא לא המחיר עצמו, אלא זה שה-Agent הפעיל כלי ולא המציא תשובה.
+
+**בדיקה שנייה: שאלה עם שם חברה**
+
+ננסה שאלה פחות טכנית:
+
+```bash
+What is the current price of Apple stock?
+```
+
+כאן המשתמש לא כתב AAPL, אלא כתב Apple stock.
+
+ה-Agent צריך לנסות להבין שהכוונה היא ל-Apple, ולהשתמש בסימול המתאים:
+
+```python
+AAPL
+```
+
+תשובה אפשרית:
+
+```bash
+Assistant: Apple Inc. is currently trading at 195.40 USD.
+The day's high is 197.10, the day's low is 193.80, and the volume is 52000000.
+```
+
+אם המודל לא מצליח לזהות את הסימול, אפשר לשאול בצורה מפורשת יותר:
+
+```bash
+What is the current price of AAPL?
+```
+
+במערכת אמיתית אפשר להוסיף tool נוסף שממיר שם חברה ל-ticker symbol בצורה אמינה יותר.
+
+**בדיקה שלישית: נתוני שוק כלליים**
+
+נשאל:
 
 ```bash
 Give me market data for NVDA.
 ```
 
-שאלות כאלה אמורות לגרום ל-Agent להפעיל את get_stock_info.
-
-לעומת זאת, שאלה כללית כמו:
+תשובה אפשרית:
 
 ```bash
-What is a stock ticker?
+Assistant: Here is the current market data for NVIDIA Corporation:
+Ticker: NVDA
+Current price: ...
+Day high: ...
+Day low: ...
+Volume: ...
 ```
 
-לא בהכרח דורשת tool. זו שאלה מושגית, וה-Agent יכול לענות עליה ישירות.
+זו בדיקה טובה כי היא מוודאת שה-Agent לא מחפש רק את הביטוי “current price”, אלא מבין שגם “market data” דורש שימוש בכלי.
 
-בפרומפט טוב לסוכן קוד, אנחנו לא רק מבקשים “תבנה Agent”. אנחנו מגדירים את גבולות האחריות שלו: איזה כלי יש לו, מתי להשתמש בו, מה לעשות אם חסר מידע, ואיך להריץ את הקובץ.
+**בדיקה רביעית: שאלה שלא דורשת Tool**
 
-כך מתקבל קוד שאפשר להבין, לבדוק ולהרחיב בהמשך.
-
-## פרומפט להוספת Tool חדש
-
-אחרי שיש לנו Stock Agent בסיסי, אפשר להרחיב אותו עם כלים נוספים. זו אחת הסיבות המרכזיות לכך ש-Agents הם מבנה גמיש: לא חייבים לבנות הכול מחדש. אפשר להוסיף יכולת חדשה כסוג של tool נוסף.
-
-לדוגמה, נניח שאנחנו רוצים להוסיף כלי שמחזיר חדשות קשורות למניה.
-
-במקום שה-Agent יענה רק על מחיר נוכחי או נתוני שוק בסיסיים, הוא יוכל גם לקבל שאלה כמו:
+נשאל:
 
 ```bash
-Show me recent news about NVDA.
+What is a stock?
+```
+
+זו שאלה מושגית. היא לא דורשת מחיר חי, quote או נתוני שוק.
+
+במקרה כזה ה-Agent יכול לענות בלי להפעיל את get_stock_info.
+
+תשובה אפשרית:
+
+```bash
+Assistant: A stock represents a share of ownership in a company. When someone owns a stock, they own a small part of that company.
+```
+
+זו בדיקה חשובה, כי Agent טוב לא אמור להשתמש בכלי בכל שאלה. הוא צריך לדעת מתי להשתמש בכלי ומתי לענות רגיל.
+
+**בדיקה חמישית: סימול לא תקין**
+
+ננסה:
+
+```bash
+What is the current price of ABCXYZ123?
+```
+
+במקרה כזה ייתכן ש-yfinance לא יחזיר נתונים שימושיים.
+
+תשובה טובה תהיה בסגנון:
+
+```bash
+Assistant: I could not find valid market data for ABCXYZ123.
 ```
 
 או:
 
 ```bash
-Are there any recent headlines about Microsoft stock?
+Assistant: The tool could not fetch stock data for ABCXYZ123.
 ```
 
-במקרה כזה, הסוכן צריך להבין שהשאלה לא דורשת רק מחיר מניה, אלא חדשות. לכן הוא צריך tool אחר.
+המטרה היא לוודא שהמערכת לא קורסת ולא מחזירה תשובה מומצאת.
 
-הפרומפט לסוכן הקוד צריך להיות ממוקד מאוד. אנחנו לא רוצים שיכתוב מחדש את כל stock_agent.py. אנחנו רוצים שיוסיף כלי חדש לקובץ הקיים, בלי לשבור את הכלי שכבר עובד.
+**יציאה מהתוכנית**
 
-דוגמה לפרומפט טוב:
+כדי לצאת מה-Agent, מקלידים:
 
 ```bash
-Edit only stock_agent.py.
-
-Goal:
-Add a new tool that returns recent news related to a stock ticker.
-
-Current behavior:
-The file already contains:
-- get_stock_info(symbol: str)
-- build_agent()
-- query_agent(agent, user_input: str)
-- main()
-
-New requirement:
-Add a new tool named get_stock_news.
-
-Tool requirements:
-- Decorate the function with @tool.
-- The function should accept one argument: symbol: str.
-- Strip whitespace from the symbol.
-- Convert the symbol to uppercase.
-- If the symbol is empty, return a clear error message.
-- Use yfinance to fetch news related to the ticker.
-- Return a clear text summary of the top news items.
-- Include the title and publisher when available.
-- If no news is found, return a clear message saying that no recent news was found.
-- Handle API failures with a clear error message.
-
-Agent update:
-- Add get_stock_news to the agent tools list.
-- Update the SYSTEM_PROMPT so the agent uses:
-  - get_stock_info for stock price, quote, or market data questions
-  - get_stock_news for news or headline questions
-
-Constraints:
-- Do not remove or rewrite get_stock_info.
-- Do not change the command-line loop unless necessary.
-- Do not create a UI.
-- Do not create a FastAPI server.
-- Do not modify other files.
-- Keep the code simple and readable.
-
-After implementing, explain briefly:
-- what you changed
-- how the new tool works
-- how the agent decides between get_stock_info and get_stock_news
-- how to test the new tool with example questions
+quit
 ```
 
-הפרומפט הזה טוב כי הוא מגדיר שינוי קטן וממוקד. הוא לא מבקש “שדרג את הסוכן”, אלא אומר בדיוק איזה tool להוסיף, איך לקרוא לו, מה הוא מקבל, מה הוא מחזיר, ואיך לחבר אותו ל-Agent.
-
-שימו לב להנחיה הזאת:
+או:
 
 ```bash
-Do not remove or rewrite get_stock_info.
+exit
 ```
 
-זו הנחיה חשובה מאוד. כאשר עובדים עם סוכן קוד על קובץ קיים, צריך להגן על מה שכבר עובד. אחרת הסוכן עלול “לשפר” את הקוד הקיים ולשבור התנהגות שכבר בדקנו.
+ואז נקבל:
 
-אחרי הוספת הכלי החדש, רשימת הכלים של ה-Agent יכולה להיראות כך:
+```bash
+Goodbye.
+```
+
+**מה בדקנו כאן**
+
+בשלב הזה בדקנו שהמערכת עובדת מקצה לקצה:
+
+1. ה-Agent נטען
+
+2. ה-LLM מחובר
+
+3. הכלי get_stock_info זמין ל-Agent
+
+4. המשתמש יכול לשאול בשפה טבעית
+
+5. ה-Agent יודע מתי להשתמש בכלי
+
+6. הכלי מביא נתונים דרך yfinance
+
+7. ה-Agent מחזיר תשובה ברורה
+
+8. התוכנית יודעת לעצור בצורה מסודרת
+
+זהו Agent פשוט, אבל הוא כבר מדגים את אחד הרעיונות החשובים ביותר בבניית סוכנים: המודל לא חייב לדעת הכול בעצמו. הוא יכול להשתמש בכלים כדי להביא מידע או לבצע פעולה בזמן אמת.
+
+ראש הטופס
+
+## טעויות נפוצות בבניית Stock Agent
+
+אחרי שה-Agent עובד, חשוב להבין איפה הוא עלול להיכשל.
+
+ב-Stock Agent יש תלות בכמה דברים יחד:
+
+```bash
+LLM
+Instructions
+Tool
+yfinance
+Ticker symbol
+External data
+```
+
+אם אחד מהם לא עובד נכון, התשובה עלולה להיות שגויה, חסרה או לא ברורה.
+
+**טעות 1: לצפות מהמודל לדעת מחיר מניה**
+
+מחיר מניה הוא מידע משתנה.
+
+לכן לא נכון לצפות מה-LLM לענות עליו מתוך הזיכרון הפנימי שלו.
+
+לדוגמה, שאלה כזאת:
+
+```bash
+What is the current price of MSFT?
+```
+
+דורשת מידע עדכני.
+
+אם המודל עונה בלי להשתמש בכלי, זו בעיה.
+
+זו בדיוק הסיבה שהוספנו ל-SYSTEM_PROMPT את ההנחיה:
+
+```bash
+Do not invent stock prices or live market data.
+```
+
+הסוכן צריך להבין:
+
+שאלה על מחיר חי 
+ ↓ 
+צריך להשתמש בכלי
+
+ולא:
+
+שאלה על מחיר חי 
+ ↓ 
+לנסות לנחש תשובה
+
+**טעות 2: לא להגדיר API key**
+
+ה-Agent צריך LLM כדי להבין את השאלה ולהחליט אם להשתמש בכלי.
+
+לכן צריך להגדיר:
 
 ```python
-tools=[get_stock_info, get_stock_news]
+ANTHROPIC_API_KEY
 ```
 
-ברגע שיש יותר מכלי אחד, ההנחיות הופכות לחשובות עוד יותר. הסוכן צריך לדעת מתי להשתמש בכל כלי.
+אם המשתנה לא מוגדר, הקוד יעצור כאן:
+
+```python
+if not os.getenv("ANTHROPIC_API_KEY"):
+    raise EnvironmentError(
+        "ANTHROPIC_API_KEY is not set. "
+        "Please set it before running stock_agent.py."
+    )
+```
+
+ב-PowerShell מגדירים אותו כך:
+
+```bash
+$env:ANTHROPIC_API_KEY="your_api_key_here"
+```
+
+חשוב לא לשים את המפתח בתוך הקוד ולא להעלות אותו ל-GitHub.
+
+**טעות 3: לסמוך על שם חברה במקום על ticker symbol**
+
+הכלי שלנו מקבל ticker symbol.
 
 לדוגמה:
 
 ```bash
-User:
-What is the current price of AAPL?
+MSFT
+AAPL
+NVDA
+TSLA
+```
 
-Expected tool:
+כאשר המשתמש שואל:
+
+```bash
+What is the current price of Apple stock?
+```
+
+ה-Agent צריך להבין שהכוונה היא כנראה:
+
+```bash
+AAPL
+```
+
+אבל זה לא תמיד מובטח.
+
+לכן בבדיקות כדאי לשאול גם עם שם חברה וגם עם ticker:
+
+```bash
+What is the current price of Apple stock?
+What is the current price of AAPL?
+```
+
+אם השאלה עם שם החברה לא עובדת טוב, זה לא אומר שה-tool נכשל. יכול להיות שהמודל לא המיר את שם החברה לסימול הנכון.
+
+במערכת מתקדמת יותר אפשר להוסיף tool נפרד שמחפש ticker לפי שם חברה.
+
+**טעות 4: לא לטפל ב-ticker לא תקין**
+
+משתמש יכול להקליד סימול שלא קיים:
+
+```bash
+ABCXYZ123
+```
+
+או שאלה לא ברורה:
+
+```bash
+What is the current stock price?
+```
+
+אם אין סימול ברור, הכלי לא צריך לקרוס.
+
+לכן בתחילת get_stock_info יש בדיקה:
+
+```python
+symbol = symbol.strip().upper()
+
+if not symbol:
+    return "Error: Please provide a stock ticker symbol."
+```
+
+בנוסף, אם yfinance לא מחזיר נתונים, הכלי מחזיר שגיאה ברורה:
+
+```python
+if not info:
+    return f"Error: No market data found for {symbol}."
+```
+
+המטרה היא שה-Agent יקבל תוצאה מובנת, גם כאשר הכלי לא הצליח.
+
+**טעות 5: להחזיר למשתמש שגיאה טכנית מדי**
+
+במערכת לימודית זה בסדר להחזיר הודעה כמו:
+
+```bash
+Error: Could not fetch stock data for MSFT.
+```
+
+אבל במערכת אמיתית עדיף להחזיר ניסוח ידידותי יותר:
+
+```bash
+I could not fetch market data for MSFT right now.
+Please try again later or check the ticker symbol.
+```
+
+העיקרון הוא:
+
+- לוגים טכניים למפתח
+
+- הודעה ברורה למשתמש
+
+לא כדאי לחשוף למשתמש stack trace, פרטים פנימיים או הודעות שגיאה ארוכות מדי.
+
+**טעות 6: לתת ייעוץ השקעות**
+
+ה-Agent שלנו מציג מידע.
+
+הוא לא אמור להמליץ למשתמש לקנות, למכור או להחזיק מניה.
+
+לכן ב-SYSTEM_PROMPT כתבנו:
+
+```python
+Do not provide financial advice.
+Do not tell the user to buy, sell, or hold a stock.
+```
+
+לדוגמה, אם המשתמש שואל:
+
+```bash
+Should I buy NVDA?
+```
+
+תשובה טובה לא תהיה:
+
+```bash
+Yes, you should buy it.
+```
+
+תשובה טובה יותר תהיה:
+
+```bash
+I can provide market data, but I cannot give financial advice.
+You may want to review the company's financials and consult a qualified professional.
+```
+
+בפרויקט שלנו הדגש הוא טכני: איך Agent משתמש בכלי. לא איך לקבל החלטות השקעה.
+
+**טעות 7: לחשוב ש-yfinance הוא ה-Agent**
+
+yfinance הוא לא הסוכן.
+
+הוא רק מקור הנתונים.
+
+חלוקת התפקידים היא:
+
+- yfinance מביא נתונים גולמיים
+
+- get_stock_info עוטף את yfinance ומחזיר טקסט מסודר
+
+- Agent מחליט מתי להפעיל את הכלי ואיך להסביר את התוצאה
+
+זו נקודה חשובה.
+
+Agent הוא לא API.
+
+Agent הוא שכבה שמחברת בין שפה טבעית, כלי חיצוני, הנחיות והתנהגות.
+
+**טעות 8: לא לבדוק אם ה-Agent באמת השתמש בכלי**
+
+לפעמים התשובה נראית טובה, אבל לא בטוח שה-Agent הפעיל את הכלי.
+
+בשלב לימודי אפשר להוסיף הדפסה זמנית בתוך הכלי:
+
+```python
+print(f"Calling get_stock_info with symbol: {symbol}")
+```
+
+כך בזמן הרצה אפשר לראות אם הפונקציה באמת הופעלה.
+
+אחרי שמסיימים לבדוק, אפשר להסיר את ההדפסה הזאת או להחליף אותה בלוג מסודר.
+
+בדיקה כזאת עוזרת להבין את ההבדל בין:
+
+המודל ענה לבד
+
+לבין:
+
+המודל הפעיל כלי וקיבל תוצאה
+
+**טעות 9: להעמיס יותר מדי אחריות על Tool אחד**
+
+בשלב הראשון בנינו tool אחד:
+
+```python
 get_stock_info
 ```
 
-אבל בשאלה אחרת:
+הוא מביא מחיר, טווח יומי ונפח מסחר.
 
-```bash
-User:
-Show me recent news about AAPL.
+לא כדאי להפוך אותו לכלי ענק שמטפל בכל דבר: חדשות, המלצות אנליסטים, ביצועים היסטוריים, דוחות כספיים ועוד.
 
-Expected tool:
+בדרך כלל עדיף לבנות כמה כלים קטנים וברורים:
+
+```python
+get_stock_info
 get_stock_news
+get_stock_recommendations
+get_stock_year_performance
 ```
 
-אם ההנחיות לא ברורות, הסוכן עלול לבחור כלי לא מתאים. למשל, הוא עלול להפעיל את כלי המחיר גם כששאלו על חדשות, או לענות תשובה כללית בלי לקרוא לאף כלי.
+כך כל tool עושה פעולה אחת ברורה, וה-Agent יכול לבחור את הכלי המתאים לפי שאלת המשתמש.
 
-לכן כדאי לעדכן את ההנחיות בצורה מפורשת:
+**טעות 10: לא להפריד בין מידע חי לבין מידע שמור**
 
-```bash
-Use get_stock_info for stock price, quote, or market data.
-Use get_stock_news for recent news, headlines, or company news.
-```
+RAG מתאים כאשר מקור הידע הוא מסמכים קיימים.
 
-הרחבת Agent בעזרת tool חדש היא דרך טובה לפתח מערכת בהדרגה. קודם בונים כלי אחד, בודקים שהוא עובד, ואז מוסיפים יכולת נוספת. כך אפשר להגדיל את המערכת בלי להפוך אותה לקשה להבנה.
+Stock Agent מתאים כאשר צריך להביא מידע בזמן אמת.
 
-במילים פשוטות, כל tool חדש הוא יכולת חדשה של הסוכן. אבל כל יכולת חדשה צריכה לבוא עם גבולות ברורים: מתי להשתמש בה, מה היא מחזירה, ומה לעשות כאשר היא נכשלת.
+לכן לא נכון לשמור מחיר מניה במסמך ולהשתמש ב-RAG כדי לענות עליו לאורך זמן. המחיר יתיישן מהר מאוד.
 
-## פרומפט לבדיקת קוד
+הכלל הוא:
 
-אחרי שסוכן הקוד כתב או שינה קוד, העבודה עדיין לא הסתיימה. צריך לבדוק את הקוד. זו טעות נפוצה לחשוב שאם הסוכן החזיר קוד שנראה טוב, אפשר מיד להמשיך הלאה.
+מידע יציב יחסית - מתאים ל-RAG
 
-בפועל, קוד צריך לעבור בדיקה כמו כל קוד אחר: האם הוא רץ, האם הוא ברור, האם יש טיפול בשגיאות, האם אין imports מיותרים, והאם יש דרך פשוטה להריץ אותו.
+מידע משתנה בזמן אמת - מתאים ל-Tool
 
-בשלב הזה לא מבקשים מסוכן הקוד להוסיף פיצ’רים חדשים. מבקשים ממנו לבדוק את מה שכבר קיים.
+לדוגמה:
 
-דוגמה לפרומפט טוב:
+<div dir="rtl">
 
-```bash
-Review the current project code.
+| **שאל**ה | **פתרון מתאים** |
+| --- | --- |
+| **What does the document say about ChromaDB?** | RAG |
+| **What is the current price of MSFT?** | Tool |
+| **What is the company policy about refunds?** | RAG |
+| **What is the current status of order 123?** | Tool |
+| **What are the latest headlines about AAPL?** | Tool |
 
-Goal:
-Check whether the implementation is correct, simple, and ready to run.
+</div>
 
-Please review these files:
-- build_rag_db.py
-- rag_chatbot.py
-- stock_agent.py
-- requirements.txt
+ההבדל הזה הוא בסיס חשוב בתכנון מערכות Agentic.
 
-Check the following:
-1. Does the code run without syntax errors?
-2. Are all imports required?
-3. Are there any unused imports?
-4. Is error handling clear and useful?
-5. Are function names clear and consistent?
-6. Is there good separation between code, configuration, and secrets?
-7. Are API keys read from environment variables and not hardcoded?
-8. Are there clear instructions for running each file?
-9. Does rag_chatbot.py load the existing vector store instead of rebuilding it?
-10. Does stock_agent.py use tools only when needed?
-11. Are there any places where the code might fail silently?
-12. Are there any unnecessary abstractions that make the code harder to understand?
+בסוף הפרק הזה, ה-Agent שלנו כבר לא רק עובד. אנחנו גם מבינים מה עלול להשתבש, איך לבדוק אותו, ואיך לשפר אותו בהמשך.
 
-Do not rewrite the whole project.
-Do not add new features.
-Do not create a UI.
-Do not modify files unless you find a clear issue.
+תחתית הטופס
 
-Return your answer in this structure:
-- Issues found
-- Suggested fixes
-- Files that should be changed
-- Exact commands to run and test the project
-```
 
-הפרומפט הזה טוב כי הוא מגדיר לסוכן הקוד תפקיד אחר: לא “בונה”, אלא “בודק”.
-
-זו הבחנה חשובה. כאשר אנחנו מבקשים מסוכן קוד לבדוק, אנחנו לא רוצים שהוא יתחיל לכתוב מערכת חדשה. אנחנו רוצים שהוא יעבור על הקוד הקיים, ימצא בעיות, ויסביר מה כדאי לתקן.
-
-אחד הדברים החשובים בבדיקה הוא לוודא שהקוד באמת רץ. לפעמים הקוד נראה נכון, אבל חסר import קטן, שם פונקציה לא תואם, או ספרייה שלא קיימת ב-requirements.txt.
-
-לכן כדאי לבקש גם פקודות הרצה:
-
-```bash
-Provide the exact commands to test the project.
-```
-
-לדוגמה, בפרויקט שלנו סדר בדיקה בסיסי יכול להיות:
-
-```bash
-pip install -r requirements.txt
-python build_rag_db.py
-python rag_chatbot.py
-python stock_agent.py
-```
-
-בדיקה נוספת היא לוודא שאין secrets בתוך הקוד. מפתחות API לא אמורים להופיע בקבצי Python. הם צריכים להגיע ממשתני סביבה.
-
-לדוגמה, זה לא טוב:
-
-```python
-api_key = "sk-..."
-```
-
-לעומת זאת, זה נכון יותר:
-
-```python
-os.getenv("ANTHROPIC_API_KEY")
-```
-
-כך הקוד בטוח יותר, נייד יותר, ומתאים יותר לעבודה אמיתית.
-
-חשוב גם לבדוק שאין ערבוב אחריות בין קבצים.
-
-build_rag_db.py אמור לבנות ולטעון את ה-Vector Store.
-
-rag_chatbot.py אמור להשתמש ב-Vector Store קיים כדי לענות לשאלות.
-
-stock_agent.py אמור להפעיל tools חיצוניים, ולא להתעסק עם ChromaDB או מסמכים.
-
-אם סוכן הקוד הכניס לוגיקה של RAG לתוך stock_agent.py, או בנה מחדש את המאגר מתוך rag_chatbot.py, זו בעיה תכנונית שכדאי לתקן.
-
-אפשר לבקש בדיקה ממוקדת יותר כך:
-
-```bash
-Check specifically that each file has a single clear responsibility:
-- build_rag_db.py prepares the vector store
-- rag_chatbot.py answers using the vector store
-- stock_agent.py answers using external tools
-
-If any file mixes responsibilities, explain where and suggest a minimal fix.
-```
-
-בדיקה טובה צריכה להתייחס גם לטיפול בשגיאות. למשל:
-
-```bash
-Check that the code handles:
-- missing data folder
-- no text files
-- missing chroma_db folder
-- missing ANTHROPIC_API_KEY
-- invalid stock ticker
-- failed yfinance request
-```
-
-אלה לא מקרי קצה נדירים. אלה דברים שקורים הרבה בזמן פיתוח והרצה. אם הקוד מטפל בהם בצורה ברורה, הרבה יותר קל לעבוד איתו.
-
-בסוף הבדיקה, חשוב לבקש מסוכן הקוד לא רק לומר מה לא טוב, אלא גם להציע תיקון מינימלי.
-
-```bash
-For each issue, suggest the smallest safe fix.
-Do not refactor unrelated code.
-```
-
-זו הנחיה חשובה. לפעמים סוכן קוד מזהה בעיה קטנה, ואז מציע לשכתב חצי פרויקט. זה לא מה שאנחנו רוצים. אנחנו רוצים תיקון קטן, בטוח וממוקד.
-
-במילים פשוטות, סוכן קוד טוב לא משמש רק לכתיבת קוד. אפשר להשתמש בו גם כבודק קוד, כעוזר דיבוג, וכמי שמוודא שהפרויקט נשאר פשוט וברור.
-
-אבל גם כאן, האחריות נשארת אצלנו. אנחנו צריכים להגדיר לו מה לבדוק, מה לא לשנות, ואיך להציג את הממצאים. כאשר הבדיקה נעשית בצורה מסודרת, קל יותר להגיע לקוד שאפשר להבין, להריץ ולהמשיך לפתח.

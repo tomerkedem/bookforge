@@ -1,119 +1,64 @@
-# בניית RAG Chatbot
+# מעבדה מעשית: בניית בסיס RAG
 
-אחרי שבנינו את בסיס ה-RAG בחלק הקודם, יש לנו עכשיו מאגר ידע מקומי שנשמר בתוך תיקיית chroma_db.
+אחרי שבחרנו את השלדים שנבנה בשיעור, אפשר להתחיל מהשלד המעשי הראשון: RAG Chatbot.
 
-בחלק הזה נבנה את השלב הבא: צ’אטבוט שמסוגל להשתמש במאגר הזה כדי לענות על שאלות.
+אבל לפני שבונים את הצ’אטבוט עצמו, צריך להכין לו בסיס ידע. הצ’אטבוט לא יכול לענות מתוך מסמכים אם המסמכים עדיין לא נטענו, לא חולקו לקטעים, לא הומרו ל-embeddings, ולא נשמרו במאגר שאפשר לחפש בו.
 
-חשוב לזכור את ההפרדה:
+זה בדיוק התפקיד של פרק זה.
 
-<div dir="rtl">
+בפרק הזה נבנה את בסיס ה-RAG: ניקח קבצי טקסט רגילים, נחלק אותם ל-chunks, נהפוך כל chunk לייצוג מספרי שנקרא embedding, ונשמור את הכול בתוך ChromaDB.
 
-| **קובץ** | **תפקיד** |
-| --- | --- |
-| **build_rag_db.py** | בונה את בסיס ה-RAG ושומר אותו לדיסק |
-| **rag_chatbot.py** | טוען את בסיס ה-RAG ומשתמש בו כדי לענות לשאלות |
+במילים פשוטות, אנחנו בונים את הזיכרון החיצוני של המערכת.
 
-</div>
+הזרימה שנבנה היא:
 
-כלומר, rag_chatbot.py לא אמור לטעון מסמכים מחדש, לא לחלק אותם ל-chunks, ולא לבנות embeddings מחדש. את כל זה כבר עשינו בפרק הקודם.
+```bash
+Documents
+   ↓
+Chunks
+   ↓
+Embeddings
+   ↓
+ChromaDB Vector Store
+   ↓
+Saved on disk
+```
 
-הקובץ החדש רק משתמש במאגר הקיים.
+חשוב להבין: בשלב הזה עדיין לא בונים צ’אטבוט. אין עדיין שאלות משתמש, אין עדיין retriever, ואין עדיין קריאה ל-LLM כדי לענות.
+
+בשלב הזה אנחנו רק מכינים את המאגר.
+
+הצ’אטבוט שיטען את המאגר וישתמש בו יגיע בפרק הבא.
 
 ## מה אנחנו בונים
 
-אנחנו בונים RAG Chatbot פשוט שעובד דרך שורת הפקודה.
+אנחנו בונים קובץ Python שמכין בסיס RAG מקומי.
 
-המשתמש יכתוב שאלה, והמערכת תבצע את השלבים הבאים:
+הקובץ יקרא: build_rag_db.py
 
-```bash
-User question
-   ↓
-Load existing Vector Store
-   ↓
-Retrieve relevant chunks
-   ↓
-Build context
-   ↓
-Send context + question to LLM
-   ↓
-Return answer
-```
+התפקיד שלו הוא לבצע את כל שלבי ההכנה:
 
-ההבדל המרכזי בין צ’אטבוט רגיל לבין RAG Chatbot הוא מקור הידע.
+1. למצוא קבצי טקסט בתיקיית data
 
-צ’אטבוט רגיל מקבל שאלה ומנסה לענות מתוך הידע של המודל.
+2. לטעון את הקבצים
 
-RAG Chatbot קודם מחפש מידע רלוונטי במסמכים, ורק אחר כך שולח את המידע הזה למודל.
+3. לחלק את הטקסט ל-chunks
 
-לדוגמה, אם המשתמש שואל:
+4. ליצור embeddings לכל chunk
+
+5. לשמור את התוצאה ב-ChromaDB
+
+6. לאפשר טעינה מחדש של המאגר בהמשך
+
+בסיום הריצה תיווצר תיקייה בשם:
 
 ```bash
-What does the document say about ChromaDB?
+chroma_db/
 ```
 
-המערכת לא אמורה לענות רק מהידע הכללי של ה-LLM. היא צריכה קודם לחפש בתוך ה-Vector Store קטעים שמדברים על ChromaDB.
+זו התיקייה שבה ChromaDB ישמור את המאגר.
 
-לאחר מכן היא בונה context:
-
-```bash
-ChromaDB is a vector database.
-It can store embeddings and search for similar text based on meaning.
-```
-
-ורק אז שולחת למודל את השאלה יחד עם ה-context.
-
-אפשר לחשוב על זה כך:
-
-```bash
-Question:
-What does the document say about ChromaDB?
-
-Retrieved context:
-Relevant chunks from the vector store
-
-LLM task:
-Answer the question using only the provided context
-```
-
-זו נקודה חשובה מאוד: ה-LLM עדיין מנסח את התשובה, אבל הוא לא אמור להמציא מקור ידע. הוא אמור להסתמך על ה-context שנשלף מתוך המסמכים.
-
-בפרק הזה נבנה קובץ מלא בשם:
-
-```bash
-rag_chatbot.py
-```
-
-הקובץ הזה יכלול:
-
-1. טעינת ה-Vector Store הקיים
-
-2. יצירת retriever
-
-3. בניית prompt עם context, history ושאלה
-
-4. הרכבת chain
-
-5. הרצת לולאת צ’אט ב-command-line
-
-6. שמירת היסטוריית שיחה קצרה
-
-7. טיפול בסיסי בשגיאות
-
-בסוף הפרק נוכל להריץ:
-
-```bash
-python rag_chatbot.py
-```
-
-ולשאול שאלות על התוכן שנמצא ב-data/sample_docs.txt.
-
-לפני שנכתוב את הקוד המלא, נוודא שהפרויקט שלנו כולל את הקבצים הדרושים.
-
-## הקבצים שנשתמש בהם
-
-לפני שנכתוב את rag_chatbot.py, נוודא שמבנה הפרויקט ברור.
-
-בסיום הפרק הקודם כבר אמורים להיות לנו הקבצים והתיקיות הבאים:
+הקבצים שנוסיף או נשתמש בהם בחלק הזה הם:
 
 ```bash
 lesson-08-ai-agents/
@@ -121,753 +66,454 @@ lesson-08-ai-agents/
   requirements.txt
   data/
     sample_docs.txt
-  chroma_db/
 ```
 
-הקובץ build_rag_db.py בנה את המאגר.
-
-התיקייה data מכילה את מסמכי המקור.
-
-התיקייה chroma_db מכילה את ה-Vector Store שנשמר לדיסק.
-
-עכשיו נוסיף קובץ חדש:
-
-```bash
-rag_chatbot.py
-```
-
-לאחר ההוספה, מבנה הפרויקט יהיה:
+לאחר הרצה מוצלחת, תתווסף גם התיקייה:
 
 ```bash
 lesson-08-ai-agents/
-  build_rag_db.py
-  rag_chatbot.py
-  requirements.txt
-  data/
-    sample_docs.txt
   chroma_db/
 ```
 
-אפשר לחשוב על הפרויקט כך:
+היא לא נכתבת ידנית. היא נוצרת על ידי הקוד.
+
+אפשר לחשוב על מבנה הפרויקט כך:
 
 <div dir="rtl">
 
 | **קובץ או תיקיי**ה | **תפקיד** |
 | --- | --- |
-| **requirements.txt** | הספריות שהפרויקט צריך |
-| **data/sample_docs.txt** | מסמך הדוגמה שממנו נבנה המאגר |
-| **build_rag_db.py** | בונה ושומר את בסיס ה-RAG |
-| **chroma_db/** | המאגר המקומי שנוצר אחרי ההרצה |
-| **rag_chatbot.py** | צ’אטבוט שטוען את המאגר ועונה על שאלות |
+| **requirements.txt** | רשימת הספריות הנדרשות |
+| **data/sample_docs.txt** | מסמך טקסט לדוגמה |
+| **build_rag_db.py** | בונה את בסיס ה-RAG |
+| **chroma_db/** | המאגר שנשמר לדיסק לאחר ההרצה |
 
 </div>
 
-הנקודה החשובה היא שהקובץ החדש לא מתחיל מאפס.
+## הכנת הספריות וקובץ הדוגמה
 
-הוא משתמש בפונקציה שכבר כתבנו בחלק הקודם:
+לפני שנכתוב את build_rag_db.py, צריך להכין שני דברים בסיסיים בפרויקט:
 
-```python
-from build_rag_db import load_vectorstore
+1. קובץ requirements.txt
+
+2. תיקיית data עם קובץ טקסט לדוגמה
+
+הקוד של בסיס ה-RAG צריך לדעת מאיפה לטעון מסמכים, ובאילו ספריות להשתמש כדי לחלק טקסט, ליצור embeddings ולשמור אותם ב-ChromaDB.
+
+המבנה שנרצה לקבל הוא:
+
+```bash
+lesson-08-ai-agents/
+  requirements.txt
+  data/
+    sample_docs.txt
 ```
 
-הפונקציה הזאת מחזירה לנו את ה-Vector Store הקיים מתוך chroma_db.
+**תוכן הקובץ requirements.txt**
 
-כלומר, במקום לכתוב שוב קוד שטוען מסמכים, מחלק ל-chunks ויוצר embeddings, אנחנו משתמשים בקוד שכבר בנינו.
+ניצור קובץ בשם:
 
-זו הפרדה מקצועית יותר:
-
-build_rag_db.py אחראי על הכנה ובנייה של המאגר 
- 
-rag_chatbot.py אחראי על שימוש במאגר בזמן שיחה
-
-בפרויקטים אמיתיים ההפרדה הזאת חשובה מאוד. היא מאפשרת לנו לבנות את המאגר פעם אחת, ואז להשתמש בו שוב ושוב בלי לשלם בכל הרצה את מחיר הבנייה מחדש.
-
-**עדכון requirements.txt**
-
-כדי להפעיל את הצ’אטבוט, אנחנו צריכים גם ספרייה שמאפשרת לנו לקרוא ל-LLM.
-
-בגרסה הזאת נשתמש ב-Anthropic דרך LangChain.
-
-לכן הקובץ requirements.txt צריך לכלול גם:
-
-```python
-langchain-anthropic
+```bash
+requirements.txt
 ```
 
-הגרסה המלאה של requirements.txt בשלב הזה תהיה:
+ובתוכו נשים את הספריות הבאות:
 
-```python
+```bash
 langchain
 langchain-chroma
 langchain-community
-langchain-anthropic
 chromadb
 sentence-transformers
 ```
 
-אם הקובץ כבר קיים, פשוט נוסיף אליו את langchain-anthropic.
+הקובץ הזה מגדיר את התלויות של הפרויקט.
 
-לאחר העדכון נריץ שוב:
+langchain מספקת את רכיבי העבודה המרכזיים.
+
+langchain-chroma מאפשרת לעבוד עם ChromaDB דרך LangChain.
+
+langchain-community כוללת רכיבים שימושיים כמו document loaders ו-embeddings.
+
+chromadb הוא ה-Vector Store שבו נשמור את ה-embeddings.
+
+sentence-transformers היא הספרייה שתאפשר לנו ליצור embeddings מטקסט בעזרת מודל מקומי.
+
+כדי להתקין את הספריות, נריץ:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-גם אם חלק מהספריות כבר מותקנות, זה בסדר. pip ישלים את מה שחסר.
+בשלב הזה עדיין לא הרצנו RAG. רק הכנו את סביבת העבודה.
 
-**משתנה סביבה עבור API key**
+**יצירת תיקיית data**
 
-כדי שהצ’אטבוט יוכל לקרוא למודל של Anthropic, צריך להגדיר משתנה סביבה בשם:
+עכשיו ניצור תיקייה בשם: data
 
-```python
-ANTHROPIC_API_KEY
-```
+ובתוכה קובץ בשם: sample_docs.txt
 
-ב-PowerShell אפשר להגדיר אותו כך:
+הקובץ הזה ישמש אותנו כמסמך הדגמה. ממנו נבנה את בסיס ה-RAG.
+
+המבנה יהיה:
 
 ```bash
-$env:ANTHROPIC_API_KEY="your_api_key_here"
+data/
+  sample_docs.txt
 ```
 
-במקום your_api_key_here נשים את המפתח האמיתי.
+**תוכן הקובץ data/sample_docs.txt**
 
-חשוב לא להכניס API key ישירות לקובץ Python, ולא להעלות אותו ל-GitHub.
+נכניס לקובץ את הטקסט הבא:
 
-כלומר, לא עושים כך:
+```bash
+LangChain is a framework for building applications with large language models.
+It helps developers connect models to prompts, memory, tools, retrievers, and external data sources.
 
-```python
-api_key = "my-real-api-key"
+RAG stands for Retrieval-Augmented Generation.
+A RAG system retrieves relevant information from external documents and gives that information to a language model as context.
+
+ChromaDB is a vector database.
+It can store embeddings and search for similar text based on meaning rather than exact keyword matching.
+
+A typical RAG pipeline has several steps.
+First, documents are loaded from files.
+Then the documents are split into smaller chunks.
+Each chunk is converted into an embedding.
+The embeddings are stored in a vector database.
+When a user asks a question, the system retrieves the most relevant chunks and sends them to the language model.
+
+Embeddings are numerical representations of text.
+Texts with similar meanings usually have embeddings that are close to each other in vector space.
+
+A retriever is the component that searches the vector store.
+It receives a user question and returns the most relevant chunks.
+
+The context window is the amount of text a language model can process at once.
+RAG helps keep the context focused by sending only the most relevant pieces of information.
+
+A good RAG system depends on good documents, useful chunk sizes, high-quality embeddings, and clear prompts.
 ```
 
-במקום זה, הקוד יקרא את המפתח מתוך משתנה הסביבה.
+המסמך הזה קצר, אבל הוא מספיק טוב להדגמה. הוא כולל כמה מושגים שנשתמש בהם בהמשך:
 
-כך הקוד נשאר בטוח יותר ומתאים להעלאה ל-GitHub.
+```bash
+LangChain
+RAG
+ChromaDB
+embeddings
+retriever
+context window
+```
 
-בשלב הזה יש לנו:
+כאשר נבנה את בסיס ה-RAG, הקוד יטען את הקובץ הזה, יחלק אותו ל-chunks, ייצור embeddings, וישמור אותם בתוך ChromaDB.
 
-1. בסיס RAG קיים בתיקיית chroma_db
+חשוב להבין שהקובץ sample_docs.txt הוא רק דוגמה. בפרויקט אמיתי, תיקיית data יכולה להכיל הרבה קבצי טקסט:
 
-2. requirements.txt מעודכן
+```bash
+data/
+  intro.txt
+  product_docs.txt
+  support_faq.txt
+  internal_notes.txt
+```
 
-3. API key שמוגדר כמשתנה סביבה
+בשלב הזה אנחנו מתחילים מקובץ אחד כדי לשמור על הפשטות. אחרי שהכול עובד, אפשר להוסיף עוד מסמכים ולבנות את המאגר מחדש.
 
-4. מקום מוכן לקובץ rag_chatbot.py
+בסיום הסעיף הזה יש לנו סביבת עבודה בסיסית:
 
-השלב הבא הוא לכתוב את הקובץ המלא rag_chatbot.py.
+```bash
+requirements.txt       → הספריות הדרושות
+data/sample_docs.txt   → מסמך הדגמה לבניית המאגר
+```
 
-## כתיבת הקובץ rag_chatbot.py
+השלב הבא הוא לכתוב את הקובץ המרכזי של חלק זה: build_rag_db.py.
 
-עכשיו נכתוב את הקובץ המרכזי של החלק הזה: rag_chatbot.py
+## כתיבת הקובץ build_rag_db.py
 
-הקובץ הזה טוען את ה-Vector Store הקיים, בונה retriever, מחבר prompt ל-LLM, ומפעיל צ’אט פשוט דרך שורת הפקודה.
+עכשיו נכתוב את הקובץ המרכזי של חלק זה: build_rag_db.py
 
-ניצור קובץ בשם rag_chatbot.py בתיקיית הפרויקט, ונכניס אליו את הקוד הבא.
+הקובץ הזה אחראי על בניית בסיס ה-RAG. הוא לא מפעיל צ’אטבוט, לא מקבל שאלות מהמשתמש, ולא קורא ל-LLM כדי לנסח תשובה.
 
-**תוכן מלא לקובץ rag_chatbot.py**
+התפקיד שלו הוא להכין את מאגר הידע.
+
+הזרימה בקובץ תהיה:
+
+```bash
+Load documents
+   ↓
+Split into chunks
+   ↓
+Create embeddings
+   ↓
+Save to ChromaDB
+   ↓
+Load existing vector store when needed
+```
+
+ניצור קובץ בשם build_rag_db.py בתיקיית הפרויקט, ונכניס אליו את הקוד הבא.
+
+**תוכן מלא לקובץ build_rag_db.py**
 
 ```python
-import os
+from pathlib import Path
 
-from langchain_anthropic import ChatAnthropic
-from langchain_core.messages import AIMessage, HumanMessage
-from langchain_core.output_parsers import StrOutputParser
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_core.runnables import RunnablePassthrough
-
-from build_rag_db import load_vectorstore
+from langchain_chroma import Chroma
+from langchain_community.document_loaders import TextLoader
+from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 
-MODEL_NAME = "claude-haiku-4-5-20251001"
-RETRIEVER_K = 4
-MAX_HISTORY_MESSAGES = 10
+CHROMA_PERSIST_DIR = Path(__file__).parent / "chroma_db"
+COLLECTION_NAME = "rag_docs"
+EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 
 
-def build_llm() -> ChatAnthropic:
+def get_embeddings() -> HuggingFaceEmbeddings:
     """
-    Build the LLM client.
+    Create the embedding model used by the RAG system.
 
-    The API key is read from the ANTHROPIC_API_KEY environment variable.
+    The same embedding model must be used when building the vector store
+    and when loading it later for search.
     """
-    api_key = os.getenv("ANTHROPIC_API_KEY")
+    return HuggingFaceEmbeddings(
+        model_name=EMBEDDING_MODEL,
+        model_kwargs={"device": "cpu"},
+    )
 
-    if not api_key:
-        raise EnvironmentError(
-            "ANTHROPIC_API_KEY is not set. "
-            "Please set it before running rag_chatbot.py."
+
+def load_and_chunk_documents(data_dir: str = "data"):
+    """
+    Load all .txt files from the data folder and split them into chunks.
+    """
+    data_path = Path(__file__).parent / data_dir
+
+    if not data_path.exists():
+        raise FileNotFoundError(
+            f"Data folder not found: {data_path}"
         )
 
-    return ChatAnthropic(
-        model=MODEL_NAME,
-        temperature=0,
+    text_files = list(data_path.glob("*.txt"))
+
+    if not text_files:
+        raise FileNotFoundError(
+            f"No .txt files found in: {data_path}"
+        )
+
+    documents = []
+
+    for file_path in text_files:
+        loader = TextLoader(
+            str(file_path),
+            encoding="utf-8",
+        )
+        documents.extend(loader.load())
+
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=400,
+        chunk_overlap=80,
+        length_function=len,
     )
 
+    chunks = splitter.split_documents(documents)
+    return chunks
 
-def build_rag_chain(vectorstore, llm):
+
+def build_vectorstore(chunks) -> Chroma:
     """
-    Build a RAG chain that retrieves relevant context
-    and sends it to the language model.
+    Build and persist a ChromaDB vector store from document chunks.
     """
-    retriever = vectorstore.as_retriever(
-        search_kwargs={"k": RETRIEVER_K}
+    vectorstore = Chroma.from_documents(
+        documents=chunks,
+        embedding=get_embeddings(),
+        persist_directory=str(CHROMA_PERSIST_DIR),
+        collection_name=COLLECTION_NAME,
     )
 
-    prompt = ChatPromptTemplate.from_messages(
-        [
-            (
-                "system",
-                """
-You are a helpful assistant.
-
-Answer the user's question based only on the following context.
-
-If the context does not contain relevant information,
-say that you do not have enough information in the provided documents.
-
-Keep the answer concise and clear.
-
-Context:
-{context}
-""",
-            ),
-            MessagesPlaceholder(variable_name="chat_history"),
-            ("human", "{question}"),
-        ]
-    )
-
-    def get_context(inputs):
-        docs = retriever.invoke(inputs["question"])
-        return "\n\n".join(doc.page_content for doc in docs)
-
-    chain = (
-        RunnablePassthrough.assign(context=get_context)
-        | prompt
-        | llm
-        | StrOutputParser()
-    )
-
-    return chain
+    return vectorstore
 
 
-def convert_history_to_messages(chat_history: list[dict]):
+def load_vectorstore() -> Chroma:
     """
-    Convert a simple list of dictionaries into LangChain message objects.
+    Load the persisted ChromaDB vector store.
+
+    This function will be used later by the RAG chatbot.
     """
-    messages = []
+    if not CHROMA_PERSIST_DIR.exists():
+        raise FileNotFoundError(
+            f"Vector store not found at {CHROMA_PERSIST_DIR}. "
+            "Run build_rag_db.py first."
+        )
 
-    for message in chat_history[-MAX_HISTORY_MESSAGES:]:
-        role = message["role"]
-        content = message["content"]
-
-        if role == "user":
-            messages.append(HumanMessage(content=content))
-        elif role == "assistant":
-            messages.append(AIMessage(content=content))
-
-    return messages
+    return Chroma(
+        persist_directory=str(CHROMA_PERSIST_DIR),
+        embedding_function=get_embeddings(),
+        collection_name=COLLECTION_NAME,
+    )
 
 
 def main():
-    print("Loading RAG chatbot...")
+    print("Building RAG vector store...")
+    print(f"Data folder: {Path(__file__).parent / 'data'}")
+    print(f"Persist directory: {CHROMA_PERSIST_DIR}")
+    print(f"Collection name: {COLLECTION_NAME}")
+    print(f"Embedding model: {EMBEDDING_MODEL}")
 
-    llm = build_llm()
-    vectorstore = load_vectorstore()
-    rag_chain = build_rag_chain(vectorstore, llm)
+    chunks = load_and_chunk_documents()
 
-    chat_history = []
+    print(f"Loaded and created {len(chunks)} chunks.")
 
-    print("RAG chatbot is ready.")
-    print("Ask a question about the documents.")
-    print("Type 'quit' or 'exit' to stop.")
+    build_vectorstore(chunks)
 
-    while True:
-        user_input = input("\nYou: ").strip()
-
-        if user_input.lower() in {"quit", "exit"}:
-            print("Goodbye.")
-            break
-
-        if not user_input:
-            print("Please enter a question.")
-            continue
-
-        try:
-            messages_for_prompt = convert_history_to_messages(chat_history)
-
-            answer = rag_chain.invoke(
-                {
-                    "question": user_input,
-                    "chat_history": messages_for_prompt,
-                }
-            )
-
-            print(f"\nAssistant: {answer}")
-
-            chat_history.append(
-                {
-                    "role": "user",
-                    "content": user_input,
-                }
-            )
-            chat_history.append(
-                {
-                    "role": "assistant",
-                    "content": answer,
-                }
-            )
-
-        except Exception as error:
-            print(f"\nError: {error}")
+    print("Vector store was created successfully.")
+    print(f"Saved to: {CHROMA_PERSIST_DIR}")
 
 
 if __name__ == "__main__":
     main()
 ```
 
-זהו קובץ מלא שאפשר להעלות ל-GitHub ולהריץ.
+הקובץ הזה בנוי מכמה חלקים ברורים.
 
-הוא בנוי כך שהקוד יהיה ברור, מחולק לפונקציות, וקל להרחבה בהמשך.
-
-הקובץ כולל כמה חלקים מרכזיים:
-
-```bash
-1. build_llm
-2. build_rag_chain
-3. convert_history_to_messages
-4. main
-```
-
-הפונקציה build_llm יוצרת את החיבור למודל.
-
-הפונקציה build_rag_chain בונה את שרשרת ה-RAG: שליפה, prompt, מודל ופלט.
-
-הפונקציה convert_history_to_messages הופכת את היסטוריית השיחה לפורמט שמתאים ל-LangChain.
-
-הפונקציה main מפעילה את הצ’אט בפועל דרך שורת הפקודה.
-
-הדבר החשוב ביותר בקובץ הזה הוא שהוא לא בונה את בסיס ה-RAG מחדש.
-
-הוא משתמש בשורה הזאת:
+בתחילת הקובץ מוגדרים שלושה ערכים קבועים:
 
 ```python
-from build_rag_db import load_vectorstore
+CHROMA_PERSIST_DIR = Path(__file__).parent / "chroma_db"
+COLLECTION_NAME = "rag_docs"
+EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 ```
 
-ובהמשך:
+CHROMA_PERSIST_DIR מגדיר איפה המאגר יישמר בדיסק.
+
+COLLECTION_NAME מגדיר את שם האוסף בתוך ChromaDB.
+
+EMBEDDING_MODEL מגדיר באיזה מודל נשתמש כדי להפוך טקסט ל-embeddings.
+
+**הפונקציה הראשונה היא:**
 
 ```python
-vectorstore = load_vectorstore()
+get_embeddings()
 ```
 
-כלומר, הקובץ הזה מניח שכבר הרצנו קודם:
+היא יוצרת את מודל ה-embeddings. חשוב להשתמש באותו מודל גם בזמן בניית המאגר וגם בזמן טעינת המאגר בהמשך. אם נבנה embeddings עם מודל אחד ונחפש עם מודל אחר, איכות החיפוש עלולה להיפגע.
+
+**הפונקציה השנייה היא:**
+
+```python
+load_and_chunk_documents()
+```
+
+היא טוענת את קבצי הטקסט מתוך תיקיית data, ואז מחלקת אותם ל-chunks.
+
+החלוקה מתבצעת כאן:
+
+```python
+splitter = RecursiveCharacterTextSplitter(
+    chunk_size=400,
+    chunk_overlap=80,
+    length_function=len,
+)
+```
+
+המשמעות היא שכל chunk יהיה בערך עד 400 תווים, עם חפיפה של 80 תווים בין chunks סמוכים. החפיפה עוזרת לשמור על הקשר בין קטעים סמוכים בטקסט.
+
+**הפונקציה השלישית היא:**
+
+```python
+build_vectorstore()
+```
+
+היא מקבלת chunks, יוצרת להם embeddings, ושומרת אותם בתוך ChromaDB.
+
+החלק החשוב הוא:
+
+```python
+Chroma.from_documents(
+    documents=chunks,
+    embedding=get_embeddings(),
+    persist_directory=str(CHROMA_PERSIST_DIR),
+    collection_name=COLLECTION_NAME,
+)
+```
+
+כאן מתבצעת הבנייה בפועל של ה-Vector Store.
+
+**הפונקציה הרביעית היא:**
+
+```python
+load_vectorstore()
+```
+
+היא לא בונה את המאגר מחדש. היא רק טוענת מאגר שכבר נשמר בדיסק.
+
+הפונקציה הזאת תהיה חשובה מאוד בחלק הבא, כאשר נבנה את rag_chatbot.py. הצ’אטבוט ישתמש בה כדי לטעון את בסיס ה-RAG הקיים.
+
+לבסוף יש את:
+
+```python
+main()
+```
+
+זו נקודת הכניסה של הקובץ. כאשר נריץ:
 
 ```bash
 python build_rag_db.py
 ```
 
-ורק אחרי שיש לנו chroma_db, אפשר להריץ:
+הפונקציה main() תטען את המסמכים, תחלק אותם ל-chunks, תבנה את המאגר, ותשמור אותו לתיקיית chroma_db.
+
+בסוף הפרק הזה יש לנו את הקובץ המרכזי של בסיס ה-RAG. השלב הבא הוא להריץ אותו ולבדוק שהתיקייה chroma_db באמת נוצרת.
+
+## הרצת הקובץ ובדיקת התוצאה
+
+אחרי שכתבנו את build_rag_db.py, אפשר להריץ אותו ולבדוק שהוא באמת בונה את בסיס ה-RAG.
+
+בשלב הזה אנחנו מצפים שהקוד יבצע את כל שרשרת ההכנה:
 
 ```bash
-python rag_chatbot.py
-```
-
-זו הפרדה נקייה בין שלב הבנייה לבין שלב השימוש.
-
-## הסבר על הקוד
-
-אחרי שיש לנו את הקובץ המלא rag_chatbot.py, כדאי לעבור על החלקים המרכזיים שלו ולהבין מה כל חלק עושה.
-
-המטרה כאן היא לא לזכור כל שורה בעל פה, אלא להבין את המבנה המקצועי של הקובץ.
-
-הקובץ בנוי סביב ארבעה רכיבים:
-
-```bash
-LLM
-Vector Store
-Retriever
-Prompt + Chain
-```
-
-כל אחד מהם אחראי על שלב אחר בתהליך.
-
-**יצירת ה-LLM**
-
-**החלק הראשון** הוא יצירת החיבור למודל:
-
-```python
-def build_llm() -> ChatAnthropic:
-    api_key = os.getenv("ANTHROPIC_API_KEY")
-
-    if not api_key:
-        raise EnvironmentError(
-            "ANTHROPIC_API_KEY is not set. "
-            "Please set it before running rag_chatbot.py."
-        )
-
-    return ChatAnthropic(
-        model=MODEL_NAME,
-        temperature=0,
-    )
-```
-
-הפונקציה הזאת בודקת אם קיים משתנה סביבה בשם:
-
-```python
-ANTHROPIC_API_KEY
-```
-
-אם המפתח לא קיים, הקוד עוצר עם הודעה ברורה.
-
-זו התנהגות חשובה, כי בלי API key אין לצ’אטבוט דרך לקרוא למודל.
-
-שימו לב שהמפתח לא כתוב בתוך הקוד. זה חשוב במיוחד כאשר מעלים פרויקט ל-GitHub.
-
-במקום לכתוב מפתח בקובץ Python, אנחנו קוראים אותו מהסביבה:
-
-```python
-os.getenv("ANTHROPIC_API_KEY")
-```
-
-כך הקוד נשאר נקי ובטוח יותר.
-
-**טעינת ה-Vector Store**
-
-בתוך main() מופיעה השורה:
-
-```python
-vectorstore = load_vectorstore()
-```
-
-הפונקציה הזאת מגיעה מהקובץ הקודם:
-
-```python
-from build_rag_db import load_vectorstore
-```
-
-זו נקודה חשובה מאוד.
-
-rag_chatbot.py לא בונה את המאגר מחדש. הוא רק טוען מאגר שכבר נוצר קודם בתוך chroma_db.
-
-אם התיקייה chroma_db לא קיימת, הפונקציה load_vectorstore() תחזיר שגיאה ותזכיר להריץ קודם:
-
-```bash
-python build_rag_db.py
-```
-
-ההפרדה הזאת הופכת את הפרויקט למסודר יותר: build_rag_db.py מכין את המאגר rag_chatbot.py משתמש במאגר
-
-**יצירת Retriever**
-
-בתוך build_rag_chain אנחנו יוצרים retriever:
-
-```python
-retriever = vectorstore.as_retriever(
-    search_kwargs={"k": RETRIEVER_K}
-)
-```
-
-ה-retriever הוא רכיב החיפוש של המערכת.
-
-הוא מקבל שאלה, מחפש ב-Vector Store, ומחזיר את ה-chunks הכי רלוונטיים.
-
-הערך RETRIEVER_K מוגדר בתחילת הקובץ:
-
-RETRIEVER_K = 4
-
-המשמעות היא שבכל שאלה נחזיר עד ארבעה chunks.
-
-למה לא להחזיר את כל המסמכים?
-
-כי המטרה של RAG היא לשלוח למודל רק את המידע הרלוונטי ביותר. יותר מדי context עלול להעמיס על המודל ולפגוע באיכות התשובה.
-
-**בניית ה-Prompt**
-
-ה-Prompt מוגדר כך:
-
-```python
-prompt = ChatPromptTemplate.from_messages(
-    [
-        (
-            "system",
-            """
-You are a helpful assistant.
-
-Answer the user's question based only on the following context.
-
-If the context does not contain relevant information,
-say that you do not have enough information in the provided documents.
-
-Keep the answer concise and clear.
-
-Context:
-{context}
-""",
-        ),
-        MessagesPlaceholder(variable_name="chat_history"),
-        ("human", "{question}"),
-    ]
-)
-```
-
-ה-Prompt מכיל שלושה חלקים:
-
-<div dir="rtl">
-
-| **חלק** | **תפקיד** |
-| --- | --- |
-| **system** | מגדיר למודל איך להתנהג |
-| **chat_history** | מוסיף חלק מהשיחה הקודמת |
-| **question** | השאלה הנוכחית של המשתמש |
-
-</div>
-
-החלק החשוב ביותר הוא ההנחיה:
-
-```bash
-Answer the user's question based only on the following context.
-```
-
-המשמעות היא שהמודל מתבקש לענות לפי ה-context שנשלף מהמסמכים, ולא לפי ידע כללי בלבד.
-
-גם ההנחיה הזאת חשובה:
-
-```bash
-If the context does not contain relevant information,
-say that you do not have enough information in the provided documents.
-```
-
-זו דרך פשוטה להקטין תשובות מומצאות. אם המידע לא נמצא במסמכים, עדיף שהמערכת תגיד שאין לה מספיק מידע.
-
-**שליפת ה-context**
-
-בתוך build_rag_chain יש פונקציה פנימית בשם get_context:
-
-```python
-def get_context(inputs):
-    docs = retriever.invoke(inputs["question"])
-    return "\n\n".join(doc.page_content for doc in docs)
-```
-
-הפונקציה הזאת מקבלת את השאלה, שולחת אותה ל-retriever, ומחזירה טקסט אחד שמורכב מכל ה-chunks שנמצאו.
-
-לדוגמה, אם ה-retriever מצא ארבעה chunks, הפונקציה תחבר אותם כך:
-
-```bash
-chunk 1
-
-chunk 2
-
-chunk 3
-
-chunk 4
-```
-
-התוצאה הזאת נכנסת לתוך {context} ב-Prompt.
-
-**הרכבת ה-Chain**
-
-החלק שמחבר את הכול הוא:
-
-```python
-chain = (
-    RunnablePassthrough.assign(context=get_context)
-    | prompt
-    | llm
-    | StrOutputParser()
-)
-```
-
-אפשר לקרוא את זה כזרימה:
-
-```bash
-Input
+Load documents
    ↓
-Add retrieved context
+Split into chunks
    ↓
-Build prompt
+Create embeddings
    ↓
-Call LLM
-   ↓
-Return text answer
+Save to ChromaDB
 ```
-
-**השלב הראשון:**
-
-```python
-RunnablePassthrough.assign(context=get_context)
-```
-
-משאיר את הקלט המקורי, ובמקביל מוסיף לו שדה חדש בשם context.
-
-כלומר, אם הקלט המקורי היה:
-
-```python
-{
-    "question": "What is ChromaDB?",
-    "chat_history": []
-}
-```
-
-אחרי השליפה הוא הופך בערך ל:
-
-```python
-{
-    "question": "What is ChromaDB?",
-    "chat_history": [],
-    "context": "Relevant chunks from the vector store..."
-}
-```
-
-לאחר מכן ה-Prompt מקבל את הנתונים, ה-LLM מייצר תשובה, ו-StrOutputParser מחזיר את התשובה כמחרוזת רגילה.
-
-**שמירת היסטוריית שיחה**
-
-היסטוריית השיחה נשמרת ברשימה פשוטה:
-
-```python
-chat_history = []
-```
-
-אחרי כל תשובה, מוסיפים אליה את שאלת המשתמש ואת תשובת הצ’אטבוט:
-
-```python
-chat_history.append(
-    {
-        "role": "user",
-        "content": user_input,
-    }
-)
-chat_history.append(
-    {
-        "role": "assistant",
-        "content": answer,
-    }
-)
-```
-
-לפני שליחת השאלה הבאה למודל, ההיסטוריה מומרת לאובייקטים של LangChain:
-
-```python
-messages_for_prompt = convert_history_to_messages(chat_history)
-```
-
-בתוך הפונקציה הזאת אנחנו לוקחים רק את ההודעות האחרונות:
-
-```python
-for message in chat_history[-MAX_HISTORY_MESSAGES:]:
-```
-
-הערך מוגדר בתחילת הקובץ:
-
-```python
-MAX_HISTORY_MESSAGES = 10
-```
-
-כלומר, לא שולחים למודל את כל השיחה מאז תחילת הריצה, אלא רק את ההודעות האחרונות.
-
-זה שומר על context קצר וממוקד יותר.
-
-**לולאת הצ’אט**
-
-בסוף הקובץ יש לולאה שמפעילה את הצ’אט:
-
-```python
-while True:
-    user_input = input("\nYou: ").strip()
-```
-
-בכל סיבוב המשתמש כותב שאלה.
-
-אם הוא כותב:
-
-```bash
-quit
-```
-
-או:
-
-```bash
-exit
-```
-
-התוכנית נעצרת.
-
-אם הוא כותב שאלה רגילה, הקוד מפעיל את ה-chain:
-
-```python
-answer = rag_chain.invoke(
-    {
-        "question": user_input,
-        "chat_history": messages_for_prompt,
-    }
-)
-```
-
-ואז מדפיס את התשובה:
-
-```python
-print(f"\nAssistant: {answer}")
-```
-
-בשלב הזה כבר יש לנו צ’אטבוט RAG עובד: הוא מקבל שאלה, שולף context מתוך המאגר, שולח אותו למודל, ומחזיר תשובה למשתמש.
-
-## הרצה ובדיקת הצ’אטבוט
-
-אחרי שכתבנו את rag_chatbot.py, אפשר להריץ את הצ’אטבוט ולבדוק שהוא באמת משתמש במאגר שבנינו בחלק הקודם.
 
 לפני ההרצה, מבנה הפרויקט אמור להיראות כך:
 
 ```bash
 lesson-08-ai-agents/
   build_rag_db.py
-  rag_chatbot.py
   requirements.txt
   data/
     sample_docs.txt
-  chroma_db/
 ```
 
-אם תיקיית chroma_db עדיין לא קיימת, צריך קודם להריץ:
-
-```bash
-python build_rag_db.py
-```
-
-רק אחרי שהמאגר נבנה ונשמר לדיסק, אפשר להריץ את הצ’אטבוט.
+כלומר, עדיין אין תיקיית chroma_db. היא תיווצר רק אחרי שהקוד ירוץ בהצלחה.
 
 **שלב 1: התקנת הספריות**
 
-אם עדיין לא התקנו את הספריות, נריץ:
+מתוך תיקיית הפרויקט נריץ:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-אם עובדים בתוך virtual environment, נוודא שהוא פעיל.
+הפקודה הזאת מתקינה את הספריות שהגדרנו בקובץ requirements.txt.
 
-ב-PowerShell:
+אם עובדים בתוך virtual environment, חשוב לוודא שהוא מופעל לפני ההתקנה.
+
+לדוגמה ב-PowerShell:
 
 ```bash
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 ```
 
-**שלב 2: הגדרת API key**
+אם ההתקנה הסתיימה ללא שגיאות, אפשר לעבור להרצת הקובץ.
 
-הצ’אטבוט משתמש ב-Anthropic, לכן צריך להגדיר את המשתנה:
-
-```python
-ANTHROPIC_API_KEY
-```
-
-ב-PowerShell:
-
-```bash
-$env:ANTHROPIC_API_KEY="your_api_key_here"
-```
-
-חשוב לא לכתוב את המפתח האמיתי בתוך הקוד, ולא להעלות אותו ל-GitHub.
-
-**שלב 3: בניית בסיס ה-RAG**
+**שלב 2: הרצת build_rag_db.py**
 
 נריץ:
 
@@ -875,190 +521,158 @@ $env:ANTHROPIC_API_KEY="your_api_key_here"
 python build_rag_db.py
 ```
 
-אם הכול תקין, נקבל פלט בסגנון:
-
-```bash
-Building RAG vector store...
-Loaded and created 5 chunks.
-Vector store was created successfully.
-Saved to: ...\chroma_db
-```
-
-מספר ה-chunks יכול להיות שונה. זה תלוי באורך המסמכים ובגודל ה-chunk שהגדרנו.
-
-**שלב 4: הרצת הצ’אטבוט**
-
-עכשיו נריץ:
-
-```bash
-python rag_chatbot.py
-```
+בזמן ההרצה, הקובץ אמור להדפיס הודעות שמראות מה הוא עושה.
 
 פלט אפשרי:
 
 ```bash
-Loading RAG chatbot...
-RAG chatbot is ready.
-Ask a question about the documents.
-Type 'quit' or 'exit' to stop.
-
-You:
+Building RAG vector store...
+Data folder: C:\D\lesson-08-ai-agents\data
+Persist directory: C:\D\lesson-08-ai-agents\chroma_db
+Collection name: rag_docs
+Embedding model: sentence-transformers/all-MiniLM-L6-v2
+Loaded and created 5 chunks.
+Vector store was created successfully.
+Saved to: C:\D\lesson-08-ai-agents\chroma_db
 ```
 
-בשלב הזה הצ’אטבוט מחכה לשאלה.
+מספר ה-chunks יכול להיות שונה לפי אורך המסמכים וגודל ה-chunk שהגדרנו. זה בסדר.
 
-**שאלות בדיקה**
+הדבר החשוב הוא שההרצה הסתיימה בלי שגיאה, ושנוצרה תיקיית chroma_db.
 
-אפשר להתחיל עם שאלה שנמצאת בבירור בתוך sample_docs.txt:
+**שלב 3: בדיקת מבנה התיקיות לאחר ההרצה**
+
+אחרי ההרצה, מבנה הפרויקט אמור להיראות בערך כך:
 
 ```bash
-What is ChromaDB?
+lesson-08-ai-agents/
+  build_rag_db.py
+  requirements.txt
+  data/
+    sample_docs.txt
+  chroma_db/
 ```
 
-תשובה אפשרית:
+התיקייה chroma_db היא התוצאה החשובה של החלק הזה.
+
+היא מכילה את ה-Vector Store שנשמר לדיסק. אנחנו לא צריכים לערוך אותה ידנית, ולא צריכים לכתוב אליה קבצים בעצמנו. ChromaDB מנהלת את התוכן שלה.
+
+בפרק הבא, rag_chatbot.py יטען את התיקייה הזאת וישתמש בה כדי לחפש chunks רלוונטיים לפי שאלת המשתמש.
+
+**שלב 4: בדיקה מהירה שהטעינה עובדת**
+
+אפשר לבצע בדיקה קטנה מתוך Python כדי לוודא שהמאגר נטען.
+
+נריץ:
+
+python
+
+ואז בתוך Python:
+
+```python
+from build_rag_db import load_vectorstore
+
+vectorstore = load_vectorstore()
+print("Vector store loaded successfully.")
+```
+
+אם מתקבלת ההודעה:
 
 ```bash
-ChromaDB is a vector database. It stores embeddings and can search for similar text based on meaning rather than exact keyword matching.
+Vector store loaded successfully.
 ```
 
-ננסה שאלה נוספת:
+סימן שהמאגר קיים וניתן לטעינה.
+
+אפשר לצאת מ-Python עם:
 
 ```bash
-What does RAG stand for?
+exit()
 ```
 
-תשובה אפשרית:
+**מה בעצם בדקנו כאן**
+
+בשלב הזה בדקנו שלושה דברים:
+
+1. הספריות מותקנות
+
+2. המסמכים נטענים ומתחלקים ל-chunks
+
+3. ChromaDB שומר את המאגר לדיסק
+
+זו בדיקה חשובה לפני שממשיכים לצ’אטבוט.
+
+אם בסיס ה-RAG לא נבנה כמו שצריך, אין טעם להריץ את rag_chatbot.py. הצ’אטבוט תלוי בכך שהתיקייה chroma_db כבר קיימת וכוללת מאגר תקין.
+
+העיקרון הוא:
+
+קודם בונים את הזיכרון. 
+אחר כך משתמשים בו.
+
+לכן סדר העבודה נשאר:
+
+python build_rag_db.py
+
+ורק בחלק הבא:
+
+python rag_chatbot.py
+
+## טעויות נפוצות בבניית בסיס RAG
+
+בבניית בסיס RAG יש כמה טעויות שחוזרות הרבה. חלק מהן נראות קטנות, אבל הן יכולות לגרום לכך שהצ’אטבוט בהמשך לא יצליח למצוא מידע או יחזיר תשובות חלשות.
+
+**הטעות הראשונה** היא לשכוח ליצור את תיקיית data.
+
+הקובץ build_rag_db.py מצפה למצוא תיקייה בשם: data
+
+ובתוכה לפחות קובץ טקסט אחד עם סיומת: .txt
+
+אם התיקייה לא קיימת, הקוד יחזיר שגיאה ברורה:
 
 ```bash
-RAG stands for Retrieval-Augmented Generation.
+Data folder not found
 ```
 
-ננסה גם שאלה על תהליך העבודה:
+זו שגיאה טובה, כי היא אומרת לנו בדיוק מה חסר.
+
+מבנה תקין צריך להיראות כך:
 
 ```bash
-What are the steps in a typical RAG pipeline?
+lesson-08-ai-agents/
+  build_rag_db.py
+  data/
+    sample_docs.txt
 ```
 
-תשובה אפשרית:
+**הטעות השנייה** היא ליצור את תיקיית data, אבל לא לשים בתוכה קבצי טקסט.
 
-```bash
-A typical RAG pipeline loads documents, splits them into chunks, converts each chunk into an embedding, stores the embeddings in a vector database, retrieves relevant chunks for a user question, and sends them to the language model as context.
+במקרה כזה התיקייה קיימת, אבל אין לקוד מה לטעון.
+
+לכן הקוד בודק גם את זה:
+
+```python
+text_files = list(data_path.glob("*.txt"))
+
+if not text_files:
+    raise FileNotFoundError(
+        f"No .txt files found in: {data_path}"
+    )
 ```
 
-**בדיקת שאלה שאין עליה מידע במסמכים**
+הבדיקה הזאת חשובה כי אחרת היינו עלולים לבנות Vector Store ריק, ואז בהמשך הצ’אטבוט לא היה מוצא שום context רלוונטי.
 
-חשוב לבדוק גם מה קורה כאשר המשתמש שואל שאלה שלא קשורה למסמכים.
+**הטעות השלישית** היא להריץ את הצ’אטבוט לפני שבונים את המאגר.
 
-לדוגמה:
-
-```bash
-What is the weather in London today?
-```
-
-תשובה טובה תהיה בסגנון:
-
-```bash
-I do not have enough information in the provided documents to answer that question.
-```
-
-זו בדיקה חשובה מאוד.
-
-מערכת RAG טובה לא אמורה להמציא תשובות כאשר אין לה context מתאים. אם המידע לא נמצא במסמכים, עדיף שהצ’אטבוט יאמר זאת בצורה ברורה.
-
-**בדיקת שאלת המשך**
-
-עכשיו נבדוק אם היסטוריית השיחה עוזרת.
-
-נשאל קודם:
-
-```bash
-What is ChromaDB?
-```
-
-ואחר כך:
-
-```bash
-How is it used in RAG?
-```
-
-המילה it מתייחסת ל-ChromaDB. בגלל שהצ’אטבוט שומר חלק מהיסטוריית השיחה, יש לו סיכוי טוב יותר להבין למה המשתמש מתכוון.
-
-תשובה אפשרית:
-
-```bash
-ChromaDB is used in RAG as the vector database that stores embeddings and helps retrieve relevant chunks based on the user's question.
-```
-
-**יציאה מהצ’אט**
-
-כדי לצאת, מקלידים:
-
-```bash
-quit
-```
-
-או:
-
-```bash
-exit
-```
-
-ואז התוכנית תדפיס:
-
-```bash
-Goodbye.
-```
-
-**מה בדקנו כאן**
-
-בשלב הזה בדקנו שהמערכת באמת עובדת מקצה לקצה:
-
-1. הצ’אטבוט נטען
-
-2. ה-Vector Store נטען מתוך chroma_db
-
-3. השאלה נשלחת ל-retriever
-
-4. chunks רלוונטיים נשלפים
-
-5. ה-context נכנס ל-prompt
-
-6. ה-LLM מחזיר תשובה
-
-7. היסטוריית השיחה נשמרת לשאלות המשך
-
-זה כבר RAG Chatbot עובד.
-
-הוא עדיין פשוט, אבל הוא כולל את כל הרכיבים המרכזיים של מערכת RAG אמיתית: מאגר וקטורי, retriever, prompt, מודל שפה, context, והיסטוריית שיחה קצרה.
-
-## טעויות נפוצות בבניית RAG Chatbot
-
-אחרי שהצ’אטבוט עובד, חשוב להבין אילו טעויות יכולות לגרום לו להיכשל או להחזיר תשובות לא טובות.
-
-במערכת RAG יש הרבה חלקים קטנים שמתחברים יחד: Vector Store, retriever, prompt, LLM, היסטוריית שיחה וטעינת קבצים. אם אחד מהם לא מוגדר נכון, כל המערכת יכולה להיראות כאילו היא עובדת, אבל בפועל להחזיר תשובות חלשות.
-
-**טעות 1: להריץ את rag_chatbot.py לפני build_rag_db.py**
-
-זו הטעות הנפוצה ביותר.
-
-הקובץ rag_chatbot.py לא בונה את המאגר. הוא רק טוען מאגר קיים.
-
-לכן הסדר הנכון הוא:
+הסדר הנכון הוא:
 
 ```bash
 python build_rag_db.py
 python rag_chatbot.py
 ```
 
-אם מריצים קודם את rag_chatbot.py, הקוד ינסה לטעון את התיקייה:
+אם מריצים קודם את rag_chatbot.py, הוא ינסה לטעון את chroma_db, אבל התיקייה עדיין לא קיימת.
 
-```bash
-chroma_db/
-```
-
-אבל אם היא עדיין לא קיימת, נקבל שגיאה.
-
-זו בדיוק הסיבה שבנינו את הפונקציה load_vectorstore() עם בדיקה ברורה:
+לכן הפונקציה load_vectorstore() בודקת את זה:
 
 ```python
 if not CHROMA_PERSIST_DIR.exists():
@@ -1068,219 +682,73 @@ if not CHROMA_PERSIST_DIR.exists():
     )
 ```
 
-הודעת שגיאה טובה לא רק אומרת שיש בעיה. היא גם אומרת מה צריך לעשות כדי לפתור אותה.
+זו הודעת שגיאה חשובה מאוד. היא מסבירה למשתמש לא רק מה הבעיה, אלא גם מה צריך לעשות כדי לפתור אותה.
 
-**טעות 2: לא להגדיר ANTHROPIC_API_KEY**
+**הטעות הרביעית** היא להשתמש במודל embeddings אחד בזמן הבנייה, ובמודל אחר בזמן החיפוש.
 
-הצ’אטבוט צריך לקרוא ל-LLM. במקרה שלנו, הוא משתמש ב-Anthropic.
+כאשר בונים את המאגר, כל chunk הופך ל-embedding. כאשר המשתמש שואל שאלה, גם השאלה הופכת ל-embedding. כדי שהחיפוש יעבוד בצורה עקבית, צריך להשתמש באותו מודל embeddings בשני השלבים.
 
-לכן חייב להיות מוגדר משתנה סביבה בשם:
-
-```python
-ANTHROPIC_API_KEY
-```
-
-אם המשתנה לא מוגדר, הפונקציה build_llm() תעצור את הריצה:
+לכן הגדרנו את שם המודל כקבוע:
 
 ```python
-api_key = os.getenv("ANTHROPIC_API_KEY")
-
-if not api_key:
-    raise EnvironmentError(
-        "ANTHROPIC_API_KEY is not set. "
-        "Please set it before running rag_chatbot.py."
-    )
+EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 ```
 
-ב-PowerShell מגדירים את המפתח כך:
-
-```bash
-$env:ANTHROPIC_API_KEY="your_api_key_here"
-```
-
-חשוב מאוד לא לשמור את המפתח בתוך הקוד.
-
-לא כך:
+והשתמשנו בו דרך פונקציה אחת:
 
 ```python
-api_key = "my-real-api-key"
+def get_embeddings() -> HuggingFaceEmbeddings:
 ```
 
-קוד כזה מסוכן להעלאה ל-GitHub, כי הוא עלול לחשוף מפתח אמיתי.
+כך גם הבנייה וגם הטעינה משתמשות באותה פונקציה.
 
-**טעות 3: לחשוב ש-RAG יודע לענות על כל דבר**
+**הטעות החמישית** היא לבחור chunks גדולים מדי או קטנים מדי בלי לבדוק.
 
-RAG לא הופך את הצ’אטבוט לכל-יודע.
-
-הוא רק מוסיף לו יכולת לענות על בסיס מסמכים חיצוניים.
-
-אם המסמכים מדברים על LangChain, ChromaDB ו-RAG, ואז המשתמש שואל:
-
-```bash
-Who won the NBA championship this year?
-```
-
-אין למערכת מידע מתאים בתוך המסמכים.
-
-במקרה כזה, התשובה הנכונה היא לא להמציא.
-
-התשובה הנכונה היא משהו בסגנון:
-
-```bash
-I do not have enough information in the provided documents to answer that question.
-```
-
-זו לא חולשה של המערכת. זו התנהגות נכונה.
-
-מערכת RAG טובה נמדדת לא רק לפי היכולת שלה לענות, אלא גם לפי היכולת שלה לעצור כאשר אין לה בסיס מספיק.
-
-**טעות 4: לשלוח יותר מדי context למודל**
-
-לפעמים נראה שכדאי להחזיר הרבה chunks, כדי שהמודל יקבל כמה שיותר מידע.
-
-אבל זה לא תמיד נכון.
-
-אם נחזיר יותר מדי chunks, ה-context עלול להיות ארוך, עמוס ולא ממוקד. המודל עלול להתבלבל, להתייחס לפרטים לא חשובים, או לפספס את הנקודה המרכזית.
-
-לכן הגדרנו:
+בפרויקט שלנו התחלנו עם:
 
 ```python
-RETRIEVER_K = 4
+chunk_size=400
+chunk_overlap=80
 ```
 
-המשמעות היא שה-retriever מחזיר עד ארבעה chunks לכל שאלה.
+אלה ערכים טובים להדגמה, אבל הם לא תמיד יהיו מושלמים לכל פרויקט.
 
-זה ערך טוב להתחלה, אבל לא ערך קדוש.
+אם ה-chunks גדולים מדי, כל chunk עלול להכיל כמה נושאים שונים, ואז החיפוש יחזיר context עמוס ולא ממוקד.
 
-בפרויקט אמיתי אפשר לבדוק ערכים שונים:
+אם ה-chunks קטנים מדי, כל chunk עלול לאבד הקשר, ואז המודל יקבל משפטים מנותקים שקשה להבין מהם תשובה מלאה.
 
-```python
-k = 2
-k = 4
-k = 6
-k = 8
-```
+לכן chunking הוא לא רק פעולה טכנית. זו החלטה שמשפיעה ישירות על איכות ה-RAG.
 
-ולראות באיזה ערך התשובות הכי טובות.
+**הטעות השישית** היא לחשוב ש-Vector Store הוא LLM.
 
-הכלל הוא פשוט:
+ChromaDB לא מנסח תשובות. הוא לא “מבין” כמו מודל שפה, ולא מחליף את ה-LLM.
 
-יותר context לא תמיד אומר תשובה טובה יותר.
+התפקיד שלו הוא אחר:
 
-המטרה היא להביא למודל את המידע הכי רלוונטי, לא את כמות המידע הכי גדולה.
+- לקבל שאלה
 
-**טעות 5: לא לשמור על Prompt ברור**
+- לחפש chunks דומים במשמעות
 
-ה-Prompt הוא המקום שבו אנחנו מגדירים למודל איך להשתמש ב-context.
+- להחזיר את הקטעים הרלוונטיים ביותר
 
-אם ה-Prompt לא ברור, המודל עלול לענות מתוך ידע כללי, גם כאשר רצינו שהוא יענה רק מתוך המסמכים.
+את התשובה הסופית ינסח ה-LLM בחלק הבא, אחרי שנעביר לו את ה-context שנשלף.
 
-לכן כתבנו:
+**הטעות השביעית** היא לשנות את המסמכים אבל לא לבנות מחדש את המאגר.
+
+אם מוסיפים קובץ חדש לתיקיית data, או משנים את sample_docs.txt, המאגר הקיים ב-chroma_db לא בהכרח יתעדכן לבד.
+
+בפרויקט פשוט כזה, הדרך הברורה היא לבנות מחדש:
 
 ```bash
-Answer the user's question based only on the following context.
+python build_rag_db.py
 ```
 
-וגם:
+במערכת אמיתית אפשר לבנות מנגנון עדכון חכם יותר, אבל בשיעור הזה נשמור על דרך פשוטה וברורה: כאשר משנים את המסמכים, בונים מחדש את בסיס ה-RAG.
 
-```bash
-If the context does not contain relevant information,
-say that you do not have enough information in the provided documents.
-```
+בסוף הפרק הזה צריך לזכור את העיקרון המרכזי:
 
-שתי ההנחיות האלה חשובות.
+איכות הצ’אטבוט מתחילה באיכות בסיס ה-RAG.
 
-הראשונה מכוונת את המודל להשתמש ב-context.
+אם המסמכים לא טובים, ה-chunks לא טובים, או ה-embeddings לא עקביים, גם מודל חזק לא תמיד יצליח לתת תשובה טובה.
 
-השנייה מכוונת אותו לא להמציא תשובה כאשר אין מספיק מידע.
-
-במערכת אמיתית אפשר לשפר את ה-Prompt עוד יותר, אבל כבר כאן יש לנו בסיס נכון.
-
-**טעות 6: לשמור יותר מדי היסטוריית שיחה**
-
-היסטוריית שיחה עוזרת בשאלות המשך.
-
-לדוגמה:
-
-```bash
-What is ChromaDB?
-```
-
-ואחר כך:
-
-```bash
-How is it used in RAG?
-```
-
-אבל אם שולחים למודל את כל השיחה מתחילת הריצה, ה-context עלול להיות עמוס מדי.
-
-לכן הגדרנו:
-
-```python
-MAX_HISTORY_MESSAGES = 10
-```
-
-המשמעות היא שהמערכת שומרת את כל ההיסטוריה בזיכרון המקומי של התוכנית, אבל שולחת למודל רק את ההודעות האחרונות.
-
-זה איזון טוב להתחלה.
-
-אם רוצים מערכת מתקדמת יותר, אפשר בעתיד לנהל היסטוריה בצורה חכמה יותר: לסכם שיחות ישנות, לשמור זיכרון חיצוני, או להפריד בין context של מסמכים לבין context של שיחה.
-
-**טעות 7: לא לבדוק שאלות מחוץ למסמכים**
-
-הרבה מפתחים בודקים רק שאלות שקל למערכת לענות עליהן.
-
-לדוגמה:
-
-```bash
-What is RAG?
-What is ChromaDB?
-What are embeddings?
-```
-
-אלה שאלות טובות לבדיקה ראשונה, אבל הן לא מספיקות.
-
-חייבים לבדוק גם שאלות שאין עליהן תשובה במסמכים:
-
-```bash
-What is the weather in London today?
-Who is the CEO of Microsoft?
-How do I cook pasta?
-```
-
-המטרה היא לוודא שהמערכת לא ממציאה תשובות.
-
-אם הצ’אטבוט עונה בביטחון על שאלות שלא קיימות במסמכים, צריך לשפר את ה-Prompt, את בדיקת ה-context, או את הלוגיקה של השליפה.
-
-**טעות 8: לא להבין את ההבדל בין retrieval לבין generation**
-
-ב-RAG יש שני שלבים שונים:
-
-```bash
-retrieval   → מציאת מידע רלוונטי
-generation  → ניסוח תשובה בעזרת LLM
-```
-
-ה-retriever לא כותב תשובה.
-
-ה-LLM לא מחפש לבד במסמכים.
-
-כל רכיב עושה תפקיד אחר.
-
-אם ה-retriever מחזיר context לא טוב, גם LLM חזק עלול לתת תשובה חלשה.
-
-אם ה-context טוב אבל ה-Prompt לא ברור, המודל עלול להשתמש בו בצורה לא מדויקת.
-
-לכן כשיש בעיה בתשובה, צריך לשאול:
-
-- האם נשלפו chunks רלוונטיים?
-
-- האם ה-context שנשלח למודל ברור?
-
-- האם ה-Prompt מגדיר נכון את ההתנהגות?
-
-- האם השאלה בכלל מתאימה למסמכים?
-
-זו דרך מקצועית יותר לדבג מערכת RAG.
-
-
+לכן לפני שעוברים ל-rag_chatbot.py, חשוב לוודא שהשלב הזה עובד היטב: המסמכים נטענים, ה-chunks נוצרים, וה-Vector Store נשמר בהצלחה לתיקיית chroma_db.

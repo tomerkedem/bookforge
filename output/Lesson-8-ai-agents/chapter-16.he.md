@@ -1,442 +1,245 @@
-# טעויות נפוצות בבניית Agents
+# תרגול מעשי מונחה והרחבות
 
-אחרי שבנינו RAG Chatbot, Stock Agent, Tools, מעבר ל-Ollama, UI ו-Workflow דו-שלבי, חשוב לעצור ולדבר על טעויות נפוצות.
+בפרק זה נרחיב את הפרויקט בעזרת חמישה תרגילים מעשיים.
 
-Agents יכולים להיראות כמו פתרון קסם. נותנים למודל הנחיות, מחברים לו כלים, והוא כבר “יחליט לבד” מה לעשות. אבל בפועל, מערכת Agentic טובה דורשת תכנון זהיר מאוד.
+בכל תרגיל נוסיף יכולת אחת, נעדכן את הקבצים הדרושים, נריץ את הקוד, ונבדוק שהתוצאה עובדת.
 
-ככל שנותנים למודל יותר יכולת פעולה, כך צריך להגדיר לו גבולות ברורים יותר.
+התרגילים בפרק זה הם:
 
-בפרק זה נרכז את הטעויות שהכי חשוב להכיר לפני שבונים מערכת Agentic אמיתית. המטרה אינה להפחיד, אלא להבין איך לבנות סוכן בצורה אחראית, יציבה וניתנת לבדיקה.
+1. מעבר ל-Ollama
 
-## שימוש ב-Agent כשמספיק Workflow
+2. בדיקה אם מניה עלתה או ירדה בשנה האחרונה
 
-אחת הטעויות הנפוצות ביותר היא להשתמש ב-Agent גם כאשר אין באמת צורך בו.
+3. הוספת כלי המלצות וחדשות
 
-לא כל מערכת שמפעילה LLM צריכה להיות Agent. לפעמים מספיק Workflow פשוט, ברור וצפוי.
+4. בניית UI עם FastAPI ו-Jinja2
 
-לדוגמה, בתרגיל המתכונים בנינו תהליך כזה:
+5. בניית Workflow דו-שלבי
 
-```bash
-ingredients → recipe name → cooking instructions
-```
+## פתרון תרגיל 1: מעבר ל-Ollama
 
-זה לא דורש Agent חופשי. אין כאן צורך שהמודל יחליט איזה כלי להפעיל, לאיזה מקור מידע לגשת, או מה השלב הבא. אנחנו יודעים מראש מה הסדר:
+בתרגיל הזה נוסיף לפרויקט אפשרות לבחור בין מודל ענן לבין מודל מקומי.
 
-1. לקבל מרכיבים
+עד עכשיו הקבצים rag_chatbot.py ו-stock_agent.py השתמשו ישירות במודל של Anthropic. זה עובד, אבל זה יוצר תלות חזקה בספק אחד.
 
-2. ליצור שם למתכון
-
-3. לכתוב הוראות הכנה
-
-במקרה כזה Workflow עדיף על Agent.
-
-למה?
-
-כי Workflow צפוי יותר. קל לבדוק אותו, קל להבין איפה קרתה תקלה, וקל לשנות שלב אחד בלי להשפיע על כל המערכת.
-
-Agent מתאים יותר כאשר יש צורך בהחלטה דינמית.
-
-לדוגמה:
+במקום שכל קובץ יחליט לבד איך ליצור את המודל, נרכז את יצירת המודל בקובץ אחד:
 
 ```bash
-User question
-   ↓
-Should I search documents?
-Should I call an API?
-Should I ask a clarification question?
-Should I use a stock tool?
-Should I stop?
+llm_factory.py
 ```
 
-כאן יש מקום ל-Agent, כי המערכת צריכה לבחור דרך פעולה לפי השאלה.
+הקובץ הזה יהיה אחראי לבדוק את משתני הסביבה ולהחזיר את המודל המתאים.
 
-אבל אם הדרך ידועה מראש, Agent עלול להוסיף מורכבות מיותרת.
-
-אפשר לחשוב על זה כך:
-
-<div dir="rtl">
-
-| **מצ**ב | **פתרון מתאים יותר** |
-| --- | --- |
-| **סדר השלבים ידוע מראש** | Workflow |
-| **צריך לבחור מסלול לפי הקלט** | Agent |
-| **צריך רק לשלוף מידע ממסמכים** | RAG |
-| **צריך להפעיל כלים לפי צורך** | Agent עם Tools |
-| **צריך תהליך צפוי וקל לבדיקה** | Workflow |
-
-</div>
-
-טעות נפוצה היא לחשוב ש-Agent הוא תמיד “מתקדם יותר”. בפועל, Agent הוא לא בהכרח טוב יותר. הוא פשוט גמיש יותר. וגמישות מגיעה עם מחיר: יותר אי-ודאות, יותר צורך בבדיקות, ויותר סיכון להתנהגות לא צפויה.
-
-לדוגמה, אם אנחנו רוצים לעבד חשבונית בשלושה שלבים קבועים:
-
-```bash
-extract fields → validate fields → save result
-```
-
-לא בטוח שצריך Agent. אפשר לבנות Workflow ברור.
-
-אבל אם המשתמש יכול לשלוח כל מיני בקשות שונות, והמערכת צריכה להחליט אם לקרוא מסמך, לבדוק מערכת חיצונית, לבקש הבהרה או להפעיל פעולה, אז Agent יכול להתאים יותר.
-
-הכלל הפשוט הוא:
-
-אם אתה יודע מראש מה השלבים: התחל מ-Workflow.
-
-אם המערכת צריכה לבחור לבד מה לעשות: שקול Agent.
-
-זו גישה בריאה יותר מתכנון שמתחיל מיד מ-Agent. קודם בונים פתרון פשוט וצפוי. רק אם באמת צריך גמישות, מוסיפים Agent.
-
-
-
-## יותר מדי חופש למודל
-
-טעות נפוצה נוספת היא לתת למודל יותר מדי חופש פעולה.
-
-כאשר בונים Agent, קל לחשוב שככל שניתן לו יותר חופש, הוא יהיה “חכם” יותר. למשל, נאפשר לו לבחור כלים לבד, להחליט כמה פעמים להריץ אותם, להחליט מתי לעצור, ואולי גם לבצע פעולות במערכות חיצוניות.
-
-אבל ככל שהמודל מקבל יותר חופש, כך המערכת הופכת פחות צפויה.
-
-Agent שמקבל שאלה פשוטה יכול לפעמים לבחור מסלול לא צפוי:
-
-```bash
-User:
-What is the current price of MSFT?
-
-Agent:
-1. Calls stock info tool
-2. Calls news tool
-3. Calls recommendations tool
-4. Gives a long answer that mixes everything
-```
-
-יכול להיות שהמשתמש ביקש רק מחיר נוכחי, אבל הסוכן החליט להביא עוד מידע שלא נדרש. זה לא בהכרח כשל טכני, אבל זו התנהגות פחות ממוקדת.
-
-במערכת אמיתית, אנחנו רוצים שה-Agent יהיה מועיל, אבל גם מוגבל.
-
-המשמעות היא שצריך להגדיר גבולות:
-
-- מה מותר לסוכן לעשות
-
-- מה אסור לו לעשות
-
-- מתי להשתמש בכלי
-
-- מתי לא להשתמש בכלי
-
-- מתי לעצור
-
-- מתי לבקש אישור
-
-- מתי להחזיר שגיאה
-
-לדוגמה, ב-Stock Agent אפשר להגדיר:
-
-```bash
-Use get_stock_info only for current price, quote, or market data.
-Use get_stock_news only when the user asks for news or headlines.
-Do not call multiple tools unless the user asks for a broad overview.
-Do not provide financial advice.
-```
-
-הנחיות כאלה מצמצמות חופש מיותר.
-
-אבל לא מספיק לכתוב הנחיות בלבד. צריך גם לתכנן את הכלים והקוד כך שלא יאפשרו פעולות מסוכנות או לא רצויות.
-
-לדוגמה, אם יש כלי ששולח מייל, לא כדאי לאפשר לסוכן לשלוח מייל מיד בלי אישור. גם אם ה-system prompt אומר “ask for confirmation first”, עדיף שהקוד עצמו יחייב שלב אישור.
-
-אפשר לחשוב על זה כך:
-
-```bash
-Bad design:
-Agent can directly perform sensitive action
-
-Better design:
-Agent drafts the action
-User confirms
-Only then the system performs the action
-```
-
-ככל שהפעולה רגישה יותר, כך צריך פחות חופש ויותר בקרה.
-
-במערכת פשוטה שמחזירה תשובות, אפשר לתת למודל יותר גמישות. 
-במערכת שמפעילה tools שקוראים מידע, צריך כבר יותר גבולות. 
-במערכת שמעדכנת מידע, שולחת בקשות, משנה סטטוס או מבצעת פעולה עסקית, חייבים מנגנוני בקרה ברורים.
-
-אפשר לחלק את רמת הסיכון כך:
-
-<div dir="rtl">
-
-| **סוג פעול**ה | **רמת סיכון** | **בקרה מומלצת** |
-| --- | --- | --- |
-| **ניסוח תשובה בלבד** | נמוכה | הנחיות רגילות |
-| **שליפת מידע ממסמכים** | נמוכה-בינונית | הגבלת context ומקורות |
-| **קריאה ל-API חיצוני** | בינונית | טיפול בשגיאות ולוגים |
-| **עדכון מידע במערכת** | גבוהה | אישור משתמש והרשאות |
-| **שליחת פעולה בלתי הפיכה** | גבוהה מאוד | אישור מפורש, לוגים ובדיקות |
-
-</div>
-
-הבעיה אינה שהמודל “טיפש”. הבעיה היא שמודל שפה הוא רכיב הסתברותי. הוא יכול לפרש בקשה בצורה שונה, לבחור כלי לא צפוי, או להמשיך לפעול גם כאשר עדיף לעצור.
-
-לכן Agent טוב לא נבנה רק על מודל חכם. הוא נבנה על שילוב של מודל, כלים מוגדרים, הנחיות ברורות, מגבלות קוד, הרשאות, לוגים ובדיקות.
-
-הכלל הפשוט הוא:
-
-ככל שה-Agent יכול לעשות יותר,
-
-כך צריך להגדיר לו גבולות חזקים יותר.
-
-חופש הוא כוח, אבל במערכות Agentic כוח בלי גבולות עלול להפוך לבעיה.
-
-## Tools לא מוגדרים היטב
-
-טעות נוספת בבניית Agents היא להגדיר tools בצורה לא מספיק ברורה.
-
-Tool הוא לא רק פונקציה שה-Agent יכול להפעיל. מבחינת הסוכן, tool הוא יכולת חיצונית. אם היכולת הזאת לא מוגדרת היטב, המודל עלול להשתמש בה בצורה לא נכונה.
-
-לדוגמה, נניח שיש לנו כלי בשם:
+אם נרצה לעבוד עם Anthropic, נגדיר:
 
 ```python
-@tool
-def get_data(input: str) -> str:
-    ...
+MODEL_PROVIDER=anthropic
 ```
 
-השם get_data כללי מדי.
-
-- איזה מידע הכלי מחזיר?
-
-- איזה קלט הוא מצפה לקבל?
-
-- מתי צריך להשתמש בו?
-
-- מה הוא מחזיר במקרה של שגיאה?
-
-למודל קשה להבין את זה.
-
-עדיף להגדיר כלי בשם ברור יותר:
+אם נרצה לעבוד עם Ollama, נגדיר:
 
 ```python
-@tool
-def get_stock_info(symbol: str) -> str:
-    """Get current stock price and market data for a ticker symbol."""
-    ...
+MODEL_PROVIDER=ollama
 ```
 
-כאן השם כבר מסביר הרבה יותר. ברור שהכלי קשור למניות, ברור שהוא מקבל ticker symbol, וברור שהוא מחזיר מידע שוק.
+כך שאר הקוד לא צריך להשתנות. rag_chatbot.py ו-stock_agent.py יקבלו אובייקט LLM מוכן, בלי לדעת אם הוא הגיע מהענן או ממודל מקומי.
 
-Tool טוב צריך לענות על כמה שאלות:
+הקבצים שנעדכן בתרגיל הזה הם:
 
-- מה הכלי עושה?
+- llm_factory.py קובץ חדש
 
-- איזה קלט הוא מקבל?
+- rag_chatbot.py עדכון קטן
 
-- איזה פלט הוא מחזיר?
+- stock_agent.py עדכון קטן
 
-- מתי נכון להשתמש בו?
+- requirements.txt הוספת langchain-ollama
 
-- מתי לא נכון להשתמש בו?
+המטרה של התרגיל היא להגיע למצב שבו אפשר להריץ את אותו פרויקט בשתי צורות:
 
-- מה קורה אם הקלט לא תקין?
+```bash
+$env:MODEL_PROVIDER="anthropic"
+python rag_chatbot.py
+```
 
-- מה קורה אם אין נתונים?
+או:
 
-אם השאלות האלה לא ברורות, ה-Agent עלול לבחור כלי לא מתאים.
+```bash
+$env:MODEL_PROVIDER="ollama"
+python rag_chatbot.py
+```
 
-לדוגמה, אם יש לנו שני כלים:
+אותה אפליקציה, אותו קוד כמעט לגמרי, ספק מודל שונה.
+
+ונעדכן את הקבצים שמשתמשים במודל:
+
+```bash
+rag_chatbot.py
+stock_agent.py
+requirements.txt
+```
+
+**עדכון requirements.txt**
+
+נוסיף:
+
+```bash
+langchain-ollama
+```
+
+**תוכן מלא לקובץ llm_factory.py**
 
 ```python
-get_stock_info
-get_stock_news
+import os
+
+from langchain_anthropic import ChatAnthropic
+from langchain_ollama import ChatOllama
+
+
+def build_llm():
+    """
+    Build an LLM client based on environment configuration.
+
+    Supported providers:
+    - anthropic
+    - ollama
+    """
+    provider = os.getenv("MODEL_PROVIDER", "anthropic").strip().lower()
+    temperature = float(os.getenv("MODEL_TEMPERATURE", "0"))
+
+    if provider == "anthropic":
+        api_key = os.getenv("ANTHROPIC_API_KEY")
+
+        if not api_key:
+            raise EnvironmentError(
+                "ANTHROPIC_API_KEY is not set. "
+                "Set it or use MODEL_PROVIDER=ollama."
+            )
+
+        model_name = os.getenv(
+            "ANTHROPIC_MODEL",
+            "claude-haiku-4-5-20251001",
+        )
+
+        return ChatAnthropic(
+            model=model_name,
+            temperature=temperature,
+        )
+
+    if provider == "ollama":
+        model_name = os.getenv("OLLAMA_MODEL", "gemma3:1b")
+        base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+
+        return ChatOllama(
+            model=model_name,
+            base_url=base_url,
+            temperature=temperature,
+        )
+
+    raise ValueError(
+        f"Unsupported MODEL_PROVIDER: {provider}. "
+        "Use 'anthropic' or 'ollama'."
+    )
 ```
 
-צריך שההבדל ביניהם יהיה ברור.
+**עדכון rag_chatbot.py**
 
-get_stock_info מתאים לשאלות כמו:
+נוסיף import:
+
+```python
+from llm_factory import build_llm
+```
+
+ובתוך main() נשתמש ב:
+
+```python
+llm = build_llm()
+```
+
+במקום ליצור את ChatAnthropic ישירות בקובץ.
+
+**עדכון stock_agent.py**
+
+נוסיף import:
+
+```python
+from llm_factory import build_llm
+```
+
+ונעדכן את build_agent():
+
+```python
+def build_agent():
+    model = build_llm()
+
+    return create_agent(
+        model=model,
+        tools=[get_stock_info],
+        system_prompt=SYSTEM_PROMPT,
+    )
+```
+
+**הרצה עם Anthropic**
+
+```bash
+$env:MODEL_PROVIDER="anthropic"
+$env:ANTHROPIC_API_KEY="your_api_key_here"
+python rag_chatbot.py
+```
+
+**הרצה עם Ollama**
+
+```bash
+ollama pull gemma3:1b
+
+$env:MODEL_PROVIDER="ollama"
+$env:OLLAMA_MODEL="gemma3:1b"
+python rag_chatbot.py
+```
+
+**בדיקה**
+
+בודקים שהצ’אטבוט עדיין עובד:
+
+```bash
+What is ChromaDB?
+```
+
+ובודקים שגם ה-Agent עדיין עובד:
 
 ```bash
 What is the current price of MSFT?
 ```
 
-get_stock_news מתאים לשאלות כמו:
+בסיום התרגיל, יצירת המודל מרוכזת בקובץ אחד, ושאר הפרויקט יכול לעבוד עם Anthropic או Ollama בלי שינוי לוגיקה.
+
+
+
+## פתרון תרגיל 2: בדיקה אם מניה עלתה או ירדה בשנה האחרונה
+
+בתרגיל הזה נרחיב את stock_agent.py ונוסיף Tool חדש שבודק ביצועי מניה בשנה האחרונה.
+
+המטרה היא לא רק להביא מחיר נוכחי, אלא להביא נתונים היסטוריים, לחשב שינוי, ולהחזיר תשובה ברורה.
+
+נעדכן קובץ אחד:
 
 ```bash
-Show me recent news about MSFT.
+stock_agent.py
 ```
 
-אם שני הכלים מחזירים מידע מעורבב, או אם ההנחיות לא מסבירות מתי להשתמש בכל אחד, הסוכן עלול להפעיל את הכלי הלא נכון.
-
-בעיה נוספת היא Tool שמקבל קלט לא מדויק.
-
-לדוגמה, כלי שמקבל טקסט חופשי:
-
-```python
-def get_stock_info(query: str) -> str:
-```
-
-יכול לקבל כל מיני ערכים:
-
-```python
-Microsoft
-MSFT
-What is the price of Microsoft?
-current price please
-```
-
-זה מקשה על הכלי. עדיף, כאשר אפשר, שה-tool יקבל קלט מוגדר וברור:
-
-```python
-def get_stock_info(symbol: str) -> str:
-```
-
-כלומר, הסוכן אחראי להבין את השאלה ולהוציא ממנה ticker symbol, וה-tool אחראי להביא מידע עבור הסימול.
-
-זו הפרדה טובה יותר:
-
-```python
-Agent:
-understands user intent and extracts the right input
-
-Tool:
-performs one clear external action
-```
-
-Tool טוב צריך גם להחזיר פלט ברור. לא כדאי להחזיר אובייקט גולמי גדול, JSON ענק, או טקסט לא מסודר שהמודל צריך לנחש ממנו מה חשוב.
-
-לדוגמה, במקום להחזיר עשרות שדות מ-API פיננסי, עדיף להחזיר סיכום ממוקד:
-
-```bash
-Company: Microsoft Corporation
-Symbol: MSFT
-Current price: 430.25 USD
-Day high: 433.10
-Day low: 426.80
-Volume: 21,000,000
-```
-
-פלט כזה קל יותר למודל להסביר, וקל יותר למשתמש להבין.
-
-גם שמות הכלים חשובים. שם כמו:
-
-```python
-do_stuff
-```
-
-אינו טוב.
-
-שם כמו:
+נוסיף Tool חדש:
 
 ```python
 get_stock_year_performance
 ```
 
-טוב בהרבה, כי הוא מסביר את הפעולה.
+**הקוד שנוסיף ל-stock_agent.py**
 
-אפשר לחשוב על Tool טוב כך:
-
-<div dir="rtl">
-
-| **מאפיין** | **Tool חל**ש | **Tool טוב** |
-| --- | --- | --- |
-| **שם** | get_data | get_stock_info |
-| **קלט** | טקסט כללי | ticker symbol |
-| **פעולה** | לא ברורה | מביא נתוני מניה |
-| **פלט** | לא מסודר | סיכום קצר וברור |
-| **שגיאות** | קריסה או פלט ריק | הודעה מובנת |
-| **גבולות** | עושה יותר מדי | עושה פעולה אחת |
-
-</div>
-
-טעות נפוצה נוספת היא לבנות Tool שעושה יותר מדי דברים.
-
-לדוגמה:
-
-```python
-get_stock_everything
-```
-
-כלי כזה יכול להביא מחיר, חדשות, המלצות, ביצועים, פרופיל חברה ותחזית. זה אולי נשמע נוח, אבל מבחינת Agent זה פחות טוב. קשה לדעת מתי להשתמש בו, קשה לבדוק אותו, והוא מחזיר יותר מדי מידע.
-
-עדיף לבנות כמה tools קטנים וברורים:
-
-```python
-get_stock_info
-get_stock_year_performance
-get_stock_recommendations
-get_stock_news
-```
-
-כך כל כלי עושה דבר אחד. הסוכן בוחר את הכלי המתאים לפי השאלה.
-
-הכלל הפשוט הוא:
-
-- Tool טוב הוא פונקציה קטנה, ברורה, צפויה, עם קלט ופלט מוגדרים.
-
-- כאשר tools מוגדרים היטב, ה-Agent יציב יותר.
-
-- כאשר tools עמומים, גם Agent חזק עלול להשתמש בהם בצורה לא נכונה.
-
-## חוסר טיפול בשגיאות
-
-טעות נפוצה מאוד בבניית Agents היא להניח שהכול יעבוד כמו שצריך.
-
-- המודל יבין את המשתמש.
-
-- ה-tool יקבל קלט תקין.
-
-- ה-API יחזיר תשובה.
-
-- הנתונים יהיו מלאים.
-
-- התגובה תחזור מהר.
-
-- והמשתמש יקבל תשובה טובה.
-
-בפועל, מערכות אמיתיות לא עובדות כך.
-
-כאשר Agent מפעיל tools, הוא תלוי בעולם חיצוני. וכל תלות חיצונית יכולה להיכשל.
-
-לדוגמה, ב-Stock Agent שלנו יש כלי שמשתמש ב-yfinance. הקריאה הזאת יכולה להיכשל מכמה סיבות:
-
-- ticker לא קיים
-
-- אין נתונים זמינים
-
-- השירות החיצוני איטי
-
-- יש בעיית רשת
-
-- חסר שדה מסוים בתגובה
-
-- מבנה התגובה השתנה
-
-אם לא נטפל במצבים האלה, הסוכן עלול לקרוס או להחזיר תשובה לא ברורה.
-
-דוגמה לא טובה:
-
-```python
-ticker = yf.Ticker(symbol)
-info = ticker.info
-price = info["currentPrice"]
-return f"The price is {price}"
-```
-
-הקוד הזה מניח שהכול תקין.
-
-הוא מניח ש-symbol תקין.
-
-הוא מניח ש-info חזר.
-
-הוא מניח ש-currentPrice קיים.
-
-אבל אם אחד הדברים האלה לא נכון, הקוד ייכשל.
-
-עדיף לכתוב קוד זהיר יותר:
+נוסיף את הפונקציה הבאה מתחת ל-get_stock_info:
 
 ```python
 @tool
-def get_stock_info(symbol: str) -> str:
-    """Get current stock price and market data for a ticker symbol."""
+def get_stock_year_performance(symbol: str) -> str:
+    """Check whether a stock went up or down over the past year."""
     symbol = symbol.strip().upper()
 
     if not symbol:
@@ -444,866 +247,830 @@ def get_stock_info(symbol: str) -> str:
 
     try:
         ticker = yf.Ticker(symbol)
-        info = ticker.info
+        history = ticker.history(period="1y")
 
-        if not info:
-            return f"Error: No stock data found for {symbol}."
+        if history.empty:
+            return f"Error: No historical price data found for {symbol}."
 
-        price = (
-            info.get("currentPrice")
-            or info.get("regularMarketPrice")
-            or info.get("previousClose")
-        )
+        start_price = history["Close"].iloc[0]
+        end_price = history["Close"].iloc[-1]
 
-        if price is None:
-            return f"Error: No price data found for {symbol}."
+        if start_price == 0:
+            return f"Error: Invalid start price found for {symbol}."
 
-        currency = info.get("currency", "")
-        name = info.get("longName") or info.get("shortName") or symbol
+        change = end_price - start_price
+        change_percent = (change / start_price) * 100
+
+        if change > 0:
+            direction = "up"
+        elif change < 0:
+            direction = "down"
+        else:
+            direction = "flat"
 
         return (
-            f"Company: {name}\n"
-            f"Symbol: {symbol}\n"
-            f"Current price: {price} {currency}"
+            f"{symbol} went {direction} over the past year.\n"
+            f"Start price: {start_price:.2f}\n"
+            f"End price: {end_price:.2f}\n"
+            f"Change: {change_percent:.2f}%"
         )
 
     except Exception:
-        return f"Error: Could not fetch stock data for {symbol}."
+        return f"Error: Could not fetch historical data for {symbol}."
 ```
 
-הקוד הזה לא מושלם, אבל הוא הרבה יותר בטוח.
+**עדכון SYSTEM_PROMPT**
 
-- הוא בודק אם הסימול ריק.
-
-- הוא בודק אם חזר מידע.
-
-- הוא מחפש מחיר בכמה שדות אפשריים.
-
-- הוא מחזיר הודעה ברורה אם אין מחיר.
-
-- והוא עוטף את הקריאה החיצונית ב-try/except.
-
-העיקרון הוא פשוט:
-
-- Tool לא אמור לקרוס בשקט.
-
-- Tool צריך להחזיר תוצאה ברורה או שגיאה ברורה.
-
-חשוב גם להבדיל בין שגיאה למצב עסקי תקין.
-
-לדוגמה, אם אין חדשות למניה מסוימת, זו לא בהכרח שגיאת מערכת. זה יכול להיות מצב תקין:
-
-```bash
-No recent news found for ABC.
-```
-
-לעומת זאת, אם הקריאה ל-API נכשלה בגלל בעיית רשת, זו כן שגיאה טכנית:
-
-```bash
-Error: Could not fetch news for ABC.
-```
-
-ההבדל הזה חשוב כי ה-Agent צריך לדעת איך להסביר את המצב למשתמש.
-
-גם timeout הוא נושא חשוב. כאשר כלי קורא לשירות חיצוני, לא כדאי לתת למשתמש לחכות בלי סוף. במערכת אמיתית נרצה להגדיר זמן המתנה סביר, ואם השירות לא עונה בזמן, להחזיר הודעה ברורה.
-
-לדוגמה:
-
-```bash
-The external service is taking too long to respond. Please try again later.
-```
-
-במקרים מסוימים נרצה גם retry. כלומר, אם הקריאה נכשלה פעם אחת בגלל תקלה זמנית, אפשר לנסות שוב פעם אחת או פעמיים. אבל צריך להיזהר לא להכניס retry ללא גבול.
+נעדכן את ההנחיות כך שה-Agent ידע מתי להשתמש בכלי החדש:
 
 ```python
-Bad:
-retry forever
+SYSTEM_PROMPT = """
+You are a helpful stock assistant.
 
-Better:
-retry up to 2 times, then return a clear error
+Use get_stock_info when the user asks about:
+- current stock price
+- quote
+- current market data
+- day high, day low, volume, or currency
+
+Use get_stock_year_performance when the user asks about:
+- whether a stock went up or down over the past year
+- one-year performance
+- 12-month performance
+- how a stock performed during the last year
+
+Do not invent live market data or historical performance.
+If the user does not provide a ticker symbol, ask for one.
+Summarize tool results clearly for the user.
+Do not provide financial advice or tell the user to buy or sell a stock.
+"""
 ```
 
-טיפול בשגיאות חשוב במיוחד כאשר יש שרשרת של פעולות.
+**עדכון רשימת הכלים**
 
-לדוגמה:
-
-```bash
-User question
-   ↓
-Agent chooses tool
-   ↓
-Tool calls API
-   ↓
-API returns missing data
-   ↓
-Agent must explain clearly
-```
-
-אם ה-tool מחזיר פלט ריק, ה-Agent עלול לנסות לנחש.
-
-אם ה-tool מחזיר שגיאה ברורה, ה-Agent יכול להסביר למשתמש מה קרה.
-
-לכן עדיף ש-tool יחזיר הודעה מפורשת:
-
-```bash
-Error: No historical price data found for MSFT.
-```
-
-מאשר להחזיר:
-
-```bash
-None
-```
-
-או מחרוזת ריקה.
-
-במערכת אמיתית כדאי גם להוסיף לוגים פנימיים. למשתמש לא צריך להציג את כל פרטי השגיאה, אבל למפתח כן חשוב לדעת מה קרה.
-
-לדוגמה:
+בתוך build_agent() נעדכן את רשימת הכלים:
 
 ```python
-except Exception as error:
-    logger.exception("Failed to fetch stock data for symbol=%s", symbol)
-    return f"Error: Could not fetch stock data for {symbol}."
+def build_agent():
+    model = build_llm()
+
+    return create_agent(
+        model=model,
+        tools=[
+            get_stock_info,
+            get_stock_year_performance,
+        ],
+        system_prompt=SYSTEM_PROMPT,
+    )
 ```
 
-כך המשתמש מקבל הודעה נקייה, והמפתח מקבל מידע מלא בלוג.
+**הרצה**
 
-הכלל הפשוט הוא:
+אם עובדים עם Anthropic:
 
-כל Tool שקורא לעולם החיצוני חייב טיפול בשגיאות.
+```bash
+$env:MODEL_PROVIDER="anthropic"
+$env:ANTHROPIC_API_KEY="your_api_key_here"
+python stock_agent.py
+```
 
-כלומר, אם הכלי קורא ל-API, מסד נתונים, קובץ, שירות רשת או מערכת חיצונית - צריך להניח שמשהו יכול להיכשל.
+אם עובדים עם Ollama:
 
-Agent טוב לא נמדד רק בכך שהוא מצליח כשהכול עובד.
+```bash
+$env:MODEL_PROVIDER="ollama"
+$env:OLLAMA_MODEL="gemma3:1b"
+python stock_agent.py
+```
 
-הוא נמדד גם בכך שהוא מתנהג בצורה ברורה כאשר משהו נכשל.
+**בדיקה**
 
-## אמון יתר בהנחיות
+בודקים שהכלי הישן עדיין עובד:
 
-הנחיות הן חלק חשוב מאוד בבניית Agent. הן מגדירות למודל איך להתנהג, מתי להשתמש בכלי, מה אסור לעשות, ואיך להחזיר תשובה למשתמש.
+```bash
+What is the current price of MSFT?
+```
 
-אבל טעות נפוצה היא לחשוב שהנחיות לבדן מספיקות.
+בודקים את הכלי החדש:
 
-לדוגמה, אפשר לכתוב ל-Agent:
+```bash
+Did MSFT go up or down in the last year?
+```
 
-Do not perform sensitive actions without user confirmation.
+אפשר לבדוק גם:
 
-זו הנחיה טובה, אבל היא לא מספיקה אם בקוד עצמו יש tool שמבצע פעולה רגישה מיד.
+```bash
+How did NVDA perform over the past 12 months?
+```
 
-נניח שיש כלי כזה:
+תשובה תקינה אמורה לכלול כיוון שינוי, מחיר התחלה, מחיר סיום ואחוז שינוי.
+
+**טעויות נפוצות**
+
+הטעות הנפוצה ביותר היא להוסיף את הפונקציה אבל לשכוח להוסיף אותה לרשימת tools.
+
+טעות נוספת היא לא לעדכן את SYSTEM_PROMPT, ואז ה-Agent לא תמיד יבין מתי להשתמש בכלי החדש.
+
+חשוב גם לבדוק את history.empty, כי לא לכל סימול יהיו נתונים היסטוריים זמינים.
+
+בסיום התרגיל, ה-Stock Agent יודע לענות גם על מחיר נוכחי וגם על ביצועים בשנה האחרונה.
+
+## פתרון תרגיל 3: הוספת כלי המלצות וחדשות
+
+בתרגיל הזה נרחיב את stock_agent.py בעוד שני Tools:
+
+```python
+get_stock_recommendations
+get_stock_news
+```
+
+הראשון יחזיר המלצות אנליסטים כאשר הן זמינות.
+
+השני יחזיר חדשות אחרונות על מניה.
+
+נעדכן קובץ אחד:
+
+```bash
+stock_agent.py
+```
+
+**הקוד שנוסיף ל-stock_agent.py**
+
+נוסיף את שתי הפונקציות הבאות מתחת ל-get_stock_year_performance.
 
 ```python
 @tool
-def delete_customer_record(customer_id: str) -> str:
-    """Delete a customer record."""
-    ...
-```
+def get_stock_recommendations(symbol: str) -> str:
+    """Get recent analyst recommendations for a stock ticker."""
+    symbol = symbol.strip().upper()
 
-אם הכלי הזה מוחק רשומה בפועל ברגע שהוא נקרא, אנחנו מסתמכים יותר מדי על זה שהמודל תמיד יבקש אישור לפני השימוש בו.
+    if not symbol:
+        return "Error: Please provide a stock ticker symbol."
 
-זו הסתמכות מסוכנת.
+    try:
+        ticker = yf.Ticker(symbol)
+        recommendations = ticker.recommendations
 
-עדיף לתכנן את המערכת כך שגם הקוד עצמו יגן על הפעולה.
+        if recommendations is None or recommendations.empty:
+            return f"No analyst recommendations found for {symbol}."
 
-לדוגמה, במקום כלי שמוחק מיד, אפשר לבנות שני שלבים:
+        latest = recommendations.tail(5)
 
-```bash
-1. prepare_delete_customer_record
-2. confirm_and_execute_delete
-```
+        rows = []
+        for _, row in latest.iterrows():
+            firm = row.get("Firm", "Unknown firm")
+            to_grade = row.get("To Grade", "Unknown rating")
+            action = row.get("Action", "")
 
-השלב הראשון רק מכין את הפעולה ומציג למשתמש מה עומד לקרות.
+            if action:
+                rows.append(f"- {firm}: {to_grade} ({action})")
+            else:
+                rows.append(f"- {firm}: {to_grade}")
 
-השלב השני מתבצע רק אחרי אישור ברור.
+        return (
+            f"Recent analyst recommendations for {symbol}:\n"
+            + "\n".join(rows)
+        )
 
-כך אנחנו לא מסתמכים רק על הנחיה. אנחנו בונים מנגנון בטיחות בתוך הארכיטקטורה.
+    except Exception:
+        return f"Error: Could not fetch analyst recommendations for {symbol}."
 
-אפשר לחשוב על זה כך:
 
-```python
-Prompt instruction:
-"Ask before deleting."
-
-Code-level guard:
-Deletion cannot happen without confirmation token.
-```
-
-ההנחיה חשובה, אבל ההגנה האמיתית נמצאת גם בקוד.
-
-אותו עיקרון נכון גם להרשאות.
-
-נניח שיש Agent שמחובר למערכת ארגונית. גם אם נכתוב לו:
-
-```bash
-Only access data the user is allowed to see.
-```
-
-זה לא מספיק. המערכת עצמה צריכה לבדוק הרשאות.
-
-כלומר, ה-tool צריך לקבל את זהות המשתמש, לבדוק מה מותר לו לעשות, ורק אז להחזיר מידע או לבצע פעולה.
-
-דוגמה עקרונית:
-
-```python
-def get_customer_data(user_id: str, customer_id: str) -> str:
-    if not user_has_permission(user_id, customer_id):
-        return "Error: You do not have permission to access this customer."
-
-    return load_customer_data(customer_id)
-```
-
-ה-Agent לא אמור להיות מנגנון ההרשאות היחיד.
-
-הוא יכול להבין שפה טבעית ולהפעיל כלים, אבל ההרשאות חייבות להיאכף בקוד.
-
-גם בדיקות קלט לא צריכות להישען רק על prompt.
-
-לא מספיק לכתוב:
-
-```python
-Use only valid ticker symbols.
-```
-
-עדיף שגם ה-tool יבדוק את הקלט:
-
-```python
-symbol = symbol.strip().upper()
-
-if not symbol:
-    return "Error: Please provide a stock ticker symbol."
-```
-
-אם מדובר בקלט רגיש יותר, צריך בדיקות חזקות יותר: פורמט, אורך, סוג ערך, הרשאות, מגבלות עסקיות, ולפעמים גם רשימה לבנה של ערכים מותרים.
-
-הנחיות הן שכבה אחת בלבד.
-
-במערכת Agentic טובה יש כמה שכבות הגנה:
-
-<div dir="rtl">
-
-| **שכב**ה | **תפקיד** |
-| --- | --- |
-| **Instructions** | להסביר למודל איך להתנהג |
-| **Tool design** | להגביל מה כל כלי יכול לעשות |
-| **Input validation** | לבדוק שהקלט תקין |
-| **Permissions** | לבדוק מה מותר למשתמש לבצע |
-| **Confirmation** | לעצור לפני פעולה רגישה |
-| **Logging** | לתעד מה קרה |
-| **Tests** | לוודא שהתנהגות חשובה נשמרת |
-
-</div>
-
-כאשר יש רק הנחיות, המערכת שבירה יותר.
-
-לדוגמה, אם המודל מפרש את הבקשה לא נכון, או אם המשתמש מנסח בקשה בצורה מבלבלת, או אם tool מתואר בצורה לא מדויקת, ההנחיה עלולה לא להספיק.
-
-זה לא אומר שאין ערך להנחיות. להפך, הן חשובות מאוד. אבל צריך להבין את המקום שלהן.
-
-הנחיות אומרות למודל מה רצוי.
-
-הקוד קובע מה אפשרי.
-
-זו הבחנה חשובה מאוד.
-
-לדוגמה:
-
-```python
-Instruction:
-Do not call external APIs unless needed.
-
-Architecture:
-Only expose specific approved tools to the Agent.
-```
-
-אם לא רוצים שה-Agent יוכל לבצע פעולה מסוימת, הדרך הבטוחה ביותר היא לא לתת לו tool שמבצע אותה.
-
-אם כן נותנים לו tool כזה, צריך להוסיף הגנות: הרשאות, אישור, לוגים ובדיקות.
-
-הכלל הפשוט הוא:
-
-אל תבנה מערכת בטוחה רק על סמך prompt.
-
-Prompt הוא חלק מהפתרון, אבל הוא לא מנגנון אבטחה מלא.
-
-במערכת אמיתית, Agent צריך להיות עטוף בקוד שמגביל, בודק ומאמת את הפעולות שלו. רק כך אפשר להפוך אותו מרכיב חכם אך לא צפוי למערכת שאפשר לסמוך עליה יותר.
-
-## Context גדול מדי
-
-טעות נפוצה במערכות RAG ו-Agents היא לחשוב שככל שנכניס למודל יותר מידע, כך התשובה תהיה טובה יותר.
-
-בפועל זה לא תמיד נכון.
-
-לפעמים יותר context עוזר. אם המודל מקבל בדיוק את הקטעים הרלוונטיים, הוא יכול לענות בצורה מבוססת יותר. אבל אם מכניסים יותר מדי טקסט, במיוחד טקסט לא ממוקד, המודל עלול להתבלבל.
-
-לדוגמה, ב-RAG Chatbot שלנו ה-retriever מוגדר כך:
-
-```python
-retriever = vectorstore.as_retriever(search_kwargs={"k": 4})
-```
-
-המשמעות היא שהמערכת מחזירה עד ארבעה chunks רלוונטיים לכל שאלה.
-
-אפשר להתפתות ולהגדיל את זה:
-
-```python
-retriever = vectorstore.as_retriever(search_kwargs={"k": 20})
-```
-
-לכאורה, זה נשמע טוב יותר. המודל יקבל יותר מידע.
-
-אבל בפועל, זה יכול לפגוע באיכות.
-
-אם מתוך 20 chunks רק 3 באמת רלוונטיים, שאר ה-17 chunks מוסיפים רעש. הם יכולים לכלול מידע דומה אבל לא מדויק, מידע ישן, מידע שקשור לנושא אחר, או פרטים שמסיטים את המודל מהשאלה המקורית.
-
-הבעיה נראית כך:
-
-```bash
-Good context:
-few relevant chunks
-
-Bad context:
-many chunks, mixed relevance, too much noise
-```
-
-מודל שפה לא תמיד יודע להתעלם מושלם ממידע מיותר. אם מכניסים לו context ארוך מדי, הוא עלול לבחור פרט לא נכון, לערבב בין מקורות, או לתת תשובה כללית מדי.
-
-זו אחת הסיבות לכך ש-RAG טוב אינו רק “להביא הרבה טקסט”.
-
-RAG טוב הוא להביא את הטקסט הנכון.
-
-אפשר לחשוב על זה כמו חיפוש בגוגל. אם המשתמש שואל שאלה מדויקת, הוא לא רוצה לקבל 100 עמודים. הוא רוצה כמה תוצאות רלוונטיות באמת.
-
-אותו עיקרון נכון גם כאן.
-
-במקום להגדיל את k בלי מחשבה, עדיף לבדוק:
-
-- האם ה-chunks שחוזרים באמת רלוונטיים?
-
-- האם chunk אחד מכיל מספיק הקשר?
-
-- האם יש חפיפה טובה בין chunks?
-
-- האם המסמכים עצמם מסודרים?
-
-- האם השאלה מנוסחת ברור?
-
-לפעמים הבעיה אינה כמות ה-context, אלא איכות החלוקה ל-chunks.
-
-אם ה-chunks קטנים מדי, כל chunk עלול לאבד הקשר.
-
-אם ה-chunks גדולים מדי, כל chunk עלול להכיל יותר מדי נושאים יחד.
-
-לכן צריך למצוא איזון.
-
-לדוגמה, בבניית המאגר השתמשנו בחלוקה כזאת:
-
-```python
-RecursiveCharacterTextSplitter(
-    chunk_size=400,
-    chunk_overlap=80,
-)
-```
-
-הערכים האלה אינם “קסם”. הם נקודת התחלה סבירה. בפרויקט אחר ייתכן שנצטרך ערכים אחרים.
-
-אם המסמכים קצרים ופשוטים, chunks קטנים יכולים להספיק.
-
-אם המסמכים ארוכים ומורכבים, ייתכן שנצטרך chunks גדולים יותר או מבנה מסמכים טוב יותר.
-
-גם ב-Agent עם tools יש בעיה דומה. אם tool מחזיר יותר מדי מידע, המודל עלול להתבלבל.
-
-לדוגמה, כלי חדשות שמחזיר 50 כותרות אינו בהכרח טוב יותר מכלי שמחזיר 5 כותרות ממוקדות.
-
-פלט עמוס מדי יכול להיראות כך:
-
-```bash
-50 news headlines
-long descriptions
-links
-publishers
-dates
-mixed topics
-```
-
-לעומת זאת, פלט ממוקד יותר:
-
-```bash
-Top 5 recent headlines
-title + publisher
-short and readable
-```
-
-בדרך כלל, הפלט השני יהיה שימושי יותר ל-Agent.
-
-הכלל הוא לא להכניס למודל את כל מה שאפשר.
-
-הכלל הוא להכניס למודל את מה שהוא צריך כדי לענות.
-
-אפשר להשתמש בכלל עבודה פשוט:
-
-```bash
-Start with small context.
-Check answer quality.
-Increase only if needed.
-```
-
-אם התשובות חסרות מידע, אפשר להגדיל את k, לשפר את ה-chunks, או לשפר את החיפוש.
-
-אם התשובות מבולבלות, ייתכן שצריך דווקא להקטין את ה-context או לסנן טוב יותר.
-
-חשוב גם לזכור שלמודלים יש מגבלת context window. כלומר, יש גבול לכמות הטקסט שאפשר לשלוח למודל בבת אחת.
-
-כאשר עובדים עם מודל מקומי, המגבלה הזאת יכולה להיות משמעותית יותר. מודלים קטנים יותר עלולים להתמודד פחות טוב עם context ארוך, גם אם טכנית הם מסוגלים לקבל אותו.
-
-לכן במעבר למודל מקומי כדאי לבדוק מחדש את כמות ה-context.
-
-לדוגמה:
-
-```python
-retriever = vectorstore.as_retriever(search_kwargs={"k": 3})
-```
-
-לפעמים הקטנת k משפרת את התשובה, כי המודל מקבל פחות רעש ויותר מיקוד.
-
-במערכת אמיתית כדאי גם להדפיס או לשמור בלוג את ה-chunks שנשלפו. כך אפשר להבין אם הבעיה היא במודל או ב-retrieval.
-
-לדוגמה:
-
-```bash
-User question:
-What does the document say about ChromaDB?
-
-Retrieved chunks:
-1. relevant
-2. relevant
-3. unrelated
-4. partially relevant
-```
-
-אם ה-context לא טוב, אין סיבה לצפות מהמודל לתת תשובה טובה. המודל יכול לנסח היטב, אבל הוא לא יכול לתקן retrieval גרוע תמיד.
-
-הכלל הפשוט הוא:
-
-יותר context אינו תמיד טוב יותר.
-
-Context מדויק טוב יותר מ-context גדול.
-
-במערכות RAG ו-Agents, איכות התשובה מתחילה בבחירת המידע שנכנס למודל. ככל שה-context נקי, רלוונטי וממוקד יותר, כך קל יותר למודל לענות בצורה טובה.
-
-## חוסר לוגים
-
-טעות נפוצה נוספת בבניית Agents היא לא לשמור לוגים.
-
-כאשר בונים צ’אטבוט רגיל, לפעמים אפשר להבין יחסית בקלות מה קרה: המשתמש שאל שאלה, המודל החזיר תשובה. אבל ב-Agent התהליך מורכב יותר.
-
-ה-Agent יכול לקבל שאלה, לבחור tool, לשלוח אליו קלט, לקבל תוצאה, להחליט אם להשתמש בכלי נוסף, ואז לנסח תשובה סופית.
-
-כלומר, מאחורי תשובה אחת יכול להיות רצף של פעולות:
-
-```bash
-User question
-   ↓
-Agent decision
-   ↓
-Tool selected
-   ↓
-Tool input
-   ↓
-Tool result
-   ↓
-Final answer
-```
-
-אם אין לוגים, קשה מאוד להבין למה הסוכן פעל כפי שפעל.
-
-לדוגמה, נניח שהמשתמש שאל:
-
-```bash
-Show me recent news about MSFT.
-```
-
-אבל הסוכן הפעיל בטעות את הכלי של מחיר מניה במקום את כלי החדשות.
-
-בלי לוגים, נראה רק את התשובה הסופית. יהיה קשה לדעת האם הבעיה הייתה בהנחיות, בשם ה-tool, בתיאור שלו, או בהחלטה של המודל.
-
-עם לוגים, אפשר לראות:
-
-```python
-User asked: Show me recent news about MSFT
-Tool selected: get_stock_info
-Tool input: MSFT
-Tool result: Current price...
-```
-
-ברגע שרואים את זה, ברור שהבעיה היא בבחירת הכלי.
-
-לוגים טובים עוזרים לנו לענות על שאלות חשובות:
-
-- מה המשתמש שאל?
-
-- איזה tool נבחר?
-
-- איזה קלט נשלח ל-tool?
-
-- מה ה-tool החזיר?
-
-- האם הייתה שגיאה?
-
-- כמה זמן הפעולה לקחה?
-
-- מה הייתה התשובה הסופית?
-
-במערכת RAG, לוגים חשובים אפילו יותר. לפעמים התשובה של המודל לא טובה, אבל הבעיה אינה במודל. הבעיה היא ב-context שנשלף.
-
-לדוגמה:
-
-```bash
-User question:
-What does the document say about ChromaDB?
-
-Retrieved chunks:
-1. unrelated chunk
-2. partially related chunk
-3. unrelated chunk
-4. unrelated chunk
-```
-
-במצב כזה אין טעם להאשים את ה-LLM. הוא קיבל context לא טוב. צריך לבדוק את ה-retriever, את גודל ה-chunks, את איכות המסמכים או את ניסוח השאלה.
-
-לכן כדאי לשמור לוגים גם בתהליך ה-RAG:
-
-```bash
-question
-retrieved chunk count
-retrieved sources
-first part of each retrieved chunk
-final answer
-```
-
-לא תמיד צריך לשמור את כל התוכן המלא של ה-chunks, במיוחד אם מדובר במידע רגיש. אבל כדאי לשמור מספיק מידע כדי להבין מה קרה.
-
-בקוד פשוט אפשר להתחיל עם הדפסות למסך:
-
-```python
-print(f"User question: {user_input}")
-print(f"Selected tool: {tool_name}")
-print(f"Tool input: {tool_input}")
-print(f"Tool result: {tool_result}")
-```
-
-אבל בפרויקט רציני יותר עדיף להשתמש ב-logging של Python.
-
-דוגמה בסיסית:
-
-```python
-import logging
-
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s | %(levelname)s | %(message)s",
-)
-
-logger = logging.getLogger(__name__)
-ואז בתוך הקוד:
-logger.info("User question: %s", user_input)
-logger.info("Running stock agent")
-```
-
-בתוך tool אפשר לכתוב:
-
-```python
-logger.info("Fetching stock data for symbol=%s", symbol)
-```
-
-ובמקרה של שגיאה:
-
-```python
-except Exception as error:
-    logger.exception("Failed to fetch stock data for symbol=%s", symbol)
-    return f"Error: Could not fetch stock data for {symbol}."
-```
-
-ההבדל בין logger.info לבין logger.exception חשוב.
-
-logger.info מתאים לאירועים רגילים, כמו התחלת פעולה או בחירת כלי.
-
-logger.exception מתאים בתוך except, כי הוא שומר גם את פרטי השגיאה ואת ה-stack trace. זה עוזר מאוד בזמן דיבוג.
-
-עם זאת, צריך להיזהר מלוגים שמכילים מידע רגיש.
-
-לא כדאי לשמור בלוגים:
-
-- API keys
-
-- סיסמאות
-
-- טוקנים
-
-- מידע אישי רגיש
-
-- מסמכים מלאים בלי צורך
-
-- נתוני לקוחות ללא סיבה
-
-לוג טוב צריך לעזור לדיבוג, אבל לא לחשוף מידע מיותר.
-
-לדוגמה, במקום לשמור מפתח API:
-
-```python
-ANTHROPIC_API_KEY=sk-...
-```
-
-נשמור רק:
-
-```python
-ANTHROPIC_API_KEY is configured: yes
-```
-
-או:
-
-```python
-ANTHROPIC_API_KEY is missing
-```
-
-ב-Agents, לוגים הם לא רק כלי טכני. הם חלק מהיכולת להבין את התנהגות המערכת.
-
-כאשר הסוכן פועל בצורה לא צפויה, הלוגים מאפשרים לנו לשחזר את המסלול:
-
-- מה המשתמש ביקש
-
-- מה הסוכן הבין
-
-- איזה כלי הופעל
-
-- מה הכלי החזיר
-
-- איך נוצרה התשובה
-
-בלי זה, אנחנו נשארים עם תחושה כללית שה-Agent “לא עבד טוב”, אבל בלי דרך ברורה לתקן.
-
-הכלל הפשוט הוא:
-
-אם Agent מפעיל tools או RAG, צריך לוגים.
-
-לא חייבים להתחיל ממערכת לוגים מורכבת. אפשר להתחיל בקטן: לוג לשאלה, לוג לכלי שנבחר, לוג לשגיאות. אבל ככל שהמערכת מתקרבת לשימוש אמיתי, הלוגים הופכים להיות חלק הכרחי מהתכנון.
-
-
-
-## פעולות רגישות ללא אישור
-
-הטעות האחרונה שנדבר עליה היא אחת החשובות ביותר: לאפשר ל-Agent לבצע פעולה רגישה בלי אישור ברור מהמשתמש.
-
-עד עכשיו רוב הדוגמאות שלנו עסקו בשליפה של מידע: להביא מחיר מניה, לשלוף chunks ממסמכים, להחזיר חדשות, או לנסח תשובה. פעולות כאלה בדרך כלל פחות מסוכנות, כי הן לא משנות מידע במערכת.
-
-אבל במערכות אמיתיות, Agents יכולים לקבל tools חזקים יותר:
-
-```python
-send_email
-update_customer_status
-create_order
-cancel_order
-delete_file
-approve_refund
-submit_form
-change_database_record
-```
-
-כאן כבר מדובר בפעולות שמשנות מצב. כלומר, אחרי שה-tool רץ, משהו בעולם האמיתי או במערכת משתנה.
-
-במצבים כאלה אסור להסתפק בזה שה-Agent “יבין לבד” מתי לבצע פעולה. צריך מנגנון אישור.
-
-לדוגמה, נניח שמשתמש כותב:
-
-```bash
-Cancel the last order.
-```
-
-זו פעולה רגישה. לפני שמבטלים הזמנה, המערכת צריכה לוודא:
-
-- איזו הזמנה בדיוק?
-
-- האם המשתמש מורשה לבטל אותה?
-
-- מה תהיה ההשפעה של הביטול?
-
-- האם המשתמש מאשר לבצע את הפעולה?
-
-תגובה טובה של Agent לא תהיה לבצע ביטול מיד. תגובה טובה תהיה להכין פעולה לאישור:
-
-```bash
-I found order #12345.
-Action: cancel order.
-Impact: the order will no longer be processed.
-
-Please confirm: should I cancel this order?
-```
-
-רק אחרי שהמשתמש מאשר בצורה ברורה, הפעולה מתבצעת.
-
-אפשר לחשוב על זה כשני שלבים:
-
-```bash
-Step 1: Prepare action
-Step 2: Confirm and execute
-```
-
-זו צורה הרבה יותר בטוחה מאשר tool אחד שמבצע הכול מיד.
-
-במקום לבנות כלי כזה:
-
-```python
 @tool
-def cancel_order(order_id: str) -> str:
-    """Cancel an order immediately."""
-    ...
+def get_stock_news(symbol: str) -> str:
+    """Get recent news headlines for a stock ticker."""
+    symbol = symbol.strip().upper()
+
+    if not symbol:
+        return "Error: Please provide a stock ticker symbol."
+
+    try:
+        ticker = yf.Ticker(symbol)
+        news_items = ticker.news
+
+        if not news_items:
+            return f"No recent news found for {symbol}."
+
+        top_items = news_items[:5]
+
+        rows = []
+        for item in top_items:
+            title = item.get("title", "No title")
+            publisher = item.get("publisher", "Unknown publisher")
+            link = item.get("link")
+
+            if link:
+                rows.append(f"- {title} ({publisher})\n  {link}")
+            else:
+                rows.append(f"- {title} ({publisher})")
+
+        return f"Recent news for {symbol}:\n" + "\n".join(rows)
+
+    except Exception:
+        return f"Error: Could not fetch news for {symbol}."
 ```
 
-עדיף לבנות תהליך שבו קודם מכינים את הפעולה:
+**עדכון SYSTEM_PROMPT**
+
+נעדכן את ההנחיות כך שה-Agent ידע לבחור בין ארבעת הכלים:
 
 ```python
-def prepare_cancel_order(order_id: str) -> dict:
-    return {
-        "action": "cancel_order",
-        "order_id": order_id,
-        "requires_confirmation": True,
-        "message": f"Order {order_id} is ready to be cancelled.",
-    }
+SYSTEM_PROMPT = """
+You are a helpful stock assistant.
+
+Use get_stock_info when the user asks about:
+- current stock price
+- quote
+- current market data
+- day high, day low, volume, or currency
+
+Use get_stock_year_performance when the user asks about:
+- whether a stock went up or down over the past year
+- one-year performance
+- 12-month performance
+- how a stock performed during the last year
+
+Use get_stock_recommendations when the user asks about:
+- analyst recommendations
+- analyst ratings
+- upgrades or downgrades
+
+Use get_stock_news when the user asks about:
+- recent news
+- headlines
+- company news
+- latest events related to a stock
+
+Do not invent live market data, historical performance, recommendations, or news.
+If the user does not provide a ticker symbol, ask for one.
+Summarize tool results clearly for the user.
+Do not provide financial advice or tell the user to buy or sell a stock.
+"""
 ```
 
-ורק לאחר אישור מפורש מבצעים:
+**עדכון רשימת הכלים**
+
+בתוך build_agent() נעדכן את רשימת הכלים:
 
 ```python
-def execute_cancel_order(order_id: str, confirmed: bool) -> str:
-    if not confirmed:
-        return "Action was not confirmed. No changes were made."
+def build_agent():
+    model = build_llm()
 
-    return f"Order {order_id} was cancelled."
+    return create_agent(
+        model=model,
+        tools=[
+            get_stock_info,
+            get_stock_year_performance,
+            get_stock_recommendations,
+            get_stock_news,
+        ],
+        system_prompt=SYSTEM_PROMPT,
+    )
 ```
 
-העיקרון כאן חשוב יותר מהקוד עצמו: פעולה רגישה לא צריכה להתבצע רק בגלל שהמודל החליט להפעיל tool.
+**הרצה**
 
-צריך להיות מנגנון בקוד שמחייב אישור.
-
-
-
-אפשר להגדיר שלוש רמות של פעולות:
-
-<div dir="rtl">
-
-| **סוג פעול**ה | **דוגמ**ה | **האם צריך אישור?** |
-| --- | --- | --- |
-| **קריאת מידע** | שליפת מחיר מניה | בדרך כלל לא |
-| **פעולה הפיכה** | יצירת טיוטת מייל | לפעמים כן |
-| **פעולה שמשנה מצב** | שליחת מייל, ביטול הזמנה, עדכון רשומה | כן |
-| **פעולה בלתי הפיכה או רגישה** | מחיקה, אישור תשלום, שינוי הרשאה | תמיד כן |
-
-</div>
-
-גם אם הפעולה נראית פשוטה, כדאי לחשוב מה יקרה אם ה-Agent יבצע אותה בטעות.
-
-לדוגמה:
-
-- שליחת מייל לאדם הלא נכון
-
-- מחיקת קובץ חשוב
-
-- עדכון סטטוס שגוי במערכת
-
-- ביטול הזמנה לא נכונה
-
-- אישור פעולה כספית בלי בדיקה
-
-אלה לא טעויות ניסוח. אלה טעויות שיכולות לגרום נזק אמיתי.
-
-לכן במערכות Agentic אמיתיות צריך להוסיף שכבות הגנה:
-
-1. הרשאות משתמש
-
-2. בדיקת קלט
-
-3. הצגת פעולה לפני ביצוע
-
-4. אישור מפורש
-
-5. לוג פעולה
-
-6. אפשרות ביטול כאשר זה אפשרי
-
-לדוגמה, לפני פעולה רגישה אפשר להציג למשתמש הודעת אישור ברורה:
-
-```python
-You are about to send this email:
-
-To: customer@example.com
-Subject: Delivery update
-
-Message:
-Your delivery is scheduled for tomorrow.
-
-Confirm send? yes/no
-```
-
-רק אם המשתמש כותב yes, הפעולה מתבצעת.
-
-חשוב שהאישור יהיה ספציפי. לא מספיק שהמשתמש כתב משהו כללי כמו:
+אם עובדים עם Anthropic:
 
 ```bash
-OK
+$env:MODEL_PROVIDER="anthropic"
+$env:ANTHROPIC_API_KEY="your_api_key_here"
+python stock_agent.py
 ```
 
-במערכת רגישה עדיף לבקש אישור ברור יותר:
+אם עובדים עם Ollama:
 
 ```bash
-Type SEND to send the email.
-Type CANCEL to stop.
+$env:MODEL_PROVIDER="ollama"
+$env:OLLAMA_MODEL="gemma3:1b"
+python stock_agent.py
 ```
 
-כך מקטינים את הסיכוי שהפעולה תתבצע בטעות.
+**בדיקה**
 
-גם לוגים חשובים כאן מאוד. כל פעולה שמשנה מצב צריכה להירשם:
+בודקים מחיר נוכחי:
 
-- מי ביקש את הפעולה
+```bash
+What is the current price of MSFT?
+```
 
-- איזו פעולה בוצעה
+בודקים ביצועים בשנה האחרונה:
 
-- על איזה אובייקט
+```bash
+Did NVDA go up or down in the last year?
+```
 
-- מתי
+בודקים המלצות אנליסטים:
 
-- מה היה הקלט
+```bash
+What are the analyst recommendations for AAPL?
+```
 
-- האם היה אישור
+בודקים חדשות:
 
-- מה הייתה התוצאה
+```bash
+Show me recent news about TSLA.
+```
 
-לדוגמה:
+**טעויות נפוצות**
+
+הטעות הנפוצה ביותר היא להוסיף את הפונקציות אבל לשכוח להוסיף אותן לרשימת tools.
+
+טעות נוספת היא להשאיר SYSTEM_PROMPT כללי מדי. כאשר יש כמה כלים, צריך להסביר בבירור מתי להשתמש בכל כלי.
+
+חשוב גם לזכור שלא לכל מניה יהיו חדשות או המלצות זמינות. במקרה כזה הכלי צריך להחזיר הודעה ברורה, ולא לגרום לתוכנית להיכשל.
+
+בסיום התרגיל, ה-Stock Agent יודע להשתמש בארבעה כלים שונים: מחיר נוכחי, ביצועים שנתיים, המלצות אנליסטים וחדשות.
+
+
+
+## פתרון תרגיל 4: בניית UI עם FastAPI ו-Jinja2
+
+בתרגיל הזה נוסיף ל-Stock Agent ממשק Web פשוט.
+
+במקום להריץ את הסוכן רק דרך שורת הפקודה, נוכל לפתוח דפדפן, להקליד שאלה בטופס, ולקבל תשובה בעמוד.
+
+נוסיף שני קבצים:
+
+```bash
+app.py
+templates/index.html
+```
+
+ונעדכן את:
+
+```bash
+requirements.txt
+```
+
+**עדכון requirements.txt**
+
+נוסיף את הספריות הבאות:
 
 ```python
-logger.info(
-    "Confirmed action executed: action=%s user_id=%s target_id=%s",
-    action_name,
-    user_id,
-    target_id,
-)
+fastapi
+uvicorn[standard]
+jinja2
+python-multipart
 ```
 
-במערכת ארגונית, לוג כזה יכול להיות קריטי. הוא מאפשר לבדוק בדיעבד מה קרה, מי אישר, ואיזה tool הופעל.
+הקובץ המלא יכול להיראות כך:
 
-הכלל הפשוט הוא:
+```python
+langchain
+langchain-chroma
+langchain-community
+langchain-anthropic
+langchain-ollama
+chromadb
+sentence-transformers
+yfinance
+python-dotenv
+fastapi
+uvicorn[standard]
+jinja2
+python-multipart
+```
 
-Agent יכול להציע פעולה.
+לאחר העדכון נריץ:
 
-המערכת צריכה לשלוט בביצוע הפעולה.
+```bash
+pip install -r requirements.txt
+```
 
-כלומר, ה-Agent יכול לעזור להבין את הבקשה, להכין טיוטה, להציע צעד הבא, או לאסוף נתונים. אבל כאשר הפעולה משנה מידע או משפיעה על משתמשים אחרים, הביצוע חייב להיות מוגן.
+**תוכן הקובץ app.py**
 
-זו נקודה שמבדילה בין דמו נחמד לבין מערכת אמיתית.
+ניצור קובץ חדש בשם app.py:
 
-בדמו, אפשר לאפשר ל-Agent לעשות כמעט הכול כדי להראות יכולת.
+הקובץ app.py לא מכיל את הלוגיקה של הסוכן עצמו. הוא רק שכבת Web דקה שמייבאת את:
 
-במערכת אמיתית, צריך לחשוב כמו מהנדס תוכנה: הרשאות, אישורים, לוגים, בדיקות וגבולות.
+```python
+from fastapi import FastAPI, Form
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
+from starlette.requests import Request
 
-בסוף, Agent טוב אינו רק Agent שיודע לפעול.
+from stock_agent import build_agent, query_agent
 
-Agent טוב הוא Agent שיודע מתי לא לפעול לבד.
+
+app = FastAPI(title="Stock Agent UI")
+templates = Jinja2Templates(directory="templates")
+
+agent = build_agent()
+
+
+@app.get("/", response_class=HTMLResponse)
+def home(request: Request):
+    return templates.TemplateResponse(
+        request,
+        "index.html",
+        {
+            "question": "",
+            "answer": None,
+            "error": None,
+        },
+    )
+
+
+@app.post("/", response_class=HTMLResponse)
+def ask(request: Request, question: str = Form(...)):
+    question = question.strip()
+
+    if not question:
+        return templates.TemplateResponse(
+            request,
+            "index.html",
+            {
+                "question": "",
+                "answer": None,
+                "error": "Please enter a question.",
+            },
+        )
+
+    try:
+        answer = query_agent(agent, question)
+
+        return templates.TemplateResponse(
+            request,
+            "index.html",
+            {
+                "question": question,
+                "answer": answer,
+                "error": None,
+            },
+        )
+
+    except Exception:
+        return templates.TemplateResponse(
+            request,
+            "index.html",
+            {
+                "question": question,
+                "answer": None,
+                "error": "Something went wrong while processing your question.",
+            },
+        )
+```
+
+**תוכן הקובץ templates/index.html**
+
+ניצור תיקייה בשם:
+
+```bash
+templates
+```
+
+ובתוכה קובץ:
+
+```bash
+index.html
+```
+
+תוכן הקובץ:
+
+```python
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Stock Agent</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 760px;
+            margin: 40px auto;
+            padding: 0 20px;
+            line-height: 1.6;
+        }
+
+        h1 {
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: #555;
+            margin-bottom: 24px;
+        }
+
+        form {
+            margin-bottom: 24px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+
+        button {
+            margin-top: 12px;
+            padding: 10px 16px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .box {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 20px;
+            background: #fafafa;
+            white-space: pre-wrap;
+        }
+
+        .error {
+            border: 1px solid #e0a0a0;
+            background: #fff5f5;
+            color: #8a1f1f;
+        }
+
+        .question {
+            color: #444;
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Stock Agent</h1>
+    <p class="subtitle">
+        Ask about stock prices, market data, one-year performance, recommendations, or news.
+    </p>
+
+    <form method="post">
+        <label for="question">Question</label><br>
+        <input
+            type="text"
+            id="question"
+            name="question"
+            value="{{ question }}"
+            placeholder="Example: What is the current price of MSFT?"
+        >
+        <button type="submit">Ask</button>
+    </form>
+
+    {% if error %}
+        <div class="box error">
+            {{ error }}
+        </div>
+    {% endif %}
+
+    {% if answer %}
+        <div class="box">
+            <div class="question">
+                <strong>You asked:</strong> {{ question }}
+            </div>
+            <strong>Answer:</strong>
+            <br>
+            {{ answer }}
+        </div>
+    {% endif %}
+</body>
+</html>
+```
+
+**הרצה**
+
+אם עובדים עם Anthropic:
+
+```bash
+$env:MODEL_PROVIDER="anthropic"
+$env:ANTHROPIC_API_KEY="your_api_key_here"
+uvicorn app:app --reload
+```
+
+אם עובדים עם Ollama:
+
+```bash
+$env:MODEL_PROVIDER="ollama"
+$env:OLLAMA_MODEL="gemma3:1b"
+uvicorn app:app --reload
+```
+
+לאחר ההרצה נפתח בדפדפן:
+
+```bash
+http://localhost:8000
+```
+
+**בדיקה**
+
+נבדוק שהעמוד עולה, ואז נשלח שאלות:
+
+```bash
+What is the current price of MSFT?
+Did NVDA go up or down in the last year?
+Show me recent news about TSLA.
+```
+
+אם מתקבלת תשובה בדפדפן, סימן שה-UI מחובר בהצלחה ל-Stock Agent.
+
+**טעויות נפוצות**
+
+אם מתקבלת שגיאה שקשורה ל-Form, בדרך כלל חסרה הספרייה:
+
+python-multipart
+
+אם מתקבלת שגיאה שהתבנית לא נמצאה, צריך לוודא שהקובץ נמצא בדיוק כאן:
+
+templates/index.html
+
+אם השרת נפתח אבל השאלה נכשלת, כדאי לבדוק קודם שה-Agent עובד לבד:
+
+python stock_agent.py
+
+בסיום התרגיל, יש לפרויקט גם ממשק Web פשוט שמפעיל את אותו Stock Agent שכבר בנינו.
+
+## פתרון תרגיל 5: Workflow דו-שלבי
+
+בתרגיל הזה נוסיף לפרויקט Workflow פשוט.
+
+המטרה היא להראות שלא כל מערכת צריכה להיות Agent חופשי. לפעמים סדר הפעולות ידוע מראש, ואז עדיף לבנות Workflow ברור.
+
+נוסיף קובץ חדש:
+
+```bash
+recipe_workflow.py
+```
+
+הזרימה תהיה:
+
+```bash
+User ingredients
+   ↓
+Generate recipe name
+   ↓
+Write cooking instructions
+   ↓
+Final recipe
+```
+
+**תוכן הקובץ recipe_workflow.py**
+
+```python
+from llm_factory import build_llm
+
+
+def validate_ingredients(ingredients: str) -> str:
+    ingredients = ingredients.strip()
+
+    if not ingredients:
+        raise ValueError("Please provide at least one ingredient.")
+
+    return ingredients
+
+
+def generate_recipe_name(llm, ingredients: str) -> str:
+    prompt = f"""
+You are a creative recipe naming assistant.
+
+Create one short recipe name based on these ingredients:
+{ingredients}
+
+Rules:
+- Return only the recipe name.
+- Do not include explanations.
+- Do not include cooking instructions.
+"""
+
+    response = llm.invoke(prompt)
+    return response.content.strip()
+
+
+def write_cooking_instructions(
+    llm,
+    ingredients: str,
+    recipe_name: str,
+) -> str:
+    prompt = f"""
+You are a practical cooking assistant.
+
+Recipe name:
+{recipe_name}
+
+Ingredients:
+{ingredients}
+
+Write simple cooking instructions for this recipe.
+
+Rules:
+- Keep the instructions beginner-friendly.
+- Use numbered steps.
+- Do not add ingredients that were not provided unless absolutely necessary.
+- Keep the answer concise.
+"""
+
+    response = llm.invoke(prompt)
+    return response.content.strip()
+
+
+def run_recipe_workflow(llm, ingredients: str) -> str:
+    ingredients = validate_ingredients(ingredients)
+
+    recipe_name = generate_recipe_name(llm, ingredients)
+
+    instructions = write_cooking_instructions(
+        llm=llm,
+        ingredients=ingredients,
+        recipe_name=recipe_name,
+    )
+
+    return (
+        f"Recipe name: {recipe_name}\n\n"
+        f"Cooking instructions:\n{instructions}"
+    )
+
+
+def main():
+    llm = build_llm()
+
+    print("Recipe Workflow is ready.")
+    print("Enter ingredients, or type 'quit' / 'exit' to stop.")
+
+    while True:
+        ingredients = input("\nIngredients: ").strip()
+
+        if ingredients.lower() in {"quit", "exit"}:
+            print("Goodbye.")
+            break
+
+        try:
+            result = run_recipe_workflow(llm, ingredients)
+            print(f"\n{result}")
+
+        except ValueError as error:
+            print(f"\nError: {error}")
+
+        except Exception:
+            print("\nError: Something went wrong while running the workflow.")
+
+
+if __name__ == "__main__":
+    main()
+```
+
+**הרצה**
+
+אם עובדים עם Anthropic:
+
+```bash
+$env:MODEL_PROVIDER="anthropic"
+$env:ANTHROPIC_API_KEY="your_api_key_here"
+python recipe_workflow.py
+```
+
+אם עובדים עם Ollama:
+
+```bash
+$env:MODEL_PROVIDER="ollama"
+$env:OLLAMA_MODEL="gemma3:1b"
+python recipe_workflow.py
+```
+
+**בדיקה**
+
+נכניס מרכיבים לדוגמה:
+
+```bash
+tomatoes, pasta, garlic, olive oil, basil
+```
+
+פלט אפשרי:
+
+```bash
+Recipe name: Garlic Basil Tomato Pasta
+
+Cooking instructions:
+1. Cook the pasta according to the package instructions.
+2. Heat olive oil in a pan and add chopped garlic.
+3. Add tomatoes and cook until softened.
+4. Mix in the cooked pasta.
+5. Add basil before serving.
+```
+
+נבדוק גם קלט קצר:
+
+```bash
+eggs, cheese
+```
+
+ונבדוק קלט ריק. במקרה כזה אמורה להופיע הודעה:
+
+```bash
+Error: Please provide at least one ingredient.
+```
+
+**למה זה Workflow ולא Agent**
+
+כאן אין צורך שהמודל יחליט מה לעשות.
+
+הסדר קבוע מראש:
+
+שלב 1: ליצור שם למתכון
+
+שלב 2: לכתוב הוראות הכנה
+
+לכן Workflow מתאים יותר מ-Agent.
+
+בסיום התרגיל, נוסף לפרויקט קובץ שמדגים Prompt Chaining פשוט: פלט של שלב אחד נכנס כקלט לשלב הבא.
+
+

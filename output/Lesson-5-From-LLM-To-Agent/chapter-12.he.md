@@ -1,387 +1,284 @@
-# anthropic_api_structured.py, שירות שמחזיר פלט מובנה
+# server.py, שרת FastAPI בפועל
 
-אחרי שהבנו למה כדאי לעטוף יכולת LLM בתוך API, המרצה עבר לקובץ שמבצע את העבודה עצמה מול Anthropic.
+אחרי שראינו איך מפעילים קריאה ל-LLM, איך מבקשים ממנו להחזיר JSON מובנה, ואיך משתמשים ב-schema כדי לוודא שהתשובה עומדת במבנה צפוי, השלב הבא הוא להפוך את כל זה לשירות אמיתי.
 
-הקובץ anthropic_api_structured.py הוא שכבת השירות: הוא מקבל טקסט וסכמה, שולח אותם למודל, דורש פלט מובנה, מאמת את התוצאה, ומחזיר לקוד אובייקט שאפשר לעבוד איתו.
+עד עכשיו הקוד היה בעיקר סקריפט. כלומר, קובץ שמריצים ידנית, והוא מבצע פעולה אחת. אבל במערכת אמיתית אנחנו בדרך כלל לא רוצים שכל לקוח יריץ קובץ Python בעצמו. אנחנו רוצים לחשוף API.
 
-נציג קודם את הקובץ בשלמותו:
+כלומר, הלקוח ישלח טקסט לשרת, השרת יעביר את הטקסט למודל, המודל יחזיר מידע מובנה, והשרת יחזיר את התוצאה ללקוח.
+
+כאן נכנס הקובץ **server.py.**
+
+המטרה שלו היא להפוך את הלוגיקה שבנינו לשירות Web קטן, ברור ונגיש.
+
+השרת מבוסס על FastAPI, ספריית Python פופולרית מאוד לבניית APIs. היא נוחה במיוחד כי היא משלבת בצורה טבעית בין הגדרת endpoints, ולידציה של קלט, מודלים של Pydantic ותיעוד אוטומטי דרך Swagger.
+
+כלומר, ברגע שאנחנו כותבים שרת FastAPI, אנחנו מקבלים כמעט בחינם גם דף תיעוד אינטראקטיבי בכתובת:
 
 ```python
-import asyncio
-import json
-from pathlib import Path
-
-import anthropic
-from jsonschema import validate
-from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
-
-client = anthropic.AsyncAnthropic()
-
-
-@retry(
-    stop=stop_after_attempt(3),
-    wait=wait_fixed(2),
-    retry=retry_if_exception_type(Exception),
-)
-async def get_structured_data(text, schema):
-    response = await client.messages.create(
-        model="claude-haiku-4-5",
-        max_tokens=1024,
-        messages=[
-            {
-                "role": "user",
-                "content": f"Extract the key information from this interaction between agent and customer: {text}",
-            }
-        ],
-        output_config={
-            "format": {
-                "type": "json_schema",
-                "schema": schema,
-            }
-        },
-    )
-
-    parsed = json.loads(response.content[0].text)
-    validate(instance=parsed, schema=schema)
-    return parsed
-
-if __name__ == "__main__":
-    data_dir = Path(__file__).parent / "data"
-
-    text = (data_dir / "call1.txt").read_text(encoding="utf-8")
-    schema = json.loads((data_dir / "call_summary_schema.json").read_text(encoding="utf-8"))
-
-    structured_data = asyncio.run(get_structured_data(text, schema))
-    print(json.dumps(structured_data, indent=4))
+/docs
 ```
 
-הקובץ הזה עושה דבר אחד מרכזי: הוא הופך טקסט חופשי לפלט מובנה. במקרה של השיעור, הטקסט הוא תמלול שיחה בין נציג ללקוח, והסכמה מגדירה אילו פרטים צריך לחלץ מהשיחה: משתתפים, נושאים מרכזיים, תוצאות, משימות המשך, סנטימנט ומזהים רלוונטיים.
+אפשר לחשוף את ה-API ללקוח בצורה מאוד נוחה, כך שהלקוח יכול לראות אילו endpoints קיימים, איזה קלט הם מקבלים, מה המבנה הצפוי של הבקשה, ואפילו לשלוח בקשות בדיקה ישירות מהדפדפן.
 
-## ייבוא הספריות
-
-בתחילת הקובץ מופיעות הספריות הדרושות:
+הקובץ server.py מתחיל בדרך כלל ביצירת האפליקציה:
 
 ```python
-import asyncio
-import json
-from pathlib import Path
+from fastapi import FastAPI
+
+app = FastAPI()
 ```
 
-**asyncio** משמש להפעלת פונקציה אסינכרונית מתוך קוד רגיל.
+השורה הזו יוצרת את אובייקט האפליקציה המרכזי. כל endpoint שנגדיר בהמשך יירשם על האובייקט הזה.
 
-**Json** משמש לשני דברים: המרת תשובת המודל מטקסט ל-JSON, והדפסת התוצאה בצורה קריאה.
+אפשר לחשוב על app בתור השרת עצמו: אליו אנחנו מחברים כתובות, פעולות, ולוגיקה.
 
-**Path** מאפשר לעבוד עם נתיבי קבצים בצורה נוחה, למשל כדי לקרוא את call1.txt ואת call_summary_schema.json מתוך תיקיית data.
+לאחר מכן השרת צריך לטעון schema ברירת מחדל. ה-schema הוא החוזה שמגדיר איך הפלט המובנה אמור להיראות.
 
-לאחר מכן מופיעים הייבואים המרכזיים יותר:
-
-```python
-import anthropic
-from jsonschema import validate
-from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
-```
-
-**anthropic** היא הספרייה שדרכה מתבצעת הקריאה למודל.
-
-**validate** מתוך jsonschema משמש לבדיקה שהתוצאה שהמודל החזיר באמת תואמת לסכמה.
-
-**tenacity** משמשת ל-retry, כלומר ניסיון חוזר במקרה של שגיאה.
-
-כאן כבר רואים שהקובץ אינו רק דוגמת API פשוטה. הוא מתחיל לכלול התנהגות שמתאימה יותר לעולם אמיתי: בדיקה, אימות, וניסיון חוזר.
-
-## יצירת client אסינכרוני
+לדוגמה, אם אנחנו מנתחים שיחה בין לקוח לנציג, ה-schema יכול להגדיר שהתוצאה צריכה להכיל שדות כמו:
 
 ```python
-client = anthropic.AsyncAnthropic()
-```
-
-כאן נוצר client אסינכרוני של Anthropic.
-
-המשמעות היא שהקריאות למודל יתבצעו עם await, ולא יחסמו את כל התהליך בזמן ההמתנה לתשובה. זה מתחבר ישירות לפרקים הקודמים על async: קריאה ל-LLM היא קריאה לשירות חיצוני, ולכן היא מתאימה מאוד לעבודה אסינכרונית.
-
-במקום שכל המערכת תחכה בצורה קשיחה לתשובה מהמודל, הפונקציה יכולה להמתין באופן אסינכרוני, ובשרת אמיתי זה מאפשר לטפל במקביל בבקשות נוספות.
-
-## retry עם Tenacity
-
-החלק הבא הוא אחד החשובים בקובץ:
-
-```python
-@retry(
-    stop=stop_after_attempt(3),
-    wait=wait_fixed(2),
-    retry=retry_if_exception_type(Exception),
-)
-```
-
-זהו decorator של tenacity.
-
-המשמעות שלו היא: אם הפונקציה שמתחתיו נכשלת, נסה להריץ אותה שוב.
-
-ההגדרות כאן אומרות:
-
-```python
-stop=stop_after_attempt(3)
-```
-
-לא לנסות בלי סוף, אלא לעצור אחרי שלושה ניסיונות.
-
-```python
-wait=wait_fixed(2)
-```
-
-לחכות שתי שניות בין ניסיון לניסיון.
-
-```python
-retry=retry_if_exception_type(Exception)
-```
-
-לבצע retry כאשר נזרקת שגיאה מסוג Exception.
-
-זה חשוב מאוד בעבודה מול LLM, כי חלק מהשגיאות יכולות להיות זמניות: תקלה ברשת, עומס זמני, timeout, תשובה לא תקינה, או שגיאת ולידציה. במקום להפיל מיד את כל התהליך, נותנים למערכת הזדמנות נוספת.
-
-זו כבר חשיבה של Production: שירות חיצוני עלול להיכשל, ולכן הקוד צריך להיות מוכן לכך.
-
-## הפונקציה המרכזית: get_structured_data
-
-```python
-async def get_structured_data(text, schema):
-```
-
-זו הפונקציה המרכזית בקובץ.
-
-היא מקבלת שני דברים:
-
-1. **text** - הטקסט החופשי שממנו רוצים לחלץ מידע.
-
-2. **schema** - סכמת JSON שמגדירה איך הפלט צריך להיראות.
-
-**זו נקודה חשובה:** הפונקציה אינה קשיחה לסוג אחד של פלט. היא מקבלת schema מבחוץ, ולכן אפשר להשתמש בה עבור סוגים שונים של חילוץ מידע, כל עוד מספקים לה סכמה מתאימה.
-
-**הקריאה למודל**
-
-בתוך הפונקציה מתבצעת הקריאה ל-Anthropic:
-
-```python
-response = await client.messages.create(
-    model="claude-haiku-4-5",
-    max_tokens=1024,
-    messages=[
-        {
-            "role": "user",
-            "content": f"Extract the key information from this interaction between agent and customer: {text}",
-        }
-    ],
-    output_config={
-        "format": {
-            "type": "json_schema",
-            "schema": schema,
-        }
-    },
-)
-```
-
-הקריאה הזו עושה כמה דברים יחד.
-
-ראשית, היא בוחרת מודל:
-
-```python
-model="claude-haiku-4-5"
-```
-
-לאחר מכן היא מגבילה את אורך התשובה:
-
-```python
-max_tokens=1024
-```
-
-ואז היא שולחת הודעת משתמש אחת שמבקשת מהמודל לחלץ מידע חשוב מתוך אינטראקציה בין נציג ללקוח:
-
-```python
-"content": f"Extract the key information from this interaction between agent and customer: {text}"
-```
-
-כאן המודל מקבל את הטקסט הגולמי. במקרה של התרגול בשיעור, זהו תמלול שיחת שירות לקוחות.
-
-## output_config ו JSON Schema
-
-החלק החשוב ביותר בקריאה הוא:
-
-```python
-output_config={
-    "format": {
-        "type": "json_schema",
-        "schema": schema,
-    }
+{
+  "customer_name": "string",
+  "issue": "string",
+  "sentiment": "positive | neutral | negative",
+  "requires_follow_up": "boolean"
 }
 ```
 
-כאן לא מבקשים מהמודל סתם “תחזיר JSON”.
+המשמעות היא שהשרת לא מבקש מהמודל “תחזיר לי משהו כללי”, אלא דורש ממנו להחזיר מבנה מוגדר.
 
-מבקשים ממנו להחזיר פלט לפי JSON Schema מוגדר.
+זו נקודה חשובה מאוד: ברגע שמערכת אחרת צורכת את התוצאה, הפלט חייב להיות צפוי. קוד לא אוהב הפתעות. אם פעם אחת המודל מחזיר טקסט חופשי, פעם אחרת JSON חלקי, ופעם שלישית שדה בשם אחר, המערכת שמקבלת את הפלט תישבר.
 
-זה הבדל גדול.
+לכן schema הוא לא קישוט. הוא חלק מהחוזה בין השרת לבין הלקוח.
 
-במקום לסמוך על ניסוח חופשי של המודל, הקוד נותן לו חוזה ברור: אלו השדות, אלו הטיפוסים, אלו הדרישות, וזה המבנה שהמערכת מצפה לקבל.
-
-במקרה של call_summary_schema.json, הסכמה דורשת שדות כמו:
+## בשלב הבא נגדיר מודל בקשה באמצעות Pydantic.
 
 ```python
-participants
-main_topics
-outcomes
-action_items
-sentiment
-reference_ids
+from pydantic import BaseModel
+
+class StructuredRequest(BaseModel):
+    text: str
 ```
 
-בנוסף, הסכמה מגדירה **additionalProperties: false**, כלומר המודל לא אמור להוסיף שדות שלא הוגדרו. זה חשוב מאוד כדי שהמערכת תקבל פלט צפוי ולא מבנה משתנה בכל פעם.
+המודל הזה אומר שה-endpoint שמקבל בקשה לניתוח מובנה מצפה לקבל JSON עם שדה בשם text.
 
-## המרת תשובת המודל ל-JSON
-
-אחרי שהמודל מחזיר תשובה, הקוד מבצע:
+לדוגמה:
 
 ```python
-parsed = json.loads(response.content[0].text)
+{
+  "text": "The customer says the package arrived late and asks for compensation."
+}
 ```
 
-התשובה של המודל מגיעה כטקסט. גם אם הטקסט נראה כמו JSON, מבחינת Python הוא עדיין מחרוזת.
+FastAPI משתמש ב-Pydantic כדי לבדוק את הקלט לפני שהקוד שלנו בכלל מתחיל לרוץ. אם הלקוח שולח בקשה בלי text, או במבנה לא נכון, FastAPI יודע להחזיר שגיאת ולידציה אוטומטית.
 
-json.loads ממיר את המחרוזת לאובייקט Python אמיתי, למשל dict.
+זה אחד היתרונות הגדולים של FastAPI: אנחנו לא צריכים לכתוב ידנית את כל בדיקות המבנה הבסיסיות.
 
-זה רגע חשוב בתהליך:
-
-לפני השורה הזו יש לנו טקסט.
-
-אחרי השורה הזו יש לנו נתונים מובנים.
-
-וזה בדיוק הערך של Structured Extraction: להפוך שיחה, מסמך או טקסט חופשי למבנה שהקוד יכול לקרוא, לבדוק, לשמור ולהעביר הלאה.
-
-## ולידציה מול הסכמה
-
-השלב הבא הוא:
+עכשיו אפשר להגדיר endpoint ראשון:
 
 ```python
-validate(instance=parsed, schema=schema)
+@app.get("/schema")
+async def get_schema():
+    return DEFAULT_SCHEMA
 ```
 
-כאן הקוד בודק שהתוצאה שהמודל החזיר באמת עומדת בסכמה.
+ה-endpoint הזה מאפשר ללקוח לקבל את ה-schema שהשרת משתמש בו.
 
-זו לא בדיקה קוסמטית. זו שכבת הגנה חשובה.
+זו פעולה פשוטה, אבל מאוד שימושית. לקוח שרוצה להבין איזה פלט הוא אמור לקבל יכול לקרוא ל:
 
-יכול להיות שהמודל החזיר JSON תקין מבחינה תחבירית, אבל עדיין לא לפי המבנה הנדרש.
+```python
+GET /schema
+```
+
+ולראות את המבנה.
+
+במערכת אמיתית זה עוזר במיוחד כאשר יש frontend, מערכת אינטגרציה, או צוות אחר שצריך לדעת מה בדיוק ה-API מחזיר.
+
+לאחר מכן מגיע ה-endpoint המרכזי:
+
+```python
+@app.post("/structured")
+async def structured(request: StructuredRequest):
+    ...
+```
+
+זה ה-endpoint שמקבל טקסט, שולח אותו לעיבוד מול המודל, ומחזיר JSON מובנה.
+
+כאן חשוב לבצע בדיקה פשוטה אבל קריטית: האם הטקסט ריק.
+
+```python
+if not request.text.strip():
+    raise HTTPException(status_code=400, detail="Text cannot be empty")
+```
+
+הבדיקה הזו מונעת מצב שבו הלקוח שולח מחרוזת ריקה, רווחים בלבד, או בקשה חסרת משמעות.
+
+במקרה כזה אין טעם לקרוא ל-LLM. זו קריאה יקרה, איטית יחסית, ולא תפיק ערך אמיתי. לכן נכון לעצור את הבקשה מוקדם ולהחזיר שגיאת HTTP ברורה.
+
+כאן אנחנו רואים שימוש ב-HTTPException:
+
+```python
+from fastapi import HTTPException
+```
+
+כאשר משהו לא תקין בבקשה, אנחנו לא מחזירים סתם טקסט. אנחנו מחזירים תגובת HTTP מסודרת עם status code מתאים.
+
+לדוגמה:
+
+```python
+raise HTTPException(
+    status_code=400,
+    detail="Text cannot be empty"
+)
+```
+
+המשמעות של 400 היא שהבעיה נמצאת בבקשה של הלקוח. כלומר, השרת תקין, אבל הקלט שהתקבל לא תקין.
+
+לעומת זאת, אם במהלך הקריאה למודל קרתה שגיאה פנימית, למשל בעיית רשת, בעיית API key, או כשל בלתי צפוי, אפשר להחזיר שגיאה מסוג 500:
+
+```python
+raise HTTPException(
+    status_code=500,
+    detail="Failed to extract structured data"
+)
+```
+
+כאן המשמעות שונה: הלקוח שלח בקשה שנראית תקינה, אבל השרת לא הצליח להשלים את הפעולה.
+
+זו הבחנה חשובה מאוד בתכנון API. לא כל שגיאה היא אותו דבר. לקוח צריך לדעת האם לתקן את הבקשה, לנסות שוב, או לפנות למפתחי השרת.
+
+בסוף ה-endpoint, לאחר שהטקסט עבר בדיקה, השרת קורא לפונקציה שמבצעת את חילוץ המידע המובנה:
+
+```python
+result = await get_structured_data(request.text, DEFAULT_SCHEMA)
+return result
+```
+
+כאן רואים שוב את החשיבות של async.
+
+קריאה ל-LLM היא קריאת רשת. בזמן שהשרת מחכה לתשובה מהמודל, אין סיבה לחסום את כל התהליך. בעזרת await, השרת יכול לנהל בצורה יעילה יותר בקשות מקבילות.
+
+## הקוד המלא יכול להיראות כך:
+
+```python
+import json
+from pathlib import Path
+
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+
+from structured_extraction import get_structured_data
+
+
+app = FastAPI(
+    title="Structured Extraction API",
+    description="API for extracting structured data from text using an LLM",
+    version="1.0.0",
+)
+
+
+SCHEMA_PATH = Path("schema.json")
+
+
+def load_default_schema():
+    with SCHEMA_PATH.open("r", encoding="utf-8") as file:
+        return json.load(file)
+
+
+DEFAULT_SCHEMA = load_default_schema()
+
+
+class StructuredRequest(BaseModel):
+    text: str
+
+
+@app.get("/schema")
+async def get_schema():
+    return DEFAULT_SCHEMA
+
+
+@app.post("/structured")
+async def structured(request: StructuredRequest):
+    if not request.text.strip():
+        raise HTTPException(
+            status_code=400,
+            detail="Text cannot be empty",
+        )
+
+    try:
+        result = await get_structured_data(
+            text=request.text,
+            schema=DEFAULT_SCHEMA,
+        )
+        return result
+
+    except Exception as error:
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to extract structured data",
+        ) from error
+```
+
+כדי להריץ את השרת משתמשים ב-uvicorn.
 
 **לדוגמה:**
 
-- שדה חובה חסר.
-
-- שדה שאמור להיות רשימה חזר כמחרוזת.
-
-- ערך שאמור להיות מתוך enum חזר כערך לא חוקי.
-
-- נוסף שדה שלא הוגדר בסכמה.
-
-במקרה כזה, validate יזהה את הבעיה ויזרוק שגיאה. מכיוון שהפונקציה עטופה ב-retry, שגיאה כזו יכולה לגרום לניסיון נוסף.
-
-זהו בדיוק ההבדל בין demo לבין שירות אמין יותר: לא מסתפקים בכך שהמודל “נראה כאילו ענה נכון”, אלא בודקים את התוצאה בקוד.
-
-**החזרת הפלט המובנה**
-
-אם ה-parsing וה-validation עברו בהצלחה, הפונקציה מחזירה את האובייקט:
-
 ```python
-return parsed
+uvicorn server:app --reload
 ```
 
-מכאן והלאה, הקוד יכול לעבוד עם הפלט הזה כמו עם כל אובייקט רגיל.
-
-אפשר לשמור אותו במסד נתונים.
-
-אפשר להחזיר אותו מ-API.
-
-אפשר לשלוח אותו ל-Agent אחר.
-
-אפשר להפעיל לפיו workflow.
-
-וזה בדיוק מה שהופך את LLM לרכיב תוכנה שימושי: הוא לא רק מייצר טקסט, אלא מחזיר נתונים שהמערכת יכולה להמשיך לעבד.
-
-## הרצת הקובץ כקובץ עצמאי
-
-בסוף הקובץ מופיע בלוק הרצה:
+המשמעות של הפקודה:
 
 ```python
-if __name__ == "__main__":
+server הוא שם הקובץ, כלומר server.py.
 ```
 
-המשמעות היא שהקוד שבתוך הבלוק ירוץ רק אם הקובץ הופעל ישירות, ולא אם הוא יובא מקובץ אחר.
+app הוא שם אובייקט FastAPI שיצרנו בתוך הקובץ.
 
-בתוך הבלוק מוגדרת תיקיית הנתונים:
+reload גורם לשרת להיטען מחדש אוטומטית כאשר משנים את הקוד, וזה נוח מאוד בזמן פיתוח.
+
+לאחר ההרצה, השרת יהיה זמין בדרך כלל בכתובת:
+
+```bash
+http://127.0.0.1:8000
+```
+
+כדי לראות את Swagger נכנסים ל:
+
+```bash
+http://127.0.0.1:8000/docs
+```
+
+שם אפשר לראות את שני ה-endpoints:
+
+<img src="/Lesson-5-From-LLM-To-Agent/assets/image-15.png" alt="image-15.png" width="396" height="409" />
+
+
+
+אפשר לפתוח את POST /structured, ללחוץ על Try it out, להזין JSON לדוגמה, ולהריץ את הקריאה ישירות מהדפדפן.
+
+לדוגמה:
 
 ```python
-data_dir = Path(__file__).parent / "data"
+{
+  "text": "The customer called because the package arrived damaged and asked for a replacement."
+}
 ```
 
-לאחר מכן הקוד קורא את טקסט השיחה:
+השרת יקבל את הטקסט, יעביר אותו למודל, יוודא שהתשובה עומדת ב-schema, ויחזיר JSON מובנה.
 
-```python
-text = (data_dir / "call1.txt").read_text(encoding="utf-8")
-```
+זו כבר לא רק הדגמה של LLM. זו התחלה של שירות תוכנה אמיתי.
 
-ואת הסכמה:
+הערך הגדול כאן הוא ההפרדה בין שכבות:
 
-```python
-schema = json.loads((data_dir / "call_summary_schema.json").read_text(encoding="utf-8"))
-```
+הלקוח לא צריך לדעת איך עובדים מול Anthropic.
 
-כלומר, לצורך בדיקה מקומית, הקובץ יודע לקחת דוגמת שיחה ודוגמת schema מתוך תיקיית data.
+הלקוח לא צריך להכיר את פרטי הפרומפט.
 
-אחר כך הוא מריץ את הפונקציה האסינכרונית:
+הלקוח לא צריך לדעת איך מבצעים ולידציה ל-JSON.
 
-```python
-structured_data = asyncio.run(get_structured_data(text, schema))
-```
+הלקוח פשוט שולח טקסט ל-API ומקבל תוצאה מובנית.
 
-ולבסוף מדפיס את התוצאה בצורה יפה:
-
-```python
-print(json.dumps(structured_data, indent=4))
-```
-
-זה מאפשר לבדוק את השירות עוד לפני שעוטפים אותו ב-FastAPI.
-
-
-
-## למה הקובץ הזה חשוב בשיעור?
-
-הקובץ הזה מחבר בין שני שלבים בקורס.
-
-מצד אחד, הוא ממשיך את הרעיון של Structured Output משיעור 4: לקחת טקסט חופשי ולהחזיר JSON.
-
-מצד שני, הוא כבר מכין אותנו לשיעור 5: לבנות שירות שאפשר לחשוף דרך API, עם async, schema, validation ו retry.
-
-כלומר, זה כבר לא רק Prompt Engineering.
-
-זו התחלה של AI Engineering.
-
-המערכת לא אומרת למודל “תחזיר משהו שימושי” ומקווה לטוב. היא מגדירה חוזה, בודקת את הפלט, מנסה שוב במקרה של כשל, ומחזירה לקוד אובייקט מובנה.
-
-**המסר המרכזי**
-
-המסר המרכזי של הפרק הוא ש-Structured Extraction אמיתי אינו מסתיים בכך שהמודל מחזיר JSON.
-
-כדי להפוך את זה לרכיב תוכנה אמין יותר, צריך:
-
-להגדיר schema ברור.
-
-לדרוש מהמודל להחזיר פלט לפי הסכמה.
-
-להמיר את התשובה ל-JSON אמיתי.
-
-לאמת את התוצאה בקוד.
-
-לבצע retry במקרה של שגיאה.
-
-ולחשוב כבר עכשיו איך הפונקציה הזו תיחשף כשירות API.
-
-זו בדיוק נקודת המעבר שהשיעור מנסה לבנות: מיכולת נקודתית של LLM אל שירות AI שאפשר לשלב במערכת אמיתית.
+זו בדיוק הדרך שבה יכולת AI הופכת מרעיון נקודתי לחלק ממערכת.
 
 

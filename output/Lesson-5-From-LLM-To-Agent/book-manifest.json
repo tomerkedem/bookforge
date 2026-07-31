@@ -7,7 +7,7 @@
       "he": "AI Engineering"
     },
     "descriptions": {
-      "he": "**תקציר:**\n\nשיעור 5 המשיך את המעבר מעבודה בסיסית מול LLM דרך API אל חשיבה מערכתית יותר: איך בונים סביב המודל שכבת שירות אמיתית, שמנהלת הקשר, מפעילה כלים, מחזירה פלט מובנה, ונחשפת למערכות אחרות דרך API.\n\nבתחילת השיעור המרצה עבר בקצרה על שיעורי הבית מהשיעור הקודם. הדגש לא היה על פתרון מלא מחדש, אלא על שני רעיונות חשובים:\n\nבתרגיל ה-Multi turn ראינו שהמודל לא זוכר דבר בעצמו, ולכן חייבים להעביר לו בכל קריאה את רשימת ה-messages. ובתרגיל סיווג המסמכים ראינו איך LLM יכול להפוך טקסט חופשי לפלט שימושי עבור קוד, למשל סיווג לפי נושא ותקציר מובנה.\n\nלאחר מכן השיעור עבר לנושא Async בעבודה מול Anthropic API. המרצה הסביר שקריאה למודל היא פעולה שמתאימה מאוד ל-async, כי רוב הזמן התוכנית ממתינה לתשובה מרשת חיצונית. לכן אפשר להריץ כמה קריאות במקביל, במקום לחכות שכל קריאה תסתיים לפני שמתחילים את הבאה. דרך הדוגמאות הודגש גם הקושי בדיבוג קוד אסינכרוני והחשיבות של הדפסות, traceId או correlationId.\n\nהחלק המרכזי הבא עסק ב-Tool use. כאן הוסבר ש-LLM בפני עצמו יודע לקבל טקסט ולהחזיר טקסט, אבל אינו באמת “עושה” פעולות בעולם החיצוני. כדי לאפשר לו לקבוע פגישה, לבדוק מזג אוויר, לגשת למסד נתונים או לקרוא לשירות פנימי, האפליקציה צריכה להגדיר לו כלים. זהו הבסיס לעולם ה-Agents ול-Agentic loop, שבו המודל מבקש להשתמש בכלי, האפליקציה מפעילה אותו, מחזירה למודל את התוצאה, והמודל ממשיך עד לתשובה סופית.\n\nבחלק השני של השיעור המרצה הציג מעבר חשוב נוסף: עטיפת יכולת LLM בתוך שרת API בעזרת FastAPI. במקום להריץ קובץ Python מקומי, בונים שירות HTTP עם endpoints, Swagger, ולידציה וסכמה. כך יכולות כמו Structured Extraction הופכות לשירות שאפליקציות אחרות או Agents יכולים לצרוך.\n\nבסיום השיעור עלו עקרונות של Prompt Design, Structured Output, Reasoning ו-Error Handling, ובהם הצורך להימנע מעומס הקשר, להחזיר פלט לפי schema, לבדוק את הפלט בקוד, ולטפל בשגיאות בצורה אחראית. שיעורי הבית החדשים ממשיכים בדיוק את הקו הזה: בניית Smart Support Router שמנתח פניות Client ומחזיר JSON תפעולי מובנה.\n\nכל קבצי הקוד, מבנה הפרויקט והתרגילים זמינים בגיטהאב שלי:\n\nhttps://github.com/tomerkedem/ai-engineering-course"
+      "he": "**תקציר:**\n\nשיעור 5 המשיך את המעבר מעבודה בסיסית מול LLM דרך API אל חשיבה מערכתית יותר: איך בונים סביב המודל שכבת שירות אמיתית, שמנהלת הקשר, מפעילה כלים, מחזירה פלט מובנה, ונחשפת למערכות אחרות דרך API.\n\nלאחר מכן השיעור עבר לנושא Async בעבודה מול Anthropic API. נסביר שקריאה למודל היא פעולה שמתאימה מאוד ל-async, כי רוב הזמן התוכנית ממתינה לתשובה מרשת חיצונית. לכן אפשר להריץ כמה קריאות במקביל, במקום לחכות שכל קריאה תסתיים לפני שמתחילים את הבאה. דרך הדוגמאות הודגש גם הקושי בדיבוג קוד אסינכרוני והחשיבות של הדפסות, traceId או correlationId.\n\nהחלק המרכזי הבא עסק ב-Tool use. כאן הוסבר ש-LLM בפני עצמו יודע לקבל טקסט ולהחזיר טקסט, אבל אינו באמת “עושה” פעולות בעולם החיצוני. כדי לאפשר לו לקבוע פגישה, לבדוק מזג אוויר, לגשת למסד נתונים או לקרוא לשירות פנימי, האפליקציה צריכה להגדיר לו כלים. זהו הבסיס לעולם ה-Agents ול-Agentic loop, שבו המודל מבקש להשתמש בכלי, האפליקציה מפעילה אותו, מחזירה למודל את התוצאה, והמודל ממשיך עד לתשובה סופית.\n\nבחלק השני של השיעור נציג מעבר חשוב נוסף: עטיפת יכולת LLM בתוך שרת API בעזרת FastAPI. במקום להריץ קובץ Python מקומי, בונים שירות HTTP עם endpoints, Swagger, ולידציה וסכמה. כך יכולות כמו Structured Extraction הופכות לשירות שאפליקציות אחרות או Agents יכולים לצרוך.\n\nבסיום השיעור עלו עקרונות של Prompt Design, Structured Output, Reasoning ו-Error Handling, ובהם הצורך להימנע מעומס הקשר, להחזיר פלט לפי schema, לבדוק את הפלט בקוד, ולטפל בשגיאות בצורה אחראית. שיעורי הבית החדשים ממשיכים בדיוק את הקו הזה: בניית Smart Support Router שמנתח פניות Client ומחזיר JSON תפעולי מובנה.\n\nכל קבצי הקוד, מבנה הפרויקט והתרגילים זמינים בגיטהאב שלי:\n\nhttps://github.com/tomerkedem/ai-engineering-course"
     },
     "chapters": [
       {
@@ -19,7 +19,7 @@
         },
         "sections": 0,
         "has_images": false,
-        "word_count": 186,
+        "word_count": 171,
         "topics": []
       },
       {
@@ -27,11 +27,11 @@
         "file_slug": "chapter-01",
         "type": "content",
         "titles": {
-          "he": "מעבר קצר על שיעורי הבית של שיעור קודם"
+          "he": "הסיפור מהעבודה על Grok והלקח ההנדסי"
         },
-        "sections": 2,
-        "has_images": true,
-        "word_count": 656,
+        "sections": 0,
+        "has_images": false,
+        "word_count": 711,
         "topics": []
       },
       {
@@ -39,11 +39,11 @@
         "file_slug": "chapter-02",
         "type": "content",
         "titles": {
-          "he": "הסיפור מהעבודה על Grok והלקח ההנדסי"
+          "he": "למה לא קופצים מיד ל-Frameworks"
         },
         "sections": 0,
         "has_images": false,
-        "word_count": 716,
+        "word_count": 724,
         "topics": []
       },
       {
@@ -51,11 +51,11 @@
         "file_slug": "chapter-03",
         "type": "content",
         "titles": {
-          "he": "למה לא קופצים מיד ל-Frameworks"
+          "he": "Async API מול Anthropic"
         },
-        "sections": 0,
-        "has_images": false,
-        "word_count": 744,
+        "sections": 8,
+        "has_images": true,
+        "word_count": 1221,
         "topics": []
       },
       {
@@ -63,11 +63,11 @@
         "file_slug": "chapter-04",
         "type": "content",
         "titles": {
-          "he": "Async API מול Anthropic"
+          "he": "Async אמיתי, כמה קריאות במקביל"
         },
         "sections": 8,
         "has_images": true,
-        "word_count": 1239,
+        "word_count": 1029,
         "topics": []
       },
       {
@@ -75,11 +75,11 @@
         "file_slug": "chapter-05",
         "type": "content",
         "titles": {
-          "he": "Async אמיתי, כמה קריאות במקביל"
+          "he": "Debugging בעולם async"
         },
-        "sections": 8,
-        "has_images": true,
-        "word_count": 1040,
+        "sections": 0,
+        "has_images": false,
+        "word_count": 419,
         "topics": []
       },
       {
@@ -87,28 +87,16 @@
         "file_slug": "chapter-06",
         "type": "content",
         "titles": {
-          "he": "Debugging בעולם async"
+          "he": "Tool use, הרגע שבו המודל מקבל יכולת לפעול"
         },
-        "sections": 0,
-        "has_images": false,
-        "word_count": 457,
+        "sections": 5,
+        "has_images": true,
+        "word_count": 739,
         "topics": []
       },
       {
         "id": 7,
         "file_slug": "chapter-07",
-        "type": "content",
-        "titles": {
-          "he": "Tool use, הרגע שבו המודל מקבל יכולת לפעול"
-        },
-        "sections": 5,
-        "has_images": true,
-        "word_count": 778,
-        "topics": []
-      },
-      {
-        "id": 8,
-        "file_slug": "chapter-08",
         "type": "content",
         "titles": {
           "he": "Agentic loop לפי 7_anthropic_api_tool_use.py"
@@ -119,15 +107,27 @@
         "topics": []
       },
       {
-        "id": 9,
-        "file_slug": "chapter-09",
+        "id": 8,
+        "file_slug": "chapter-08",
         "type": "content",
         "titles": {
           "he": "המעבר מארגז תרגול לארכיטקטורה של Agents"
         },
         "sections": 0,
         "has_images": true,
-        "word_count": 516,
+        "word_count": 493,
+        "topics": []
+      },
+      {
+        "id": 9,
+        "file_slug": "chapter-09",
+        "type": "content",
+        "titles": {
+          "he": "דוגמאות עסקיות מעולם Verint"
+        },
+        "sections": 6,
+        "has_images": true,
+        "word_count": 659,
         "topics": []
       },
       {
@@ -135,11 +135,11 @@
         "file_slug": "chapter-10",
         "type": "content",
         "titles": {
-          "he": "דוגמאות עסקיות מעולם Verint"
+          "he": "למה עוטפים יכולת LLM בתוך API"
         },
-        "sections": 6,
+        "sections": 5,
         "has_images": true,
-        "word_count": 688,
+        "word_count": 590,
         "topics": []
       },
       {
@@ -147,11 +147,11 @@
         "file_slug": "chapter-11",
         "type": "content",
         "titles": {
-          "he": "למה עוטפים יכולת LLM בתוך API"
+          "he": "anthropic_api_structured.py, שירות שמחזיר פלט מובנה"
         },
-        "sections": 5,
-        "has_images": true,
-        "word_count": 613,
+        "sections": 9,
+        "has_images": false,
+        "word_count": 1316,
         "topics": []
       },
       {
@@ -159,28 +159,16 @@
         "file_slug": "chapter-12",
         "type": "content",
         "titles": {
-          "he": "anthropic_api_structured.py, שירות שמחזיר פלט מובנה"
+          "he": "server.py, שרת FastAPI בפועל"
         },
-        "sections": 9,
-        "has_images": false,
-        "word_count": 1317,
+        "sections": 2,
+        "has_images": true,
+        "word_count": 1079,
         "topics": []
       },
       {
         "id": 13,
         "file_slug": "chapter-13",
-        "type": "content",
-        "titles": {
-          "he": "server.py, שרת FastAPI בפועל"
-        },
-        "sections": 2,
-        "has_images": true,
-        "word_count": 1085,
-        "topics": []
-      },
-      {
-        "id": 14,
-        "file_slug": "chapter-14",
         "type": "content",
         "titles": {
           "he": "תיקיית data, שיחה אמיתית וסכמה שמכריחה מבנה"
@@ -191,8 +179,8 @@
         "topics": []
       },
       {
-        "id": 15,
-        "file_slug": "chapter-15",
+        "id": 14,
+        "file_slug": "chapter-14",
         "type": "content",
         "titles": {
           "he": "Error Handling בעבודה עם LLM"
@@ -203,32 +191,32 @@
         "topics": []
       },
       {
-        "id": 16,
-        "file_slug": "chapter-16",
+        "id": 15,
+        "file_slug": "chapter-15",
         "type": "content",
         "titles": {
           "he": "עקרונות Prompt Design שעלו בסוף השיעור"
         },
         "sections": 12,
         "has_images": false,
-        "word_count": 766,
+        "word_count": 740,
         "topics": []
       },
       {
-        "id": 17,
-        "file_slug": "chapter-17",
+        "id": 16,
+        "file_slug": "chapter-16",
         "type": "content",
         "titles": {
           "he": "Reasoning, Structured Output ומה באמת קורה במערכות"
         },
         "sections": 7,
         "has_images": false,
-        "word_count": 966,
+        "word_count": 940,
         "topics": []
       },
       {
-        "id": 18,
-        "file_slug": "chapter-18",
+        "id": 17,
+        "file_slug": "chapter-17",
         "type": "content",
         "titles": {
           "he": "פתרון תרגיל הבית: Intelligent Request Router"

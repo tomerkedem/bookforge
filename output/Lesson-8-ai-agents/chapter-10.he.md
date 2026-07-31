@@ -1,16 +1,218 @@
-# בניית בסיס RAG
+# חלק מעשי: בחירת שלד נכון למערכת Agentic
 
-אחרי שבחרנו את השלדים שנבנה בשיעור, אפשר להתחיל מהשלד המעשי הראשון: RAG Chatbot.
+אחרי שהבנו את הרעיונות המרכזיים של Agents, אפשר לעבור לחלק המעשי. לפני שנכנסים לקוד עצמו, חשוב להבין מה אנחנו עומדים לבנות, אילו קבצים קיימים, ומה התפקיד של כל קובץ.
 
-אבל לפני שבונים את הצ’אטבוט עצמו, צריך להכין לו בסיס ידע. הצ’אטבוט לא יכול לענות מתוך מסמכים אם המסמכים עדיין לא נטענו, לא חולקו לקטעים, לא הומרו ל-embeddings, ולא נשמרו במאגר שאפשר לחפש בו.
+המטרה כאן היא לא לרוץ ישר להרצה, אלא לבנות תמונה מסודרת של הפרויקט. כאשר יודעים מה כל קובץ עושה, קל יותר להבין את הקוד, לתקן תקלות, ולהרחיב את המערכת בהמשך.
 
-זה בדיוק התפקיד של פרק זה.
+לפני שמתחילים לכתוב קוד ל-Agent, כדאי לעצור ולשאול שאלה פשוטה:
 
-בפרק הזה נבנה את בסיס ה-RAG: ניקח קבצי טקסט רגילים, נחלק אותם ל-chunks, נהפוך כל chunk לייצוג מספרי שנקרא embedding, ונשמור את הכול בתוך ChromaDB.
+איזה סוג מערכת אנחנו בכלל צריכים לבנות?
 
-במילים פשוטות, אנחנו בונים את הזיכרון החיצוני של המערכת.
+זו שאלה חשובה, כי לא כל בעיה דורשת Agent חופשי. לפעמים מספיק Workflow פשוט. לפעמים צריך RAG. לפעמים צריך Agent עם Tools. ולפעמים באמת צריך Agent Loop שיכול לחשוב, לפעול, לבדוק תוצאה ולהמשיך.
 
-הזרימה שנבנה היא:
+בפרק הזה לא נלמד רשימה של מושגים תאורטיים. במקום זה נלמד איך לבחור את השלד הנכון למערכת שאנחנו רוצים לבנות.
+
+המטרה היא לעזור לקורא לחשוב כמו מפתח מערכת:
+
+בעיה ← סוג מערכת מתאים ← שלד קוד ← מימוש
+
+## למה צריך לתכנן שלד לפני שכותבים קוד
+
+בחלק המעשי נבנה שתי מערכות קטנות, שכל אחת מדגימה יכולת אחרת בעולם של AI Agents.
+
+כאשר עובדים עם LLM, קל מאוד להתחיל ישר מהקוד. כותבים prompt, מחברים מודל, מוסיפים tool, ואז ממשיכים להוסיף עוד ועוד חלקים.
+
+אבל אם לא מתכננים שלד מראש, המערכת עלולה להפוך מהר מאוד למבולגנת.
+
+לדוגמה, נניח שאנחנו רוצים לבנות עוזר שעונה על שאלות מתוך מסמכים. אם נתחיל מיד מ-Agent, יכול להיות שנוסיף לו tools, instructions, memory, routing, ואולי אפילו loop. אבל בפועל, ייתכן שכל מה שהיה צריך הוא RAG Chatbot פשוט:
+
+```bash
+Question → Retriever → Context → LLM → Answer
+```
+
+במקרה כזה Agent חופשי רק מוסיף מורכבות.
+
+מצד שני, אם המשתמש שואל שאלות שדורשות פעולה חיצונית, למשל להביא מחיר מניה בזמן אמת, RAG לבדו לא מספיק. כאן צריך כלי חיצוני:
+
+```bash
+Question → Agent → Tool call → Tool result → Answer
+```
+
+לכן לפני שכותבים קוד, צריך להבין מה סוג הבעיה.
+
+שאלה טובה לתכנון היא:
+
+האם המערכת צריכה רק לענות, או שהיא גם צריכה לבחור פעולה ולבצע אותה?
+
+- אם המערכת רק צריכה לבצע סדר פעולות ידוע מראש, כנראה ש-Workflow יספיק.
+
+- אם היא צריכה לענות מתוך מסמכים, כנראה ש-RAG מתאים.
+
+- אם היא צריכה להביא מידע ממערכת חיצונית או להפעיל פעולה, נצטרך Agent עם Tools.
+
+- אם היא צריכה לפעול בכמה צעדים, לבדוק תוצאה, להחליט מה הצעד הבא, ואולי לחזור על התהליך, אז ייתכן שצריך Agent Loop.
+
+אפשר לחשוב על זה כך:
+
+<div dir="rtl">
+
+| **צורך** | **שלד מתאים** |
+| --- | --- |
+| **סדר פעולות קבוע מראש** | Workflow |
+| **תשובות מתוך מסמכים** | RAG Chatbot |
+| **שימוש ב-API או פעולה חיצונית** | Agent עם Tools |
+| **החלטה חוזרת לפי תוצאה** | Agent Loop |
+
+</div>
+
+בחירה נכונה של שלד חוסכת הרבה בעיות בהמשך. היא עוזרת להחליט אילו קבצים יהיו בפרויקט, אילו פונקציות צריך לכתוב, איפה תהיה האחריות של כל רכיב, ואיך נבדוק שהמערכת עובדת.
+
+הכלל הפשוט הוא:
+
+לא מתחילים מ-Agent.
+
+מתחילים מהבעיה.
+
+רק אחרי שמבינים את הבעיה, בוחרים את השלד המתאים.
+
+## שלד 1: Workflow פשוט
+
+השלד הפשוט ביותר הוא Workflow.
+
+Workflow מתאים כאשר אנחנו יודעים מראש מה סדר השלבים שהמערכת צריכה לבצע. אין צורך שהמודל יחליט לבד מה הצעד הבא, ואין צורך בלולאת פעולה חופשית. אנחנו כותבים את סדר הפעולות בקוד, והמודל משמש בתוך אחד או יותר מהשלבים.
+
+לדוגמה:
+
+```bash
+Input
+   ↓
+Step 1
+   ↓
+Step 2
+   ↓
+Step 3
+   ↓
+Output
+```
+
+זהו מבנה מאוד שימושי, דווקא בגלל שהוא פשוט.
+
+נניח שאנחנו רוצים לבנות מערכת שמקבלת רשימת מרכיבים ומחזירה מתכון. אפשר לבנות את זה כ-Workflow דו-שלבי:
+
+```bash
+ingredients
+   ↓
+generate recipe name
+   ↓
+write cooking instructions
+```
+
+במקרה כזה אין צורך ב-Agent. המודל לא צריך לבחור כלי, לא צריך להחליט מסלול, ולא צריך לבדוק שוב ושוב מה לעשות. אנחנו יודעים מראש מה התהליך.
+
+בשלד כזה הקוד יכול להיראות כך:
+
+```python
+def run_workflow(llm, ingredients: str) -> str:
+    recipe_name = generate_recipe_name(llm, ingredients)
+    instructions = write_cooking_instructions(
+        llm=llm,
+        ingredients=ingredients,
+        recipe_name=recipe_name,
+    )
+
+    return (
+        f"Recipe name: {recipe_name}\n\n"
+        f"Cooking instructions:\n{instructions}"
+    )
+```
+
+היתרון הגדול של Workflow הוא שליטה.
+
+- קל לדעת מה קורה בכל שלב.
+
+- קל לבדוק כל פונקציה בנפרד.
+
+- קל להבין איפה יש תקלה.
+
+- וקל לשנות שלב אחד בלי לשבור את כל המערכת.
+
+לדוגמה, אם שם המתכון לא טוב, אפשר לשפר רק את הפונקציה:
+
+```python
+generate_recipe_name()
+```
+
+אם הוראות ההכנה לא מספיק ברורות, אפשר לשפר רק את:
+
+```python
+write_cooking_instructions()
+```
+
+זו הפרדה טובה מאוד ללמידה ולפיתוח.
+
+Workflow מתאים במיוחד למצבים כאלה:
+
+<div dir="rtl">
+
+| **מצ**ב | **למה Workflow מתאים** |
+| --- | --- |
+| **סדר השלבים ידוע מראש** | אין צורך בהחלטה חופשית של Agent |
+| **רוצים תהליך צפוי** | כל שלב מוגדר בקוד |
+| **רוצים לבדוק כל שלב בנפרד** | קל להריץ ולדבג |
+| **המשימה חוזרת על עצמה באותו מבנה** | הקוד נשאר יציב וברור |
+| **אין צורך בכלים דינמיים** | המודל רק מבצע שלב מוגדר |
+
+</div>
+
+לעומת זאת, Workflow פחות מתאים כאשר המשתמש יכול לבקש הרבה סוגים שונים של פעולות, או כאשר המערכת צריכה להחליט בעצמה מה לעשות לפי תוצאה שחזרה מכלי חיצוני.
+
+לדוגמה, אם המשתמש שואל פעם על מסמך, פעם על מניה, פעם על חדשות, ופעם מבקש לבצע פעולה. Workflow פשוט כבר לא מספיק. שם ייתכן שנצטרך Agent עם Tools או Routing.
+
+הכלל הפשוט הוא:
+
+אם אפשר לצייר את התהליך מראש כשרשרת קבועה, כנראה ש-Workflow הוא השלד הנכון להתחלה.
+
+Workflow אינו פחות “חכם” מ-Agent. הוא פשוט יותר ממוקד. בהרבה מערכות אמיתיות, זה דווקא יתרון גדול.
+
+## שלד 2: RAG Chatbot
+
+השלד השני הוא RAG Chatbot.
+
+השלד הזה מתאים כאשר המערכת צריכה לענות על שאלות מתוך מסמכים, מאגר ידע, נהלים, מדריכים או קבצים פנימיים.
+
+במקרה כזה הבעיה אינה רק “איך לגרום למודל לענות”, אלא איך לתת לו את המידע הנכון בזמן השאלה.
+
+מודל שפה רגיל עונה מתוך הידע הפנימי שלו. אבל אם אנחנו רוצים שהוא יענה לפי מסמכים מסוימים, צריך לבנות מנגנון שמביא לו context רלוונטי.
+
+השלד נראה כך:
+
+```bash
+User question
+   ↓
+Retriever
+   ↓
+Relevant chunks
+   ↓
+Prompt with context
+   ↓
+LLM
+   ↓
+Answer
+```
+
+זה בדיוק המקום שבו RAG מתאים.
+
+נניח שיש לנו מסמכים שמסבירים איך עובדת מערכת מסוימת. המשתמש שואל:
+
+```bash
+How does ChromaDB store embeddings?
+```
+
+אנחנו לא רוצים שהמודל יענה לפי ידע כללי בלבד. אנחנו רוצים שהוא קודם יחפש במסמכים שלנו קטעים רלוונטיים, ורק אחר כך יענה.
+
+לכן RAG Chatbot בנוי משני שלבים מרכזיים.
+
+השלב הראשון הוא שלב הכנה:
 
 ```bash
 Documents
@@ -19,736 +221,827 @@ Chunks
    ↓
 Embeddings
    ↓
-ChromaDB Vector Store
+Vector Store
+```
+
+בשלב הזה אנחנו לוקחים את המסמכים, מחלקים אותם לקטעים קטנים, יוצרים embeddings, ושומרים אותם ב-Vector Store.
+
+השלב השני הוא שלב השאלה:
+
+```bash
+Question
    ↓
-Saved on disk
+Search Vector Store
+   ↓
+Retrieve relevant chunks
+   ↓
+Send context to LLM
+   ↓
+Answer
 ```
 
-חשוב להבין: בשלב הזה עדיין לא בונים צ’אטבוט. אין עדיין שאלות משתמש, אין עדיין retriever, ואין עדיין קריאה ל-LLM כדי לענות.
+כלומר, RAG Chatbot אינו רק prompt. הוא שילוב של מאגר ידע, חיפוש סמנטי, ו-LLM שמנסח תשובה.
 
-בשלב הזה אנחנו רק מכינים את המאגר.
+בשלד קוד פשוט, זה יכול להיראות כך:
 
-הצ’אטבוט שיטען את המאגר וישתמש בו יגיע בפרק הבא.
+```python
+def build_rag_chain(vectorstore, llm):
+    retriever = vectorstore.as_retriever(search_kwargs={"k": 4})
 
-## מה אנחנו בונים
+    def get_context(inputs):
+        docs = retriever.invoke(inputs["question"])
+        return "\n\n".join(doc.page_content for doc in docs)
 
-אנחנו בונים קובץ Python שמכין בסיס RAG מקומי.
+    chain = (
+        RunnablePassthrough.assign(context=get_context)
+        | prompt
+        | llm
+        | StrOutputParser()
+    )
 
-הקובץ יקרא: build_rag_db.py
-
-התפקיד שלו הוא לבצע את כל שלבי ההכנה:
-
-1. למצוא קבצי טקסט בתיקיית data
-
-2. לטעון את הקבצים
-
-3. לחלק את הטקסט ל-chunks
-
-4. ליצור embeddings לכל chunk
-
-5. לשמור את התוצאה ב-ChromaDB
-
-6. לאפשר טעינה מחדש של המאגר בהמשך
-
-בסיום הריצה תיווצר תיקייה בשם:
-
-```bash
-chroma_db/
+    return chain
 ```
 
-זו התיקייה שבה ChromaDB ישמור את המאגר.
+הנקודה החשובה כאן היא שה-LLM לא ניגש בעצמו למסמכים. מי שמחפש במסמכים הוא ה-retriever. המודל מקבל את התוצאה בתוך ה-context, ואז מנסח תשובה.
 
-הקבצים שנוסיף או נשתמש בהם בחלק הזה הם:
 
-```bash
-lesson-08-ai-agents/
-  build_rag_db.py
-  requirements.txt
-  data/
-    sample_docs.txt
-```
 
-לאחר הרצה מוצלחת, תתווסף גם התיקייה:
-
-```bash
-lesson-08-ai-agents/
-  chroma_db/
-```
-
-היא לא נכתבת ידנית. היא נוצרת על ידי הקוד.
-
-אפשר לחשוב על מבנה הפרויקט כך:
+RAG מתאים במיוחד למצבים כאלה:
 
 <div dir="rtl">
 
-| **קובץ או תיקיי**ה | **תפקיד** |
+| **מצ**ב | **למה RAG מתאים** |
 | --- | --- |
-| **requirements.txt** | רשימת הספריות הנדרשות |
-| **data/sample_docs.txt** | מסמך טקסט לדוגמה |
-| **build_rag_db.py** | בונה את בסיס ה-RAG |
-| **chroma_db/** | המאגר שנשמר לדיסק לאחר ההרצה |
+| **יש מסמכים קיימים** | המערכת יכולה לשלוף מהם מידע |
+| **התשובה צריכה להיות מבוססת מקור** | ה-context מגיע מהמסמכים |
+| **המידע לא בהכרח נמצא במודל** | מוסיפים ידע חיצוני |
+| **רוצים לצמצם המצאות** | המודל מקבל חומר רלוונטי |
+| **יש שאלות חוזרות על מאגר ידע** | ה-retriever מחפש בכל שאלה |
 
 </div>
 
-## הכנת הספריות וקובץ הדוגמה
+אבל RAG לא מתאים לכל דבר.
 
-לפני שנכתוב את build_rag_db.py, צריך להכין שני דברים בסיסיים בפרויקט:
+אם המשתמש שואל על מחיר מניה בזמן אמת, RAG לא מספיק. מחיר מניה משתנה כל הזמן, והוא לא אמור להגיע ממסמך ישן. כאן צריך tool שמביא נתון חי.
 
-1. קובץ requirements.txt
+אם המשתמש מבקש לבצע פעולה, למשל לשלוח מייל או לבדוק סטטוס במערכת חיצונית, RAG גם לא מספיק. הוא יודע לשלוף מידע, לא לבצע פעולה.
 
-2. תיקיית data עם קובץ טקסט לדוגמה
+לכן חשוב להבין את הגבול:
 
-הקוד של בסיס ה-RAG צריך לדעת מאיפה לטעון מסמכים, ובאילו ספריות להשתמש כדי לחלק טקסט, ליצור embeddings ולשמור אותם ב-ChromaDB.
+- RAG מתאים כאשר צריך לענות מתוך ידע קיים.
 
-המבנה שנרצה לקבל הוא:
+- RAG לא מספיק כאשר צריך לבצע פעולה או להביא נתון חי.
+
+במילים פשוטות, RAG נותן למערכת זיכרון חיצוני.
+
+הוא מאפשר למודל לענות על בסיס מידע שלא נמצא בהכרח בתוך המודל עצמו, אלא בתוך המסמכים שהכנו מראש.
+
+הכלל הפשוט הוא:
+
+אם מקור התשובה הוא מסמכים, השלד הטבעי הוא RAG Chatbot.
+
+זהו שלד חזק מאוד, אבל הוא צריך להיות ממוקד. איכות התשובה תלויה לא רק במודל, אלא גם באיכות המסמכים, בגודל ה-chunks, במודל ה-embeddings, וביכולת של ה-retriever לשלוף את הקטעים הנכונים.
+
+
+
+## שלד 3: Agent עם Tools
+
+השלד השלישי הוא Agent עם Tools.
+
+השלד הזה מתאים כאשר המערכת לא צריכה רק לענות מתוך ידע קיים, אלא גם להפעיל פעולה חיצונית בזמן הריצה.
+
+ההבדל המרכזי הוא כזה:
+
+RAG Chatbot: מחפש מידע במסמכים קיימים
+
+Agent with Tools: מפעיל פונקציה, API או פעולה חיצונית
+
+לדוגמה, אם המשתמש שואל:
 
 ```bash
-lesson-08-ai-agents/
-  requirements.txt
-  data/
-    sample_docs.txt
+What is the current price of MSFT?
 ```
 
-**תוכן הקובץ requirements.txt**
+זו לא שאלה שמתאימה למסמך סטטי. מחיר מניה הוא מידע משתנה. לכן המערכת צריכה להפעיל כלי שמביא נתון עדכני.
 
-ניצור קובץ בשם:
+השלד נראה כך:
 
 ```bash
-requirements.txt
+User question
+   ↓
+Agent
+   ↓
+LLM decides whether a tool is needed
+   ↓
+Tool call
+   ↓
+Tool result
+   ↓
+LLM creates final answer
 ```
 
-ובתוכו נשים את הספריות הבאות:
+בשלד הזה ה-LLM לא רק מנסח תשובה. הוא גם עוזר להחליט אם צריך להפעיל tool, ואיזה tool מתאים לשאלה.
 
-```bash
-langchain
-langchain-chroma
-langchain-community
-chromadb
-sentence-transformers
+לדוגמה, אם יש לנו כלי כזה:
+
+```python
+@tool
+def get_stock_info(symbol: str) -> str:
+    """Get current stock price and market data for a ticker symbol."""
+    ...
 ```
 
-הקובץ הזה מגדיר את התלויות של הפרויקט.
-
-langchain מספקת את רכיבי העבודה המרכזיים.
-
-langchain-chroma מאפשרת לעבוד עם ChromaDB דרך LangChain.
-
-langchain-community כוללת רכיבים שימושיים כמו document loaders ו-embeddings.
-
-chromadb הוא ה-Vector Store שבו נשמור את ה-embeddings.
-
-sentence-transformers היא הספרייה שתאפשר לנו ליצור embeddings מטקסט בעזרת מודל מקומי.
-
-כדי להתקין את הספריות, נריץ:
+המשתמש לא צריך לקרוא לפונקציה בעצמו. הוא יכול לשאול בשפה טבעית:
 
 ```bash
-pip install -r requirements.txt
+Give me the quote for Apple stock.
 ```
 
-בשלב הזה עדיין לא הרצנו RAG. רק הכנו את סביבת העבודה.
+וה-Agent אמור להבין שהכוונה היא כנראה ל-AAPL, להפעיל את הכלי, לקבל את התוצאה, ולהחזיר תשובה מסודרת.
 
-**יצירת תיקיית data**
+זה היתרון הגדול של Agent עם Tools: הוא מחבר בין שפה טבעית לבין פעולות בקוד.
 
-עכשיו ניצור תיקייה בשם: data
-
-ובתוכה קובץ בשם: sample_docs.txt
-
-הקובץ הזה ישמש אותנו כמסמך הדגמה. ממנו נבנה את בסיס ה-RAG.
-
-המבנה יהיה:
+אפשר לחשוב על זה כך:
 
 ```bash
-data/
-  sample_docs.txt
+User language
+   ↓
+Agent understanding
+   ↓
+Tool execution
+   ↓
+Clear answer
 ```
 
-**תוכן הקובץ data/sample_docs.txt**
+בשלד קוד פשוט, יצירת Agent יכולה להיראות כך:
 
-נכניס לקובץ את הטקסט הבא:
+```python
 
-```bash
-LangChain is a framework for building applications with large language models.
-It helps developers connect models to prompts, memory, tools, retrievers, and external data sources.
+SYSTEM_PROMPT = """
+You are a helpful stock assistant.
 
-RAG stands for Retrieval-Augmented Generation.
-A RAG system retrieves relevant information from external documents and gives that information to a language model as context.
+Use get_stock_info when the user asks about:
+- current stock price
+- quote
+- current market data
 
-ChromaDB is a vector database.
-It can store embeddings and search for similar text based on meaning rather than exact keyword matching.
+Use get_stock_year_performance when the user asks about:
+- one-year performance
+- whether a stock went up or down over the past year
 
-A typical RAG pipeline has several steps.
-First, documents are loaded from files.
-Then the documents are split into smaller chunks.
-Each chunk is converted into an embedding.
-The embeddings are stored in a vector database.
-When a user asks a question, the system retrieves the most relevant chunks and sends them to the language model.
+Use get_stock_news when the user asks about:
+- recent news
+- headlines
+- company news
 
-Embeddings are numerical representations of text.
-Texts with similar meanings usually have embeddings that are close to each other in vector space.
+Do not invent live market data.
+Do not provide financial advice.
+Summarize tool results clearly for the user.
+"""
 
-A retriever is the component that searches the vector store.
-It receives a user question and returns the most relevant chunks.
+def build_agent():
+    model = build_llm()
 
-The context window is the amount of text a language model can process at once.
-RAG helps keep the context focused by sending only the most relevant pieces of information.
-
-A good RAG system depends on good documents, useful chunk sizes, high-quality embeddings, and clear prompts.
+    return create_agent(
+        model=model,
+        tools=[
+            get_stock_info,
+            get_stock_year_performance,
+            get_stock_news,
+        ],
+        system_prompt=SYSTEM_PROMPT,
+    )
 ```
 
-המסמך הזה קצר, אבל הוא מספיק טוב להדגמה. הוא כולל כמה מושגים שנשתמש בהם בהמשך:
+יש כאן שלושה רכיבים מרכזיים:
+
+- LLM
+
+- Tools
+
+- Instructions
+
+ה-LLM מבין את השאלה ומנסח תשובה.
+
+ה-Tools נותנים למערכת יכולת לבצע פעולות חיצוניות.
+
+ה-Instructions מסבירות לסוכן מתי להשתמש בכל כלי, מה אסור לעשות, ואיך להחזיר תשובה.
+
+Agent עם Tools מתאים במיוחד למצבים כאלה:
+
+<div dir="rtl">
+
+| **מצ**ב | **למה Agent עם Tools מתאים** |
+| --- | --- |
+| **צריך להביא מידע חי** | tool יכול לקרוא ל-API בזמן אמת |
+| **צריך לבצע פעולה** | tool יכול להפעיל פונקציה חיצונית |
+| **יש כמה סוגי בקשות** | הסוכן יכול לבחור כלי לפי השאלה |
+| **המשתמש שואל בשפה טבעית** | הסוכן מתרגם כוונה לפעולה |
+| **רוצים להרחיב יכולות בהדרגה** | מוסיפים tools חדשים לפי צורך |
+
+</div>
+
+אבל חשוב להיזהר: Agent עם Tools מסוכן יותר מ-RAG פשוט.
+
+ב-RAG, המערכת בעיקר שולפת מידע.
+
+ב-Agent עם Tools, המערכת יכולה לבצע פעולה.
+
+לכן צריך להגדיר היטב את גבולות הכלים.
+
+Tool טוב צריך להיות קטן, ברור וצפוי:
+
+- שם ברור
+
+- קלט ברור
+
+- פלט ברור
+
+- טיפול בשגיאות
+
+- אחריות אחת בלבד
+
+לדוגמה, tool בשם: get_stock_info ברור יותר מ-tool בשם: get_data ככל שה-tool ברור יותר, קל יותר ל-Agent להשתמש בו נכון.
+
+בנוסף, צריך להיזהר מפעולות שמשנות מידע. אם tool רק קורא מידע, הסיכון בדרך כלל נמוך יותר. אבל אם tool שולח מייל, מעדכן רשומה, מבטל הזמנה או משנה סטטוס, צריך להוסיף אישור משתמש, הרשאות ולוגים.
+
+**לכן הכלל הפשוט הוא:**
+
+אם המערכת צריכה לבצע פעולה או לקרוא ל-API בזמן אמת, השלד המתאים הוא Agent עם Tools.
+
+אבל לא כל tool הופך את המערכת לטובה יותר. עדיף להתחיל מכלי אחד ברור, לבדוק שהוא עובד, ורק אחר כך להוסיף כלים נוספים.
+
+Agent טוב הוא לא Agent שיש לו כמה שיותר tools.
+
+Agent טוב הוא Agent שיש לו את הכלים הנכונים, עם גבולות ברורים, והוא יודע מתי להשתמש בהם.
+
+## שלד 4: Agent Loop
+
+השלד הרביעי הוא Agent Loop.
+
+זהו השלד הגמיש ביותר, אבל גם המסוכן והמורכב ביותר. הוא מתאים למצבים שבהם פעולה אחת אינה מספיקה, והמערכת צריכה לעבוד בכמה צעדים: להבין מצב, לבחור פעולה, לבדוק את התוצאה, ואז להחליט מה לעשות בהמשך.
+
+השלד הכללי נראה כך:
 
 ```bash
-LangChain
+Observe
+   ↓
+Think
+   ↓
+Act
+   ↓
+Observe result
+   ↓
+Think again
+   ↓
+Act again
+```
+
+כלומר, הסוכן לא רק מקבל שאלה ומחזיר תשובה. הוא נכנס ללולאה.
+
+בכל סיבוב הוא שואל את עצמו:
+
+- מה אני יודע עכשיו?
+
+- מה חסר לי?
+
+- איזה כלי כדאי להפעיל?
+
+- האם התוצאה מספיקה?
+
+- האם צריך צעד נוסף?
+
+- האם אפשר לעצור?
+
+לדוגמה, נניח שהמשתמש מבקש:
+
+```bash
+Find out why my RAG chatbot gives weak answers and suggest a fix.
+```
+
+זו לא בהכרח פעולה אחת. הסוכן אולי יצטרך:
+
+1. לבדוק את השאלה של המשתמש
+
+2. לבדוק אילו chunks נשלפו
+
+3. לבדוק את גודל ה-chunks
+
+4. לבדוק את ערך k
+
+5. לבדוק את ה-prompt
+
+6. להציע שינוי
+
+7. אולי להריץ בדיקה נוספת
+
+במקרה כזה Workflow קבוע יכול להיות מוגבל מדי, כי לא תמיד יודעים מראש איזה שלב יידרש. Agent Loop מתאים יותר, כי הוא מאפשר לסוכן להחליט בכל פעם מה הצעד הבא.
+
+אבל חשוב להבין: Agent Loop הוא לא ברירת המחדל. הוא שלד שצריך להשתמש בו רק כאשר באמת יש צורך בגמישות כזאת.
+
+אפשר לתאר Agent Loop בצורה פשוטה:
+
+```python
+while not done:
+    observation = get_current_state()
+    decision = llm_decide_next_step(observation)
+
+    if decision.action == "use_tool":
+        result = run_tool(decision.tool_name, decision.tool_input)
+        update_state(result)
+
+    elif decision.action == "final_answer":
+        done = True
+        answer = decision.answer
+```
+
+זה לא קוד מלא, אלא המחשה של הרעיון.
+
+הסוכן מקבל מצב נוכחי, מחליט מה לעשות, מבצע פעולה, מקבל תוצאה, ואז חוזר לחשוב שוב.
+
+Agent Loop מתאים במיוחד למצבים כאלה:
+
+<div dir="rtl">
+
+| **מצ**ב | **למה Agent Loop מתאים** |
+| --- | --- |
+| **לא יודעים מראש כמה צעדים יידרשו** | הסוכן יכול להמשיך עד שיש מספיק מידע |
+| **צריך לבדוק תוצאה לפני הצעד הבא** | כל פעולה משפיעה על ההחלטה הבאה |
+| **יש כמה כלים אפשריים** | הסוכן יכול לבחור בכל סיבוב |
+| **המשימה פתוחה יחסית** | אין מסלול אחד קבוע |
+| **צריך תהליך חקירה** | הסוכן יכול לאסוף מידע בהדרגה |
+
+</div>
+
+אבל יחד עם הגמישות מגיעים סיכונים.
+
+- הסוכן עלול להיכנס ללולאה ארוכה מדי.
+
+- הוא עלול להפעיל יותר מדי כלים.
+
+- הוא עלול להמשיך גם כשכבר יש תשובה מספקת.
+
+- והוא עלול לבחור פעולה לא נכונה בשלב ביניים.
+
+לכן Agent Loop חייב גבולות ברורים.
+
+לדוגמה:
+
+```bash
+maximum number of steps
+allowed tools only
+stop conditions
+error handling
+logging
+confirmation before sensitive actions
+```
+
+במערכת אמיתית לא נרצה לולאה פתוחה בלי סוף. נרצה להגדיר מספר צעדים מקסימלי:
+
+```python
+max_steps = 5
+
+for step in range(max_steps):
+    ...
+```
+
+כך גם אם הסוכן לא מצליח להגיע לתשובה, הוא לא ירוץ לנצח.
+
+חשוב גם להגדיר מתי עוצרים:
+
+- אם נמצאה תשובה מספקת: עצור.
+
+- אם אין מידע רלוונטי: עצור והסבר.
+
+- אם tool נכשל: עצור או נסה חלופה מוגבלת.
+
+- אם נדרש אישור משתמש: עצור ובקש אישור.
+
+Agent Loop טוב אינו סוכן “שעושה מה שבא לו”.
+
+זה סוכן שפועל בתוך מסגרת מוגדרת.
+
+הכלל הפשוט הוא:
+
+Agent Loop מתאים כאשר המערכת צריכה להחליט שוב ושוב לפי תוצאות ביניים.
+
+אם יש רק שלב אחד, או שרשרת ידועה מראש, אין צורך ב-Agent Loop. עדיף Workflow פשוט יותר.
+
+אבל כאשר המשימה דורשת חקירה, החלטות חוזרות והתאמה לפי תוצאה, Agent Loop יכול להיות שלד חזק מאוד. כל עוד הוא מוגבל, מתועד ונבדק היטב.
+
+## איך לבחור שלד לפי סוג הבעיה
+
+אחרי שראינו את ארבעת השלדים המרכזיים, אפשר לחזור לשאלה החשובה באמת:
+
+איך יודעים באיזה שלד לבחור?
+
+התשובה מתחילה מהבעיה, לא מהטכנולוגיה.
+
+לא מתחילים מהשאלה “איך בונים Agent?”.
+
+מתחילים מהשאלה “מה המשתמש צריך שהמערכת תעשה?”.
+
+אם המשתמש צריך תשובה מתוך מסמכים, נחשוב על RAG.
+
+אם המשתמש צריך פעולה חיצונית, נחשוב על Tools.
+
+אם יש סדר שלבים קבוע, נחשוב על Workflow.
+
+אם המערכת צריכה להחליט שוב ושוב לפי תוצאות ביניים, נחשוב על Agent Loop.
+
+דרך טובה לבחור שלד היא לשאול סדרת שאלות.
+
+**השאלה הראשונה:**
+
+האם סדר הפעולות ידוע מראש?
+
+אם התשובה היא כן, בדרך כלל כדאי להתחיל מ-Workflow.
+
+לדוגמה:
+
+קלט ← עיבוד ← בדיקה ← פלט
+
+או:
+
+```bash
+ingredients → recipe name → cooking instructions
+```
+
+במקרים כאלה אין צורך לתת למודל חופש מלא. אנחנו יודעים מה השלבים, ולכן נכתוב אותם בקוד.
+
+**השאלה השנייה:**
+
+האם התשובה צריכה להגיע ממסמכים?
+
+אם כן, השלד הטבעי הוא RAG Chatbot.
+
+לדוגמה:
+
+```bash
+User question
+   ↓
+Search documents
+   ↓
+Retrieve context
+   ↓
+LLM answers from context
+```
+
+זה מתאים למאגרי ידע, מדריכים, נהלים, מסמכי תמיכה, סיכומים, תיעוד טכני וקבצים פנימיים.
+
+**השאלה השלישית:**
+
+האם צריך להביא מידע חי או להפעיל פעולה חיצונית?
+
+אם כן, נצטרך Agent עם Tools.
+
+לדוגמה:
+
+```bash
+User asks for stock price
+   ↓
+Agent calls stock API tool
+   ↓
+Tool returns current data
+   ↓
+Agent explains result
+```
+
+כאן RAG לא מספיק, כי המידע לא מגיע ממסמך סטטי אלא ממקור חיצוני בזמן אמת.
+
+**השאלה הרביעית:**
+
+האם צריך כמה צעדים שלא ידועים מראש?
+
+אם כן, ייתכן ש-Agent Loop מתאים.
+
+לדוגמה, אם הסוכן צריך לבדוק בעיה, להפעיל כלי, לנתח תוצאה, להחליט על כלי נוסף, ואז אולי לעצור, זה כבר תהליך דינמי.
+
+אפשר לסכם את הבחירה כך:
+
+<div dir="rtl">
+
+| **שאל**ה | **אם התשובה כן** | **שלד מתאים** |
+| --- | --- | --- |
+| **האם סדר השלבים ידוע מראש?** | כן | Workflow |
+| **האם צריך לענות מתוך מסמכים?** | כן | RAG Chatbot |
+| **האם צריך להפעיל API או פעולה חיצונית?** | כן | Agent עם Tools |
+| **האם צריך החלטות חוזרות לפי תוצאות ביניים?** | כן | Agent Loop |
+
+</div>
+
+חשוב להבין שהשלדים האלה אינם תמיד נפרדים לגמרי. במערכת אמיתית אפשר לשלב ביניהם.
+
+לדוגמה, אפשר לבנות Agent עם Tools, שאחד הכלים שלו הוא RAG:
+
+```bash
+User question
+   ↓
+Agent
+   ↓
+Tool 1: search internal documents
+Tool 2: check external system
+   ↓
+Final answer
+```
+
+אפשר גם לבנות Workflow שבתוכו אחד השלבים הוא RAG:
+
+```bash
+Input
+   ↓
+Retrieve context from documents
+   ↓
+Generate answer
+   ↓
+Validate answer
+```
+
+ואפשר לבנות Agent Loop שמשתמש בכמה tools, אבל עדיין מגביל את מספר הצעדים.
+
+הבחירה אינה תמיד “או זה או זה”. אבל כדי להתחיל נכון, כדאי לבחור שלד מרכזי אחד.
+
+**הכלל הפשוט הוא:**
+
+בחר את השלד הפשוט ביותר שיכול לפתור את הבעיה.
+
+- לא כדאי להתחיל מ-Agent Loop אם Workflow מספיק.
+
+- לא כדאי להוסיף Tools אם RAG מספיק.
+
+- לא כדאי לבנות RAG אם אין מסמכים.
+
+- ולא כדאי לתת למודל חופש אם התהליך ידוע מראש.
+
+שלד נכון נותן למערכת יציבות. הוא עוזר לקוד להיות ברור, לבדיקה להיות פשוטה, ולתקלות להיות קלות יותר לאיתור.
+
+לפני שכותבים קוד, כדאי לכתוב לעצמנו משפט אחד:
+
+המערכת שאני בונה היא בעיקר: Workflow / RAG / Agent with Tools / Agent Loop
+
+אם קשה לענות על המשפט הזה, כנראה שעדיין לא הבנו מספיק טוב את הבעיה.
+
+ראש הטופס
+
+## טעויות בבחירת שלד
+
+אחרי שבוחרים שלד למערכת, חשוב להכיר גם את הטעויות הנפוצות בבחירה הזאת. הרבה בעיות בפרויקטים של Agents לא מתחילות בקוד עצמו, אלא בהחלטה לא נכונה על מבנה המערכת.
+
+**הטעות הראשונה** היא להתחיל מ-Agent כי זה נשמע מתקדם.
+
+לפעמים מפתחים אומרים:
+
+בוא נבנה Agent שיטפל בזה.
+
+אבל לא תמיד צריך Agent. אם יש תהליך קבוע וברור, Workflow פשוט יהיה יציב יותר, קצר יותר וקל יותר לבדיקה.
+
+לדוגמה, אם המשימה היא:
+
+קבל טקסט ← תקן ניסוח ← החזר גרסה משופרת
+
+אין צורך ב-Agent. אפשר לבנות פונקציה פשוטה שמפעילה LLM עם prompt קבוע.
+
+**הטעות השנייה** היא להשתמש ב-RAG גם כשאין באמת מסמכים.
+
+RAG מתאים כאשר יש מקור ידע חיצוני שהמערכת צריכה לשלוף ממנו מידע. אם אין מסמכים, אין מאגר ידע, ואין צורך ב-retrieval, אז RAG מוסיף שכבה מיותרת.
+
+לדוגמה, אם המשתמש שואל:
+
+```bash
+Write a polite email response.
+```
+
+אין סיבה לחפש ב-Vector Store. זו משימת ניסוח רגילה.
+
+לעומת זאת, אם המשתמש שואל:
+
+```bash
+What does our internal policy say about refunds?
+```
+
+כאן RAG מתאים, כי התשובה צריכה להגיע ממסמך מדיניות.
+
+**הטעות השלישית** היא לבנות Agent עם Tools כאשר מספיק Tool רגיל שמופעל ישירות.
+
+לא כל שימוש ב-API דורש Agent. אם אנחנו יודעים בוודאות איזו פונקציה צריך להפעיל, אפשר לקרוא לה ישירות.
+
+לדוגמה:
+
+```python
+price = get_stock_info("MSFT")
+```
+
+אם הכפתור בממשק הוא “Get stock price”, אין צורך שהמודל יחליט איזה tool להפעיל. המשתמש כבר בחר פעולה ברורה.
+
+Agent עם Tools מתאים יותר כאשר המשתמש שואל בשפה טבעית, והמערכת צריכה להבין לבד איזו פעולה מתאימה.
+
+**הטעות הרביעית** היא לבנות Agent Loop מוקדם מדי.
+
+Agent Loop נראה חזק, כי הוא מאפשר למערכת לפעול בכמה צעדים ולתקן את עצמה תוך כדי. אבל הוא גם מוסיף הרבה מורכבות.
+
+צריך לחשוב על שאלות כמו:
+
+- כמה צעדים מותר לסוכן לבצע?
+
+- מתי הוא עוצר?
+
+- מה קורה אם tool נכשל?
+
+- האם הוא יכול להפעיל אותו tool שוב ושוב?
+
+- איך נדע למה הוא קיבל החלטה מסוימת?
+
+אם אין תשובות ברורות לשאלות האלה, ייתכן ש-Agent Loop הוא בחירה מוקדמת מדי.
+
+**הטעות החמישית** היא לערבב כמה שלדים בלי סיבה.
+
+לדוגמה, מערכת אחת יכולה לכלול גם RAG, גם Tools, גם Workflow וגם Agent Loop. לפעמים זה מוצדק, אבל לא כדאי להתחיל משם.
+
+מבנה מסובך מדי בתחילת הדרך עלול להיראות כך:
+
+```bash
+User question
+   ↓
+Agent Loop
+   ↓
+Router
+   ↓
 RAG
-ChromaDB
-embeddings
-retriever
-context window
-```
-
-כאשר נבנה את בסיס ה-RAG, הקוד יטען את הקובץ הזה, יחלק אותו ל-chunks, ייצור embeddings, וישמור אותם בתוך ChromaDB.
-
-חשוב להבין שהקובץ sample_docs.txt הוא רק דוגמה. בפרויקט אמיתי, תיקיית data יכולה להכיל הרבה קבצי טקסט:
-
-```bash
-data/
-  intro.txt
-  product_docs.txt
-  support_faq.txt
-  internal_notes.txt
-```
-
-בשלב הזה אנחנו מתחילים מקובץ אחד כדי לשמור על הפשטות. אחרי שהכול עובד, אפשר להוסיף עוד מסמכים ולבנות את המאגר מחדש.
-
-בסיום הסעיף הזה יש לנו סביבת עבודה בסיסית:
-
-```bash
-requirements.txt       → הספריות הדרושות
-data/sample_docs.txt   → מסמך הדגמה לבניית המאגר
-```
-
-השלב הבא הוא לכתוב את הקובץ המרכזי של חלק זה: build_rag_db.py.
-
-## כתיבת הקובץ build_rag_db.py
-
-עכשיו נכתוב את הקובץ המרכזי של חלק זה: build_rag_db.py
-
-הקובץ הזה אחראי על בניית בסיס ה-RAG. הוא לא מפעיל צ’אטבוט, לא מקבל שאלות מהמשתמש, ולא קורא ל-LLM כדי לנסח תשובה.
-
-התפקיד שלו הוא להכין את מאגר הידע.
-
-הזרימה בקובץ תהיה:
-
-```bash
-Load documents
    ↓
-Split into chunks
+Tool calls
    ↓
-Create embeddings
+Evaluator
    ↓
-Save to ChromaDB
+Another LLM call
    ↓
-Load existing vector store when needed
+Final answer
 ```
 
-ניצור קובץ בשם build_rag_db.py בתיקיית הפרויקט, ונכניס אליו את הקוד הבא.
+זה אולי נראה מרשים, אבל קשה מאוד לבדוק מערכת כזאת.
 
-**תוכן מלא לקובץ build_rag_db.py**
-
-```python
-from pathlib import Path
-
-from langchain_chroma import Chroma
-from langchain_community.document_loaders import TextLoader
-from langchain_community.embeddings import HuggingFaceEmbeddings
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-
-
-CHROMA_PERSIST_DIR = Path(__file__).parent / "chroma_db"
-COLLECTION_NAME = "rag_docs"
-EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
-
-
-def get_embeddings() -> HuggingFaceEmbeddings:
-    """
-    Create the embedding model used by the RAG system.
-
-    The same embedding model must be used when building the vector store
-    and when loading it later for search.
-    """
-    return HuggingFaceEmbeddings(
-        model_name=EMBEDDING_MODEL,
-        model_kwargs={"device": "cpu"},
-    )
-
-
-def load_and_chunk_documents(data_dir: str = "data"):
-    """
-    Load all .txt files from the data folder and split them into chunks.
-    """
-    data_path = Path(__file__).parent / data_dir
-
-    if not data_path.exists():
-        raise FileNotFoundError(
-            f"Data folder not found: {data_path}"
-        )
-
-    text_files = list(data_path.glob("*.txt"))
-
-    if not text_files:
-        raise FileNotFoundError(
-            f"No .txt files found in: {data_path}"
-        )
-
-    documents = []
-
-    for file_path in text_files:
-        loader = TextLoader(
-            str(file_path),
-            encoding="utf-8",
-        )
-        documents.extend(loader.load())
-
-    splitter = RecursiveCharacterTextSplitter(
-        chunk_size=400,
-        chunk_overlap=80,
-        length_function=len,
-    )
-
-    chunks = splitter.split_documents(documents)
-    return chunks
-
-
-def build_vectorstore(chunks) -> Chroma:
-    """
-    Build and persist a ChromaDB vector store from document chunks.
-    """
-    vectorstore = Chroma.from_documents(
-        documents=chunks,
-        embedding=get_embeddings(),
-        persist_directory=str(CHROMA_PERSIST_DIR),
-        collection_name=COLLECTION_NAME,
-    )
-
-    return vectorstore
-
-
-def load_vectorstore() -> Chroma:
-    """
-    Load the persisted ChromaDB vector store.
-
-    This function will be used later by the RAG chatbot.
-    """
-    if not CHROMA_PERSIST_DIR.exists():
-        raise FileNotFoundError(
-            f"Vector store not found at {CHROMA_PERSIST_DIR}. "
-            "Run build_rag_db.py first."
-        )
-
-    return Chroma(
-        persist_directory=str(CHROMA_PERSIST_DIR),
-        embedding_function=get_embeddings(),
-        collection_name=COLLECTION_NAME,
-    )
-
-
-def main():
-    print("Building RAG vector store...")
-    print(f"Data folder: {Path(__file__).parent / 'data'}")
-    print(f"Persist directory: {CHROMA_PERSIST_DIR}")
-    print(f"Collection name: {COLLECTION_NAME}")
-    print(f"Embedding model: {EMBEDDING_MODEL}")
-
-    chunks = load_and_chunk_documents()
-
-    print(f"Loaded and created {len(chunks)} chunks.")
-
-    build_vectorstore(chunks)
-
-    print("Vector store was created successfully.")
-    print(f"Saved to: {CHROMA_PERSIST_DIR}")
-
-
-if __name__ == "__main__":
-    main()
-```
-
-הקובץ הזה בנוי מכמה חלקים ברורים.
-
-בתחילת הקובץ מוגדרים שלושה ערכים קבועים:
-
-```python
-CHROMA_PERSIST_DIR = Path(__file__).parent / "chroma_db"
-COLLECTION_NAME = "rag_docs"
-EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
-```
-
-CHROMA_PERSIST_DIR מגדיר איפה המאגר יישמר בדיסק.
-
-COLLECTION_NAME מגדיר את שם האוסף בתוך ChromaDB.
-
-EMBEDDING_MODEL מגדיר באיזה מודל נשתמש כדי להפוך טקסט ל-embeddings.
-
-**הפונקציה הראשונה היא:**
-
-```python
-get_embeddings()
-```
-
-היא יוצרת את מודל ה-embeddings. חשוב להשתמש באותו מודל גם בזמן בניית המאגר וגם בזמן טעינת המאגר בהמשך. אם נבנה embeddings עם מודל אחד ונחפש עם מודל אחר, איכות החיפוש עלולה להיפגע.
-
-**הפונקציה השנייה היא:**
-
-```python
-load_and_chunk_documents()
-```
-
-היא טוענת את קבצי הטקסט מתוך תיקיית data, ואז מחלקת אותם ל-chunks.
-
-החלוקה מתבצעת כאן:
-
-```python
-splitter = RecursiveCharacterTextSplitter(
-    chunk_size=400,
-    chunk_overlap=80,
-    length_function=len,
-)
-```
-
-המשמעות היא שכל chunk יהיה בערך עד 400 תווים, עם חפיפה של 80 תווים בין chunks סמוכים. החפיפה עוזרת לשמור על הקשר בין קטעים סמוכים בטקסט.
-
-**הפונקציה השלישית היא:**
-
-```python
-build_vectorstore()
-```
-
-היא מקבלת chunks, יוצרת להם embeddings, ושומרת אותם בתוך ChromaDB.
-
-החלק החשוב הוא:
-
-```python
-Chroma.from_documents(
-    documents=chunks,
-    embedding=get_embeddings(),
-    persist_directory=str(CHROMA_PERSIST_DIR),
-    collection_name=COLLECTION_NAME,
-)
-```
-
-כאן מתבצעת הבנייה בפועל של ה-Vector Store.
-
-**הפונקציה הרביעית היא:**
-
-```python
-load_vectorstore()
-```
-
-היא לא בונה את המאגר מחדש. היא רק טוענת מאגר שכבר נשמר בדיסק.
-
-הפונקציה הזאת תהיה חשובה מאוד בחלק הבא, כאשר נבנה את rag_chatbot.py. הצ’אטבוט ישתמש בה כדי לטעון את בסיס ה-RAG הקיים.
-
-לבסוף יש את:
-
-```python
-main()
-```
-
-זו נקודת הכניסה של הקובץ. כאשר נריץ:
+עדיף להתחיל בשלד פשוט:
 
 ```bash
-python build_rag_db.py
-```
-
-הפונקציה main() תטען את המסמכים, תחלק אותם ל-chunks, תבנה את המאגר, ותשמור אותו לתיקיית chroma_db.
-
-בסוף הפרק הזה יש לנו את הקובץ המרכזי של בסיס ה-RAG. השלב הבא הוא להריץ אותו ולבדוק שהתיקייה chroma_db באמת נוצרת.
-
-## הרצת הקובץ ובדיקת התוצאה
-
-אחרי שכתבנו את build_rag_db.py, אפשר להריץ אותו ולבדוק שהוא באמת בונה את בסיס ה-RAG.
-
-בשלב הזה אנחנו מצפים שהקוד יבצע את כל שרשרת ההכנה:
-
-```bash
-Load documents
+User question
    ↓
-Split into chunks
+Retriever
    ↓
-Create embeddings
+Context
    ↓
-Save to ChromaDB
+LLM
+   ↓
+Answer
 ```
 
-לפני ההרצה, מבנה הפרויקט אמור להיראות כך:
+ורק אם באמת צריך, להוסיף שכבות נוספות.
+
+**הטעות השישית** היא לבחור שלד לפי מה שנוח למודל, ולא לפי מה שהמשתמש צריך.
+
+המשתמש לא מעניין אותו אם השתמשנו ב-Agent, RAG או Workflow. הוא רוצה שהמערכת תעשה את העבודה בצורה ברורה, מהירה ואמינה.
+
+לכן השאלה אינה:
+
+איזו ארכיטקטורה הכי מתקדמת?
+
+אלא:
+
+איזו ארכיטקטורה פותרת את הבעיה בצורה הכי פשוטה ואמינה?
+
+אפשר לסכם את הטעויות כך:
+
+<div dir="rtl">
+
+| **טעות** | **למה היא בעייתית** | **מה עדיף לעשות** |
+| --- | --- | --- |
+| **להתחיל מ-Agent תמיד** | מוסיף מורכבות מיותרת | להתחיל מהבעיה |
+| **להשתמש ב-RAG בלי מסמכים** | אין מה לשלוף | להשתמש ב-prompt רגיל |
+| **להשתמש ב-Agent כשיש פעולה ידועה** | החלטת מודל מיותרת | לקרוא לפונקציה ישירות |
+| **להתחיל מ-Agent Loop** | קשה לבדיקה ולשליטה | להתחיל מ-Workflow או Agent פשוט |
+| **לערבב שלדים מוקדם מדי** | קשה להבין ולדבג | להוסיף שכבות בהדרגה |
+| **לבחור לפי טכנולוגיה** | מתעלם מהצורך האמיתי | לבחור לפי משימת המשתמש |
+
+</div>
+
+**הכלל הפשוט הוא:**
+
+אם אפשר לפתור את הבעיה בשלד פשוט יותר, 
+כדאי להתחיל ממנו.
+
+מערכת טובה אינה מערכת עם הכי הרבה רכיבים. מערכת טובה היא מערכת שהמבנה שלה מתאים לבעיה, קל להבין אותה, וקל לבדוק שהיא עובדת.
+
+תחתית הטופס
+
+## השלד שנבנה בשיעור הזה
+
+אחרי שהכרנו כמה שלדים אפשריים למערכות Agentic, אפשר להבין בצורה ברורה יותר מה בדיוק נבנה בשיעור הזה.
+
+בשיעור הזה לא נבנה Agent Loop מלא. כלומר, לא נבנה סוכן שנכנס ללולאה פתוחה, מפעיל כלים שוב ושוב, בודק תוצאות ביניים, ומחליט בכל פעם מה הצעד הבא.
+
+במקום זה נבנה שלושה שלדים מעשיים, שכל אחד מהם מדגים צורת חשיבה אחרת:
 
 ```bash
-lesson-08-ai-agents/
-  build_rag_db.py
-  requirements.txt
-  data/
-    sample_docs.txt
+1. RAG Chatbot
+2. Stock Agent with Tools
+3. Two-step Workflow
 ```
 
-כלומר, עדיין אין תיקיית chroma_db. היא תיווצר רק אחרי שהקוד ירוץ בהצלחה.
+**השלד הראשון** הוא RAG Chatbot.
 
-**שלב 1: התקנת הספריות**
+זהו החלק שבו המערכת עונה על שאלות מתוך מסמכים. קודם נבנה Vector Store מתוך קבצי טקסט, אחר כך נטען אותו מתוך הצ’אטבוט, נשלוף chunks רלוונטיים, ונעביר אותם ל-LLM בתור context.
 
-מתוך תיקיית הפרויקט נריץ:
+הזרימה שלו נראית כך:
 
 ```bash
-pip install -r requirements.txt
+Documents
+   ↓
+Chunks
+   ↓
+Embeddings
+   ↓
+Vector Store
+   ↓
+Retriever
+   ↓
+Context
+   ↓
+LLM
+   ↓
+Answer
 ```
 
-הפקודה הזאת מתקינה את הספריות שהגדרנו בקובץ requirements.txt.
+השלד הזה מתאים כאשר מקור הידע הוא מסמכים קיימים. הוא מלמד איך לתת למודל “זיכרון חיצוני” במקום לצפות ממנו לענות רק מתוך הידע הפנימי שלו.
 
-אם עובדים בתוך virtual environment, חשוב לוודא שהוא מופעל לפני ההתקנה.
+**השלד השני** הוא Stock Agent עם Tools.
 
-לדוגמה ב-PowerShell:
+כאן המערכת לא עונה מתוך מסמכים, אלא מפעילה כלי חיצוני בזמן אמת. המשתמש שואל שאלה על מניה, ה-Agent מזהה שצריך נתון חיצוני, מפעיל tool מתאים, מקבל תוצאה, ואז מחזיר תשובה מסודרת.
+
+הזרימה שלו נראית כך:
 
 ```bash
-.\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
+User question
+   ↓
+Agent
+   ↓
+Tool selection
+   ↓
+External API
+   ↓
+Tool result
+   ↓
+Final answer
 ```
 
-אם ההתקנה הסתיימה ללא שגיאות, אפשר לעבור להרצת הקובץ.
+השלד הזה מתאים כאשר צריך להביא מידע חי, לקרוא ל-API, או לבצע פעולה חיצונית. הוא מלמד את המעבר מצ’אטבוט שמנסח תשובה למערכת שיכולה להשתמש ביכולות חיצוניות.
 
-**שלב 2: הרצת build_rag_db.py**
+**השלד השלישי** הוא Workflow דו-שלבי.
 
-נריץ:
+זהו שלד פשוט וצפוי יותר. במקום לתת למודל להחליט לבד מה לעשות, אנחנו מגדירים מראש את סדר השלבים. בדוגמה שלנו, המשתמש מכניס מרכיבים, השלב הראשון יוצר שם למתכון, והשלב השני כותב הוראות הכנה.
+
+הזרימה שלו נראית כך:
 
 ```bash
-python build_rag_db.py
+Ingredients
+   ↓
+Generate recipe name
+   ↓
+Write cooking instructions
+   ↓
+Final recipe
 ```
 
-בזמן ההרצה, הקובץ אמור להדפיס הודעות שמראות מה הוא עושה.
+השלד הזה מתאים כאשר סדר הפעולות ידוע מראש. הוא מלמד שלא תמיד צריך Agent. לפעמים Workflow פשוט, ברור וקל לבדיקה הוא הבחירה הנכונה ביותר.
 
-פלט אפשרי:
+אפשר לסכם את שלושת השלדים כך:
+
+<div dir="rtl">
+
+| **שלד** | **מה הוא מדגים** | **מתי להשתמש בו** |
+| --- | --- | --- |
+| **RAG Chatbot** | תשובה מתוך מסמכים | כאשר מקור הידע הוא מאגר מסמכים |
+| **Agent עם Tools** | הפעלת כלי חיצוני | כאשר צריך API, נתון חי או פעולה חיצונית |
+| **Workflow דו-שלבי** | שרשרת פעולות קבועה | כאשר סדר השלבים ידוע מראש |
+
+</div>
+
+הבחירה לבנות דווקא את שלושת השלדים האלה אינה מקרית. יחד הם נותנים בסיס מעשי רחב מאוד:
 
 ```bash
-Building RAG vector store...
-Data folder: C:\D\lesson-08-ai-agents\data
-Persist directory: C:\D\lesson-08-ai-agents\chroma_db
-Collection name: rag_docs
-Embedding model: sentence-transformers/all-MiniLM-L6-v2
-Loaded and created 5 chunks.
-Vector store was created successfully.
-Saved to: C:\D\lesson-08-ai-agents\chroma_db
+RAG → זיכרון חיצוני
+Tools → יכולת פעולה
+Workflow → תהליך צפוי ומבוקר
 ```
 
-מספר ה-chunks יכול להיות שונה לפי אורך המסמכים וגודל ה-chunk שהגדרנו. זה בסדר.
+אלה שלושה רעיונות מרכזיים בבניית מערכות AI מודרניות.
 
-הדבר החשוב הוא שההרצה הסתיימה בלי שגיאה, ושנוצרה תיקיית chroma_db.
-
-**שלב 3: בדיקת מבנה התיקיות לאחר ההרצה**
-
-אחרי ההרצה, מבנה הפרויקט אמור להיראות בערך כך:
+בהמשך השיעור נבנה את השלדים האלה בפועל דרך קבצים ברורים:
 
 ```bash
-lesson-08-ai-agents/
-  build_rag_db.py
-  requirements.txt
-  data/
-    sample_docs.txt
-  chroma_db/
+build_rag_db.py      → בניית בסיס RAG
+rag_chatbot.py       → צ’אטבוט שעונה לפי context
+stock_agent.py       → Agent שמפעיל tools
+llm_factory.py       → מעבר בין מודל ענן למודל מקומי
+recipe_workflow.py   → Workflow דו-שלבי
+app.py               → ממשק Web פשוט
 ```
 
-התיקייה chroma_db היא התוצאה החשובה של החלק הזה.
 
-היא מכילה את ה-Vector Store שנשמר לדיסק. אנחנו לא צריכים לערוך אותה ידנית, ולא צריכים לכתוב אליה קבצים בעצמנו. ChromaDB מנהלת את התוכן שלה.
-
-בפרק הבא, rag_chatbot.py יטען את התיקייה הזאת וישתמש בה כדי לחפש chunks רלוונטיים לפי שאלת המשתמש.
-
-**שלב 4: בדיקה מהירה שהטעינה עובדת**
-
-אפשר לבצע בדיקה קטנה מתוך Python כדי לוודא שהמאגר נטען.
-
-נריץ:
-
-python
-
-ואז בתוך Python:
-
-```python
-from build_rag_db import load_vectorstore
-
-vectorstore = load_vectorstore()
-print("Vector store loaded successfully.")
-```
-
-אם מתקבלת ההודעה:
-
-```bash
-Vector store loaded successfully.
-```
-
-סימן שהמאגר קיים וניתן לטעינה.
-
-אפשר לצאת מ-Python עם:
-
-```bash
-exit()
-```
-
-**מה בעצם בדקנו כאן**
-
-בשלב הזה בדקנו שלושה דברים:
-
-1. הספריות מותקנות
-
-2. המסמכים נטענים ומתחלקים ל-chunks
-
-3. ChromaDB שומר את המאגר לדיסק
-
-זו בדיקה חשובה לפני שממשיכים לצ’אטבוט.
-
-אם בסיס ה-RAG לא נבנה כמו שצריך, אין טעם להריץ את rag_chatbot.py. הצ’אטבוט תלוי בכך שהתיקייה chroma_db כבר קיימת וכוללת מאגר תקין.
-
-העיקרון הוא:
-
-קודם בונים את הזיכרון. 
-אחר כך משתמשים בו.
-
-לכן סדר העבודה נשאר:
-
-python build_rag_db.py
-
-ורק בחלק הבא:
-
-python rag_chatbot.py
-
-## טעויות נפוצות בבניית בסיס RAG
-
-בבניית בסיס RAG יש כמה טעויות שחוזרות הרבה. חלק מהן נראות קטנות, אבל הן יכולות לגרום לכך שהצ’אטבוט בהמשך לא יצליח למצוא מידע או יחזיר תשובות חלשות.
-
-**הטעות הראשונה** היא לשכוח ליצור את תיקיית data.
-
-הקובץ build_rag_db.py מצפה למצוא תיקייה בשם: data
-
-ובתוכה לפחות קובץ טקסט אחד עם סיומת: .txt
-
-אם התיקייה לא קיימת, הקוד יחזיר שגיאה ברורה:
-
-```bash
-Data folder not found
-```
-
-זו שגיאה טובה, כי היא אומרת לנו בדיוק מה חסר.
-
-מבנה תקין צריך להיראות כך:
-
-```bash
-lesson-08-ai-agents/
-  build_rag_db.py
-  data/
-    sample_docs.txt
-```
-
-**הטעות השנייה** היא ליצור את תיקיית data, אבל לא לשים בתוכה קבצי טקסט.
-
-במקרה כזה התיקייה קיימת, אבל אין לקוד מה לטעון.
-
-לכן הקוד בודק גם את זה:
-
-```python
-text_files = list(data_path.glob("*.txt"))
-
-if not text_files:
-    raise FileNotFoundError(
-        f"No .txt files found in: {data_path}"
-    )
-```
-
-הבדיקה הזאת חשובה כי אחרת היינו עלולים לבנות Vector Store ריק, ואז בהמשך הצ’אטבוט לא היה מוצא שום context רלוונטי.
-
-**הטעות השלישית** היא להריץ את הצ’אטבוט לפני שבונים את המאגר.
-
-הסדר הנכון הוא:
-
-```bash
-python build_rag_db.py
-python rag_chatbot.py
-```
-
-אם מריצים קודם את rag_chatbot.py, הוא ינסה לטעון את chroma_db, אבל התיקייה עדיין לא קיימת.
-
-לכן הפונקציה load_vectorstore() בודקת את זה:
-
-```python
-if not CHROMA_PERSIST_DIR.exists():
-    raise FileNotFoundError(
-        f"Vector store not found at {CHROMA_PERSIST_DIR}. "
-        "Run build_rag_db.py first."
-    )
-```
-
-זו הודעת שגיאה חשובה מאוד. היא מסבירה למשתמש לא רק מה הבעיה, אלא גם מה צריך לעשות כדי לפתור אותה.
-
-**הטעות הרביעית** היא להשתמש במודל embeddings אחד בזמן הבנייה, ובמודל אחר בזמן החיפוש.
-
-כאשר בונים את המאגר, כל chunk הופך ל-embedding. כאשר המשתמש שואל שאלה, גם השאלה הופכת ל-embedding. כדי שהחיפוש יעבוד בצורה עקבית, צריך להשתמש באותו מודל embeddings בשני השלבים.
-
-לכן הגדרנו את שם המודל כקבוע:
-
-```python
-EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
-```
-
-והשתמשנו בו דרך פונקציה אחת:
-
-```python
-def get_embeddings() -> HuggingFaceEmbeddings:
-```
-
-כך גם הבנייה וגם הטעינה משתמשות באותה פונקציה.
-
-**הטעות החמישית** היא לבחור chunks גדולים מדי או קטנים מדי בלי לבדוק.
-
-בפרויקט שלנו התחלנו עם:
-
-```python
-chunk_size=400
-chunk_overlap=80
-```
-
-אלה ערכים טובים להדגמה, אבל הם לא תמיד יהיו מושלמים לכל פרויקט.
-
-אם ה-chunks גדולים מדי, כל chunk עלול להכיל כמה נושאים שונים, ואז החיפוש יחזיר context עמוס ולא ממוקד.
-
-אם ה-chunks קטנים מדי, כל chunk עלול לאבד הקשר, ואז המודל יקבל משפטים מנותקים שקשה להבין מהם תשובה מלאה.
-
-לכן chunking הוא לא רק פעולה טכנית. זו החלטה שמשפיעה ישירות על איכות ה-RAG.
-
-**הטעות השישית** היא לחשוב ש-Vector Store הוא LLM.
-
-ChromaDB לא מנסח תשובות. הוא לא “מבין” כמו מודל שפה, ולא מחליף את ה-LLM.
-
-התפקיד שלו הוא אחר:
-
-- לקבל שאלה
-
-- לחפש chunks דומים במשמעות
-
-- להחזיר את הקטעים הרלוונטיים ביותר
-
-את התשובה הסופית ינסח ה-LLM בחלק הבא, אחרי שנעביר לו את ה-context שנשלף.
-
-**הטעות השביעית** היא לשנות את המסמכים אבל לא לבנות מחדש את המאגר.
-
-אם מוסיפים קובץ חדש לתיקיית data, או משנים את sample_docs.txt, המאגר הקיים ב-chroma_db לא בהכרח יתעדכן לבד.
-
-בפרויקט פשוט כזה, הדרך הברורה היא לבנות מחדש:
-
-```bash
-python build_rag_db.py
-```
-
-במערכת אמיתית אפשר לבנות מנגנון עדכון חכם יותר, אבל בשיעור הזה נשמור על דרך פשוטה וברורה: כאשר משנים את המסמכים, בונים מחדש את בסיס ה-RAG.
-
-בסוף הפרק הזה צריך לזכור את העיקרון המרכזי:
-
-איכות הצ’אטבוט מתחילה באיכות בסיס ה-RAG.
-
-אם המסמכים לא טובים, ה-chunks לא טובים, או ה-embeddings לא עקביים, גם מודל חזק לא תמיד יצליח לתת תשובה טובה.
-
-לכן לפני שעוברים ל-rag_chatbot.py, חשוב לוודא שהשלב הזה עובד היטב: המסמכים נטענים, ה-chunks נוצרים, וה-Vector Store נשמר בהצלחה לתיקיית chroma_db.
