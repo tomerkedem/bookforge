@@ -123,6 +123,9 @@ export interface InteractiveEarthHandle {
    *   - frontFacing: true when the point is on the camera-facing
    *     hemisphere (worldPoint.z > 0). Hosts use this to hide a
    *     surface marker when the region has rotated to the back.
+   *   - depth: the point's world z on the unit sphere (1 = facing
+   *     the camera dead-on, 0 = on the limb). Beams use a stricter
+   *     threshold than frontFacing so they never end on the horizon.
    * Returns null when the canvas has been disposed.
    *
    * Math note: the local-point construction uses the same UV→3D
@@ -132,7 +135,20 @@ export interface InteractiveEarthHandle {
    * is exactly the surface location the Blue Marble texture renders,
    * with no calibration drift between the texture and the marker.
    */
-  projectLatLng(lat: number, lng: number): { x: number; y: number; frontFacing: boolean } | null;
+  projectLatLng(lat: number, lng: number): { x: number; y: number; frontFacing: boolean; depth: number } | null;
+  /**
+   * Run `cb` once the Earth is revealed (texture decoded, or the
+   * neutral placeholder after a load failure) — immediately if it
+   * already is. Until then the canvas is fully transparent, so the
+   * host can show a stand-in image behind it.
+   */
+  onReveal(cb: () => void): void;
+  /**
+   * Suspend (true) or resume (false) the idle drift only — rendering,
+   * focus animations and drag continue. The host holds the view while
+   * language beams are shown so their points stay on the visible side.
+   */
+  holdIdle(hold: boolean): void;
   /** Pause/resume idle rotation + rAF loop. Does NOT dispose. */
   setIdleRotation(enabled: boolean): void;
   /**
@@ -186,6 +202,16 @@ export function createInteractiveEarth(
   // shows through — no fake continents, no half-rendered sphere.
   earth.visible = false;
   atmosphere.visible = false;
+  let revealed = false;
+  let revealCallbacks: Array<() => void> = [];
+  const reveal = () => {
+    earth.visible = true;
+    atmosphere.visible = true;
+    revealed = true;
+    const callbacks = revealCallbacks;
+    revealCallbacks = [];
+    callbacks.forEach((cb) => cb());
+  };
 
   // Dev-only console tuning aid for the ocean-lift strength. Run
   // `__earthOceanLift(0.4)` (any value, 0 = off) and the next frame
@@ -222,8 +248,7 @@ export function createInteractiveEarth(
       // Texture is bound by the core. Reveal the meshes — the next
       // rAF frame paints the real NASA Earth with the atmospheric
       // rim. No fake continents were ever rendered.
-      earth.visible = true;
-      atmosphere.visible = true;
+      reveal();
       console.info('[interactive-earth-3d] Earth day texture loaded', {
         url: DAY_TEXTURE_URL,
         width: tex.image?.width,
@@ -236,8 +261,7 @@ export function createInteractiveEarth(
       // material. The user sees a restrained dark sphere with the
       // atmospheric rim instead of empty space; we log loudly so
       // the failure is visible in the console.
-      earth.visible = true;
-      atmosphere.visible = true;
+      reveal();
       console.error(
         `[interactive-earth-3d] Failed to load Earth day texture at ${DAY_TEXTURE_URL}; revealing neutral dark placeholder.`,
         { source: 'neutral-dark-placeholder', error: err },
@@ -313,6 +337,7 @@ export function createInteractiveEarth(
 
   // ── Animation loop ──────────────────────────────────────────────
   let idleEnabled = true;
+  let idleHeld = false;
   let rafId: number | null = null;
   let lastTime = 0;
 
@@ -338,7 +363,7 @@ export function createInteractiveEarth(
       if (t >= 1) {
         focusAnim = null;
       }
-    } else if (!dragging && idleSpeed > 0) {
+    } else if (!dragging && idleSpeed > 0 && !idleHeld) {
       earth.rotation.y += idleSpeed * dt;
     }
 
@@ -439,7 +464,7 @@ export function createInteractiveEarth(
     projectLatLng(
       lat: number,
       lng: number,
-    ): { x: number; y: number; frontFacing: boolean } | null {
+    ): { x: number; y: number; frontFacing: boolean; depth: number } | null {
       if (core.isDisposed()) return null;
       // Same UV→3D formula THREE.SphereGeometry uses internally, so
       // the point we project is exactly the surface location where
@@ -476,7 +501,14 @@ export function createInteractiveEarth(
       const rect = container.getBoundingClientRect();
       const cssX = (ndc.x * 0.5 + 0.5) * rect.width;
       const cssY = (-ndc.y * 0.5 + 0.5) * rect.height;
-      return { x: cssX, y: cssY, frontFacing };
+      return { x: cssX, y: cssY, frontFacing, depth: worldPoint.z };
+    },
+    onReveal(cb: () => void): void {
+      if (revealed) cb();
+      else revealCallbacks.push(cb);
+    },
+    holdIdle(hold: boolean): void {
+      idleHeld = hold;
     },
     setIdleRotation(enabled: boolean): void {
       idleEnabled = enabled;

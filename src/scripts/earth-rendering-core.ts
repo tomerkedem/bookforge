@@ -97,6 +97,12 @@ export function rotationYForLng(lng: number): number {
   return (LNG_TO_ROTATION_Y_OFFSET_DEG - lng) * DEG;
 }
 
+/** Wrap an angle delta into (-π, π] so eased rotations always take
+ *  the shortest way around the globe. */
+export function wrapAngle(a: number): number {
+  return a - 2 * Math.PI * Math.round(a / (2 * Math.PI));
+}
+
 // ── Atmosphere shader (single source of truth) ─────────────────────
 //
 // Back-side sphere at radius 1.06, additive blend, no post-processing.
@@ -240,8 +246,12 @@ export interface EarthSceneOptions {
    *  is applied to the final composited frame; it preserves the
    *  per-light intensity ratios so the dark/light contrast and
    *  terminator character are unchanged in ratio space — they just
-   *  sit slightly higher in absolute brightness. Hard ceiling at
-   *  1.18 — values above leak into filmic / cartoonish territory. */
+   *  sit slightly higher in absolute brightness. Keep the overlay
+   *  at or below 1.18 — values above leak into filmic / cartoonish
+   *  territory at large size. The ~34 px header miniature is the
+   *  one exception: tuned at its real size in both themes, it needs
+   *  a much stronger lift to read as land and sea at all (see
+   *  header-earth-3d.ts). */
   toneMappingExposure?: number;
   /** AmbientLight intensity — default 0.55, the canonical overlay
    *  "warm earthshine fill" value. Miniature callers may pass
@@ -255,8 +265,10 @@ export interface EarthSceneOptions {
    *  without altering the sun direction, the terminator position,
    *  or the day/night ratio character. The ratio change is small:
    *  at ambient 0.55 the dark/light ratio is ~3.0; at ambient 0.65
-   *  it's ~2.7 — still clearly cinematic, not flat. Hard ceiling
-   *  at 0.75 — beyond that the terminator starts to wash out. */
+   *  it's ~2.7 — still clearly cinematic, not flat. For the overlay,
+   *  stay at or below 0.75 — beyond that the terminator starts to
+   *  wash out at large size. The header miniature goes higher on
+   *  purpose; at ~34 px the terminator is only a few pixels wide. */
   ambientIntensity?: number;
   /** Selective sea-lightening, 0 = off (default). The NASA Blue
    *  Marble's deep oceans render as a heavy dark mass — most
@@ -314,7 +326,7 @@ export interface EarthSceneHandle {
   /** Start the async WebP load. Idempotent calls are not guarded —
    *  call once per scene. */
   loadDayTexture(callbacks?: DayTextureCallbacks): void;
-  /** Re-read the container's bounding rect, resize the renderer's
+  /** Re-read the container's layout size, resize the renderer's
    *  drawing buffer, update camera aspect/projection. Does NOT
    *  render — the wrapper decides when to paint. */
   sizeFromContainer(): void;
@@ -545,9 +557,15 @@ export function createEarthScene(
   let textureSource: 'real-webp' | 'pending' = 'pending';
 
   function sizeFromContainer(): void {
-    const rect = container.getBoundingClientRect();
-    const w = Math.max(1, Math.round(rect.width));
-    const h = Math.max(1, Math.round(rect.height));
+    // Layout size, NOT getBoundingClientRect: the launch/return
+    // flights scale the stage with a CSS transform. A transformed
+    // rect measured mid-flight (ResizeObserver, refit) would shrink
+    // the drawing buffer to the in-flight size and the planet would
+    // then be GPU-upscaled — blurry at full size. clientWidth /
+    // clientHeight ignore transforms, so the buffer always matches
+    // the final on-screen size and the scaled canvas stays sharp.
+    const w = Math.max(1, container.clientWidth);
+    const h = Math.max(1, container.clientHeight);
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     camera.updateProjectionMatrix();

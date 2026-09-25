@@ -161,6 +161,15 @@ const overlayListLabel = t('language.availableList', activeLanguage);
  * English and Spanish reuse a single point for both purposes — the
  * North America center and central Spain already land on land at
  * the projection scale.
+ *
+ * The optional `beams` list holds the points the light beams reach
+ * from a hovered / focused / selected language option. They are a
+ * visual sample only — not a ranking and not a claim that a language
+ * belongs to a country. When omitted, the beam targets the hotspot
+ * (or the camera focus). On focus / selection the globe turns to the
+ * orientation that shows as many of these points as possible at once
+ * (see aimPointFor in the script); beams are drawn only to points
+ * that are actually on the visible side.
  */
 const LANGUAGE_FOCUS: Record<
   string,
@@ -169,6 +178,7 @@ const LANGUAGE_FOCUS: Record<
     lng: number;
     label: string;
     hotspot?: { lat: number; lng: number; label: string };
+    beams?: { lat: number; lng: number }[];
   }
 > = {
   he: {
@@ -192,8 +202,26 @@ const LANGUAGE_FOCUS: Record<
     //                   asked for.
     hotspot: { lat: 31.5, lng: 34.8, label: 'Israel' },
   },
-  en: { lat: 39.8, lng: -98.6, label: 'North America / United States' },
-  es: { lat: 40.4, lng: -3.7, label: 'Spain / Iberian Peninsula' },
+  en: {
+    lat: 39.8,
+    lng: -98.6,
+    label: 'North America / United States',
+    beams: [
+      { lat: 39.8, lng: -98.6 },
+      { lat: 52.5, lng: -1.5 },
+      { lat: 9, lng: 8 },
+    ],
+  },
+  es: {
+    lat: 40.4,
+    lng: -3.7,
+    label: 'Spain / Iberian Peninsula',
+    beams: [
+      { lat: 40.4, lng: -3.7 },
+      { lat: 23, lng: -102 },
+      { lat: -34, lng: -64 },
+    ],
+  },
 };
 
 const focusByCode = JSON.stringify(
@@ -373,9 +401,13 @@ const activeFocusJson = JSON.stringify(LANGUAGE_FOCUS[activeLanguage] ?? null);
         data-lgs-beam=""
         preserveAspectRatio="none"
       >
+        {/* One beam per visible point of the language (LANGUAGE_FOCUS
+            `beams`). The gradient below is the TEMPLATE: the host
+            clones it, the path and the impact dot per point on first
+            use, so every beam gets its own gradient axis. */}
         <defs>
           <linearGradient
-            id="lgs-beam-gradient"
+            class="lgs-beam-gradient"
             gradientUnits="userSpaceOnUse"
           >
             {/* Source end (near the language button) — bright warm
@@ -392,7 +424,6 @@ const activeFocusJson = JSON.stringify(LANGUAGE_FOCUS[activeLanguage] ?? null);
             <stop offset="100%" stop-color="rgba(232, 197, 71, 0)"></stop>
           </linearGradient>
         </defs>
-        <path class="lgs-beam-path" fill="url(#lgs-beam-gradient)"></path>
       </svg>
     </div>
   </div>
@@ -437,6 +468,10 @@ const activeFocusJson = JSON.stringify(LANGUAGE_FOCUS[activeLanguage] ?? null);
        intentional handoff cue and is unchanged. */
     background: transparent;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.22);
+    /* Mouse / pen drag turns the small globe (header-earth-3d). Pen
+       would otherwise start a pan and cancel the drag. Touch never
+       drags — a tap still opens the selector. */
+    touch-action: none;
     transition:
       transform 220ms var(--ease-emphasized, cubic-bezier(0.2, 0.7, 0.2, 1)),
       box-shadow 220ms var(--ease-emphasized, cubic-bezier(0.2, 0.7, 0.2, 1));
@@ -546,14 +581,6 @@ const activeFocusJson = JSON.stringify(LANGUAGE_FOCUS[activeLanguage] ?? null);
        the brief mount/load window. A flat dark disc is the
        graceful invisible state. */
     background-color: #0a0a0a;
-    /* Parallax CSS custom properties retained as a JS handshake:
-       the trigger's pointermove handler still writes --lgs-px /
-       --lgs-py for compatibility with any future consumer, but
-       the visual parallax is now driven entirely by the Three.js
-       handle's setParallax(camera rotation). No CSS rule reads
-       these vars anymore. */
-    --lgs-px: 0px;
-    --lgs-py: 0px;
     /* Opacity transition kept for launch/return choreography
        (`.is-launched-out .lgs-globe` fades the small globe out
        while the cinematic overlay is open). All bg-position /
@@ -1395,6 +1422,13 @@ const activeFocusJson = JSON.stringify(LANGUAGE_FOCUS[activeLanguage] ?? null);
     /* Keeps the rAF/render contained so the rest of the page can
        paint independently. */
     contain: layout paint;
+    /* Launch stand-in: a snapshot of the small header globe is set
+       as background-image while the large globe's texture decodes
+       (first open), so the planet that leaves the header is the
+       small one, not an empty frame. 91.6 % = MINI_SPHERE_SCALE, the
+       size of the small globe's sphere relative to the large one
+       at the same frame size. Cleared on reveal. */
+    background: center / 91.6% no-repeat;
   }
 
   .lgs-overlay-earth canvas {
@@ -1566,6 +1600,27 @@ const activeFocusJson = JSON.stringify(LANGUAGE_FOCUS[activeLanguage] ?? null);
        geometry to maintain. */
     transform-origin: center;
   }
+  /* Impact point of each beam. The primary region also has the HTML
+     hotspot on top; the dot marks the additional points. The dots
+     are created at runtime, so they carry no Astro scope attribute —
+     hence :global under the scoped SVG. */
+  .lgs-beam-svg :global(.lgs-beam-dot) {
+    fill: #fff5c8;
+    filter: drop-shadow(0 0 3px rgba(232, 197, 71, 0.8));
+  }
+  /* Selection flash — a single brightness pulse on every beam while
+     the selection ceremony runs, in step with the pill and hotspot
+     pulses (640 ms). */
+  .lgs-beam-svg.is-flash {
+    animation: lgs-beam-flash 640ms cubic-bezier(0.4, 0, 0.6, 1);
+  }
+  @keyframes lgs-beam-flash {
+    0%, 100% { filter: none; }
+    40% {
+      filter: brightness(1.6) drop-shadow(0 0 4px rgba(255, 236, 170, 0.9))
+        drop-shadow(0 0 12px rgba(232, 197, 71, 0.6));
+    }
+  }
 
   @keyframes lgs-hotspot-pulse {
     0%, 100% {
@@ -1696,16 +1751,16 @@ const activeFocusJson = JSON.stringify(LANGUAGE_FOCUS[activeLanguage] ?? null);
        "selected state" cue), they just don't animate. */
     .lgs-overlay-option.is-active.is-confirming::before,
     .lgs-overlay-option.is-active.is-confirming::after,
-    .lgs-hotspot.is-confirming.is-visible .lgs-hotspot-dot {
+    .lgs-hotspot.is-confirming.is-visible .lgs-hotspot-dot,
+    .lgs-beam-svg.is-flash {
       animation: none !important;
     }
     .lgs-overlay-confirm-label {
       transition: none !important;
     }
-    /* Reduced-motion: snap the language change instead of panning,
-       and ignore pointer-hover parallax (the JS handler also
-       short-circuits under this media query — belt + braces).
-       Opacity transition is preserved so the launched-out
+    /* Reduced-motion: the small globe snaps to a new language region
+       (and back after a drag) instead of easing — header-earth-3d
+       handles that in JS. Opacity transition is preserved so the launched-out
        cross-fade with the cinematic Earth still works. */
     .lgs-globe {
       transition: opacity 200ms cubic-bezier(0.2, 0.7, 0.2, 1) !important;
@@ -1863,10 +1918,15 @@ const activeFocusJson = JSON.stringify(LANGUAGE_FOCUS[activeLanguage] ?? null);
   // child element refs avoid querying the DOM every frame.
   let beamActiveButton: HTMLButtonElement | null = null;
   let beamSvg: SVGSVGElement | null = null;
-  let beamPath: SVGPathElement | null = null;
-  let beamGradient: SVGLinearGradientElement | null = null;
+  let beamPoints: FocusPoint[] = [];
   let beamHotspotEl: HTMLElement | null = null;
   let beamEarthContainer: HTMLElement | null = null;
+  // Beams end only on points well inside the visible hemisphere
+  // (world z on the unit sphere), never on the horizon where the
+  // projection squeezes and the beam would skim the limb.
+  const BEAM_MIN_DEPTH = 0.3;
+  // Per-page counter for the cloned gradient ids.
+  let beamGradientSeq = 0;
 
   function stopHotspotTracking(removeClass = true): void {
     if (hotspotRafId !== null) {
@@ -1902,174 +1962,215 @@ const activeFocusJson = JSON.stringify(LANGUAGE_FOCUS[activeLanguage] ?? null);
     hotspotTrackingCode = code;
     hotspotEl = hotspotElement;
 
-    // Already running — the closure reads hotspotTrackingFocus
-    // fresh each frame, so updating it above is enough to switch
+    // Already running — the loop reads hotspotTrackingFocus fresh
+    // each frame, so updating it above is enough to switch
     // languages without restarting the rAF.
-    if (hotspotRafId !== null) return;
-
-    const frame = () => {
-      hotspotRafId = null;
-      const focusNow = hotspotTrackingFocus;
-      const codeNow = hotspotTrackingCode;
-      const el = hotspotEl;
-      const handle = earthHandle;
-      if (!focusNow || !el || !handle) {
-        if (el) el.classList.remove('is-visible');
-        return;
-      }
-      const proj = handle.projectLatLng(focusNow.lat, focusNow.lng);
-      if (!proj) {
-        el.classList.remove('is-visible');
-        return;
-      }
-      el.style.setProperty('--lgs-hx', `${proj.x.toFixed(2)}px`);
-      el.style.setProperty('--lgs-hy', `${proj.y.toFixed(2)}px`);
-      el.classList.toggle('is-visible', proj.frontFacing);
-
-      // Beam end follows the hotspot projection. No-op if no
-      // beam is currently active. Same rAF, no second loop, so
-      // the beam never lags the hotspot by a frame.
-      updateBeamGeometry(proj.x, proj.y, proj.frontFacing);
-
-      // One-shot diagnostic: per-language. Gated behind isLgsDebug()
-      // so production builds stay quiet — set window.__lgsDebug = true
-      // in DevTools to re-enable for hotspot-projection verification.
-      if (
-        isLgsDebug() &&
-        hotspotDiagnosticLoggedFor !== codeNow &&
-        codeNow !== null
-      ) {
-        hotspotDiagnosticLoggedFor = codeNow;
-        console.info('[LanguageGlobeSelector] hotspot projection', {
-          code: codeNow,
-          lat: focusNow.lat,
-          lng: focusNow.lng,
-          label: focusNow.label,
-          projectedX: Number(proj.x.toFixed(2)),
-          projectedY: Number(proj.y.toFixed(2)),
-          visible: proj.frontFacing,
-        });
-      }
-
-      hotspotRafId = requestAnimationFrame(frame);
-    };
-    hotspotRafId = requestAnimationFrame(frame);
+    ensureProjectionLoop();
   }
 
   /**
-   * Show the linkage beam from `btn` to the active hotspot. Caches
-   * the SVG / path / gradient refs and the earth container ref so
-   * per-frame updates inside the hotspot rAF don't query the DOM.
-   * Idempotent — calling with the same button just rebinds.
+   * Start the single projection rAF if it isn't running. It serves
+   * both the hotspot and the beams and stops by itself once neither
+   * is active, so the hotspot and the beams never lag each other by
+   * a frame.
    */
-  function showBeam(btn: HTMLButtonElement, stage: HTMLElement): void {
+  function ensureProjectionLoop(): void {
+    if (hotspotRafId === null) hotspotRafId = requestAnimationFrame(projectionFrame);
+  }
+
+  function projectionFrame(): void {
+    hotspotRafId = null;
+    const handle = earthHandle;
+    const beamsOn = updateBeams(handle);
+    const focusNow = hotspotTrackingFocus;
+    const codeNow = hotspotTrackingCode;
+    const el = hotspotEl;
+    if (!focusNow || !el || !handle) {
+      if (el) el.classList.remove('is-visible');
+      if (beamsOn) hotspotRafId = requestAnimationFrame(projectionFrame);
+      return;
+    }
+    const proj = handle.projectLatLng(focusNow.lat, focusNow.lng);
+    if (!proj) {
+      el.classList.remove('is-visible');
+      return;
+    }
+    el.style.setProperty('--lgs-hx', `${proj.x.toFixed(2)}px`);
+    el.style.setProperty('--lgs-hy', `${proj.y.toFixed(2)}px`);
+    el.classList.toggle('is-visible', proj.frontFacing);
+
+    // One-shot diagnostic: per-language. Gated behind isLgsDebug()
+    // so production builds stay quiet — set window.__lgsDebug = true
+    // in DevTools to re-enable for hotspot-projection verification.
+    if (
+      isLgsDebug() &&
+      hotspotDiagnosticLoggedFor !== codeNow &&
+      codeNow !== null
+    ) {
+      hotspotDiagnosticLoggedFor = codeNow;
+      console.info('[LanguageGlobeSelector] hotspot projection', {
+        code: codeNow,
+        lat: focusNow.lat,
+        lng: focusNow.lng,
+        label: focusNow.label,
+        projectedX: Number(proj.x.toFixed(2)),
+        projectedY: Number(proj.y.toFixed(2)),
+        visible: proj.frontFacing,
+      });
+    }
+
+    hotspotRafId = requestAnimationFrame(projectionFrame);
+  }
+
+  /**
+   * Show linkage beams from `btn` to `points` (the language's beam
+   * points). Caches the SVG and earth container refs so the per-frame
+   * update inside the projection rAF doesn't query the DOM, and kicks
+   * the loop so beams appear even when no hotspot is being tracked.
+   * Idempotent — calling again with another button just rebinds.
+   */
+  function showBeam(btn: HTMLButtonElement, stage: HTMLElement, points: FocusPoint[]): void {
     const overlayEarth = stage.querySelector<HTMLElement>('.lgs-overlay-earth');
     if (!overlayEarth) return;
     const svgEl = stage.querySelector<SVGSVGElement>('.lgs-beam-svg');
-    if (!svgEl) return;
+    if (!svgEl || !points.length) return;
     beamSvg = svgEl;
-    beamPath = svgEl.querySelector<SVGPathElement>('.lgs-beam-path');
-    beamGradient = svgEl.querySelector<SVGLinearGradientElement>('#lgs-beam-gradient');
     beamHotspotEl = stage.querySelector<HTMLElement>('.lgs-hotspot');
     beamEarthContainer = overlayEarth;
     beamActiveButton = btn;
-    svgEl.classList.add('is-active');
+    beamPoints = points;
     if (beamHotspotEl) beamHotspotEl.classList.add('is-beam-active');
+    // Hold the view while beams are lit so idle drift doesn't carry
+    // the points off the visible side; drag still works.
+    earthHandle?.holdIdle(true);
+    ensureProjectionLoop();
   }
 
   /**
-   * Hide the beam and clear its state. Safe to call when no beam
+   * Hide the beams and clear their state. Safe to call when no beam
    * is active — does nothing. The next pointerenter/focus on an
    * option will re-arm.
    */
   function hideBeam(): void {
-    if (beamSvg) beamSvg.classList.remove('is-active');
+    if (beamSvg) beamSvg.classList.remove('is-active', 'is-flash');
     if (beamHotspotEl) beamHotspotEl.classList.remove('is-beam-active');
     beamActiveButton = null;
+    beamPoints = [];
+    earthHandle?.holdIdle(false);
   }
 
   /**
-   * Per-frame update of the beam geometry. Called from the hotspot
-   * rAF frame() above with the latest projection of the active
-   * focus point. No-ops when no beam is active. Hides the beam
-   * when the focus point rotates past the silhouette (frontFacing
-   * = false) so the beam never ends in empty space.
-   *
-   * Geometry: a thin wedge polygon — 5 px wide at the language
-   * button source, 1.4 px wide at the impact point — filled with
-   * a linearGradient whose endpoints match the beam direction. The
-   * gradient stops define the warm-cream → gold falloff and fade
-   * to alpha 0 at both ends so the beam dissolves cleanly into
-   * the pill at the source and into the luminous dot at the impact.
+   * Return beam slot `i` (gradient + path + impact dot), creating it
+   * on first use by cloning the markup's template gradient. Each beam
+   * needs its own gradient because the gradient axis follows the
+   * beam's direction.
    */
-  function updateBeamGeometry(projX: number, projY: number, frontFacing: boolean): void {
-    if (!beamSvg || !beamPath || !beamGradient || !beamActiveButton || !beamEarthContainer) return;
-
-    // If the focus has rotated past the silhouette, fade the beam
-    // out via the same `is-active` toggle the hover handlers use.
-    // The button-hover state isn't cleared — when the region
-    // rotates back into view, the beam returns automatically.
-    if (!frontFacing) {
-      beamSvg.classList.remove('is-active');
-      return;
+  function beamSlot(svg: SVGSVGElement, i: number): { grad: SVGLinearGradientElement; path: SVGPathElement; dot: SVGCircleElement } | null {
+    const paths = svg.querySelectorAll<SVGPathElement>('.lgs-beam-path');
+    if (paths[i]) {
+      const path = paths[i];
+      return {
+        grad: svg.querySelector<SVGLinearGradientElement>(`#${path.dataset.gradient}`)!,
+        path,
+        dot: svg.querySelectorAll<SVGCircleElement>('.lgs-beam-dot')[i],
+      };
     }
-    beamSvg.classList.add('is-active');
+    const template = svg.querySelector<SVGLinearGradientElement>('.lgs-beam-gradient');
+    if (!template) return null;
+    const ns = 'http://www.w3.org/2000/svg';
+    const grad = template.cloneNode(true) as SVGLinearGradientElement;
+    grad.removeAttribute('class');
+    grad.id = `lgs-beam-gradient-${++beamGradientSeq}`;
+    template.parentNode!.appendChild(grad);
+    const path = document.createElementNS(ns, 'path');
+    path.classList.add('lgs-beam-path');
+    path.dataset.gradient = grad.id;
+    path.setAttribute('fill', `url(#${grad.id})`);
+    const dot = document.createElementNS(ns, 'circle');
+    dot.classList.add('lgs-beam-dot');
+    dot.setAttribute('r', '2.6');
+    svg.append(path, dot);
+    return { grad, path, dot };
+  }
 
-    const svgRect = beamSvg.getBoundingClientRect();
-    const btnRect = beamActiveButton.getBoundingClientRect();
-    const earthRect = beamEarthContainer.getBoundingClientRect();
+  /**
+   * Per-frame beam update, called from the projection rAF. Returns
+   * whether beams are active (so the loop keeps running for them).
+   * Each beam point is projected through the Earth's camera; points
+   * behind or near the silhouette get no beam. If none is visible the
+   * layer fades out and returns by itself when the region rotates
+   * back into view.
+   *
+   * Geometry per beam: a thin wedge polygon — 5 px wide at the
+   * language button source, 1.4 px wide at the impact point — filled
+   * with a linearGradient whose endpoints match the beam direction.
+   * The gradient stops fade to alpha 0 at both ends so the beam
+   * dissolves into the pill at the source and into the dot at impact.
+   */
+  function updateBeams(handle: InteractiveEarthHandle | null): boolean {
+    const svg = beamSvg;
+    const btn = beamActiveButton;
+    const earthBox = beamEarthContainer;
+    if (!svg || !btn || !earthBox || !beamPoints.length) return false;
+    if (!handle) {
+      svg.classList.remove('is-active');
+      return true;
+    }
 
-    // Source: the glowing ORIGIN NODE under the hovered pill —
-    // pill's bottom-center X, pill's bottom-edge Y. The node's
-    // CSS centers it at (left: 50%, top: 100%, translate(-50%, -50%)),
-    // which puts its center exactly on this point. Using the pill's
-    // vertical center instead would float the beam start in mid-pill
-    // and leave the node looking like an unrelated decoration.
-    // getBoundingClientRect accounts for the pill's translateY
-    // (arc lift), so this stays correct as the apex pill sits higher.
+    const svgRect = svg.getBoundingClientRect();
+    const btnRect = btn.getBoundingClientRect();
+    const earthRect = earthBox.getBoundingClientRect();
+    // Source: the pill's bottom-center — where the orbit node sits.
+    // getBoundingClientRect includes the pill's arc lift.
     const sx = btnRect.left + btnRect.width / 2 - svgRect.left;
     const sy = btnRect.bottom - svgRect.top;
-
-    // Impact: projection coords are relative to the earth container;
-    // translate to SVG-local coords by adding the earth's offset
-    // within the SVG.
-    const ex = earthRect.left + projX - svgRect.left;
-    const ey = earthRect.top + projY - svgRect.top;
-
-    const dx = ex - sx;
-    const dy = ey - sy;
-    const len = Math.hypot(dx, dy);
-    if (len < 1) return;
-
-    const ux = dx / len;
-    const uy = dy / len;
-    // Perpendicular to the beam direction (counter-clockwise 90°).
-    const px = -uy;
-    const py = ux;
-
-    // Wedge half-widths: 2.5 px at the source (5 px total — easy
-    // to see, never thick enough to read as a laser bar), 0.7 px
-    // at the impact (1.4 px total — narrows to elegant point).
+    // Wedge half-widths at the source and at the impact point.
     const halfStart = 2.5;
     const halfEnd = 0.7;
 
-    const p1x = (sx + px * halfStart).toFixed(2);
-    const p1y = (sy + py * halfStart).toFixed(2);
-    const p2x = (ex + px * halfEnd).toFixed(2);
-    const p2y = (ey + py * halfEnd).toFixed(2);
-    const p3x = (ex - px * halfEnd).toFixed(2);
-    const p3y = (ey - py * halfEnd).toFixed(2);
-    const p4x = (sx - px * halfStart).toFixed(2);
-    const p4y = (sy - py * halfStart).toFixed(2);
-
-    beamPath.setAttribute(
-      'd',
-      `M${p1x} ${p1y} L${p2x} ${p2y} L${p3x} ${p3y} L${p4x} ${p4y} Z`,
-    );
-    beamGradient.setAttribute('x1', sx.toFixed(2));
-    beamGradient.setAttribute('y1', sy.toFixed(2));
-    beamGradient.setAttribute('x2', ex.toFixed(2));
-    beamGradient.setAttribute('y2', ey.toFixed(2));
+    let shown = 0;
+    beamPoints.forEach((point, i) => {
+      const slot = beamSlot(svg, i);
+      if (!slot) return;
+      const proj = handle.projectLatLng(point.lat, point.lng);
+      // Projection coords are relative to the earth container.
+      const ex = proj ? earthRect.left + proj.x - svgRect.left : 0;
+      const ey = proj ? earthRect.top + proj.y - svgRect.top : 0;
+      const len = Math.hypot(ex - sx, ey - sy);
+      if (!proj || proj.depth < BEAM_MIN_DEPTH || len < 1) {
+        slot.path.setAttribute('d', '');
+        slot.dot.setAttribute('visibility', 'hidden');
+        return;
+      }
+      shown++;
+      const ux = (ex - sx) / len;
+      const uy = (ey - sy) / len;
+      // Perpendicular to the beam direction (counter-clockwise 90°).
+      const px = -uy;
+      const py = ux;
+      const f = (n: number) => n.toFixed(2);
+      slot.path.setAttribute(
+        'd',
+        `M${f(sx + px * halfStart)} ${f(sy + py * halfStart)} L${f(ex + px * halfEnd)} ${f(ey + py * halfEnd)} ` +
+          `L${f(ex - px * halfEnd)} ${f(ey - py * halfEnd)} L${f(sx - px * halfStart)} ${f(sy - py * halfStart)} Z`,
+      );
+      slot.grad.setAttribute('x1', f(sx));
+      slot.grad.setAttribute('y1', f(sy));
+      slot.grad.setAttribute('x2', f(ex));
+      slot.grad.setAttribute('y2', f(ey));
+      slot.dot.setAttribute('cx', f(ex));
+      slot.dot.setAttribute('cy', f(ey));
+      slot.dot.removeAttribute('visibility');
+    });
+    // Slots left over from a language with more points.
+    svg.querySelectorAll<SVGPathElement>('.lgs-beam-path').forEach((path, i) => {
+      if (i >= beamPoints.length) path.setAttribute('d', '');
+    });
+    svg.querySelectorAll<SVGCircleElement>('.lgs-beam-dot').forEach((dot, i) => {
+      if (i >= beamPoints.length) dot.setAttribute('visibility', 'hidden');
+    });
+    svg.classList.toggle('is-active', shown > 0);
+    return true;
   }
 
   /**
@@ -2102,12 +2203,13 @@ const activeFocusJson = JSON.stringify(LANGUAGE_FOCUS[activeLanguage] ?? null);
       return 0;
     }
     currentFocusCode = code;
+    const aim = aimPointFor(code, focus as LanguageFocusEntry);
     if (isReducedMotion()) {
-      handle.focusLatLng(focus.lat, focus.lng);
+      handle.focusLatLng(aim.lat, aim.lng);
       startHotspotTracking(stage, code, focus);
       return 0;
     }
-    handle.animateFocusLatLng(focus.lat, focus.lng, FOCUS_HOVER_MS);
+    handle.animateFocusLatLng(aim.lat, aim.lng, FOCUS_HOVER_MS);
     startHotspotTracking(stage, code, focus);
     return FOCUS_HOVER_MS;
   }
@@ -2135,13 +2237,21 @@ const activeFocusJson = JSON.stringify(LANGUAGE_FOCUS[activeLanguage] ?? null);
    * between cleans up the previous tracked elements first.
    */
   function startSelectionCeremony(
-    btn: HTMLElement,
+    btn: HTMLButtonElement,
     focus: LanguageFocusEntry | null,
     stage: HTMLElement | null,
   ): void {
     // Defensive — clean any stragglers from a previous ceremony
     // that ended in an unusual path (e.g. cancelled mid-flight).
     endSelectionCeremony();
+
+    // Beams from the chosen pill, with one bright flash. A touch tap
+    // never hovered, so this is also where touch users see them.
+    const beamStage = btn.closest<HTMLElement>('.lgs-overlay-stage');
+    if (beamStage && focus) {
+      showBeam(btn, beamStage, beamPointsFor(focus));
+      beamSvg?.classList.add('is-flash');
+    }
 
     btn.classList.add('is-confirming');
     confirmingBtn = btn;
@@ -2187,6 +2297,7 @@ const activeFocusJson = JSON.stringify(LANGUAGE_FOCUS[activeLanguage] ?? null);
   /** End the visual ceremony. Idempotent. Always safe to call
    *  multiple times — the second call is a no-op. */
   function endSelectionCeremony(): void {
+    beamSvg?.classList.remove('is-flash');
     if (confirmingBtn) {
       confirmingBtn.classList.remove('is-confirming');
       confirmingBtn = null;
@@ -2249,6 +2360,7 @@ const activeFocusJson = JSON.stringify(LANGUAGE_FOCUS[activeLanguage] ?? null);
   // module is left unchanged — it only sees lat/lng for rotation.
   interface LanguageFocusEntry extends FocusPoint {
     hotspot?: FocusPoint;
+    beams?: FocusPoint[];
   }
   type LanguageFocusMap = Record<string, LanguageFocusEntry | null>;
 
@@ -2260,6 +2372,71 @@ const activeFocusJson = JSON.stringify(LANGUAGE_FOCUS[activeLanguage] ?? null);
    */
   function hotspotPointFor(entry: LanguageFocusEntry): FocusPoint {
     return entry.hotspot ?? entry;
+  }
+
+  /** The points the light beams reach for a language. */
+  function beamPointsFor(entry: LanguageFocusEntry): FocusPoint[] {
+    return entry.beams?.length ? entry.beams : [hotspotPointFor(entry)];
+  }
+
+  /**
+   * Where focus / selection rotations aim — the course project's rule
+   * ("turn toward the language's points so they are visible together"),
+   * made to keep a useful, land-facing view:
+   *
+   *   1. Show as many of the language's beam points at once as the
+   *      sphere allows (a point counts when it is at least
+   *      AIM_MIN_DEPTH toward the camera — a margin over the beam
+   *      cutoff so no beam ends on the horizon).
+   *   2. Among orientations showing that many, keep every shown point
+   *      comfortably inside the limb (the strictest depth in
+   *      AIM_DEPTH_TIERS that still allows it).
+   *   3. Then take the one closest to the language's camera focus —
+   *      the composed, land-facing view the small globe shows —
+   *      rather than the plain mean direction, which for widely spread
+   *      points centers open ocean.
+   *
+   * Tilt is limited to ±AIM_MAX_LAT (as the course clamps its aim) so
+   * the globe never swings toward a pole. One point: the camera focus
+   * itself. Results are cached per language.
+   */
+  const AIM_DEPTH_TIERS = [0.5, 0.45, 0.4, 0.35];
+  const AIM_MIN_DEPTH = 0.35;
+  const AIM_MAX_LAT = 50;
+  const aimCache = new Map<string, FocusPoint>();
+
+  function aimPointFor(code: string, entry: LanguageFocusEntry): FocusPoint {
+    const points = entry.beams;
+    if (!points || points.length < 2) return entry;
+    const cached = aimCache.get(code);
+    if (cached) return cached;
+
+    const RAD = Math.PI / 180;
+    const unit = (p: FocusPoint) => {
+      const c = Math.cos(p.lat * RAD);
+      return [c * Math.cos(p.lng * RAD), c * Math.sin(p.lng * RAD), Math.sin(p.lat * RAD)];
+    };
+    const targets = points.map(unit);
+    const home = unit(entry);
+    const candidates: { point: FocusPoint; depths: number[]; nearHome: number }[] = [];
+    for (let lat = -AIM_MAX_LAT; lat <= AIM_MAX_LAT; lat++) {
+      for (let lng = -180; lng < 180; lng++) {
+        const c = unit({ lat, lng });
+        const dot = (t: number[]) => c[0] * t[0] + c[1] * t[1] + c[2] * t[2];
+        candidates.push({ point: { lat, lng }, depths: targets.map(dot), nearHome: dot(home) });
+      }
+    }
+    const shown = (depths: number[], min: number) => depths.filter((d) => d >= min).length;
+    const most = Math.max(...candidates.map((c) => shown(c.depths, AIM_MIN_DEPTH)));
+    let aim: FocusPoint = entry;
+    for (const tier of AIM_DEPTH_TIERS) {
+      const ok = candidates.filter((c) => shown(c.depths, tier) >= most);
+      if (!ok.length) continue;
+      aim = ok.reduce((a, b) => (b.nearHome > a.nearHome ? b : a)).point;
+      break;
+    }
+    aimCache.set(code, aim);
+    return aim;
   }
 
   // Step-1 choreography phase durations.
@@ -2578,23 +2755,41 @@ const activeFocusJson = JSON.stringify(LANGUAGE_FOCUS[activeLanguage] ?? null);
   }
 
   /**
-   * Compute the FLIP transform that places the stage element so it
-   * visually aligns with the trigger element (same center, same
-   * width). Returns the inverted transform — when applied to the
-   * stage, the stage appears at the trigger's position and size; an
-   * animation back to identity then "flies" it to its natural place.
+   * The small header globe renders its sphere from camera distance
+   * 3.55, the large one from 3.85 (earth-rendering-core). At the same
+   * frame size the large sphere is therefore smaller by
+   * sqrt(3.55² - 1) / sqrt(3.85² - 1) ≈ 0.916. The flights scale the
+   * stage so the two SPHERES coincide, not the two boxes — the large
+   * globe leaves from, and lands on, exactly the small one.
+   */
+  const MINI_SPHERE_SCALE = 0.916;
+
+  /**
+   * FLIP geometry between the stage's natural (untransformed) rect
+   * and the small header globe: the offset between their centers and
+   * the scale at which the large sphere matches the small one. Null
+   * when the stage isn't laid out yet.
+   */
+  function flightGeometry(stage: HTMLElement, trigger: HTMLElement): { dx: number; dy: number; scale: number } | null {
+    const tr = (trigger.querySelector<HTMLElement>('.lgs-globe') ?? trigger).getBoundingClientRect();
+    const sr = stage.getBoundingClientRect();
+    if (sr.width === 0 || sr.height === 0) return null;
+    return {
+      dx: (tr.left + tr.width / 2) - (sr.left + sr.width / 2),
+      dy: (tr.top + tr.height / 2) - (sr.top + sr.height / 2),
+      scale: tr.width / (sr.width * MINI_SPHERE_SCALE),
+    };
+  }
+
+  /**
+   * The inverted FLIP transform: applied to the stage, the large
+   * globe sits exactly on the small header globe; an animation back
+   * to identity then "flies" it to its natural place.
    */
   function flipTransformFromTrigger(stage: HTMLElement, trigger: HTMLElement): string {
-    const tr = trigger.getBoundingClientRect();
-    const sr = stage.getBoundingClientRect();
-    if (sr.width === 0 || sr.height === 0) {
-      // Element not laid out yet — no useful transform we can compute.
-      return 'none';
-    }
-    const dx = (tr.left + tr.width / 2) - (sr.left + sr.width / 2);
-    const dy = (tr.top + tr.height / 2) - (sr.top + sr.height / 2);
-    const scale = tr.width / sr.width;
-    return `translate(${dx.toFixed(2)}px, ${dy.toFixed(2)}px) scale(${scale.toFixed(4)})`;
+    const g = flightGeometry(stage, trigger);
+    if (!g) return 'none';
+    return `translate(${g.dx.toFixed(2)}px, ${g.dy.toFixed(2)}px) scale(${g.scale.toFixed(4)})`;
   }
 
   /**
@@ -2630,11 +2825,7 @@ const activeFocusJson = JSON.stringify(LANGUAGE_FOCUS[activeLanguage] ?? null);
     // (position progress vs scale progress at each time point) is
     // expressed explicitly rather than inferred from a single easing
     // curve — the launch wants slow scale early, faster late.
-    const tr = trigger.getBoundingClientRect();
-    const sr = stage.getBoundingClientRect();
-    const dx = (tr.left + tr.width / 2) - (sr.left + sr.width / 2);
-    const dy = (tr.top + tr.height / 2) - (sr.top + sr.height / 2);
-    const scale = tr.width / sr.width;
+    const { dx, dy, scale } = flightGeometry(stage, trigger)!;
     // Arc bow on the path — applied only at the mid keyframe so the
     // travel reads as a soft rise (planet ascends ABOVE the straight
     // line at midway, then descends into center). Bounded to [-44,
@@ -2770,11 +2961,7 @@ const activeFocusJson = JSON.stringify(LANGUAGE_FOCUS[activeLanguage] ?? null);
     // the final landing at the trigger. The same arcLift math as
     // runLaunchFlight is used so the launch and return read as
     // mirrored cinematic arcs rather than two unrelated motions.
-    const tr = trigger.getBoundingClientRect();
-    const sr = stage.getBoundingClientRect();
-    const dx = (tr.left + tr.width / 2) - (sr.left + sr.width / 2);
-    const dy = (tr.top + tr.height / 2) - (sr.top + sr.height / 2);
-    const scale = tr.width / sr.width;
+    const { dx, dy, scale } = flightGeometry(stage, trigger)!;
     const midDx = dx * 0.5;
     const midDy = dy * 0.5;
     const midScale = scale + (1 - scale) * 0.55;
@@ -2860,7 +3047,7 @@ const activeFocusJson = JSON.stringify(LANGUAGE_FOCUS[activeLanguage] ?? null);
     stage.style.opacity = '';
   }
 
-  async function openOverlay(_root: HTMLElement, overlay: HTMLElement, trigger: HTMLButtonElement): Promise<void> {
+  async function openOverlay(root: HTMLElement, overlay: HTMLElement, trigger: HTMLButtonElement): Promise<void> {
     // Guard: ignore re-opens while launching/open/returning.
     if (state !== 'closed') return;
     state = 'launching';
@@ -2937,9 +3124,25 @@ const activeFocusJson = JSON.stringify(LANGUAGE_FOCUS[activeLanguage] ?? null);
     let handle: InteractiveEarthHandle | null = null;
     if (stage) {
       const focusMap = readFocusMap(overlay);
-      const initialLang = overlay.dataset.initialLanguage || '';
+      // root.dataset.current follows client-side language switches
+      // (syncToLang); the SSR initial language would open the large
+      // globe on the previous region after a chapter-page switch.
+      const initialLang = root.dataset.current || overlay.dataset.initialLanguage || '';
       const initialFocus = focusMap[initialLang] ?? null;
       handle = await ensureEarth(stage, initialFocus);
+      if (handle && !reducedMotion) {
+        // Until the large globe's texture has decoded (first open),
+        // its canvas is transparent. Stand in with a snapshot of the
+        // small globe so the planet leaving the header is the one the
+        // user just clicked; the real Earth replaces it on reveal.
+        let revealed = false;
+        handle.onReveal(() => {
+          revealed = true;
+          stage.style.backgroundImage = '';
+        });
+        const shot = revealed ? null : headerEarthHandles.get(trigger)?.snapshot();
+        if (shot) stage.style.backgroundImage = `url(${shot})`;
+      }
       if (handle) {
         // Re-apply per-language focus on EVERY open, not just the
         // first construction. The cached handle keeps its previous
@@ -2953,13 +3156,14 @@ const activeFocusJson = JSON.stringify(LANGUAGE_FOCUS[activeLanguage] ?? null);
         // launch flight lands.
         if (initialFocus && initialLang) {
           handle.focusLatLng(initialFocus.lat, initialFocus.lng);
-          // Step 2 — remember which language the globe currently
-          // shows so hover/focus rotations can no-op when the user
-          // hovers the active option. Start the projection tracker
-          // so the hotspot lands on the real geographic point
-          // (Israel for he, central US for en, central Spain for es)
-          // and follows idle rotation / drag automatically.
-          currentFocusCode = initialLang;
+          // Step 2 — start the projection tracker so the hotspot
+          // lands on the real geographic point (Israel for he,
+          // central US for en, central Spain for es) and follows
+          // idle rotation / drag automatically. The globe opens on
+          // the small globe's view (the camera focus); currentFocusCode
+          // stays unset so focusing the active option right after
+          // turns it to show that language's points (aimPointFor).
+          currentFocusCode = null;
           startHotspotTracking(stage, initialLang, initialFocus);
         }
         handle.setIdleRotation(true);
@@ -3120,6 +3324,7 @@ const activeFocusJson = JSON.stringify(LANGUAGE_FOCUS[activeLanguage] ?? null);
     //    artifact and the "large Earth lingers" bug in one stroke.
     if (stage) {
       stage.style.visibility = 'hidden';
+      stage.style.backgroundImage = '';
       // Belt-and-braces: also clear the preflight class. The current
       // close path is most often reached AFTER a successful flight
       // (runLaunchFlight removed it already) — but if a close
@@ -3205,8 +3410,21 @@ const activeFocusJson = JSON.stringify(LANGUAGE_FOCUS[activeLanguage] ?? null);
     const stage = overlay.querySelector<HTMLElement>('.lgs-overlay-earth');
     const row = overlay.querySelector<HTMLElement>('.lgs-overlay-row');
 
-    // 1. Fade language row out first.
+    // 1. Fade language row out first, and the beams with it — they
+    //    start at the pills, so they must not outlive the row.
     if (row) row.classList.remove('is-revealed');
+    hideBeam();
+
+    // Turn the large globe back to the region the small globe will
+    // show — the newly chosen language if one is pending, else the
+    // current one — so the planet that lands in the header matches
+    // it. Timed to settle just before the return flight ends.
+    const root = overlay.previousElementSibling as HTMLElement | null;
+    const homeLang = pendingLanguageChange ?? root?.dataset.current ?? overlay.dataset.initialLanguage ?? '';
+    const homeFocus = readFocusMap(overlay)[homeLang];
+    if (earthHandle && homeFocus && !isReducedMotion()) {
+      earthHandle.animateFocusLatLng(homeFocus.lat, homeFocus.lng, ROW_FADEOUT_MS + RETURN_DURATION_MS - 120);
+    }
 
     if (stage) {
       if (isReducedMotion()) {
@@ -3566,7 +3784,10 @@ const activeFocusJson = JSON.stringify(LANGUAGE_FOCUS[activeLanguage] ?? null);
         void import('../../scripts/header-earth-3d')
           .then(({ createHeaderEarth }) => {
             if (!document.body.contains(trigger)) return; // teardown raced us
-            const handle = createHeaderEarth(headerGlobeEl, focusPoint);
+            const handle = createHeaderEarth(headerGlobeEl, focusPoint, {
+              interactionTarget: trigger,
+              reducedMotion: isReducedMotion(),
+            });
             headerEarthHandles.set(trigger, handle);
             headerGlobeEl.classList.add('has-canvas');
           })
@@ -3575,69 +3796,11 @@ const activeFocusJson = JSON.stringify(LANGUAGE_FOCUS[activeLanguage] ?? null);
           });
       }
 
-      // ── Pointer-hover parallax ─────────────────────────────────
-      // Gentle "globe tilts toward the cursor" effect, mouse-only.
-      // The .lgs-globe CSS uses calc(--lgs-base-* + --lgs-p*) for
-      // its background-position; this handler writes --lgs-px and
-      // --lgs-py within ±12 / ±8 px based on where the cursor sits
-      // inside the 46 px trigger. Coefficients are negative so the
-      // visible region of the globe shifts toward the cursor (the
-      // surface near the cursor "comes forward"), matching the
-      // 3D card-tilt parallax convention.
-      //
-      // Skipped under prefers-reduced-motion. Skipped for non-mouse
-      // pointer types (touch, pen) — those don't have a meaningful
-      // "hover before commit" phase and triggering parallax on a
-      // tap would shift the globe right when the user is about to
-      // click. Keyboard focus keeps the language default at all
-      // times. Reset to 0 on pointerleave / pointercancel / blur so
-      // the globe always returns to its language-default region.
-      const globe = trigger.querySelector<HTMLElement>('.lgs-globe');
-      const reducedMotion =
-        typeof window.matchMedia === 'function' &&
-        window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      if (globe && !reducedMotion) {
-        const PARALLAX_X = 12; // px
-        const PARALLAX_Y = 8;  // px (smaller — latitude shift is more visually sensitive)
+      // Mouse / pen drag on the small globe is handled inside
+      // header-earth-3d (interactionTarget above): drag to look
+      // around, leave to return to the language region.
 
-        trigger.addEventListener('pointermove', (e: PointerEvent) => {
-          if (e.pointerType !== 'mouse') return;
-          const rect = trigger.getBoundingClientRect();
-          if (rect.width === 0 || rect.height === 0) return;
-          // Normalize to -1..+1 across the trigger box.
-          const nx = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-          const ny = ((e.clientY - rect.top) / rect.height) * 2 - 1;
-          // Clamp in case a fast pointer move lands the event
-          // slightly outside the rect.
-          const cx = Math.max(-1, Math.min(1, nx));
-          const cy = Math.max(-1, Math.min(1, ny));
-          // Negative coefficient = visible region shifts toward
-          // the cursor (the side near the cursor rotates forward).
-          const px = -cx * PARALLAX_X;
-          const py = -cy * PARALLAX_Y;
-          // Write the CSS vars as a JS handshake — no CSS rule
-          // consumes them today, but keeping the write keeps the
-          // contract stable for any future consumer / debug
-          // overlay. The Three.js handle does the actual visual
-          // parallax via camera rotation.
-          globe.style.setProperty('--lgs-px', `${px.toFixed(1)}px`);
-          globe.style.setProperty('--lgs-py', `${py.toFixed(1)}px`);
-          const handle = headerEarthHandles.get(trigger);
-          if (handle) handle.setParallax(px, py);
-        });
-
-        const resetParallax = () => {
-          globe.style.setProperty('--lgs-px', '0px');
-          globe.style.setProperty('--lgs-py', '0px');
-          const handle = headerEarthHandles.get(trigger);
-          if (handle) handle.setParallax(0, 0);
-        };
-        trigger.addEventListener('pointerleave', resetParallax);
-        trigger.addEventListener('pointercancel', resetParallax);
-        trigger.addEventListener('blur', resetParallax);
-      }
-
-      // Single-language mode: Earth + parallax already wired above.
+      // Single-language mode: Earth + drag already wired above.
       // No overlay exists for this trigger, so the button is a no-op
       // click target and the rest of the wiring (overlay listeners,
       // option buttons, language switching) is skipped.
@@ -3664,6 +3827,9 @@ const activeFocusJson = JSON.stringify(LANGUAGE_FOCUS[activeLanguage] ?? null);
 
       trigger.addEventListener('click', (e) => {
         e.preventDefault();
+        // A drag on the small globe ends with a click on the button;
+        // that release is not a request to open the selector.
+        if (headerEarthHandles.get(trigger)?.takeDrag()) return;
         // Only react when fully open or fully closed. Mid-animation
         // clicks are deliberately ignored — the cinematic flight is
         // short enough that this feels intentional, not unresponsive.
@@ -3726,6 +3892,11 @@ const activeFocusJson = JSON.stringify(LANGUAGE_FOCUS[activeLanguage] ?? null);
       };
 
       const beamStage = overlay.querySelector<HTMLElement>('.lgs-overlay-stage');
+      const showBeamFor = (btn: HTMLButtonElement): void => {
+        if (state !== 'open' || !beamStage || ceremonyInFlight) return;
+        const focus = stepTwoFocusMap[btn.dataset.language ?? ''];
+        if (focus) showBeam(btn, beamStage, beamPointsFor(focus));
+      };
 
       optionButtons.forEach((btn) => {
         // Mouse hover — pointerenter only. Pointermove fires on every
@@ -3737,12 +3908,11 @@ const activeFocusJson = JSON.stringify(LANGUAGE_FOCUS[activeLanguage] ?? null);
         btn.addEventListener('pointerenter', (e: PointerEvent) => {
           if (e.pointerType && e.pointerType !== 'mouse') return;
           previewLanguageOnGlobe(btn);
-          // Light up the beam from this button. The earth rotation
-          // started above will move the hotspot to the language's
-          // region; the beam tracks the hotspot per-frame inside the
-          // existing rAF, so the beam's impact end follows the planet
-          // naturally without any second loop.
-          if (beamStage && !ceremonyInFlight) showBeam(btn, beamStage);
+          // Light up the beams from this button to the language's own
+          // points. They are projected per-frame in the same rAF as
+          // the hotspot, so they follow the rotation started above
+          // (and any drag) without a second loop.
+          showBeamFor(btn);
         });
         // Keyboard focus — fires on Tab and on arrow-key navigation
         // (the existing ArrowRight/Down handler calls .focus()), so
@@ -3750,15 +3920,22 @@ const activeFocusJson = JSON.stringify(LANGUAGE_FOCUS[activeLanguage] ?? null);
         // users for free.
         btn.addEventListener('focus', () => {
           previewLanguageOnGlobe(btn);
-          if (beamStage && !ceremonyInFlight) showBeam(btn, beamStage);
+          showBeamFor(btn);
         });
         // Hover end — fade the beam out. The hotspot itself stays
         // visible (it follows the active focus); only the linkage
         // beam dismisses. Skipped during the selection ceremony so
         // a click-then-mouse-drift doesn't kill the beam mid-confirm.
         btn.addEventListener('pointerleave', () => {
-          if (ceremonyInFlight) return;
-          if (beamActiveButton === btn) hideBeam();
+          if (ceremonyInFlight || beamActiveButton !== btn) return;
+          // Hover ends: fall back to the keyboard-focused option, if
+          // any, so its beams stay lit; otherwise fade out.
+          const focused = document.activeElement;
+          if (focused instanceof HTMLButtonElement && focused !== btn && focused.matches('.lgs-overlay-option')) {
+            showBeamFor(focused);
+          } else {
+            hideBeam();
+          }
         });
         btn.addEventListener('blur', () => {
           if (ceremonyInFlight) return;
@@ -3908,7 +4085,10 @@ const activeFocusJson = JSON.stringify(LANGUAGE_FOCUS[activeLanguage] ?? null);
 
             // Default flow (chapter pages, every other reload-based
             // page): unchanged from today. Defer the language change
-            // to closeOverlay so the return flight runs first.
+            // to closeOverlay so the return flight runs first. The
+            // small globe is hidden under the overlay, so it snaps to
+            // the new region now and the large globe lands on it.
+            if (focus) headerEarthHandles.get(trigger)?.setFocus(focus.lat, focus.lng, true);
             pendingLanguageChange = lang;
             close();
           };
